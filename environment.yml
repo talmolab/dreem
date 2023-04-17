@@ -14,7 +14,7 @@ dependencies:
   - torchvision
   # - conda-forge::lightning
   - imageio
-  - av
+  - conda-forge::av
   # - ffmpeg
   - albumentations
   - pip
