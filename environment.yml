@@ -15,7 +15,7 @@ dependencies:
   # - conda-forge::lightning
   - imageio
   - av
-  - ffmpeg
+  # - ffmpeg
   - albumentations
   - pip
   - pip:
