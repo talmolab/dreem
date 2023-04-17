@@ -81,6 +81,7 @@ jobs:
         with:
           environment-file: environment.yml
           cache-env: true
+          channels: pytorch,nvidia,conda-forge,defaults
 
       - name: Print environment info
         shell: bash -l {0}
