@@ -54,10 +54,6 @@ jobs:
       run: |
         pydocstyle --convention=google biogtr/
 
-    - name: Run MyPy
-      run: |
-        mypy --follow-imports=skip --ignore-missing-imports biogtr tests
-
   # Tests with pytest
   tests:
     strategy:

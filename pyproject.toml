@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "torch >= 2.0.0",
-    "pytorch-lightning",
+    "lightning",
     "imageio",
 ]
 dynamic = ["version"]
