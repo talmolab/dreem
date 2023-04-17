@@ -30,7 +30,7 @@ version = {attr = "biogtr.__version__"}
 readme = {file = ["README.md"]}
 
 [project.optional-dependencies]
-dev = ["pytest", "black"]
+dev = ["pytest", "black", "pydocstyle"]
 
 [project.scripts]
 biogtr = "biogtr.cli:cli"

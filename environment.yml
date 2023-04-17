@@ -12,7 +12,7 @@ dependencies:
   - cudnn
   - pytorch
   - torchvision
-  - lightning
+  - conda-forge::lightning
   - imageio
   - av
   - ffmpeg
