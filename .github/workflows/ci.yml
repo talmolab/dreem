@@ -1,0 +1,118 @@
+# Continuous integration
+name: CI
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - "biogtr/**"
+      - "tests/**"
+      - ".github/workflows/ci.yml"
+      - "environment.yml"
+      - "pyproject.toml"
+  push:
+    branches:
+      - main
+    paths:
+      - "biogtr/**"
+      - "tests/**"
+      - ".github/workflows/ci.yml"
+      - "environment.yml"
+      - "pyproject.toml"
+
+jobs:
+  # Lint with black, docstring check with pydocstyle, static type checking with mypy
+  lint:
+    # This job runs:
+    #
+    # 1. Linting with black
+    #
+    # 2. Docstring style checking with pydocstyle 
+    # Note: This uses Google-style docstring convention
+    # Ref: https://google.github.io/styleguide/pyguide.html
+    name: Lint
+    runs-on: "ubuntu-22.04"
+    steps:
+
+    - name: Checkout repo
+      uses: actions/checkout@v3.0.2
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        pip install --editable .[dev]
+
+    - name: Run Black
+      run: |
+        black --check biogtr tests
+    
+    - name: Run pydocstyle
+      run: |
+        pydocstyle --convention=google biogtr/
+
+    - name: Run MyPy
+      run: |
+        mypy --follow-imports=skip --ignore-missing-imports biogtr tests
+
+  # Tests with pytest
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-22.04", "windows-2022"]
+        python: [3.9]
+
+    name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3.0.2
+
+      - name: Cache conda
+        uses: actions/cache@v1
+        env:
+          # Increase this value to reset cache if environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml', 'setup.cfg') }}
+
+      - name: Setup Miniconda
+        # https://github.com/conda-incubator/setup-miniconda
+        uses: conda-incubator/setup-miniconda@v2.1.1
+        with:
+          python-version: ${{ matrix.python }}
+          use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+          environment-file: environment.yml
+          activate-environment: biogtr
+
+      - name: Print environment info
+        shell: bash -l {0}
+        run: |
+          which python
+          conda info
+          conda list
+
+      - name: Test with pytest
+        if: ${{ !(startsWith(matrix.os, 'ubuntu') && matrix.python == 3.9) }}
+        shell: bash -l {0}
+        run: |
+          pytest
+
+      - name: Test with pytest (with coverage)
+        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.python == 3.9 }}
+        shell: bash -l {0}
+        run: |
+          pytest --cov=biogtr --cov-report=xml tests/
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3.1.0
+        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.python == 3.9 }}
+        with:
+          fail_ci_if_error: true
+          verbose: false
