@@ -81,15 +81,14 @@ jobs:
         with:
           environment-file: environment.yml
           cache-env: true
-          # channels: pytorch,nvidia,conda-forge,defaults
           channel-priority: flexible
 
       - name: Print environment info
         shell: bash -l {0}
         run: |
           which python
-          conda info
-          conda list
+          micromamba info
+          micromamba list
 
       - name: Test with pytest
         if: ${{ !(startsWith(matrix.os, 'ubuntu') && matrix.python == 3.9) }}
