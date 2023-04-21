@@ -68,7 +68,7 @@ class ATTWeightHead(torch.nn.Module):
         feature_dim: int,
         num_layers: int,
         dropout: float,
-    ) -> None:
+    ):
         """
         Initializes an instance of ATTWeightHead.
 
