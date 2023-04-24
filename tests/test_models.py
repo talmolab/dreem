@@ -2,6 +2,7 @@ import pytest
 import torch
 from biogtr.models.attention_head import MLP, ATTWeightHead
 from biogtr.models.embedding import Embedding
+from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.models.transformer import (
     Transformer,
     TransformerEncoderLayer,
@@ -295,6 +296,57 @@ def test_transformer_embedding():
     ).to(device)
 
     asso_preds, embedding = transformer(instances)
+
+    assert asso_preds[0].size() == (num_detected * num_frames,) * 2
+    assert embedding.size() == (num_detected * num_frames, 1, feats)
+
+
+def test_tracking_transformer():
+    feats = 512
+    device = "cpu"
+    num_frames = 5
+    num_detected = 20
+    img_shape = (1, 128, 128)
+
+    instances = []
+
+    for i in range(num_frames):
+        instances.append(
+            {
+                "frame_id": torch.tensor(i),
+                "img_shape": torch.tensor(img_shape),
+                "num_detected": torch.tensor([num_detected]).to(device),
+                "crops": torch.rand(size=(num_detected, 1, 64, 64)),
+                "bboxes": torch.rand(size=(num_detected, 4)).to(device),
+            }
+        )
+
+    embedding_meta = {
+        "embedding_type": "fixed_pos",
+        "kwargs": {
+            "temperature": num_detected,
+            "scale": num_frames,
+            "normalize": True,
+            "device": device,
+        },
+    }
+
+    cfg = {"resnet18", "ResNet18_Weights.DEFAULT"}
+
+    tracking_transformer = GlobalTrackingTransformer(
+        encoder_model="resnet18",
+        encoder_cfg={"weights": "ResNet18_Weights.DEFAULT"},
+        d_model=feats,
+        num_encoder_layers=1,
+        num_decoder_layers=1,
+        dim_feedforward=feats,
+        feature_dim_attn_head=feats,
+        embedding_meta=embedding_meta,
+        return_embedding=True,
+        device=device,
+    ).to(device)
+
+    asso_preds, embedding = tracking_transformer(instances)
 
     assert asso_preds[0].size() == (num_detected * num_frames,) * 2
     assert embedding.size() == (num_detected * num_frames, 1, feats)
