@@ -1,7 +1,13 @@
+import pytest
 import torch
 from biogtr.models.attention_head import MLP, ATTWeightHead
-from biogtr.models.visual_encoder import VisualEncoder
 from biogtr.models.embedding import Embedding
+from biogtr.models.transformer import (
+    Transformer,
+    TransformerEncoderLayer,
+    TransformerDecoderLayer,
+)
+from biogtr.models.visual_encoder import VisualEncoder
 
 # todo: add named tensor tests
 # todo: add fixtures
@@ -61,7 +67,7 @@ def test_embedding():
     times = torch.rand(size=(N,))
 
     sine_emb = emb._sine_box_embedding(
-        boxes, features=d_model, temperature=objects, normalize=True, scale=10
+        boxes, features=d_model // 4, temperature=objects, normalize=True, scale=10
     )
 
     learned_pos_emb = emb._learned_pos_embedding(
@@ -90,8 +96,7 @@ def test_embedding_kwargs():
 
     # sine embedding
 
-    _ = emb._sine_box_embedding(boxes)
-    sine_no_args_params = emb._get_parameter_values()
+    sine_no_args = emb._sine_box_embedding(boxes)
 
     sine_args = {
         "temperature": objects,
@@ -99,43 +104,197 @@ def test_embedding_kwargs():
         "normalize": True,
     }
 
-    _ = emb._sine_box_embedding(boxes, **sine_args)
-    sine_with_args_params = emb._get_parameter_values()
+    sine_with_args = emb._sine_box_embedding(boxes, **sine_args)
 
-    assert sine_no_args_params["temperature"] != sine_with_args_params["temperature"]
-
-    assert sine_no_args_params["scale"] != sine_with_args_params["scale"]
-
-    assert sine_no_args_params["normalize"] != sine_with_args_params["normalize"]
+    assert not torch.equal(sine_no_args, sine_with_args)
 
     # learned pos embedding
 
-    _ = emb._learned_pos_embedding(boxes)
-    lp_no_args_params = emb._get_parameter_values()
+    lp_no_args = emb._learned_pos_embedding(boxes)
 
     lp_args = {"learn_pos_emb_num": 100, "over_boxes": False}
 
-    _ = emb._learned_pos_embedding(boxes, **lp_args)
-    lp_with_args_params = emb._get_parameter_values()
+    lp_with_args = emb._learned_pos_embedding(boxes, **lp_args)
 
-    assert (
-        lp_no_args_params["learn_pos_emb_num"]
-        != lp_with_args_params["learn_pos_emb_num"]
-    )
-
-    assert lp_no_args_params["over_boxes"] != lp_with_args_params["over_boxes"]
+    assert not torch.equal(lp_no_args, lp_with_args)
 
     # learned temp embedding
 
-    _ = emb._learned_temp_embedding(times)
-    lt_no_args_params = emb._get_parameter_values()
+    lt_no_args = emb._learned_temp_embedding(times)
 
     lt_args = {"learn_temp_emb_num": 100}
 
-    _ = emb._learned_temp_embedding(times, **lt_args)
-    lt_with_args_params = emb._get_parameter_values()
+    lt_with_args = emb._learned_temp_embedding(times, **lt_args)
 
-    assert (
-        lt_no_args_params["learn_temp_emb_num"]
-        != lt_with_args_params["learn_temp_emb_num"]
+    assert not torch.equal(lt_no_args, lt_with_args)
+
+
+def test_transformer_encoder():
+    feats = 256
+
+    transformer_encoder = TransformerEncoderLayer(
+        d_model=feats, nhead=1, dim_feedforward=feats, norm=True
     )
+
+    N, B, D = 10, 1, feats
+
+    # no position
+    src = torch.rand(size=(N, B, D))
+
+    out = transformer_encoder(src)
+
+    assert out.size() == src.size()
+
+    # with position
+    pos = torch.ones_like(src)
+
+    out = transformer_encoder(src, pos=pos)
+
+    assert out.size() == src.size()
+
+
+def test_transformer_decoder():
+    feats = 512
+
+    transformer_decoder = TransformerDecoderLayer(
+        d_model=feats,
+        nhead=2,
+        dim_feedforward=feats,
+        dropout=0.2,
+        norm=False,
+        decoder_self_attn=True,
+    )
+
+    N, B, D = 10, 1, feats
+
+    # no position
+    tgt = memory = torch.rand(size=(N, B, D))
+
+    out = transformer_decoder(tgt, memory)
+
+    assert out.size() == tgt.size()
+
+    # with position
+    pos = tgt_pos = torch.ones_like(memory)
+
+    out = transformer_decoder(tgt, memory, pos=pos, tgt_pos=tgt_pos)
+
+    assert out.size() == pos.size()
+
+
+def test_transformer_basic():
+    feats = 256
+    device = "cpu"
+    num_frames = 32
+    num_detected = 10
+    img_shape = (1, 100, 100)
+
+    transformer = Transformer(
+        d_model=feats,
+        num_encoder_layers=1,
+        num_decoder_layers=1,
+        dim_feedforward=feats,
+        feature_dim_attn_head=feats,
+        device=device,
+    ).to(device)
+
+    instances = []
+
+    for i in range(num_frames):
+        instances.append(
+            {
+                "frame_id": torch.tensor(i),
+                "img_shape": torch.tensor(img_shape),
+                "num_detected": torch.tensor([num_detected]),
+                "bboxes": torch.rand(size=(num_detected, 4)).to(device),
+                "features": torch.rand(size=(num_detected, feats)).to(device),
+            }
+        )
+
+    asso_preds = transformer(instances)
+
+    assert asso_preds[0].size() == (num_detected * num_frames,) * 2
+
+
+def test_transformer_embedding_validity():
+    # use lower feats and single layer for efficiency
+    feats = 256
+
+    # this would throw assertion since no "embedding_type" key
+    with pytest.raises(Exception):
+        _ = Transformer(
+            d_model=feats,
+            num_encoder_layers=1,
+            num_decoder_layers=1,
+            dim_feedforward=feats,
+            feature_dim_attn_head=feats,
+            embedding_meta={"type": "learned_pos"},
+        )
+
+    # this would throw assertion since "embedding_type" value invalid
+    with pytest.raises(Exception):
+        _ = Transformer(
+            d_model=feats,
+            num_encoder_layers=1,
+            num_decoder_layers=1,
+            dim_feedforward=feats,
+            feature_dim_attn_head=feats,
+            embedding_meta={"embedding_type": "foo"},
+        )
+
+    # this would succeed
+    _ = Transformer(
+        d_model=feats,
+        num_encoder_layers=1,
+        num_decoder_layers=1,
+        dim_feedforward=feats,
+        feature_dim_attn_head=feats,
+        embedding_meta={"embedding_type": "learned_pos"},
+    )
+
+
+def test_transformer_embedding():
+    feats = 256
+    device = "cpu"
+    num_frames = 3
+    num_detected = 10
+    img_shape = (1, 50, 50)
+
+    instances = []
+
+    for i in range(num_frames):
+        instances.append(
+            {
+                "frame_id": torch.tensor(i),
+                "img_shape": torch.tensor(img_shape),
+                "num_detected": torch.tensor([num_detected]),
+                "bboxes": torch.rand(size=(num_detected, 4)).to(device),
+                "features": torch.rand(size=(num_detected, feats)).to(device),
+            }
+        )
+
+    embedding_meta = {
+        "embedding_type": "learned_pos_temp",
+        "kwargs": {
+            "learn_pos_emb_num": 16,
+            "learn_temp_emb_num": 16,
+            "normalize": True,
+            "device": device,
+        },
+    }
+
+    transformer = Transformer(
+        d_model=feats,
+        num_encoder_layers=1,
+        num_decoder_layers=1,
+        dim_feedforward=feats,
+        feature_dim_attn_head=feats,
+        embedding_meta=embedding_meta,
+        return_embedding=True,
+        device=device,
+    ).to(device)
+
+    asso_preds, embedding = transformer(instances)
+
+    assert asso_preds[0].size() == (num_detected * num_frames,) * 2
+    assert embedding.size() == (num_detected * num_frames, 1, feats)
