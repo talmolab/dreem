@@ -6,40 +6,10 @@ import torch
 
 
 class Embedding(torch.nn.Module):
-    _param_names = {
-        "_sine_box_embedding": [
-            "features",
-            "temperature",
-            "device",
-            "scale",
-            "normalize",
-        ],
-        "_learned_pos_embedding": [
-            "features",
-            "learn_pos_emb_num",
-            "device",
-            "over_boxes",
-        ],
-        "_learned_temp_embedding": ["features", "learn_temp_emb_num", "device"],
-    }
-
     def __init__(self):
         super().__init__()
         # empty init for flexibility
         pass
-
-    def _get_parameter_values(self) -> dict:
-        """
-        Returns a dictionary of parameter values for a given embedding function.
-        Useful for checking changed parameter values in tests.
-        """
-        params = {}
-        for func_name, param_names in self._param_names.items():
-            if hasattr(self, func_name):
-                for param_name in param_names:
-                    if hasattr(self, param_name):
-                        params[param_name] = getattr(self, param_name)
-        return params
 
     def _torch_int_div(
         self, tensor1: torch.Tensor, tensor2: torch.Tensor
@@ -88,7 +58,7 @@ class Embedding(torch.nn.Module):
             **kwargs,
         }
 
-        self.features = params["features"] // 4
+        self.features = params["features"]
         self.temperature = params["temperature"]
         self.device = params["device"]
         self.scale = params["scale"]
