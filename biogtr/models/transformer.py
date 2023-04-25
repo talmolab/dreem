@@ -15,6 +15,7 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 
 from biogtr.models.attention_head import ATTWeightHead
 from biogtr.models.embedding import Embedding
+from biogtr.models.model_utils import get_boxes_times
 from torch import nn
 from typing import Dict, List, Tuple
 import copy
@@ -164,37 +165,6 @@ class Transformer(torch.nn.Module):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
-    def _get_boxes_time(
-        self, instances: List[Dict]
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Extracts the bounding boxes and frame indices from the input list of instances.
-
-        Args:
-            instances (List[Dict]): List of instance dictionaries
-
-        Returns:
-            Tuple[torch.Tensor, torch.Tensor]: A tuple of two tensors containing the
-                                                bounding boxes and corresponding frame
-                                                indices, respectively.
-        """
-        boxes, times = [], []
-        _, h, w = instances[0]["img_shape"].flatten()
-
-        for fidx, instance in enumerate(instances):
-            bbox = instance["bboxes"]
-
-            bbox[:, [0, 2]] /= w
-            bbox[:, [1, 3]] /= h
-
-            boxes.append(bbox)
-            times.append(torch.full((bbox.shape[0],), fidx))
-
-        boxes = torch.cat(boxes, dim=0)  # N x 4
-        times = torch.cat(times, dim=0).to(self.device)  # N
-
-        return boxes, times
-
     def forward(self, instances, query_frame=None):
         """A forward pass through the transformer and attention head.
         Args:
@@ -233,7 +203,7 @@ class Transformer(torch.nn.Module):
         if self.embedding_meta:
             kwargs = self.embedding_meta.get("kwargs", {})
 
-            pred_box, pred_time = self._get_boxes_time(instances)  # N x 4
+            pred_box, pred_time = get_boxes_times(instances, self.device)  # N x 4
 
             embedding_type = self.embedding_meta["embedding_type"]
 
