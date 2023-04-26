@@ -3,7 +3,7 @@ import imageio
 import sleap_io as sio
 import data_utils
 from torch.utils.data import Dataset
-from torchvision import functional as tvf
+from torchvision.transforms import functional as tvf
 
 
 class SleapDataset(Dataset):
@@ -17,6 +17,8 @@ class SleapDataset(Dataset):
         clip_length=500,
         crop_type="centroid",
         mode="train",
+        tfm=None,
+        tfm_cfg=None,
     ):
         """
         Dataset for loading tracking annotations stored in .slp files
@@ -30,6 +32,8 @@ class SleapDataset(Dataset):
             crop_type: `centroid` or `pose` - determines whether to crop around a centroid or around a pose
             mode: `train` or `val`. Determines whether this dataset is used for training or validation.
             Currently doesn't affect dataset logic
+            tfm: The augmentation function from albumentations
+            tfm_cfg: The config for the augmentations
         """
         self.slp_files = slp_files
         self.padding = padding
@@ -39,6 +43,8 @@ class SleapDataset(Dataset):
         self.clip_length = clip_length
         self.crop_type = crop_type
         self.mode = mode
+        self.tfm = tfm
+        self.tfm_cfg = tfm_cfg
 
         assert self.crop_type in ["centroid", "pose"], "Invalid crop type!"
 
