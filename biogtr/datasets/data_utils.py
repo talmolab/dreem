@@ -37,10 +37,10 @@ def crop_bbox(img: torch.Tensor, bbox: ArrayLike) -> torch.Tensor:
     y1, x1, y2, x2 = bbox
     crop = tvf.crop(
         img,
-        top=int(round(y1)),
-        left=int(round(x1)),
-        height=int(round(y2 - y1)),
-        width=int(round(x2 - x1)),
+        top=int(y1.round()),
+        left=int(x1.round()),
+        height=int((y2 - y1).round()),
+        width=int((x2 - x1).round()),
     )
 
     return crop

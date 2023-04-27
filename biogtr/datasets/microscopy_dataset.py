@@ -25,8 +25,7 @@ class MicroscopyDataset(Dataset):
         Args:
             videos: paths to raw microscopy videos
             tracks: paths to trackmate gt labels (either .xml or .csv)
-            parser: parsing function from biogtr.data.parsers to parse annotation files
-            from different file types and get them to a common format
+            source: file format of gt labels based on label generator
             padding: amount of padding around object crops
             crop_size: the size of the object crops
             chunk: whether or not to chunk the dataset into batches
@@ -46,11 +45,11 @@ class MicroscopyDataset(Dataset):
         self.tfm = tfm
         self.tfm_cfg = tfm_cfg
         if source.lower() == "trackmate":
-            self.parser = data_utils.parse_trackmate
+            self.parse = data_utils.parse_trackmate
         elif source.lower() == "icy":
-            self.parser = data_utils.parse_ICY
+            self.parse = data_utils.parse_ICY
         elif source.lower() == "isbi":
-            self.parser = data_utils.parse_ISBI
+            self.parse = data_utils.parse_ISBI
         else:
             raise ValueError(
                 f"{source} is unsupported! Must be one of [trackmate, icy, isbi]"
@@ -74,14 +73,15 @@ class MicroscopyDataset(Dataset):
                 for video in self.frame_idx
             ]
 
-            self.chunked_frame_idx, self.video_idx = [], []
+            self.chunked_frame_idx, self.label_idx = [], []
             for i, (split, frame_idx) in enumerate(zip(self.chunks, self.frame_idx)):
-                frame_idx_split = torch.split(frame_idx, split)[1:]
+                print(split, frame_idx)
+                frame_idx_split = torch.split(frame_idx, self.clip_length)
                 self.chunked_frame_idx.extend(frame_idx_split)
-                self.video_idx.extend(len(frame_idx_split) * [i])
+                self.label_idx.extend(len(frame_idx_split) * [i])
         else:
             self.chunked_frame_idx = self.frame_idx
-            self.video_idx = [i for i in range(len(self.videos))]
+            self.label_idx = [i for i in range(len(self.videos))]
 
     def __len__(self):
         """
@@ -93,7 +93,7 @@ class MicroscopyDataset(Dataset):
     def no_batching_fn(self, batch):
         return batch
 
-    def __getitem__(self, idx: int):
+    def __getitem__(self, idx):
         """
         Get an element of the dataset
         Returns a list of dicts where each dict corresponds a frame in the
@@ -119,16 +119,17 @@ class MicroscopyDataset(Dataset):
             Args:
                 idx: the index of the batch. Note this is not the index of the video or the frame.
         """
-        video_idx = self.video_idx[idx]
+        label_idx = self.label_idx[idx]
         frame_idx = self.chunked_frame_idx[idx]
-        track = self.labels[idx]
-        if type(self.videos[video_idx]) == list:
-            video = self.videos[video_idx]
+        labels = self.labels[label_idx]
+        labels = labels.dropna(how="all")
+        if type(self.videos[label_idx]) == list:
+            video = self.videos[label_idx]
             video = torch.stack([torch.Tensor(imread(video[i])) for i in frame_idx])
-            print(len(self.videos[video_idx]))
-            print(video.shape)
+
         else:
-            video = imread(self.videos[video_idx])
+            video = imread(self.videos[label_idx])
+
         if self.tfm is not None and self.tfm_cfg is not None:
             aug = self.tfm(**self.frm_cfg)
         elif self.tfm is not None and self.tfm_cfg is None:
@@ -141,14 +142,15 @@ class MicroscopyDataset(Dataset):
             gt_track_ids, centroids, bboxes, crops = [], [], [], []
             img = video[i]
             # padded = np.pad(sec, pad_width=50, mode="constant", constant_values=0)
-            lf = track.loc[track["FRAME"] == i]
+            lf = labels[labels["FRAME"].astype(int) == i.item()]
+
             for instance in sorted(lf["TRACK_ID"].unique()):
                 # try:
                 gt_track_ids.append(int(instance))
 
                 x = lf[lf["TRACK_ID"] == instance]["POSITION_X"].iloc[0]
                 y = lf[lf["TRACK_ID"] == instance]["POSITION_Y"].iloc[0]
-                centroids.append(torch.Tensor([x, y]).astype("float32"))
+                centroids.append(torch.Tensor([x, y]).to(torch.float32))
             if aug is not None:
                 augmented = aug(image=img, keypoints=torch.vstack(centroids))
                 img, centroids = augmented["image"], augmented["keypoints"]
@@ -160,11 +162,9 @@ class MicroscopyDataset(Dataset):
                     padding=self.padding,
                 )
                 bboxes.append(bbox)
-
             for bbox in bboxes:
                 crop = data_utils.crop_bbox(img, bbox)
                 crops.append(crop)
-
             #     bb = self._create_bb([int(x), int(y)], self.crop_size, padding=50)
             #     # print(bb)
             #     # todo: we should definitely fix this, very confusing
@@ -181,13 +181,13 @@ class MicroscopyDataset(Dataset):
             # padded = np.expand_dims(padded, axis=0)
             instances.append(
                 {
-                    "video_id": torch.Tensor([video_idx]),
+                    "video_id": torch.Tensor([label_idx]),
                     "img_shape": torch.Tensor([img.shape]),
                     "frame_id": torch.Tensor([i]),
                     "num_detected": torch.Tensor([len(bboxes)]),
                     "gt_track_ids": torch.Tensor(gt_track_ids).type(torch.int64),
-                    "bboxes": torch.Tensor(bboxes),
-                    "crops": torch.stack(crops),
+                    "bboxes": torch.stack(bboxes),
+                    "crops": torch.stack(crops).squeeze(),
                     "features": torch.Tensor([]),
                     "pred_track_ids": torch.Tensor([-1 for _ in range(len(bboxes))]),
                     "asso_output": torch.Tensor([]),
