@@ -1,27 +1,24 @@
 import torch
-import torch
-import pandas as pd
 import data_utils
 from torchvision.transforms import functional as tvf
 from skimage.io import imread
 from PIL import Image
 from torch.utils import Dataset
-from parsers import parse_trackmate, parse_ICY, parse_ISBI
 
 
 class MicroscopyDataset(Dataset):
     def __init__(
         self,
-        videos,
-        tracks,
-        parser,
-        padding=5,
-        crop_size=20,
-        chunk=False,
-        clip_length=10,
-        mode="Train",
-        tfm=None,
-        tfm_cfg=None,
+        videos: list[str],
+        tracks: list[str],
+        source: str,
+        padding: int = 5,
+        crop_size: int = 20,
+        chunk: bool = False,
+        clip_length: int = 10,
+        mode: str = "Train",
+        tfm: callable = None,
+        tfm_cfg: dict = None,
     ):
         """
         Dataset for loading Microscopy Data
@@ -41,7 +38,6 @@ class MicroscopyDataset(Dataset):
         """
         self.videos = videos
         self.tracks = tracks
-        self.parse = parser
         self.chunk = chunk
         self.clip_length = clip_length
         self.crop_size = crop_size
@@ -49,6 +45,16 @@ class MicroscopyDataset(Dataset):
         self.mode = mode
         self.tfm = tfm
         self.tfm_cfg = tfm_cfg
+        if source.lower() == "trackmate":
+            self.parser = data_utils.parse_trackmate
+        elif source.lower() == "icy":
+            self.parser = data_utils.parse_ICY
+        elif source.lower() == "isbi":
+            self.parser = data_utils.parse_ISBI
+        else:
+            raise ValueError(
+                f"{source} is unsupported! Must be one of [trackmate, icy, isbi]"
+            )
 
         self.labels = [
             self.parse(self.tracks[video_idx])
@@ -87,21 +93,25 @@ class MicroscopyDataset(Dataset):
     def no_batching_fn(self, batch):
         return batch
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
         """
         Get an element of the dataset
-        Returns a list of dicts where each dict corresponds a frame in the chunk and each value is a `torch.Tensor`
+        Returns a list of dicts where each dict corresponds a frame in the
+        chunk and each value is a `torch.Tensor`
         Dict Elements:
         {
                     "video_id": The video being passed through the transformer,
                     "img_shape": the shape of each frame,
-                    "frame_id": the specific frame in the entire video being used,
+                    "frame_id": the specific frame in the entire video being
+                    used,
                     "num_detected": The number of objects in the frame,
                     "gt_track_ids": The ground truth labels,
                     "bboxes": The bounding boxes of each object,
                     "crops": The raw pixel crops,
-                    "features": The feature vectors for each crop outputed by the CNN encoder,
-                    "pred_track_ids": The predicted trajectory labels from the tracker,
+                    "features": The feature vectors for each crop outputed by
+                    the CNN encoder,
+                    "pred_track_ids": The predicted trajectory labels from the
+                    tracker,
                     "asso_output": the association matrix preprocessing,
                     "matches": the true positives from the model,
                     "traj_score": the association matrix post processing,
