@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import pandas as pd
 import sleap_io as sio
-from torchvision import functional as tvf
+from torchvision.transforms import functional as tvf
 from numpy.typing import ArrayLike
 from xml.etree import cElementTree as et
 
@@ -64,7 +64,7 @@ def get_bbox(center: ArrayLike, size: int) -> torch.Tensor:
 
 
 def centroid_bbox(
-    instance: sio.Instance, anchors: ArrayLike[str], crop_size: int
+    instance: sio.Instance, anchors: list, crop_size: int
 ) -> torch.Tensor:
     """Calculate bbox around instance centroid. This is useful for ensuring that
     crops are centered around each instance in the case of incorrect pose

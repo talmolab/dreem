@@ -1,9 +1,9 @@
 import torch
-import data_utils
+from biogtr.datasets import data_utils
 from torchvision.transforms import functional as tvf
 from skimage.io import imread
 from PIL import Image
-from torch.utils import Dataset
+from torch.utils.data import Dataset
 
 
 class MicroscopyDataset(Dataset):
