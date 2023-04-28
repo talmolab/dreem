@@ -25,7 +25,6 @@ class GlobalTrackingTransformer(nn.Module):
         embedding_meta: dict = None,
         return_embedding: bool = False,
         decoder_self_attn: bool = False,
-        device: str = "cpu",
     ):
         """
         Transformer module.
@@ -48,7 +47,6 @@ class GlobalTrackingTransformer(nn.Module):
             embedding_meta: Metadata for positional embeddings. See below.
             return_embedding: Whether to return the positional embeddings
             decoder_self_attn: If True, use decoder self attention.
-            device: Device to use for computations.
 
             embedding_meta: By default this will be an empty dict and indicate
                 that no positional embeddings should be used. To use positional
@@ -78,8 +76,6 @@ class GlobalTrackingTransformer(nn.Module):
 
         super().__init__()
 
-        self.device = device
-
         self.visual_encoder = VisualEncoder(encoder_model, encoder_cfg, d_model)
 
         self.transformer = Transformer(
@@ -98,14 +94,13 @@ class GlobalTrackingTransformer(nn.Module):
             embedding_meta=embedding_meta,
             return_embedding=return_embedding,
             decoder_self_attn=decoder_self_attn,
-            device=self.device,
         )
 
     def forward(self, instances, all_instances=None):
         # Extract feature representations with pre-trained encoder.
         for frame in instances:
             if (frame["num_detected"] > 0).item():
-                z = self.visual_encoder(frame["crops"].to(self.device))
+                z = self.visual_encoder(frame["crops"])
                 frame["features"] = z
 
         # Extract association matrix with transformer.

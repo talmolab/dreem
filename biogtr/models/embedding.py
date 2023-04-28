@@ -29,7 +29,6 @@ class Embedding(torch.nn.Module):
         boxes,
         features: int = 512,
         temperature: int = 10000,
-        device: str = "cpu",
         scale: float = None,
         normalize: bool = False,
         **kwargs,
@@ -41,7 +40,6 @@ class Embedding(torch.nn.Module):
             features: number of position features to use.
             temperature: frequency factor to control spread of pos embed values.
                 A higher temp (e.g 10000) gives a larger spread of values
-            device: the device to be used (e.g., "cuda", "cpu").
             scale: A scale factor to use if normalizing
             normalize: Whether to normalize the input before computing embedding
         Returns:
@@ -52,7 +50,6 @@ class Embedding(torch.nn.Module):
         params = {
             "features": features,
             "temperature": temperature,
-            "device": device,
             "scale": scale,
             "normalize": normalize,
             **kwargs,
@@ -60,7 +57,6 @@ class Embedding(torch.nn.Module):
 
         self.features = params["features"]
         self.temperature = params["temperature"]
-        self.device = params["device"]
         self.scale = params["scale"]
         self.normalize = params["normalize"]
 
@@ -75,7 +71,10 @@ class Embedding(torch.nn.Module):
         if self.normalize:
             boxes = boxes / (boxes[:, -1:] + 1e-6) * self.scale
 
-        dim_t = torch.arange(self.features, dtype=torch.float32, device=self.device)
+        dim_t = torch.arange(
+            self.features, dtype=torch.float32, device=self.features.device
+        )
+
         dim_t = self.temperature ** (2 * self._torch_int_div(dim_t, 2) / self.features)
 
         # (b, n_t, 4, D//4)
@@ -95,7 +94,6 @@ class Embedding(torch.nn.Module):
         boxes: torch.Tensor,
         features: int = 1024,
         learn_pos_emb_num: int = 16,
-        device: str = "cpu",
         over_boxes: bool = True,
         **kwargs,
     ) -> torch.Tensor:
@@ -105,7 +103,6 @@ class Embedding(torch.nn.Module):
             boxes: the input boxes.
             features: Number of features in attention head.
             learn_pos_emb_num: Size of the dictionary of embeddings.
-            device: the device to be used (e.g., "cuda", "cpu").
             over_boxes: If True, use box dimensions, rather than box offset and shape.
         Returns:
             torch.Tensor, the learned positional embeddings.
@@ -114,19 +111,17 @@ class Embedding(torch.nn.Module):
         params = {
             "features": features,
             "learn_pos_emb_num": learn_pos_emb_num,
-            "device": device,
             "over_boxes": over_boxes,
             **kwargs,
         }
 
         self.features = params["features"]
         self.learn_pos_emb_num = params["learn_pos_emb_num"]
-        self.device = params["device"]
         self.over_boxes = params["over_boxes"]
 
         pos_lookup = torch.nn.Embedding(
             self.learn_pos_emb_num * 4, self.features // 4
-        ).to(self.device)
+        ).to(self.features.device)
 
         N = boxes.shape[0]
         boxes = boxes.view(N, 4)
@@ -160,7 +155,6 @@ class Embedding(torch.nn.Module):
         times: torch.Tensor,
         features: int = 1024,
         learn_temp_emb_num: int = 16,
-        device: str = "cpu",
         **kwargs,
     ) -> torch.Tensor:
         """
@@ -169,7 +163,6 @@ class Embedding(torch.nn.Module):
             times: the input times.
             features: Number of features in attention head.
             learn_temp_emb_num: Size of the dictionary of embeddings.
-            device: the device to be used (e.g., "cuda", "cpu").
         Returns:
             torch.Tensor, the learned temporal embeddings.
         """
@@ -177,16 +170,14 @@ class Embedding(torch.nn.Module):
         params = {
             "features": features,
             "learn_temp_emb_num": learn_temp_emb_num,
-            "device": device,
             **kwargs,
         }
 
         self.features = params["features"]
         self.learn_temp_emb_num = params["learn_temp_emb_num"]
-        self.device = params["device"]
 
         temp_lookup = torch.nn.Embedding(self.learn_temp_emb_num, self.features).to(
-            self.device
+            self.features.device
         )
 
         N = times.shape[0]

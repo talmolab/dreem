@@ -2,9 +2,7 @@ from typing import Dict, List, Tuple
 import torch
 
 
-def get_boxes_times(
-    instances: List[Dict], device: str = "cpu"
-) -> Tuple[torch.Tensor, torch.Tensor]:
+def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Extracts the bounding boxes and frame indices from the input list of instances.
 
@@ -29,6 +27,6 @@ def get_boxes_times(
         times.append(torch.full((bbox.shape[0],), fidx))
 
     boxes = torch.cat(boxes, dim=0)  # N x 4
-    times = torch.cat(times, dim=0).to(device)  # N
+    times = torch.cat(times, dim=0).to(boxes.device)  # N
 
     return boxes, times

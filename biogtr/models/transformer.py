@@ -44,7 +44,6 @@ class Transformer(torch.nn.Module):
         embedding_meta: dict = None,
         return_embedding: bool = False,
         decoder_self_attn: bool = False,
-        device: str = "cpu",
     ):
         super().__init__()
 
@@ -66,7 +65,6 @@ class Transformer(torch.nn.Module):
             embedding_meta: Metadata for positional embeddings. See below.
             return_embedding: Whether to return the positional embeddings
             decoder_self_attn: If True, use decoder self attention.
-            device: Device to use for computations.
 
             embedding_meta: By default this will be an empty dict and indicate
                 that no positional embeddings should be used. To use positional
@@ -94,7 +92,6 @@ class Transformer(torch.nn.Module):
                 likely throw errors due to incorrect tensor shapes.
         """
 
-        self.device = device
         self.d_model = d_model
 
         self.embedding_meta = embedding_meta
@@ -203,7 +200,7 @@ class Transformer(torch.nn.Module):
         if self.embedding_meta:
             kwargs = self.embedding_meta.get("kwargs", {})
 
-            pred_box, pred_time = get_boxes_times(instances, self.device)  # N x 4
+            pred_box, pred_time = get_boxes_times(instances)  # N x 4
 
             embedding_type = self.embedding_meta["embedding_type"]
 

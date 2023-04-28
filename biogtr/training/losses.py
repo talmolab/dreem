@@ -15,11 +15,9 @@ class AssoLoss(nn.Module):
         neg_unmatched: bool = False,
         epsilon: float = 1e-4,
         asso_weight: float = 1.0,
-        device: str = "cpu",
     ):
         super().__init__()
 
-        self.device = device
         self.neg_unmatched = neg_unmatched
         self.epsilon = epsilon
         self.asso_weight = asso_weight
@@ -28,11 +26,11 @@ class AssoLoss(nn.Module):
         self, asso_preds: List[torch.Tensor], instances: List[dict]
     ) -> torch.Tensor:
         # get number of detected objects and ground truth ids
-        n_t = [frame["num_detected"].to(self.device) for frame in instances]
+        n_t = [frame["num_detected"] for frame in instances]
         target_inst_id = torch.cat([frame["gt_track_ids"] for frame in instances])
 
         # for now set equal since detections are fixed
-        pred_box, pred_time = get_boxes_times(instances, self.device)
+        pred_box, pred_time = get_boxes_times(instances)
         target_box, target_time = pred_box, pred_time
 
         # todo: we should maybe reconsider how we label gt instances. The second
@@ -60,8 +58,6 @@ class AssoLoss(nn.Module):
         asso_gt, match_cues = self._get_asso_gt(
             pred_box, pred_time, target_box, target_time, target_inst_id, n_t
         )
-
-        asso_gt = asso_gt.to(self.device)
 
         loss = sum(
             [
