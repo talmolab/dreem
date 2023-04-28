@@ -119,6 +119,12 @@ class SleapDataset(Dataset):
         video_name = self.video_files[label_idx]
 
         vid_reader = imageio.get_reader(video_name, "ffmpeg")
+        if self.tfm is not None and self.tfm_cfg is not None:
+            aug = self.tfm(**self.frm_cfg)
+        elif self.tfm is not None and self.tfm_cfg is None:
+            aug = self.tfm
+        else:
+            aug = None
 
         instances = []
         for i in frame_idx:
@@ -130,7 +136,7 @@ class SleapDataset(Dataset):
             lf_img = vid_reader.get_data(i)
 
             img = tvf.to_tensor(lf_img)
-
+            
             _, h, w = img.shape
 
             for instance in lf:
@@ -142,6 +148,10 @@ class SleapDataset(Dataset):
                 # poses.append(torch.Tensor(instance.numpy()).astype("float32"))
 
                 # bboxes
+                if aug is not None:
+                    augmented = aug(image=img, keypoints=torch.vstack(centroids))
+                    img, centroids = augmented["image"], augmented["keypoints"]
+                    
                 if self.crop_type == "centroid":
                     bbox = data_utils.pad_bbox(
                         data_utils.centroid_bbox(instance, anchors, self.crop_size),
@@ -158,18 +168,18 @@ class SleapDataset(Dataset):
 
             instances.append(
                 {
-                    "video_id": torch.Tensor([label_idx]),
-                    "img_shape": torch.Tensor([img.shape]),
-                    "frame_id": torch.Tensor([i]),
-                    "num_detected": torch.Tensor([len(bboxes)]),
-                    "gt_track_ids": torch.Tensor(gt_track_ids).type(torch.int64),
+                    "video_id": torch.tensor([label_idx]),
+                    "img_shape": torch.tensor([img.shape]),
+                    "frame_id": torch.tensor([i]),
+                    "num_detected": torch.tensor([len(bboxes)]),
+                    "gt_track_ids": torch.tensor(gt_track_ids),
                     "bboxes": torch.stack(bboxes),
                     "crops": torch.stack(crops),
-                    "features": torch.Tensor([]),
-                    "pred_track_ids": torch.Tensor([-1 for _ in range(len(bboxes))]),
-                    "asso_output": torch.Tensor([]),
-                    "matches": torch.Tensor([]),
-                    "traj_score": torch.Tensor([]),
+                    "features": torch.tensor([]),
+                    "pred_track_ids": torch.tensor([-1 for _ in range(len(bboxes))]),
+                    "asso_output": torch.tensor([]),
+                    "matches": torch.tensor([]),
+                    "traj_score": torch.tensor([]),
                 }
             )
 

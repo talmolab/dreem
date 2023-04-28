@@ -75,7 +75,7 @@ class MicroscopyDataset(Dataset):
 
             self.chunked_frame_idx, self.label_idx = [], []
             for i, (split, frame_idx) in enumerate(zip(self.chunks, self.frame_idx)):
-                print(split, frame_idx)
+                
                 frame_idx_split = torch.split(frame_idx, self.clip_length)
                 self.chunked_frame_idx.extend(frame_idx_split)
                 self.label_idx.extend(len(frame_idx_split) * [i])
@@ -123,12 +123,15 @@ class MicroscopyDataset(Dataset):
         frame_idx = self.chunked_frame_idx[idx]
         labels = self.labels[label_idx]
         labels = labels.dropna(how="all")
+
         if type(self.videos[label_idx]) == list:
             video = self.videos[label_idx]
             video = torch.stack([torch.Tensor(imread(video[i])) for i in frame_idx])
-
         else:
-            video = imread(self.videos[label_idx])
+            video = torch.Tensor(imread(self.videos[label_idx]))
+
+        if len(video.shape) == 3:
+            video = video.unsqueeze(axis=1)
 
         if self.tfm is not None and self.tfm_cfg is not None:
             aug = self.tfm(**self.frm_cfg)
@@ -150,11 +153,10 @@ class MicroscopyDataset(Dataset):
 
                 x = lf[lf["TRACK_ID"] == instance]["POSITION_X"].iloc[0]
                 y = lf[lf["TRACK_ID"] == instance]["POSITION_Y"].iloc[0]
-                centroids.append(torch.Tensor([x, y]).to(torch.float32))
+                centroids.append(torch.tensor([x, y]).to(torch.float32))
             if aug is not None:
                 augmented = aug(image=img, keypoints=torch.vstack(centroids))
                 img, centroids = augmented["image"], augmented["keypoints"]
-            img = tvf.to_tensor(img)
 
             for c in centroids:
                 bbox = data_utils.pad_bbox(
@@ -181,18 +183,18 @@ class MicroscopyDataset(Dataset):
             # padded = np.expand_dims(padded, axis=0)
             instances.append(
                 {
-                    "video_id": torch.Tensor([label_idx]),
-                    "img_shape": torch.Tensor([img.shape]),
-                    "frame_id": torch.Tensor([i]),
-                    "num_detected": torch.Tensor([len(bboxes)]),
-                    "gt_track_ids": torch.Tensor(gt_track_ids).type(torch.int64),
+                    "video_id": torch.tensor([label_idx]),
+                    "img_shape": torch.tensor([img.shape]),
+                    "frame_id": torch.tensor([i]),
+                    "num_detected": torch.tensor([len(bboxes)]),
+                    "gt_track_ids": torch.tensor(gt_track_ids).type(torch.int64),
                     "bboxes": torch.stack(bboxes),
-                    "crops": torch.stack(crops).squeeze(),
-                    "features": torch.Tensor([]),
-                    "pred_track_ids": torch.Tensor([-1 for _ in range(len(bboxes))]),
-                    "asso_output": torch.Tensor([]),
-                    "matches": torch.Tensor([]),
-                    "traj_score": torch.Tensor([]),
+                    "crops": torch.stack(crops),
+                    "features": torch.tensor([]),
+                    "pred_track_ids": torch.tensor([-1 for _ in range(len(bboxes))]),
+                    "asso_output": torch.tensor([]),
+                    "matches": torch.tensor([]),
+                    "traj_score": torch.tensor([]),
                 }
             )
         return instances
