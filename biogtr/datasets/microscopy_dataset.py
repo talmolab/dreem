@@ -181,18 +181,18 @@ class MicroscopyDataset(Dataset):
             # padded = np.expand_dims(padded, axis=0)
             instances.append(
                 {
-                    "video_id": torch.Tensor([label_idx]),
-                    "img_shape": torch.Tensor([img.shape]),
-                    "frame_id": torch.Tensor([i]),
-                    "num_detected": torch.Tensor([len(bboxes)]),
-                    "gt_track_ids": torch.Tensor(gt_track_ids).type(torch.int64),
+                    "video_id": torch.tensor([label_idx]),
+                    "img_shape": torch.tensor([img.shape]),
+                    "frame_id": torch.tensor([i]),
+                    "num_detected": torch.tensor([len(bboxes)]),
+                    "gt_track_ids": torch.tensor(gt_track_ids).type(torch.int64),
                     "bboxes": torch.stack(bboxes),
                     "crops": torch.stack(crops).squeeze(),
-                    "features": torch.Tensor([]),
-                    "pred_track_ids": torch.Tensor([-1 for _ in range(len(bboxes))]),
-                    "asso_output": torch.Tensor([]),
-                    "matches": torch.Tensor([]),
-                    "traj_score": torch.Tensor([]),
+                    "features": torch.tensor([]),
+                    "pred_track_ids": torch.tensor([-1 for _ in range(len(bboxes))]),
+                    "asso_output": torch.tensor([]),
+                    "matches": torch.tensor([]),
+                    "traj_score": torch.tensor([]),
                 }
             )
         return instances
