@@ -71,9 +71,7 @@ class Embedding(torch.nn.Module):
         if self.normalize:
             boxes = boxes / (boxes[:, -1:] + 1e-6) * self.scale
 
-        dim_t = torch.arange(
-            self.features, dtype=torch.float32, device=self.features.device
-        )
+        dim_t = torch.arange(self.features, dtype=torch.float32)
 
         dim_t = self.temperature ** (2 * self._torch_int_div(dim_t, 2) / self.features)
 
@@ -119,9 +117,7 @@ class Embedding(torch.nn.Module):
         self.learn_pos_emb_num = params["learn_pos_emb_num"]
         self.over_boxes = params["over_boxes"]
 
-        pos_lookup = torch.nn.Embedding(
-            self.learn_pos_emb_num * 4, self.features // 4
-        ).to(self.features.device)
+        pos_lookup = torch.nn.Embedding(self.learn_pos_emb_num * 4, self.features // 4)
 
         N = boxes.shape[0]
         boxes = boxes.view(N, 4)
@@ -176,9 +172,7 @@ class Embedding(torch.nn.Module):
         self.features = params["features"]
         self.learn_temp_emb_num = params["learn_temp_emb_num"]
 
-        temp_lookup = torch.nn.Embedding(self.learn_temp_emb_num, self.features).to(
-            self.features.device
-        )
+        temp_lookup = torch.nn.Embedding(self.learn_temp_emb_num, self.features)
 
         N = times.shape[0]
 
