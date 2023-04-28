@@ -13,6 +13,8 @@ from biogtr.models.visual_encoder import VisualEncoder
 # todo: add named tensor tests
 # todo: add fixtures
 
+torch.set_default_device("cpu")
+
 
 def test_mlp():
     b, n, f = 1, 10, 1024  # batch size, num instances, features
@@ -185,7 +187,6 @@ def test_transformer_decoder():
 
 def test_transformer_basic():
     feats = 256
-    device = "cpu"
     num_frames = 32
     num_detected = 10
     img_shape = (1, 100, 100)
@@ -196,8 +197,7 @@ def test_transformer_basic():
         num_decoder_layers=1,
         dim_feedforward=feats,
         feature_dim_attn_head=feats,
-        device=device,
-    ).to(device)
+    )
 
     instances = []
 
@@ -207,8 +207,8 @@ def test_transformer_basic():
                 "frame_id": torch.tensor(i),
                 "img_shape": torch.tensor(img_shape),
                 "num_detected": torch.tensor([num_detected]),
-                "bboxes": torch.rand(size=(num_detected, 4)).to(device),
-                "features": torch.rand(size=(num_detected, feats)).to(device),
+                "bboxes": torch.rand(size=(num_detected, 4)),
+                "features": torch.rand(size=(num_detected, feats)),
             }
         )
 
@@ -256,7 +256,6 @@ def test_transformer_embedding_validity():
 
 def test_transformer_embedding():
     feats = 256
-    device = "cpu"
     num_frames = 3
     num_detected = 10
     img_shape = (1, 50, 50)
@@ -269,8 +268,8 @@ def test_transformer_embedding():
                 "frame_id": torch.tensor(i),
                 "img_shape": torch.tensor(img_shape),
                 "num_detected": torch.tensor([num_detected]),
-                "bboxes": torch.rand(size=(num_detected, 4)).to(device),
-                "features": torch.rand(size=(num_detected, feats)).to(device),
+                "bboxes": torch.rand(size=(num_detected, 4)),
+                "features": torch.rand(size=(num_detected, feats)),
             }
         )
 
@@ -280,7 +279,6 @@ def test_transformer_embedding():
             "learn_pos_emb_num": 16,
             "learn_temp_emb_num": 16,
             "normalize": True,
-            "device": device,
         },
     }
 
@@ -292,8 +290,7 @@ def test_transformer_embedding():
         feature_dim_attn_head=feats,
         embedding_meta=embedding_meta,
         return_embedding=True,
-        device=device,
-    ).to(device)
+    )
 
     asso_preds, embedding = transformer(instances)
 
@@ -303,7 +300,6 @@ def test_transformer_embedding():
 
 def test_tracking_transformer():
     feats = 512
-    device = "cpu"
     num_frames = 5
     num_detected = 20
     img_shape = (1, 128, 128)
@@ -315,20 +311,15 @@ def test_tracking_transformer():
             {
                 "frame_id": torch.tensor(i),
                 "img_shape": torch.tensor(img_shape),
-                "num_detected": torch.tensor([num_detected]).to(device),
+                "num_detected": torch.tensor([num_detected]),
                 "crops": torch.rand(size=(num_detected, 1, 64, 64)),
-                "bboxes": torch.rand(size=(num_detected, 4)).to(device),
+                "bboxes": torch.rand(size=(num_detected, 4)),
             }
         )
 
     embedding_meta = {
         "embedding_type": "fixed_pos",
-        "kwargs": {
-            "temperature": num_detected,
-            "scale": num_frames,
-            "normalize": True,
-            "device": device,
-        },
+        "kwargs": {"temperature": num_detected, "scale": num_frames, "normalize": True},
     }
 
     cfg = {"resnet18", "ResNet18_Weights.DEFAULT"}
@@ -343,8 +334,7 @@ def test_tracking_transformer():
         feature_dim_attn_head=feats,
         embedding_meta=embedding_meta,
         return_embedding=True,
-        device=device,
-    ).to(device)
+    )
 
     asso_preds, embedding = tracking_transformer(instances)
 
