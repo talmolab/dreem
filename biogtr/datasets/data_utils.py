@@ -81,7 +81,7 @@ def centroid_bbox(
 
     for anchor in anchors:
         cx, cy = instance[anchor].x, instance[anchor].y
-        if not torch.isnan(cx):
+        if not np.isnan(cx):
             break
 
     bbox = torch.Tensor(
@@ -155,6 +155,35 @@ def resize_and_pad(img: torch.Tensor, output_size: int):
     vp2 = output_size - (img_height + vp1)
     padding = (hp1, vp1, hp2, vp2)
     return tvf.pad(img, padding, 0, "constant")
+
+
+def sorted_anchors(labels: sio.Labels) -> list[str]:
+    """
+    Sort anchor names from most instances with that node to least
+    Returns: a list of anchor names sorted by most nodes to least nodes
+    Args:
+        labels: a sleap_io.labels object containing all the labels for that video
+    """
+    all_anchors = labels.skeletons[0].node_names
+
+    anchor_counts = {anchor: 0 for anchor in all_anchors}
+
+    for i in range(len(labels)):
+        lf = labels[i]
+        for instance in lf:
+            for anchor in all_anchors:
+                x, y = instance[anchor].x, instance[anchor].y
+                if np.isnan(x) or np.isnan(y):
+                    anchor_counts[anchor] += 1
+
+    sorted_anchors = sorted(anchor_counts.keys(), key=lambda k: anchor_counts[k])
+
+    return sorted_anchors
+
+
+"""
+PARSERS
+"""
 
 
 def parse_trackmate_xml(xml_path: str) -> pd.DataFrame:
