@@ -1,7 +1,7 @@
 import torch
 import imageio
 import sleap_io as sio
-import data_utils
+from biogtr.datasets import data_utils
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as tvf
 
@@ -9,24 +9,24 @@ from torchvision.transforms import functional as tvf
 class SleapDataset(Dataset):
     def __init__(
         self,
-        slp_files,
-        padding=5,
-        crop_size=128,
-        anchor_names=["thorax", "head"],
-        chunk=True,
-        clip_length=500,
-        crop_type="centroid",
-        mode="train",
-        tfm=None,
-        tfm_cfg=None,
+        slp_files: list[str],
+        video_files: list[str],
+        padding: int = 5,
+        crop_size: int = 128,
+        chunk: bool = True,
+        clip_length: int = 500,
+        crop_type: str = "centroid",
+        mode: str = "train",
+        tfm: callable = None,
+        tfm_cfg: dict = None,
     ):
         """
         Dataset for loading tracking annotations stored in .slp files
         Args:
-            slp_files: a list of .slp files storing tracking annotations and vid file path
+            slp_files: a list of .slp files storing tracking annotations
+            vid_files: a list of paths to video files
             padding: amount of padding around object crops
             crop_size: the size of the object crops
-            anchor_names: names of nodes in skeleton to be used as centroid for cropping ordered by priority
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
             crop_type: `centroid` or `pose` - determines whether to crop around a centroid or around a pose
@@ -36,9 +36,9 @@ class SleapDataset(Dataset):
             tfm_cfg: The config for the augmentations
         """
         self.slp_files = slp_files
+        self.video_files = video_files
         self.padding = padding
         self.crop_size = crop_size
-        self.anchor_names = anchor_names
         self.chunk = chunk
         self.clip_length = clip_length
         self.crop_type = crop_type
@@ -50,6 +50,9 @@ class SleapDataset(Dataset):
 
         self.labels = [sio.load_slp(slp_file) for slp_file in self.slp_files]
 
+        self.anchor_names = [
+            data_utils.sorted_anchors(labels) for labels in self.labels
+        ]
         # for label in self.labels:
         # label.remove_empty_instances(keep_empty_frames=False)
 
@@ -63,7 +66,7 @@ class SleapDataset(Dataset):
 
             self.chunked_frame_idx, self.label_idx = [], []
             for i, (split, frame_idx) in enumerate(zip(self.chunks, self.frame_idx)):
-                frame_idx_split = torch.split(frame_idx, split)[1:]
+                frame_idx_split = torch.split(frame_idx, self.clip_length)
                 self.chunked_frame_idx.extend(frame_idx_split)
                 self.label_idx.extend(len(frame_idx_split) * [i])
         else:
@@ -110,16 +113,16 @@ class SleapDataset(Dataset):
 
         anchors = [
             video.skeletons[0].node_names.index(anchor_name)
-            for anchor_name in self.anchor_names
+            for anchor_name in self.anchor_names[label_idx]
         ]  # get the nodes from the skeleton
 
-        video_name = video.videos[0].filename.split("/")[1]
+        video_name = self.video_files[label_idx]
 
         vid_reader = imageio.get_reader(video_name, "ffmpeg")
 
         instances = []
         for i in frame_idx:
-            gt_track_ids, poses, bboxes, crops = [], [], [], []
+            gt_track_ids, bboxes, crops = [], [], []
 
             i = int(i)
 
@@ -134,8 +137,9 @@ class SleapDataset(Dataset):
                 # gt_track_ids
                 gt_track_ids.append(video.tracks.index(instance.track))
 
-                # poses
-                poses.append(torch.Tensor(instance.numpy()).astype("float32"))
+                # # poses
+                # might be necessary later so commenting out for now
+                # poses.append(torch.Tensor(instance.numpy()).astype("float32"))
 
                 # bboxes
                 if self.crop_type == "centroid":
@@ -143,29 +147,23 @@ class SleapDataset(Dataset):
                         data_utils.centroid_bbox(instance, anchors, self.crop_size),
                         padding=self.padding,
                     )
-                elif self.crop_type == "pose":
-                    bbox = data_utils.pose_bbox(instance, self.padding, (w, h))
-
-                bboxes.append(bbox)
-
-                # crops
-                if self.crop_type == "centroid":
                     crop = data_utils.crop_bbox(img, bbox)
                 elif self.crop_type == "pose":
+                    bbox = data_utils.pose_bbox(instance, self.padding, (w, h))
                     crop = data_utils.resize_and_pad(
                         data_utils.crop_bbox(img, bbox), self.crop_size
                     )
-
+                bboxes.append(bbox)
                 crops.append(crop)
 
             instances.append(
                 {
-                    "video_id": torch.from_numpy(torch.Tensor([label_idx])),
+                    "video_id": torch.Tensor([label_idx]),
                     "img_shape": torch.Tensor([img.shape]),
                     "frame_id": torch.Tensor([i]),
                     "num_detected": torch.Tensor([len(bboxes)]),
                     "gt_track_ids": torch.Tensor(gt_track_ids).type(torch.int64),
-                    "bboxes": torch.Tensor(bboxes),
+                    "bboxes": torch.stack(bboxes),
                     "crops": torch.stack(crops),
                     "features": torch.Tensor([]),
                     "pred_track_ids": torch.Tensor([-1 for _ in range(len(bboxes))]),
