@@ -1,7 +1,7 @@
 import torch
 import imageio
 import sleap_io as sio
-import data_utils
+from biogtr.datasets import data_utils
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as tvf
 
@@ -63,7 +63,7 @@ class SleapDataset(Dataset):
 
             self.chunked_frame_idx, self.label_idx = [], []
             for i, (split, frame_idx) in enumerate(zip(self.chunks, self.frame_idx)):
-                frame_idx_split = torch.split(frame_idx, split)[1:]
+                frame_idx_split = torch.split(frame_idx, self.clip_length)
                 self.chunked_frame_idx.extend(frame_idx_split)
                 self.label_idx.extend(len(frame_idx_split) * [i])
         else:
@@ -112,8 +112,8 @@ class SleapDataset(Dataset):
             video.skeletons[0].node_names.index(anchor_name)
             for anchor_name in self.anchor_names
         ]  # get the nodes from the skeleton
-
-        video_name = video.videos[0].filename.split("/")[1]
+        print(video.videos[-1].filename)
+        video_name = video.videos[-1].filename.split("/")[-1]
 
         vid_reader = imageio.get_reader(video_name, "ffmpeg")
 
