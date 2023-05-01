@@ -1,7 +1,7 @@
 # to implement - config class that handles getters/setters
 import hydra
 import sys
-import ast 
+import ast
 import torch
 import lightning
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
@@ -10,9 +10,12 @@ from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from omegaconf import DictConfig, OmegaConf
 from typing import Union
+
 """
 Class for handling config parsing
 """
+
+
 class Config:
     def __init__(self, cfg: DictConfig):
         """
@@ -33,7 +36,7 @@ class Config:
 
         def set_hparams(self, hparams: dict):
             """
-            Setter function for overwriting specific hparams. 
+            Setter function for overwriting specific hparams.
             Useful for changing 1 or 2 hyperparameters such as dataset
             Args:
                 hparams: A dict containing the hyperparameter to be overwritten and the value to be changed to
@@ -48,8 +51,10 @@ class Config:
             """
             model_params = self.cfg.model
             return GlobalTrackingTransformer(**model_params)
-        
-        def get_dataset(self, type: str = "sleap", mode: str = None) -> Union[SleapDataset, MicroscopyDataset]:
+
+        def get_dataset(
+            self, type: str = "sleap", mode: str = None
+        ) -> Union[SleapDataset, MicroscopyDataset]:
             """
             Getter for datasets
             Returns: Either a `SleapDataset` or `MicroscopyDataset` with params indicated by cfg
@@ -66,14 +71,18 @@ class Config:
             elif mode.lower() == "test":
                 dataset_params = self.cfg.test_dataset
             else:
-                raise ValueError("`mode` must be one of ['train', 'val','test', not '{mode}'")
+                raise ValueError(
+                    "`mode` must be one of ['train', 'val','test', not '{mode}'"
+                )
             if type.lower() == "sleap":
                 return SleapDataset(**dataset_params)
             elif type.lower() == "microscopy":
                 return MicroscopyDataset(**dataset_params)
             else:
-                raise ValueError(f"`type` must be one of ['sleap', 'microscopy'] not '{type}'!")
-            
+                raise ValueError(
+                    f"`type` must be one of ['sleap', 'microscopy'] not '{type}'!"
+                )
+
         def get_optimizer(self) -> torch.optim.Optimizer:
             """
             Getter for optimizer
@@ -86,7 +95,7 @@ class Config:
             Getter for loss functions
             Returns: An AssoLoss with specified params
             """
-            pass
+            return AssoLoss()
 
         def get_logger(self) -> lightning.pytorch.loggers.logger:
             """
