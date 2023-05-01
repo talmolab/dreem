@@ -3,12 +3,12 @@ from pytorch_lightning import LightningModule
 
 
 class GTRRunner(LightningModule):
-    def __init__(self, model, loss, optim=None, scheduler=None):
+    def __init__(self, model, loss, optimizer=None, scheduler=None):
         super().__init__()
 
         self.model = model
         self.loss = loss
-        self.optim = optim
+        self.optimizer = optimizer
         self.scheduler = scheduler
 
     def training_step(self, train_batch, batch_idx):
@@ -44,4 +44,12 @@ class GTRRunner(LightningModule):
         else:
             scheduler = self.scheduler
 
-        return [optimizer], [scheduler]
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "monitor": "train_loss",
+                "interval": "epoch",
+                "frequency": 10,
+            },
+        }
