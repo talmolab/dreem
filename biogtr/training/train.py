@@ -41,7 +41,7 @@ def train(model, dataset, trainer):
 # not sure we need hydra? could just do argparse + omegaconf?
 @hydra.main(config_path="configs", config_name=None, version_base=None)
 def main(cfg: DictConfig):
-    cfg = Config(cfg)
+    train_cfg = Config(cfg)
 
     # update with extra cli args
     hparams = {}
@@ -56,11 +56,11 @@ def main(cfg: DictConfig):
                 print(e)
                 pass
 
-    cfg.update(hparams)
+    train_cfg.set_hparams(hparams)
 
-    model = cfg.get_model()
-    dataset = cfg.get_dataset()
-    loss = cfg.get_loss()
+    model = train_cfg.get_model()
+    dataset = train_cfg.get_dataset()
+    loss = train_cfg.get_loss()
 
     dataset = TrackingDataset(dataset)
 

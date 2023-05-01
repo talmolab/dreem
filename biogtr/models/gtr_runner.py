@@ -1,5 +1,5 @@
 import torch
-from lightning import LightningModule
+from pytorch_lightning import LightningModule
 
 
 class GTRRunner(LightningModule):

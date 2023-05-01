@@ -3,7 +3,7 @@ import hydra
 import sys
 import ast
 import torch
-import lightning
+import pytorch_lightning as pl
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
 from biogtr.datasets.sleap_dataset import SleapDataset
@@ -97,14 +97,14 @@ class Config:
         """
         return AssoLoss()
 
-    def get_logger(self) -> lightning.pytorch.loggers.logger:
+    def get_logger(self) -> pl.pytorch.loggers.logger:
         """
         Getter for lightning logging callbacks
         Returns: A lightning Logger with specified params
         """
         pass
 
-    def get_trainer(self) -> lightning.Trainer:
+    def get_trainer(self) -> pl.Trainer:
         """
         Getter for the lightning trainer:
         Returns a lightning Trainer with specified params
