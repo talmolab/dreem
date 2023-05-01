@@ -1,0 +1,13 @@
+model:
+  d_model: 256
+  num_encoder_layers: 1
+  num_decoder_layers: 1
+  dim_feedforward: 256
+  feature_dim_attn_head: 256
+
+dataset:
+  padding: 5
+  crop_size: 128
+  chunk: true
+  clip_length: 32
+  crop_type: 'centroid'
