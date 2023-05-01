@@ -22,7 +22,7 @@ else:
     pin_memory = False
 
 # for dataloader if shuffling, since shuffling is done by default on cpu
-generator = torch.Generator(device=device) if shuffle else None
+generator = torch.Generator(device=device) if shuffle and device == "cuda" else None
 
 # useful for longer training runs, but not for single iteration debugging
 # finds optimal hardware algs which has upfront time increase for first
@@ -69,7 +69,10 @@ def main(cfg: DictConfig):
     accelerator = "cpu" if device == "cpu" else "gpu"
 
     # test with 1 epoch and single batch, this should be controlled from config
-    trainer = pl.Trainer(max_epochs=1, accelerator=accelerator, limit_train_batches=1)
+    # todo: get to work with multi-gpu training
+    trainer = pl.Trainer(
+        max_epochs=1, accelerator=accelerator, limit_train_batches=1, devices=1
+    )
 
     train(model, dataset, trainer)
 
