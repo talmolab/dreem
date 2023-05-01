@@ -36,15 +36,6 @@ Lightning wrapper for tracking datasets
 
 
 class TrackingDataset(LightningDataModule):
-    """
-    Initialize tracking dataset
-    Args:
-        train_ds: Sleap or Microscopy training Dataset
-        train_dl: Training dataloader. Only used for overriding `train_dataloader`.
-        val_ds: Sleap or Microscopy Validation set
-        val_dl : Validation dataloader. Only used for overriding `val_dataloader`.
-    """
-
     def __init__(
         self,
         train_ds: Union[SleapDataset, MicroscopyDataset, None] = None,
@@ -52,6 +43,14 @@ class TrackingDataset(LightningDataModule):
         val_ds: Union[SleapDataset, MicroscopyDataset, None] = None,
         val_dl: DataLoader = None,
     ):
+        """
+        Initialize tracking dataset
+        Args:
+            train_ds: Sleap or Microscopy training Dataset
+            train_dl: Training dataloader. Only used for overriding `train_dataloader`.
+            val_ds: Sleap or Microscopy Validation set
+            val_dl : Validation dataloader. Only used for overriding `val_dataloader`.
+        """
         super().__init__()
 
         self.train_ds = train_ds

@@ -1,9 +1,29 @@
 import torch
+from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
+from biogtr.training.losses import AssoLoss
 from pytorch_lightning import LightningModule
+
+"""
+Lightning Wrapper around GlobalTrackingTransformer. Used to train model + run eval
+"""
 
 
 class GTRRunner(LightningModule):
-    def __init__(self, model, loss, optimizer=None, scheduler=None):
+    def __init__(
+        self,
+        model: GlobalTrackingTransformer,
+        loss: AssoLoss,
+        optimizer: torch.optim.Optimizer = None,
+        scheduler: torch.optim.lr_scheduler.LRScheduler = None,
+    ):
+        """
+        Initialize a lightning module for GTR
+        Args:
+            model: GlobalTrackingTransformer model to be trained/used for eval
+            loss: AssoLoss function to optimize
+            optimizer: optimizer to train model with. Only used to overwrite `configure_optimizer`
+            scheduler: lr_scheduler used to overwrite `configure_optimizer
+        """
         super().__init__()
 
         self.model = model
