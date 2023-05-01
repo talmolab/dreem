@@ -97,7 +97,7 @@ class Config:
         """
         return AssoLoss()
 
-    def get_logger(self) -> pl.pytorch.loggers.logger:
+    def get_logger(self) -> pl.loggers.WandbLogger:
         """
         Getter for lightning logging callbacks
         Returns: A lightning Logger with specified params
