@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# lightning
+lightning_logs
+outputs
+
+# vscode
+.vscode
