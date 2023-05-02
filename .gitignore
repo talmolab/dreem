@@ -134,3 +134,6 @@ outputs
 
 # vscode
 .vscode
+biogtr/training/.hydra/config.yaml
+biogtr/training/.hydra/hydra.yaml
+biogtr/training/.hydra/overrides.yaml

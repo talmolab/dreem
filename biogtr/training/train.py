@@ -22,7 +22,7 @@ else:
     pin_memory = False
 
 # for dataloader if shuffling, since shuffling is done by default on cpu
-generator = torch.Generator(device=device) if shuffle else None
+generator = torch.Generator(device=device) if shuffle and device == "cuda" else None
 
 # useful for longer training runs, but not for single iteration debugging
 # finds optimal hardware algs which has upfront time increase for first
@@ -34,14 +34,16 @@ generator = torch.Generator(device=device) if shuffle else None
 torch.set_default_device(device)
 
 
-def train(model, dataset, trainer):
+def train(model: GTRRunner, 
+          dataset: TrackingDataset, 
+          trainer: pl.Trainer):
     trainer.fit(model, dataset)
 
 
 # not sure we need hydra? could just do argparse + omegaconf?
 @hydra.main(config_path="configs", config_name=None, version_base=None)
 def main(cfg: DictConfig):
-    cfg = Config(cfg)
+    train_cfg = Config(cfg)
 
     # update with extra cli args
     hparams = {}
@@ -56,11 +58,11 @@ def main(cfg: DictConfig):
                 print(e)
                 pass
 
-    cfg.update(hparams)
+    train_cfg.set_hparams(hparams)
 
-    model = cfg.get_model()
-    dataset = cfg.get_dataset()
-    loss = cfg.get_loss()
+    model = train_cfg.get_model()
+    dataset = train_cfg.get_dataset()
+    loss = train_cfg.get_loss()
 
     dataset = TrackingDataset(dataset)
 
@@ -69,7 +71,10 @@ def main(cfg: DictConfig):
     accelerator = "cpu" if device == "cpu" else "gpu"
 
     # test with 1 epoch and single batch, this should be controlled from config
-    trainer = pl.Trainer(max_epochs=1, accelerator=accelerator, limit_train_batches=1)
+    # todo: get to work with multi-gpu training
+    trainer = pl.Trainer(
+        max_epochs=1, accelerator=accelerator, limit_train_batches=1, devices=1
+    )
 
     train(model, dataset, trainer)
 
