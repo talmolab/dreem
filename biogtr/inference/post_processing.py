@@ -1,6 +1,42 @@
 import torch
 
 
+def softmax_asso(self, asso_output):
+    """Applies the softmax activation function on asso_output.
+    Args:
+        asso_output: Same structure as before. It's a list of tensors.
+        An example is shown  below. The shape is modified.
+    Returns:
+        asso_output: Exactly the same as before but with the softmax applied.
+    # ------------------------ An example of asso_output ----------------------- #
+    N_i: number of detected instances in i-th frame of window.
+    N_t: number of instances in current/query frame (rightmost frame of the window).
+    T: length of window.
+    asso_output is of shape: (T, N_t, N_i).
+    """
+
+    # N_i: number of detected instances in i-th frame of window.
+    # N_t: number of instances in current frame (rightmost frame of the window).
+    # T: length of window.
+
+    # asso_output: (T, N_t, N_i)
+
+    asso_active = []
+    for asso in asso_output:
+        # asso: (N_t, N_i)
+
+        # I'm guessing what they are doing here is giving the model a chance to pick "uncertain".
+        # If the model doesn't find any high associations between 2 instances within the window,
+        # this "uncertain" category will have the highest probability and the other classes/categories
+        # will have lower probability.
+        asso = torch.cat([asso, asso.new_zeros((asso.shape[0], 1))], dim=1).softmax(
+            dim=1
+        )[:, :-1]
+        asso_active.append(asso)
+
+    return asso_active  # (T, N_t, N_i)
+
+
 def weight_decay_time(
     asso_output: torch.Tensor,
     decay_time: float = 0,
