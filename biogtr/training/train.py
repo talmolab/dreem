@@ -34,7 +34,9 @@ generator = torch.Generator(device=device) if shuffle and device == "cuda" else 
 torch.set_default_device(device)
 
 
-def train(model, dataset, trainer):
+def train(model: GTRRunner, 
+          dataset: TrackingDataset, 
+          trainer: pl.Trainer):
     trainer.fit(model, dataset)
 
 
