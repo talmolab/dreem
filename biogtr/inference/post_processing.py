@@ -1,5 +1,6 @@
 import torch
 
+
 def weight_decay_time(
     asso_output: torch.Tensor,
     decay_time: float = 0,
@@ -75,6 +76,7 @@ def weight_decay_time(
             torch.zeros(1, dtype=inter.dtype, device=inter.device),
         )
         return iou
+
 
 def weight_iou(
     asso_output: torch.Tensor, method: str = None, last_ious: torch.Tensor = None
