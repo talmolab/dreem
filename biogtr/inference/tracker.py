@@ -13,7 +13,8 @@ class Tracker(Module):
     def __init__(
         self,
         model: GlobalTrackingTransformer,
-        use_vis_feats: bool,
+        window_size: int = 8,
+        use_vis_feats: bool = True,
         overlap_thresh: float = 0.01,
         mult_thresh: bool = True,
         decay_time: float = None,
@@ -33,6 +34,7 @@ class Tracker(Module):
         """
         self.model = model
         (_,) = self.model.eval()
+        self.window_size = window_size
         self.use_vis_feats = use_vis_feats
         self.overlap_thresh = overlap_thresh
         self.mult_thresh = mult_thresh
@@ -246,9 +248,7 @@ class Tracker(Module):
 
         N, T = sum(n_t), len(n_t)  # Number of instances in window; length of window.
 
-        reid_features = torch.cat(
-            [frame["features"].to(self.device) for frame in instances], dim=0
-        )[
+        reid_features = torch.cat([frame["features"] for frame in instances], dim=0)[
             None
         ]  # (1, N, D=512)
 
@@ -386,7 +386,7 @@ class Tracker(Module):
         instances[k]["final_traj_score"].index.name = "Current Frame Instances"
         instances[k]["final_traj_score"].columns.name = "Unique IDs"
 
-        instances[k]["pos_emb"] = embeddings["pos"]
-        instances[k]["temp_emb"] = embeddings["temp"]
+        # instances[k]["pos_emb"] = embeddings["pos"]
+        # instances[k]["temp_emb"] = embeddings["temp"]
 
         return instances, id_count
