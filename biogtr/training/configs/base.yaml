@@ -24,7 +24,7 @@ scheduler:
   patience: 10
   threshold: 1e-4
   threshold_mode: "rel"
-
+  
 tracker:
   window_size: 8
   use_vis_feats: true
@@ -102,9 +102,9 @@ checkpointing:
 
 trainer:
   accelerator: "gpu"
-  check_val_every_n: 1
+  check_val_every_n_epoch: 1
   devices: 1
-  enable_checpointing: true
+  enable_checkpointing: true
   gradient_clip_val: null
   limit_train_batches: 1.0
   limit_test_batches: 1.0

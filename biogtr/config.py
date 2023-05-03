@@ -33,6 +33,7 @@ class Config:
         else:
             # just use base config
             self.cfg = base_cfg
+        print(self.cfg.keys())
 
     def set_hparams(self, hparams: dict):
         """
@@ -51,6 +52,13 @@ class Config:
         """
         model_params = self.cfg.model
         return GlobalTrackingTransformer(**model_params)
+
+    def get_tracker_cfg(self):
+        tracker_params = self.cfg.tracker
+        tracker_cfg = {}
+        for key, val in tracker_params.items():
+            tracker_cfg[key] = val
+        return tracker_cfg
 
     def get_dataset(
         self, type: str, mode: str
@@ -161,12 +169,14 @@ class Config:
         checkpoint_params = self.cfg.checkpointing
         return pl.callbacks.ModelCheckpoint(dirpath=dirpath, **checkpoint_params)
 
-    def get_trainer(self, callbacks: list[pl.callbacks.Callback]) -> pl.Trainer:
+    def get_trainer(
+        self, callbacks: list[pl.callbacks.Callback], logger: pl.loggers.WandbLogger
+    ) -> pl.Trainer:
         """
         Getter for the lightning trainer:
         Returns a lightning Trainer with specified params
         Args:
             callbacks: a list of lightning callbacks preconfigured to be used for training
         """
-        trainer_params = self.cfg.trainer_params
-        return pl.Trainer(callbacks=callbacks, **trainer_params)
+        trainer_params = self.cfg.trainer
+        return pl.Trainer(callbacks=callbacks, logger=logger, **trainer_params)
