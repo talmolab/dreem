@@ -85,11 +85,11 @@ class Config:
         self, dataset: Union[SleapDataset, MicroscopyDataset], mode: str
     ) -> torch.utils.data.DataLoader:
         if mode.lower() == "train":
-            dataloader_params = self.cfg.dataset.train_dataloader
+            dataloader_params = self.cfg.dataloader.train_dataloader
         elif mode.lower() == "val":
-            dataloader_params = self.cfg.dataset.val_dataloader
+            dataloader_params = self.cfg.dataloader.val_dataloader
         elif mode.lower() == "test":
-            dataloader_params = self.cfg.dataset.test_dataloader
+            dataloader_params = self.cfg.dataloader.test_dataloader
         else:
             raise ValueError(
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
