@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def get_matches(instances: dict) -> tuple[dict, int, list]:
+def get_matches(instances: list[dict]) -> tuple[dict, int, list]:
     """
     Get comparison between predicted and gt trajectory labels
     Returns:
@@ -9,7 +9,7 @@ def get_matches(instances: dict) -> tuple[dict, int, list]:
         indices: the frame indices being compared
         video_id: the video being
     Args:
-        instances: a dict containing the video_id, frame_id, gt labels and predicted labels
+        instances: a list of dicts where each dict corresponds to a frame and contains the video_id, frame_id, gt labels and predicted labels
     """
     matches = {}
     indices = []
