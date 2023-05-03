@@ -56,15 +56,16 @@ class GTRRunner(LightningModule):
         logits = self.model(x)
         return logits
 
-    def training_step(self, train_batch: list[dict]) -> dict:
+    def training_step(self, train_batch: list[dict], batch_idx) -> dict:
         """
         Train step of model.
         Returns: a dictionary containing the training metrics calculated at each step
         Args:
             train_batch: a list of dicts where each dict is a frame and contains gt data
         """
+        print(type(train_batch[0]))
         eval_metrics = self._shared_eval_step(
-            train_batch[0], eval_metrics=self.train_metrics
+            train_batch, eval_metrics=self.train_metrics
         )
 
         for metric, val in eval_metrics:
@@ -72,23 +73,21 @@ class GTRRunner(LightningModule):
 
         return eval_metrics
 
-    def validation_step(self, val_batch: list[dict]) -> dict:
+    def validation_step(self, val_batch: list[dict], batch_idx) -> dict:
         """
         Validation step of model.
         Returns: a dictionary containing the validation metrics calculated at each step
         Args:
             test_batch: a list of dicts where each dict is a frame and contains gt data
         """
-        eval_metrics = self._shared_eval_step(
-            val_batch[0], eval_metrics=self.val_metrics
-        )
+        eval_metrics = self._shared_eval_step(val_batch, eval_metrics=self.val_metrics)
 
         for metric, val in eval_metrics:
             self.log(f"val_{metric}", val)
 
         return eval_metrics
 
-    def test_step(self, test_batch):
+    def test_step(self, test_batch, batch_idx):
         """
         Train step of model.
         Returns: a dictionary containing the test metrics calculated at each step
@@ -96,7 +95,7 @@ class GTRRunner(LightningModule):
             test_batch: a list of dicts where each dict is a frame and contains gt data
         """
         eval_metrics = self._shared_eval_step(
-            test_batch[0], eval_metrics=self.test_metrics
+            test_batch, eval_metrics=self.test_metrics
         )
 
         for metric, val in eval_metrics:
