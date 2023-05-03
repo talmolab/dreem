@@ -5,9 +5,104 @@ model:
   dim_feedforward: 256
   feature_dim_attn_head: 256
 
+loss:
+  neg_unmatched: false
+  epsilon: 1e-4
+  asso_weight: 1.0
+
+#currently assumes adam. TODO adapt logic for other optimizers like sgd
+optimizer:
+  lr: 0.001
+  betas: (0.9, 0.999)
+  eps: 1e-8
+  weight_decay: 0.01
+
+#currently assumes reduce lr on plateau
+scheduler:
+  mode: "min"
+  factor: 0.5
+  patience: 10
+  threshold: 1e-4
+  threshold_mode: "rel"
+
+tracker:
+  use_vis_feats: true
+  overlap_thresh: 0.01
+  mult_thresh: true
+  decay_time: null
+  iou: null
+  max_center_dist: null
+
 dataset:
-  padding: 5
-  crop_size: 128
-  chunk: true
-  clip_length: 32
-  crop_type: 'centroid'
+  train_dataset:
+    slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']
+    video_files: ['190612_110405_wt_18159111_rig2.2@11730.mp4']
+    padding: 5
+    crop_size: 128
+    chunk: true
+    clip_length: 32
+    crop_type: 'centroid'
+
+  val_dataset:
+    slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']
+    video_files: ['190612_110405_wt_18159111_rig2.2@11730.mp4']
+    padding: 5
+    crop_size: 128 
+    chunk: False
+    clip_length: 32
+    crop_type: 'centroid'
+
+  test_dataset:
+    slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']
+    video_files: ['190612_110405_wt_18159111_rig2.2@11730.mp4']
+    padding: 5
+    crop_size: 128 
+    chunk: False
+    clip_length: 32
+    crop_type: 'centroid'
+
+logging:
+  name: "example_train"
+  entity: null
+  job_type: "train"
+  notes: "Example train job"
+  dir: "./models"
+  group: "example"
+  save_dir: './models'
+  project: "GTR"
+  log_model: "all"
+
+early_stopping:
+  monitor: "val_loss"
+  min_delta: 0.1
+  patience: 10
+  mode: "min"
+  check_finite: true
+  stopping_threshold: 1e-8
+  divergence_threshold: 30
+
+checkpointing:
+  monitor: "val_loss"
+  verbose: true
+  save_last: true
+  auto_insert_metric_name: true
+  every_n_epochs: 10
+
+trainer:
+  accelerator: "gpu"
+  check_val_every_n: 1
+  devices: 1
+  enable_checpointing: true
+  gradient_clip_val: null
+  limit_train_batches: 1.0
+  limit_test_batches: 1.0
+  limit_val_batches: 1.0
+  log_every_n_steps: 1
+  max_epochs: 100
+  min_epochs: 10
+    
+
+
+
+
+

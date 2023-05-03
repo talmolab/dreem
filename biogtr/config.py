@@ -9,7 +9,7 @@ from biogtr.training.losses import AssoLoss
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from omegaconf import DictConfig, OmegaConf
-from typing import Union
+from typing import Union, Iterable
 
 """
 Class for handling config parsing
@@ -65,11 +65,11 @@ class Config:
         if mode is None:
             dataset_params = self.cfg.dataset
         elif mode.lower() == "train":
-            dataset_params = self.cfg.train_dataset
+            dataset_params = self.cfg.dataset.train_dataset
         elif mode.lower() == "val":
-            dataset_params = self.cfg.val_dataset
+            dataset_params = self.cfg.dataset.val_dataset
         elif mode.lower() == "test":
-            dataset_params = self.cfg.test_dataset
+            dataset_params = self.cfg.dataset.test_dataset
         else:
             raise ValueError(
                 "`mode` must be one of ['train', 'val','test', not '{mode}'"
@@ -83,30 +83,70 @@ class Config:
                 f"`type` must be one of ['sleap', 'microscopy'] not '{type}'!"
             )
 
-    def get_optimizer(self) -> torch.optim.Optimizer:
+    def get_optimizer(self, params: Iterable) -> torch.optim.Optimizer:
         """
         Getter for optimizer
         Returns: A torch Optimizer with specified params
+        Args:
+            params: iterable of model parameters to optimize or dicts defining parameter groups
         """
-        pass
+        optimizer_params = self.cfg.optimizer
+        return torch.optim.Adam(params=params, **optimizer_params)
+
+    def get_scheduler(
+        self, optimizer: torch.optim.Optimizer
+    ) -> torch.optim.lr_scheduler.LRScheduler:
+        """
+        Getter for lr scheduler
+        Returns a torch learning rate scheduler with specified params
+        Args:
+            optimizer: The optimizer to wrap the scheduler around
+        """
+        lr_scheduler_params = self.cfg.scheduler
+        return torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer=optimizer, **lr_scheduler_params
+        )
 
     def get_loss(self) -> AssoLoss:
         """
         Getter for loss functions
         Returns: An AssoLoss with specified params
         """
-        return AssoLoss()
+        loss_params = self.cfg.loss
+        return AssoLoss(**loss_params)
 
     def get_logger(self) -> pl.loggers.WandbLogger:
         """
-        Getter for lightning logging callbacks
+        Getter for lightning logging callback
         Returns: A lightning Logger with specified params
         """
-        pass
+        logger_params = self.cfg.logging
+        return pl.loggers.WandbLogger(**logger_params)
 
-    def get_trainer(self) -> pl.Trainer:
+    def get_early_stopping(self) -> pl.callbacks.EarlyStopping:
+        """
+        Getter for lightning early stopping callbac
+        Returns: a lightning early stopping callback with specified params
+        """
+        early_stopping_params = self.cfg.early_stopping
+        return pl.callbacks.EarlyStopping(**early_stopping_params)
+
+    def get_checkpointing(self, dirpath: str) -> pl.callbacks.ModelCheckpoint:
+        """
+        getter for lightning checkpointing callback
+        Returns: a lightning checkpointing callback with specified params
+        Args:
+            dirpath: the path to the directory where checkpoints will be stored
+        """
+        checkpoint_params = self.cfg.checkpointing
+        return pl.callbacks.ModelCheckpoint(dirpath=dirpath, **checkpoint_params)
+
+    def get_trainer(self, callbacks: list[pl.callbacks.Callback]) -> pl.Trainer:
         """
         Getter for the lightning trainer:
         Returns a lightning Trainer with specified params
+        Args:
+            callbacks: a list of lightning callbacks preconfigured to be used for training
         """
-        pass
+        trainer_params = self.cfg.trainer_params
+        return pl.Trainer(callbacks=callbacks, **trainer_params)
