@@ -1,10 +1,12 @@
-import torch
+from PIL import Image
+from numpy.typing import ArrayLike
+from torchvision.transforms import functional as tvf
+from xml.etree import cElementTree as et
+import albumentations as A
 import numpy as np
 import pandas as pd
 import sleap_io as sio
-from torchvision.transforms import functional as tvf
-from numpy.typing import ArrayLike
-from xml.etree import cElementTree as et
+import torch
 
 
 def pad_bbox(bbox: ArrayLike, padding: int = 16) -> torch.Tensor:
@@ -347,6 +349,7 @@ def parse_ICY(xml_path: str) -> pd.DataFrame:
     return trajs
 
 
+# todo: consolidate ICY / ISBY parser into one (only differ by a couple lines)
 def parse_ISBI(xml_file: str) -> pd.DataFrame:
     """
     Parse .xml labels file from ISBI particle tracing challenge.
@@ -388,3 +391,31 @@ def parse_ISBI(xml_file: str) -> pd.DataFrame:
     )
     trajs = trajs.apply(pd.to_numeric, errors="coerce", downcast="integer")
     return trajs
+
+
+# todo: type
+class LazyTiffStack:
+    def __init__(self, filename):
+        # expects spatial, channels
+        self.image = Image.open(filename)
+
+    def __getitem__(self, section_idx):
+        self.image.seek(section_idx)
+        return self.image
+
+    def get_section(self, section_idx):
+        section = self.__getitem__(section_idx)
+        return np.array(section)
+
+    def close(self):
+        self.file.close()
+
+
+# todo: type
+def build_augmentations(augmentations):
+    aug_list = []
+    for aug_name, aug_args in augmentations.items():
+        aug_class = getattr(A, aug_name)
+        aug = aug_class(**aug_args)
+        aug_list.append(aug)
+    return A.Compose(aug_list, p=1.0, keypoint_params=A.KeypointParams(format="xy"))
