@@ -2,6 +2,7 @@ import torch
 import pandas as pd
 from typing import Union
 from torch.nn import Module
+from biogtr.models import model_utils
 from biogtr.inference import post_processing
 from biogtr.inference.boxes import Boxes
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
@@ -251,14 +252,14 @@ class Tracker(Module):
             None
         ]  # (1, N, D=512)
 
-        asso_output, pred_boxes, pred_time, embeddings = self.transformer(
-            instances, reid_features, k
-        )  # (L=1, N_t, N)
+        asso_output = self.model(
+            instances)  # (L=1, N_t, N)
+        instances[k]["asso_output"] = asso_output
 
         asso_output = asso_output[-1].split(n_t, dim=1)  # (T, N_t, N_i)
-        asso_output = post_processing.softmax_asso(asso_output)  # (T, N_t, N_i)
+        asso_output = model_utils.softmax_asso(asso_output)  # (T, N_t, N_i)
         asso_output = torch.cat(asso_output, dim=1).cpu()  # (N_t, N)
-        instances[k]["asso_output"] = asso_output
+        
 
         N_t = instances[k][
             "num_detected"
@@ -279,6 +280,7 @@ class Tracker(Module):
 
         asso_output = asso_output[:, nonk_inds]  # (N_t, N_p)
 
+        pred_boxes = Boxes(torch.cat([frame["bboxes"] for frame in instances]))
         k_boxes = pred_boxes[k_inds]  # n_k x 4
         nonk_boxes = pred_boxes[nonk_inds]  # Np x 4
 
@@ -322,7 +324,7 @@ class Tracker(Module):
             ]  # M
 
             last_boxes = nonk_boxes[last_inds]  # M x 4
-            last_ious = self._pairwise_iou(Boxes(k_boxes), Boxes(last_boxes))  # n_k x M
+            last_ious = post_processing._pairwise_iou(Boxes(k_boxes), Boxes(last_boxes))  # n_k x M
         else:
             last_ious = asso_output.new_zeros(asso_output.shape)
 
@@ -389,44 +391,4 @@ class Tracker(Module):
 
         return instances, id_count
 
-    def _pairwise_intersection(self, boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
-        """
-        Given two lists of boxes of size N and M,
-        compute the intersection area between __all__ N x M pairs of boxes.
-        The box order must be (xmin, ymin, xmax, ymax)
-        Args:
-            boxes1,boxes2 (Boxes): two `Boxes`. Contains N & M boxes, respectively.
-        Returns:
-            Tensor: intersection, sized [N,M].
-        """
-        boxes1, boxes2 = boxes1.tensor, boxes2.tensor
-        width_height = torch.min(boxes1[:, None, 2:], boxes2[:, 2:]) - torch.max(
-            boxes1[:, None, :2], boxes2[:, :2]
-        )  # [N,M,2]
 
-        width_height.clamp_(min=0)  # [N,M,2]
-        intersection = width_height.prod(dim=2)  # [N,M]
-
-        return intersection
-
-    def _pairwise_iou(self, boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
-        """
-        Given two lists of boxes of size N and M, compute the IoU
-        (intersection over union) between **all** N x M pairs of boxes.
-        The box order must be (xmin, ymin, xmax, ymax).
-        Args:
-            boxes1,boxes2 (Boxes): two `Boxes`. Contains N & M boxes, respectively.
-        Returns:
-            Tensor: IoU, sized [N,M].
-        """
-        area1 = boxes1.area()  # [N]
-        area2 = boxes2.area()  # [M]
-        inter = self._pairwise_intersection(boxes1, boxes2)
-
-        # handle empty boxes
-        iou = torch.where(
-            inter > 0,
-            inter / (area1[:, None] + area2 - inter),
-            torch.zeros(1, dtype=inter.dtype, device=inter.device),
-        )
-        return iou
