@@ -71,7 +71,10 @@ def train(cfg: DictConfig):
 
     loss = train_cfg.get_loss()
 
-    model = GTRRunner(model, loss)
+    optimizer = train_cfg.get_optimizer(model.parameters())
+    scheduler = train_cfg.get_scheduler(optimizer)
+
+    model = GTRRunner(model, loss, optimizer, scheduler)
 
     # test with 1 epoch and single batch, this should be controlled from config
     # todo: get to work with multi-gpu training
