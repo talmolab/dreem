@@ -74,18 +74,24 @@ def train(cfg: DictConfig):
     optimizer = train_cfg.get_optimizer(model.parameters())
     scheduler = train_cfg.get_scheduler(optimizer)
 
-    model = GTRRunner(model, loss, optimizer, scheduler)
+    tracker_cfg = train_cfg.get_tracker_cfg()
+    model = GTRRunner(
+        model=model,
+        tracker_cfg=tracker_cfg,
+        loss=loss,
+        optimizer=optimizer,
+        scheduler=scheduler,
+    )
 
     # test with 1 epoch and single batch, this should be controlled from config
     # todo: get to work with multi-gpu training
     logger = train_cfg.get_logger()
     callbacks = [
-        pl.callbacks.LRMonitor(),
-        logger,
+        pl.callbacks.LearningRateMonitor(),
         train_cfg.get_early_stopping(),
-        train_cfg.get_checkpointing(),
+        train_cfg.get_checkpointing("./models"),
     ]
-    trainer = train_cfg.get_trainer(callbacks)
+    trainer = train_cfg.get_trainer(callbacks, logger)
     trainer.fit(model, datamodule=dataset)
 
 
