@@ -100,7 +100,12 @@ class GlobalTrackingTransformer(nn.Module):
         # Extract feature representations with pre-trained encoder.
         for frame in instances:
             if (frame["num_detected"] > 0).item():
-                z = self.visual_encoder(frame["crops"])
+                x = (
+                    frame["crops"].squeeze()
+                    if len(frame["crops"].shape) == 5
+                    else frame["crops"]
+                )
+                z = self.visual_encoder(x)
                 frame["features"] = z
 
         # Extract association matrix with transformer.
