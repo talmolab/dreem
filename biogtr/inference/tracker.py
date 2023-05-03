@@ -252,14 +252,12 @@ class Tracker(Module):
             None
         ]  # (1, N, D=512)
 
-        asso_output = self.model(
-            instances)  # (L=1, N_t, N)
+        asso_output = self.model(instances)  # (L=1, N_t, N)
         instances[k]["asso_output"] = asso_output
 
         asso_output = asso_output[-1].split(n_t, dim=1)  # (T, N_t, N_i)
         asso_output = model_utils.softmax_asso(asso_output)  # (T, N_t, N_i)
         asso_output = torch.cat(asso_output, dim=1).cpu()  # (N_t, N)
-        
 
         N_t = instances[k][
             "num_detected"
@@ -324,7 +322,9 @@ class Tracker(Module):
             ]  # M
 
             last_boxes = nonk_boxes[last_inds]  # M x 4
-            last_ious = post_processing._pairwise_iou(Boxes(k_boxes), Boxes(last_boxes))  # n_k x M
+            last_ious = post_processing._pairwise_iou(
+                Boxes(k_boxes), Boxes(last_boxes)
+            )  # n_k x M
         else:
             last_ious = asso_output.new_zeros(asso_output.shape)
 
@@ -390,5 +390,3 @@ class Tracker(Module):
         instances[k]["temp_emb"] = embeddings["temp"]
 
         return instances, id_count
-
-
