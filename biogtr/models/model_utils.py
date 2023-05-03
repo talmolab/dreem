@@ -31,6 +31,7 @@ def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
 
     return boxes, times
 
+
 def softmax_asso(self, asso_output):
     """Applies the softmax activation function on asso_output.
     Args:
