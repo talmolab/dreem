@@ -42,6 +42,8 @@ class TrackingDataset(LightningDataModule):
         train_dl: DataLoader = None,
         val_ds: Union[SleapDataset, MicroscopyDataset, None] = None,
         val_dl: DataLoader = None,
+        test_ds: Union[SleapDataset, MicroscopyDataset, None] = None,
+        test_dl: DataLoader = None,
     ):
         """
         Initialize tracking dataset
@@ -51,12 +53,22 @@ class TrackingDataset(LightningDataModule):
             val_ds: Sleap or Microscopy Validation set
             val_dl : Validation dataloader. Only used for overriding `val_dataloader`.
         """
+        assert (
+            train_ds is not None or train_dl is not None
+        ), "Must pass in either a train dataset or train dataloader"
+        assert (
+            val_ds is not None or val_dl is not None
+        ), "Must pass in either a val dataset or val dataset"
+        assert (
+            test_ds is not None or test_dl is not None
+        ), "Must pass in either a test dataset or test dataset"
         super().__init__()
-
         self.train_ds = train_ds
         self.train_dl = train_dl
         self.val_ds = val_ds
         self.val_dl = val_dl
+        self.test_ds = test_ds
+        self.test_dl = test_dl
 
     def setup(self, stage=None):
         pass
@@ -70,11 +82,13 @@ class TrackingDataset(LightningDataModule):
             return DataLoader(
                 self.train_ds,
                 batch_size=1,
-                shuffle=shuffle,
-                pin_memory=pin_memory,
+                shuffle=True,
+                pin_memory=False,
                 collate_fn=self.train_ds.no_batching_fn,
-                num_workers=num_workers,
-                generator=generator,
+                num_workers=0,
+                generator=torch.Generator(device="cuda")
+                if torch.cuda.is_available()
+                else None,
             )
         else:
             return self.train_dl
@@ -89,10 +103,28 @@ class TrackingDataset(LightningDataModule):
                 self.val_ds,
                 batch_size=1,
                 shuffle=False,
+                pin_memory=False,
+                collate_fn=self.train_ds.no_batching_fn,
+                num_workers=0,
+                generator=None,
+            )
+        else:
+            return self.val_dl
+
+    def test_dataloader(self) -> DataLoader:
+        """
+        Getter for test dataloader
+        Returns: The test dataloader
+        """
+        if self.test_dl is None:
+            return DataLoader(
+                self.test_ds,
+                batch_size=1,
+                shuffle=False,
                 pin_memory=pin_memory,
                 collate_fn=self.train_ds.no_batching_fn,
                 num_workers=num_workers,
                 generator=None,
             )
         else:
-            return self.val_dl
+            return self.test_dl

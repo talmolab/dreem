@@ -53,7 +53,7 @@ class Config:
         return GlobalTrackingTransformer(**model_params)
 
     def get_dataset(
-        self, type: str = "sleap", mode: str = None
+        self, type: str, mode: str
     ) -> Union[SleapDataset, MicroscopyDataset]:
         """
         Getter for datasets
@@ -62,9 +62,7 @@ class Config:
             type: Either "sleap" or "microscopy". Whether to return a `SleapDataset` or `MicroscopyDataset`
             mode: [None, "train", "test", "val"]. Indicates whether to use train, val, or test params for dataset
         """
-        if mode is None:
-            dataset_params = self.cfg.dataset
-        elif mode.lower() == "train":
+        if mode.lower() == "train":
             dataset_params = self.cfg.dataset.train_dataset
         elif mode.lower() == "val":
             dataset_params = self.cfg.dataset.val_dataset
@@ -72,7 +70,7 @@ class Config:
             dataset_params = self.cfg.dataset.test_dataset
         else:
             raise ValueError(
-                "`mode` must be one of ['train', 'val','test', not '{mode}'"
+                "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
         if type.lower() == "sleap":
             return SleapDataset(**dataset_params)
@@ -82,6 +80,28 @@ class Config:
             raise ValueError(
                 f"`type` must be one of ['sleap', 'microscopy'] not '{type}'!"
             )
+
+    def get_dataloader(
+        self, dataset: Union[SleapDataset, MicroscopyDataset], mode: str
+    ) -> torch.utils.data.DataLoader:
+        if mode.lower() == "train":
+            dataloader_params = self.cfg.dataset.train_dataloader
+        elif mode.lower() == "val":
+            dataloader_params = self.cfg.dataset.val_dataloader
+        elif mode.lower() == "test":
+            dataloader_params = self.cfg.dataset.test_dataloader
+        else:
+            raise ValueError(
+                "`mode` must be one of ['train', 'val','test'], not '{mode}'"
+            )
+        return torch.utils.data.DataLoader(
+            dataset,
+            pin_memory=True if dataloader_params.num_workers > 0 else False,
+            generator=torch.Generator(device="cuda")
+            if torch.cuda.is_available()
+            else None,
+            **dataloader_params,
+        )
 
     def get_optimizer(self, params: Iterable) -> torch.optim.Optimizer:
         """

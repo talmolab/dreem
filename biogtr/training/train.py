@@ -34,15 +34,9 @@ generator = torch.Generator(device=device) if shuffle and device == "cuda" else 
 torch.set_default_device(device)
 
 
-def train(model: GTRRunner, 
-          dataset: TrackingDataset, 
-          trainer: pl.Trainer):
-    trainer.fit(model, dataset)
-
-
 # not sure we need hydra? could just do argparse + omegaconf?
 @hydra.main(config_path="configs", config_name=None, version_base=None)
-def main(cfg: DictConfig):
+def train(cfg: DictConfig):
     train_cfg = Config(cfg)
 
     # update with extra cli args
@@ -61,22 +55,35 @@ def main(cfg: DictConfig):
     train_cfg.set_hparams(hparams)
 
     model = train_cfg.get_model()
-    dataset = train_cfg.get_dataset()
-    loss = train_cfg.get_loss()
 
-    dataset = TrackingDataset(dataset)
+    train_dataset = train_cfg.get_dataset(type="sleap", mode="train")
+    train_dataloader = train_cfg.get_dataloader(train_dataset, mode="train")
+
+    val_dataset = train_cfg.get_dataset(type="sleap", mode="val")
+    val_dataloader = train_cfg.get_dataloader(val_dataset, mode="val")
+
+    test_dataset = train_cfg.get_dataset(type="sleap", mode="test")
+    test_dataloader = train_cfg.get_dataloader(test_dataset, mode="test")
+
+    dataset = TrackingDataset(
+        train_dl=train_dataloader, val_dl=val_dataloader, test_dl=test_dataloader
+    )
+
+    loss = train_cfg.get_loss()
 
     model = GTRRunner(model, loss)
 
-    accelerator = "cpu" if device == "cpu" else "gpu"
-
     # test with 1 epoch and single batch, this should be controlled from config
     # todo: get to work with multi-gpu training
-    trainer = pl.Trainer(
-        max_epochs=1, accelerator=accelerator, limit_train_batches=1, devices=1
-    )
-
-    train(model, dataset, trainer)
+    logger = train_cfg.get_logger()
+    callbacks = [
+        pl.callbacks.LRMonitor(),
+        logger,
+        train_cfg.get_early_stopping(),
+        train_cfg.get_checkpointing(),
+    ]
+    trainer = train_cfg.get_trainer(callbacks)
+    trainer.fit(model, datamodule=dataset)
 
 
 if __name__ == "__main__":
@@ -88,4 +95,4 @@ if __name__ == "__main__":
     # python train.py +base_config=configs/base.yaml +params_config=configs/params.yaml
     # override with params config, and specific params:
     # python train.py +base_config=configs/base.yaml +params_config=configs/params.yaml +model.norm=True +model.decoder_self_attn=True +dataset.padding=10
-    main()
+    train()
