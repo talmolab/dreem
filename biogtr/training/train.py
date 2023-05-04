@@ -57,10 +57,14 @@ def main(cfg: DictConfig):
     model = train_cfg.get_model()
     train_dataset = train_cfg.get_dataset(type="sleap", mode="train")
     train_dataloader = train_cfg.get_dataloader(train_dataset, mode="train")
+
+    val_dataset = train_cfg.get_dataset(type="sleap", mode="val")
+    val_dataloader = train_cfg.get_dataloader(val_dataset, mode="val")
+
     loss = train_cfg.get_loss()
     optimizer = train_cfg.get_optimizer(model.parameters())
     scheduler = train_cfg.get_scheduler(optimizer)
-    dataset = TrackingDataset(train_dl=train_dataloader)
+    dataset = TrackingDataset(train_dl=train_dataloader, val_dl=val_dataloader)
 
     model = GTRRunner(model, loss, optimizer=optimizer, scheduler=scheduler)
 

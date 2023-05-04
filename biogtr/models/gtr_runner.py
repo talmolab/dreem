@@ -1,3 +1,5 @@
+from typing import Any, Optional
+from pytorch_lightning.utilities.types import STEP_OUTPUT
 import torch
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
@@ -15,6 +17,7 @@ class GTRRunner(LightningModule):
         loss: AssoLoss,
         optimizer: torch.optim.Optimizer = None,
         scheduler: torch.optim.lr_scheduler.LRScheduler = None,
+        train_metrics=[""],
     ):
         """
         Initialize a lightning module for GTR
@@ -30,19 +33,32 @@ class GTRRunner(LightningModule):
         self.loss = loss
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.train_metrics = train_metrics
+
+    def forward(self, instances):
+        return self.model(instances)
 
     def training_step(self, train_batch, batch_idx):
         # todo: add logic for wandb logging
+        result = self._shared_eval_step(train_batch[0], self.train_metrics)
+        for metric, val in result.items():
+            self.log(f"train_{metric}", val, batch_size=len(train_batch[0]))
+        return result
 
-        x = train_batch[0]
+    def validation_step(self, val_batch, batch_idx):
+        result = self._shared_eval_step(val_batch[0])
+        for metric, val in result.items():
+            self.log(f"train_{metric}", val, batch_size=len(val_batch[0]))
+        return result
 
-        logits = self.model(x)
+    def _shared_eval_step(self, instances, eval_metrics=["sw_cnt"]):
+        logits = self.model(instances)
 
-        loss = self.loss(logits, x)
+        loss = self.loss(logits, instances)
 
-        self.log("train_loss", loss)
+        return_metrics = {"loss": loss}
 
-        return loss
+        return return_metrics
 
     # def validation_step(self, val_batch, batch_idx):
     # to implement. also need switch count logic
