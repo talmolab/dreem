@@ -85,7 +85,7 @@ logging:
   log_model: "all"
 
 early_stopping:
-  monitor: "val_loss"
+  monitor: "train_loss"
   min_delta: 0.1
   patience: 10
   mode: "min"
@@ -94,16 +94,14 @@ early_stopping:
   divergence_threshold: 30
 
 checkpointing:
-  monitor: "val_loss"
+  monitor: "train_loss"
   verbose: true
   save_last: true
   auto_insert_metric_name: true
   every_n_epochs: 10
 
 trainer:
-  accelerator: "gpu"
   check_val_every_n_epoch: 1
-  devices: 1
   enable_checkpointing: true
   gradient_clip_val: null
   limit_train_batches: 1.0
