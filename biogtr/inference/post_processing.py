@@ -37,7 +37,7 @@ def weight_decay_time(
     return asso_output
 
 
-def _pairwise_intersection(self, boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
+def _pairwise_intersection(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     """
     Given two lists of boxes of size N and M,
     compute the intersection area between __all__ N x M pairs of boxes.
@@ -58,7 +58,7 @@ def _pairwise_intersection(self, boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     return intersection
 
 
-def _pairwise_iou(self, boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
+def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     """
     Given two lists of boxes of size N and M, compute the IoU
     (intersection over union) between **all** N x M pairs of boxes.
@@ -70,7 +70,7 @@ def _pairwise_iou(self, boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     """
     area1 = boxes1.area()  # [N]
     area2 = boxes2.area()  # [M]
-    inter = self._pairwise_intersection(boxes1, boxes2)
+    inter = _pairwise_intersection(boxes1, boxes2)
 
     # handle empty boxes
     iou = torch.where(
