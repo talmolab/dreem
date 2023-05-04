@@ -45,8 +45,7 @@ class TrackingDataset(LightningDataModule):
         test_ds: Union[SleapDataset, MicroscopyDataset, None] = None,
         test_dl: DataLoader = None,
     ):
-        """
-        Initialize tracking dataset
+        """Initialize tracking dataset
         Args:
             train_ds: Sleap or Microscopy training Dataset
             train_dl: Training dataloader. Only used for overriding `train_dataloader`.
@@ -74,8 +73,7 @@ class TrackingDataset(LightningDataModule):
         pass
 
     def train_dataloader(self) -> DataLoader:
-        """
-        Getter for train_dataloader.
+        """Getter for train_dataloader.
         Returns: The Training Dataloader.
         """
         if self.train_dl is None:
@@ -94,8 +92,7 @@ class TrackingDataset(LightningDataModule):
             return self.train_dl
 
     def val_dataloader(self) -> DataLoader:
-        """
-        Getter for val dataloader
+        """Getter for val dataloader
         Returns: The validation dataloader.
         """
         if self.val_dl is None:
@@ -112,8 +109,7 @@ class TrackingDataset(LightningDataModule):
             return self.val_dl
 
     def test_dataloader(self) -> DataLoader:
-        """
-        Getter for test dataloader
+        """Getter for test dataloader
         Returns: The test dataloader
         """
         if self.test_dl is None:

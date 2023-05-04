@@ -18,9 +18,7 @@ Class for handling config parsing
 
 class Config:
     def __init__(self, cfg: DictConfig):
-        """
-        Initialize the class with config from hydra/omega conf
-        First uses `base_param` file then overwrites with specific `params_config`
+        """Initialize the class with config from hydra/omega conf. First uses `base_param` file then overwrites with specific `params_config`
         Args:
             cfg: The `DictConfig` containing all the hyperparameters needed for training/evaluation
         """
@@ -36,9 +34,7 @@ class Config:
         print(self.cfg.keys())
 
     def set_hparams(self, hparams: dict):
-        """
-        Setter function for overwriting specific hparams.
-        Useful for changing 1 or 2 hyperparameters such as dataset
+        """Setter function for overwriting specific hparams. Useful for changing 1 or 2 hyperparameters such as dataset
         Args:
             hparams: A dict containing the hyperparameter to be overwritten and the value to be changed to
         """
@@ -46,8 +42,7 @@ class Config:
             OmegaConf.update(self.cfg, hparam, val)
 
     def get_model(self) -> GlobalTrackingTransformer:
-        """
-        Getter for gtr model
+        """Getter for gtr model
         Returns: A global tracking transformer with parameters indicated by cfg
         """
         model_params = self.cfg.model
@@ -63,12 +58,11 @@ class Config:
     def get_dataset(
         self, type: str, mode: str
     ) -> Union[SleapDataset, MicroscopyDataset]:
-        """
-        Getter for datasets
-        Returns: Either a `SleapDataset` or `MicroscopyDataset` with params indicated by cfg
+        """Getter for datasets
         Args:
             type: Either "sleap" or "microscopy". Whether to return a `SleapDataset` or `MicroscopyDataset`
             mode: [None, "train", "test", "val"]. Indicates whether to use train, val, or test params for dataset
+        Returns: Either a `SleapDataset` or `MicroscopyDataset` with params indicated by cfg
         """
         if mode.lower() == "train":
             dataset_params = self.cfg.dataset.train_dataset
@@ -92,6 +86,12 @@ class Config:
     def get_dataloader(
         self, dataset: Union[SleapDataset, MicroscopyDataset], mode: str
     ) -> torch.utils.data.DataLoader:
+        """Getter for dataloader
+        Args:
+            dataset: the Sleap or Microscopy Dataset used to initialize the dataloader
+            mode: either ["train", "val", or "test"] indicates which dataset config to use
+        Returns: A torch dataloader for `dataset` with parameters configured as specified
+        """
         if mode.lower() == "train":
             dataloader_params = self.cfg.dataloader.train_dataloader
         elif mode.lower() == "val":
@@ -122,11 +122,10 @@ class Config:
         )
 
     def get_optimizer(self, params: Iterable) -> torch.optim.Optimizer:
-        """
-        Getter for optimizer
-        Returns: A torch Optimizer with specified params
+        """Getter for optimizer
         Args:
             params: iterable of model parameters to optimize or dicts defining parameter groups
+        Returns: A torch Optimizer with specified params
         """
         optimizer_params = self.cfg.optimizer
         return torch.optim.Adam(params=params, **optimizer_params)
@@ -134,11 +133,10 @@ class Config:
     def get_scheduler(
         self, optimizer: torch.optim.Optimizer
     ) -> torch.optim.lr_scheduler.LRScheduler:
-        """
-        Getter for lr scheduler
-        Returns a torch learning rate scheduler with specified params
+        """Getter for lr scheduler
         Args:
             optimizer: The optimizer to wrap the scheduler around
+        Returns: A torch learning rate scheduler with specified params
         """
         lr_scheduler_params = self.cfg.scheduler
         return torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -146,35 +144,31 @@ class Config:
         )
 
     def get_loss(self) -> AssoLoss:
-        """
-        Getter for loss functions
+        """Getter for loss functions
         Returns: An AssoLoss with specified params
         """
         loss_params = self.cfg.loss
         return AssoLoss(**loss_params)
 
     def get_logger(self) -> pl.loggers.WandbLogger:
-        """
-        Getter for lightning logging callback
+        """Getter for lightning logging callback
         Returns: A lightning Logger with specified params
         """
         logger_params = self.cfg.logging
         return pl.loggers.WandbLogger(**logger_params)
 
     def get_early_stopping(self) -> pl.callbacks.EarlyStopping:
-        """
-        Getter for lightning early stopping callbac
-        Returns: a lightning early stopping callback with specified params
+        """Getter for lightning early stopping callbac
+        Returns: A lightning early stopping callback with specified params
         """
         early_stopping_params = self.cfg.early_stopping
         return pl.callbacks.EarlyStopping(**early_stopping_params)
 
     def get_checkpointing(self, dirpath: str) -> pl.callbacks.ModelCheckpoint:
-        """
-        getter for lightning checkpointing callback
-        Returns: a lightning checkpointing callback with specified params
+        """Getter for lightning checkpointing callback
         Args:
-            dirpath: the path to the directory where checkpoints will be stored
+            dirpath: The path to the directory where checkpoints will be stored
+        Returns: A lightning checkpointing callback with specified params
         """
         checkpoint_params = self.cfg.checkpointing
         return pl.callbacks.ModelCheckpoint(dirpath=dirpath, **checkpoint_params)
@@ -186,11 +180,13 @@ class Config:
         accelerator: str,
         devices: int,
     ) -> pl.Trainer:
-        """
-        Getter for the lightning trainer:
-        Returns a lightning Trainer with specified params
+        """Getter for the lightning trainer:
         Args:
             callbacks: a list of lightning callbacks preconfigured to be used for training
+            logger: the Wandb logger used for logging during training
+            accelerator: either "gpu" or "cpu" specifies which device to use
+            devices: The number of gpus to be used. 0 means cpu
+        Returns: A lightning Trainer with specified params
         """
         trainer_params = self.cfg.trainer
         return pl.Trainer(
