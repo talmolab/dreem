@@ -95,8 +95,10 @@ class GTRRunner(LightningModule):
         if "sw_cnt" in eval_metrics:
             tracker = Tracker(self.model, **self.tracker_cfg)
             instances_pred = tracker.track(instances)
-            # matches, indices, _ = metrics.get_matches(instances_pred)
-
+            matches, indices, _ = metrics.get_matches(instances_pred)
+            switches = metrics.get_switches(matches, indices)
+            sw_cnt = metrics.get_switch_count(switches)
+            return_metrics["sw_cnt"] = sw_cnt
         return return_metrics
 
     def configure_optimizers(self) -> dict:
