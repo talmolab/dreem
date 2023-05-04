@@ -53,15 +53,15 @@ class TrackingDataset(LightningDataModule):
             val_ds: Sleap or Microscopy Validation set
             val_dl : Validation dataloader. Only used for overriding `val_dataloader`.
         """
-        assert (
-            train_ds is not None or train_dl is not None
-        ), "Must pass in either a train dataset or train dataloader"
-        assert (
-            val_ds is not None or val_dl is not None
-        ), "Must pass in either a val dataset or val dataset"
-        assert (
-            test_ds is not None or test_dl is not None
-        ), "Must pass in either a test dataset or test dataset"
+        # assert (
+        #     train_ds is not None or train_dl is not None
+        # ), "Must pass in either a train dataset or train dataloader"
+        # assert (
+        #     val_ds is not None or val_dl is not None
+        # ), "Must pass in either a val dataset or val dataset"
+        # assert (
+        #     test_ds is not None or test_dl is not None
+        # ), "Must pass in either a test dataset or test dataset"
         super().__init__()
         self.train_ds = train_ds
         self.train_dl = train_dl
