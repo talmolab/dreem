@@ -89,7 +89,6 @@ class GTRRunner(LightningModule):
         Returns: a dict containing the loss and any other metrics specified by `eval_metrics`
         """
         logits = self.model(instances)
-
         loss = self.loss(logits, instances)
 
         return_metrics = {"loss": loss}

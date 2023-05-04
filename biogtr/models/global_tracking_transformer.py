@@ -47,7 +47,6 @@ class GlobalTrackingTransformer(nn.Module):
             embedding_meta: Metadata for positional embeddings. See below.
             return_embedding: Whether to return the positional embeddings
             decoder_self_attn: If True, use decoder self attention.
-
             embedding_meta: By default this will be an empty dict and indicate
                 that no positional embeddings should be used. To use positional
                 embeddings, a dict should be passed with the type of embedding to
@@ -60,7 +59,6 @@ class GlobalTrackingTransformer(nn.Module):
                 You can additionally pass kwargs to override the default
                 embedding values (see embedding.py function methods for relevant
                 embedding parameters). Example:
-
                     embedding_meta = {
                         'embedding_type': 'learned_pos_temp',
                         'kwargs': {
@@ -96,15 +94,14 @@ class GlobalTrackingTransformer(nn.Module):
             decoder_self_attn=decoder_self_attn,
         )
 
-    def forward(self, instances, all_instances=None):
+    def forward(self, instances, all_instances=None, query_frame=None):
         # Extract feature representations with pre-trained encoder.
         for frame in instances:
             if (frame["num_detected"] > 0).item():
-                x = frame["crops"]
-                z = self.visual_encoder(x)
+                z = self.visual_encoder(frame["crops"])
                 frame["features"] = z
 
         # Extract association matrix with transformer.
-        asso_preds = self.transformer(instances)
+        asso_preds = self.transformer(instances, query_frame=query_frame)
 
         return asso_preds
