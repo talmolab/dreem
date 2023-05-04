@@ -1,4 +1,5 @@
 import torch
+from biogtr.inference.boxes import Boxes
 
 
 def weight_decay_time(
@@ -35,47 +36,49 @@ def weight_decay_time(
         asso_output = asso_output * (decay_time ** dts[:, None])
     return asso_output
 
-    def _pairwise_intersection(self, boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
-        """
-        Given two lists of boxes of size N and M,
-        compute the intersection area between __all__ N x M pairs of boxes.
-        The box order must be (xmin, ymin, xmax, ymax)
-        Args:
-            boxes1,boxes2 (Boxes): two `Boxes`. Contains N & M boxes, respectively.
-        Returns:
-            Tensor: intersection, sized [N,M].
-        """
-        boxes1, boxes2 = boxes1.tensor, boxes2.tensor
-        width_height = torch.min(boxes1[:, None, 2:], boxes2[:, 2:]) - torch.max(
-            boxes1[:, None, :2], boxes2[:, :2]
-        )  # [N,M,2]
 
-        width_height.clamp_(min=0)  # [N,M,2]
-        intersection = width_height.prod(dim=2)  # [N,M]
+def _pairwise_intersection(self, boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
+    """
+    Given two lists of boxes of size N and M,
+    compute the intersection area between __all__ N x M pairs of boxes.
+    The box order must be (xmin, ymin, xmax, ymax)
+    Args:
+        boxes1,boxes2 (Boxes): two `Boxes`. Contains N & M boxes, respectively.
+    Returns:
+        Tensor: intersection, sized [N,M].
+    """
+    boxes1, boxes2 = boxes1.tensor, boxes2.tensor
+    width_height = torch.min(boxes1[:, None, 2:], boxes2[:, 2:]) - torch.max(
+        boxes1[:, None, :2], boxes2[:, :2]
+    )  # [N,M,2]
 
-        return intersection
+    width_height.clamp_(min=0)  # [N,M,2]
+    intersection = width_height.prod(dim=2)  # [N,M]
 
-    def _pairwise_iou(self, boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
-        """
-        Given two lists of boxes of size N and M, compute the IoU
-        (intersection over union) between **all** N x M pairs of boxes.
-        The box order must be (xmin, ymin, xmax, ymax).
-        Args:
-            boxes1,boxes2 (Boxes): two `Boxes`. Contains N & M boxes, respectively.
-        Returns:
-            Tensor: IoU, sized [N,M].
-        """
-        area1 = boxes1.area()  # [N]
-        area2 = boxes2.area()  # [M]
-        inter = self._pairwise_intersection(boxes1, boxes2)
+    return intersection
 
-        # handle empty boxes
-        iou = torch.where(
-            inter > 0,
-            inter / (area1[:, None] + area2 - inter),
-            torch.zeros(1, dtype=inter.dtype, device=inter.device),
-        )
-        return iou
+
+def _pairwise_iou(self, boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
+    """
+    Given two lists of boxes of size N and M, compute the IoU
+    (intersection over union) between **all** N x M pairs of boxes.
+    The box order must be (xmin, ymin, xmax, ymax).
+    Args:
+        boxes1,boxes2 (Boxes): two `Boxes`. Contains N & M boxes, respectively.
+    Returns:
+        Tensor: IoU, sized [N,M].
+    """
+    area1 = boxes1.area()  # [N]
+    area2 = boxes2.area()  # [M]
+    inter = self._pairwise_intersection(boxes1, boxes2)
+
+    # handle empty boxes
+    iou = torch.where(
+        inter > 0,
+        inter / (area1[:, None] + area2 - inter),
+        torch.zeros(1, dtype=inter.dtype, device=inter.device),
+    )
+    return iou
 
 
 def weight_iou(
