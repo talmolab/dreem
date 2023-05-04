@@ -1,6 +1,8 @@
 from typing import Any, Optional
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 import torch
+from biogtr.inference.tracker import Tracker
+from biogtr.inference import metrics
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
 from pytorch_lightning import LightningModule
@@ -14,10 +16,12 @@ class GTRRunner(LightningModule):
     def __init__(
         self,
         model: GlobalTrackingTransformer,
+        tracker_cfg: dict,
         loss: AssoLoss,
         optimizer: torch.optim.Optimizer = None,
         scheduler: torch.optim.lr_scheduler.LRScheduler = None,
         train_metrics=[""],
+        val_metrics=["sw_cnt"],
     ):
         """
         Initialize a lightning module for GTR
@@ -30,10 +34,12 @@ class GTRRunner(LightningModule):
         super().__init__()
 
         self.model = model
+        self.tracker_cfg = tracker_cfg
         self.loss = loss
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.train_metrics = train_metrics
+        self.val_metrics = val_metrics
 
     def forward(self, instances):
         return self.model(instances)
@@ -46,7 +52,7 @@ class GTRRunner(LightningModule):
         return result
 
     def validation_step(self, val_batch, batch_idx):
-        result = self._shared_eval_step(val_batch[0])
+        result = self._shared_eval_step(val_batch[0], eval_metrics=self.val_metrics)
         for metric, val in result.items():
             self.log(f"train_{metric}", val, batch_size=len(val_batch[0]))
         return result
@@ -57,12 +63,12 @@ class GTRRunner(LightningModule):
         loss = self.loss(logits, instances)
 
         return_metrics = {"loss": loss}
+        if "sw_cnt" in eval_metrics:
+            tracker = Tracker(self.model, **self.tracker_cfg)
+            instances_pred = tracker.track(instances)
+            # matches, indices, _ = metrics.get_matches(instances_pred)
 
         return return_metrics
-
-    # def validation_step(self, val_batch, batch_idx):
-    # to implement. also need switch count logic
-    # return loss
 
     def configure_optimizers(self):
         # todo: init from config

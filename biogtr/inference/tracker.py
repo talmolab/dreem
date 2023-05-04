@@ -9,7 +9,7 @@ from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from scipy.optimize import linear_sum_assignment
 
 
-class Tracker(Module):
+class Tracker:
     def __init__(
         self,
         model: GlobalTrackingTransformer,
@@ -33,7 +33,8 @@ class Tracker(Module):
             max_center_dist: distance threshold for filtering trajectory score matrix
         """
         self.model = model
-        (_,) = self.model.eval()
+        print(f"Model on gpu: {next(model.parameters()).is_cuda}")
+        _ = self.model.eval()
         self.window_size = window_size
         self.use_vis_feats = use_vis_feats
         self.overlap_thresh = overlap_thresh
@@ -42,7 +43,7 @@ class Tracker(Module):
         self.iou = iou
         self.max_center_dist = max_center_dist
 
-    def forward(self, instances: dict, all_instances: list = None):
+    def track(self, instances: dict, all_instances: list = None):
         """
         Run tracker and get predicted trajectories
         Returns: instances dict populated with pred track ids and association matrix scores
@@ -67,7 +68,7 @@ class Tracker(Module):
                 # Assuming the encoder is already trained or train encoder jointly.
                 else:
                     with torch.no_grad():
-                        z = self.model.encoder_model(frame["crops"])
+                        z = self.model.visual_encoder(frame["crops"])
                         frame["features"] = z
         """
         I feel like this chunk is unnecessary:
@@ -296,11 +297,11 @@ class Tracker(Module):
         asso_output = post_processing.weight_decay_time(
             asso_output, self.decay_time, reid_features, T, k
         )
-
-        asso_output = torch.mm(asso_output, id_inds)  # (N_t, M)
+        print(asso_output.device, id_inds.device)
+        asso_output = torch.mm(asso_output, id_inds.cpu())  # (N_t, M)
 
         instances[k]["decay_time_traj_score"] = pd.DataFrame(
-            (asso_output).numpy(), columns=unique_ids.numpy()
+            (asso_output).numpy(), columns=unique_ids.cpu().numpy()
         )
         instances[k]["decay_time_traj_score"].index.name = "Current Frame Instances"
         instances[k]["decay_time_traj_score"].columns.name = "Unique IDs"
@@ -322,16 +323,14 @@ class Tracker(Module):
             ]  # M
 
             last_boxes = nonk_boxes[last_inds]  # M x 4
-            last_ious = post_processing._pairwise_iou(
-                Boxes(k_boxes), Boxes(last_boxes)
-            )  # n_k x M
+            last_ious = post_processing._pairwise_iou(k_boxes, last_boxes)  # n_k x M
         else:
             last_ious = asso_output.new_zeros(asso_output.shape)
 
         asso_output = post_processing.weight_iou(asso_output, self.iou, last_ious)
 
         instances[k]["with_iou_traj_score"] = pd.DataFrame(
-            (asso_output).numpy(), columns=unique_ids.numpy()
+            (asso_output).numpy(), columns=unique_ids.cpu().numpy()
         )
         instances[k]["with_iou_traj_score"].index.name = "Current Frame Instances"
         instances[k]["with_iou_traj_score"].columns.name = "Unique IDs"
@@ -346,7 +345,7 @@ class Tracker(Module):
         )
 
         instances[k]["max_center_dist_traj_score"] = pd.DataFrame(
-            (asso_output).numpy(), columns=unique_ids.numpy()
+            (asso_output).numpy(), columns=unique_ids.cpu().numpy()
         )
         instances[k][
             "max_center_dist_traj_score"
@@ -381,7 +380,7 @@ class Tracker(Module):
         instances[k]["pred_track_ids"] = track_ids
 
         instances[k]["final_traj_score"] = pd.DataFrame(
-            (asso_output).numpy(), columns=unique_ids.numpy()
+            (asso_output).numpy(), columns=unique_ids.cpu().numpy()
         )
         instances[k]["final_traj_score"].index.name = "Current Frame Instances"
         instances[k]["final_traj_score"].columns.name = "Unique IDs"
