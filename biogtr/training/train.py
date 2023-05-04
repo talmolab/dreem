@@ -8,21 +8,7 @@ import sys
 import torch
 import torch.multiprocessing
 
-# todo: move to config
-num_workers = 0
-shuffle = True
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
-
-if num_workers > 0:
-    # prevent too many open files error
-    pin_memory = True
-    torch.multiprocessing.set_sharing_strategy("file_system")
-else:
-    pin_memory = False
-
-# for dataloader if shuffling, since shuffling is done by default on cpu
-generator = torch.Generator(device=device) if shuffle and device == "cuda" else None
 
 # useful for longer training runs, but not for single iteration debugging
 # finds optimal hardware algs which has upfront time increase for first
@@ -65,10 +51,10 @@ def main(cfg: DictConfig):
     optimizer = train_cfg.get_optimizer(model.parameters())
     scheduler = train_cfg.get_scheduler(optimizer)
     dataset = TrackingDataset(train_dl=train_dataloader, val_dl=val_dataloader)
-
-    model = GTRRunner(model, loss, optimizer=optimizer, scheduler=scheduler)
-
-    accelerator = "cpu" if device == "cpu" else "gpu"
+    tracker_cfg = train_cfg.get_tracker_cfg()
+    model = GTRRunner(
+        model, tracker_cfg, loss, optimizer=optimizer, scheduler=scheduler
+    )
 
     # test with 1 epoch and single batch, this should be controlled from config
     # todo: get to work with multi-gpu training
@@ -79,7 +65,13 @@ def main(cfg: DictConfig):
         train_cfg.get_checkpointing("./models"),
         train_cfg.get_early_stopping(),
     ]
-    trainer = train_cfg.get_trainer(callbacks, logger)
+
+    trainer = train_cfg.get_trainer(
+        callbacks,
+        logger,
+        accelerator="gpu" if torch.cuda.is_available() else "cpu",
+        devices=1 if torch.cuda.is_available() else "cpu",
+    )
 
     trainer.fit(model, dataset)
 

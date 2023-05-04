@@ -102,13 +102,21 @@ class Config:
             raise ValueError(
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
+        if dataloader_params.num_workers > 0:
+            # prevent too many open files error
+            pin_memory = True
+            torch.multiprocessing.set_sharing_strategy("file_system")
+        else:
+            pin_memory = False
+
+        generator = (
+            torch.Generator(device="cuda") if torch.cuda.is_available() else None
+        )
         return torch.utils.data.DataLoader(
             dataset=dataset,
             batch_size=1,
-            pin_memory=True if dataloader_params.num_workers > 0 else False,
-            generator=torch.Generator(device="cuda")
-            if torch.cuda.is_available()
-            else None,
+            pin_memory=pin_memory,
+            generator=generator,
             collate_fn=dataset.no_batching_fn,
             **dataloader_params,
         )
@@ -172,7 +180,11 @@ class Config:
         return pl.callbacks.ModelCheckpoint(dirpath=dirpath, **checkpoint_params)
 
     def get_trainer(
-        self, callbacks: list[pl.callbacks.Callback], logger: pl.loggers.WandbLogger
+        self,
+        callbacks: list[pl.callbacks.Callback],
+        logger: pl.loggers.WandbLogger,
+        accelerator: str,
+        devices: int,
     ) -> pl.Trainer:
         """
         Getter for the lightning trainer:
@@ -181,4 +193,10 @@ class Config:
             callbacks: a list of lightning callbacks preconfigured to be used for training
         """
         trainer_params = self.cfg.trainer
-        return pl.Trainer(callbacks=callbacks, logger=logger, **trainer_params)
+        return pl.Trainer(
+            callbacks=callbacks,
+            logger=logger,
+            accelerator=accelerator,
+            devices=devices,
+            **trainer_params,
+        )
