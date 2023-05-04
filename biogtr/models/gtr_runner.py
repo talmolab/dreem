@@ -69,7 +69,7 @@ class GTRRunner(LightningModule):
     def validation_step(
         self, val_batch: list[dict], batch_idx: int
     ) -> dict[str, float]:
-        """Method outlining the training procedure for model
+        """Method outlining the val procedure for model
         Args:
             val_batch: A single batch from the dataset which is a list of dicts
             with length `clip_length` where each dict is a frame
@@ -80,6 +80,31 @@ class GTRRunner(LightningModule):
         for metric, val in result.items():
             self.log(f"val_{metric}", val, batch_size=len(val_batch[0]))
         return result
+
+    def test_step(self, test_batch: list[dict], batch_idx: int) -> dict[str, float]:
+        """Method outlining the test procedure for model
+        Args:
+            val_batch: A single batch from the dataset which is a list of dicts
+            with length `clip_length` where each dict is a frame
+            batch_idx: the batch number used by lightning
+        Returns: A dict containing the val loss plus any other metrics specified during initialization
+        """
+        result = self._shared_eval_step(test_batch[0], eval_metrics=self.test_metrics)
+        for metric, val in result.items():
+            self.log(f"val_{metric}", val, batch_size=len(test_batch[0]))
+        return result
+
+    def predict_step(self, batch: list[dict], batch_idx: int) -> dict:
+        """Method describing inference for model. Computes association + assignment.
+        Args:
+            batch: A single batch from the dataset which is a list of dicts
+            with length `clip_length` where each dict is a frame
+            batch_idx: the batch number used by lightning
+        Returns: A list of dicts where each dict is a frame and contains the predicted track ids from the model.
+        """
+        tracker = Tracker(self.model, **self.tracker_cfg)
+        instances_pred = tracker.track(batch[0])
+        return instances_pred
 
     def _shared_eval_step(self, instances, eval_metrics=["sw_cnt"]):
         """Helper function for running evaluation used by train, test, and val steps
