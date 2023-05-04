@@ -103,11 +103,13 @@ class Config:
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
         return torch.utils.data.DataLoader(
-            dataset,
+            dataset=dataset,
+            batch_size=1,
             pin_memory=True if dataloader_params.num_workers > 0 else False,
             generator=torch.Generator(device="cuda")
             if torch.cuda.is_available()
             else None,
+            collate_fn=dataset.no_batching_fn,
             **dataloader_params,
         )
 
