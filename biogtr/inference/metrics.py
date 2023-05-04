@@ -1,15 +1,17 @@
+"""
+Helper functions for calculating mot metrics
+"""
 import numpy as np
 
 
 def get_matches(instances: list[dict]) -> tuple[dict, int, list]:
-    """
-    Get comparison between predicted and gt trajectory labels
+    """Get comparison between predicted and gt trajectory labels
+    Args:
+        instances: a list of dicts where each dict corresponds to a frame and contains the video_id, frame_id, gt labels and predicted labels
     Returns:
         matches: a dict containing predicted and gt trajectory labels
         indices: the frame indices being compared
         video_id: the video being
-    Args:
-        instances: a list of dicts where each dict corresponds to a frame and contains the video_id, frame_id, gt labels and predicted labels
     """
     matches = {}
     indices = []
@@ -31,12 +33,11 @@ def get_matches(instances: list[dict]) -> tuple[dict, int, list]:
 
 
 def get_switches(matches: dict, indices: list) -> dict:
-    """
-    Get misassigned predicted trajectory labels
-    Returns: A dict of dicts containing the frame at which the switch occured and the change in labels
+    """Get misassigned predicted trajectory labels
     Args:
         matches: a dict containing the gt and predicted labels
         indices: a list of frame indices being used
+    Returns: A dict of dicts containing the frame at which the switch occured and the change in labels
     """
     track, switches = {}, {}
     # unique_gt_ids = np.unique([k.split(" ")[0] for k in list(matches.keys())])
