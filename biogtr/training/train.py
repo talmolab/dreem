@@ -36,7 +36,7 @@ torch.set_default_device(device)
 
 # not sure we need hydra? could just do argparse + omegaconf?
 @hydra.main(config_path="configs", config_name=None, version_base=None)
-def train(cfg: DictConfig):
+def main(cfg: DictConfig):
     train_cfg = Config(cfg)
 
     # update with extra cli args
@@ -55,44 +55,29 @@ def train(cfg: DictConfig):
     train_cfg.set_hparams(hparams)
 
     model = train_cfg.get_model()
-
     train_dataset = train_cfg.get_dataset(type="sleap", mode="train")
     train_dataloader = train_cfg.get_dataloader(train_dataset, mode="train")
-
-    val_dataset = train_cfg.get_dataset(type="sleap", mode="val")
-    val_dataloader = train_cfg.get_dataloader(val_dataset, mode="val")
-
-    test_dataset = train_cfg.get_dataset(type="sleap", mode="test")
-    test_dataloader = train_cfg.get_dataloader(test_dataset, mode="test")
-
-    dataset = TrackingDataset(
-        train_dl=train_dataloader, val_dl=val_dataloader, test_dl=test_dataloader
-    )
-
     loss = train_cfg.get_loss()
-
     optimizer = train_cfg.get_optimizer(model.parameters())
     scheduler = train_cfg.get_scheduler(optimizer)
+    dataset = TrackingDataset(train_dl=train_dataloader)
 
-    tracker_cfg = train_cfg.get_tracker_cfg()
-    model = GTRRunner(
-        model=model,
-        tracker_cfg=tracker_cfg,
-        loss=loss,
-        optimizer=optimizer,
-        scheduler=scheduler,
-    )
+    model = GTRRunner(model, loss, optimizer=optimizer, scheduler=scheduler)
+
+    accelerator = "cpu" if device == "cpu" else "gpu"
 
     # test with 1 epoch and single batch, this should be controlled from config
     # todo: get to work with multi-gpu training
     logger = train_cfg.get_logger()
+
     callbacks = [
         pl.callbacks.LearningRateMonitor(),
-        train_cfg.get_early_stopping(),
         train_cfg.get_checkpointing("./models"),
+        train_cfg.get_early_stopping(),
     ]
     trainer = train_cfg.get_trainer(callbacks, logger)
-    trainer.fit(model, datamodule=dataset)
+
+    trainer.fit(model, dataset)
 
 
 if __name__ == "__main__":
@@ -104,4 +89,4 @@ if __name__ == "__main__":
     # python train.py +base_config=configs/base.yaml +params_config=configs/params.yaml
     # override with params config, and specific params:
     # python train.py +base_config=configs/base.yaml +params_config=configs/params.yaml +model.norm=True +model.decoder_self_attn=True +dataset.padding=10
-    train()
+    main()
