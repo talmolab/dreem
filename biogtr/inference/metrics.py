@@ -4,7 +4,7 @@ Helper functions for calculating mot metrics
 import numpy as np
 
 
-def get_matches(instances: list[dict]) -> tuple[dict, int, list]:
+def get_matches(instances: list[dict]) -> tuple[dict, list, int]:
     """Get comparison between predicted and gt trajectory labels
     Args:
         instances: a list of dicts where each dict corresponds to a frame and contains the video_id, frame_id, gt labels and predicted labels
@@ -29,7 +29,7 @@ def get_matches(instances: list[dict]) -> tuple[dict, int, list]:
                 matches[match] = np.full(len(instances), 0)
 
             matches[match][idx] = 1
-    return matches, video_id, indices
+    return matches, indices, video_id
 
 
 def get_switches(matches: dict, indices: list) -> dict:
