@@ -19,7 +19,6 @@ def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
 
     for fidx, instance in enumerate(instances):
         bbox = instance["bboxes"]
-
         bbox[:, [0, 2]] /= w
         bbox[:, [1, 3]] /= h
 
@@ -28,7 +27,6 @@ def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
 
     boxes = torch.cat(boxes, dim=0)  # N x 4
     times = torch.cat(times, dim=0).to(boxes.device)  # N
-
     return boxes, times
 
 
