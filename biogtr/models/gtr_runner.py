@@ -103,7 +103,7 @@ class GTRRunner(LightningModule):
         Returns: A list of dicts where each dict is a frame and contains the predicted track ids from the model.
         """
         tracker = Tracker(self.model, **self.tracker_cfg)
-        instances_pred = tracker.track(batch[0])
+        instances_pred = tracker(batch[0])
         return instances_pred
 
     def _shared_eval_step(self, instances, eval_metrics=["sw_cnt"]):
@@ -119,7 +119,7 @@ class GTRRunner(LightningModule):
         return_metrics = {"loss": loss}
         if "sw_cnt" in eval_metrics:
             tracker = Tracker(self.model, **self.tracker_cfg)
-            instances_pred = tracker.track(instances)
+            instances_pred = tracker(instances)
             matches, indices, _ = metrics.get_matches(instances_pred)
             switches = metrics.get_switches(matches, indices)
             sw_cnt = metrics.get_switch_count(switches)

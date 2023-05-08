@@ -21,8 +21,7 @@ class Tracker:
         iou: str = None,
         max_center_dist: float = None,
     ):
-        """
-        Initialize a tracker to run inference
+        """Initialize a tracker to run inference
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
             use_vis_feats: Whether or not to use visual feature extractor
@@ -42,13 +41,22 @@ class Tracker:
         self.iou = iou
         self.max_center_dist = max_center_dist
 
-    def track(self, instances: list[dict], all_instances: list = None):
-        """
-        Run tracker and get predicted trajectories
-        Returns: instances dict populated with pred track ids and association matrix scores
+    def __call__(self, instances: list[dict], all_instances: list = None):
+        """Wrapper around `track` to enable `tracker()` instead of `tracker.track()`
         Args:
             instances: data dict to run inference on
             all_instances: list of instances from previous chunks to stitch together full trajectory
+        Returns: instances dict populated with pred track ids and association matrix scores
+        """
+        return self.track(instances, all_instances)
+
+    def track(self, instances: list[dict], all_instances: list = None):
+        """
+        Run tracker and get predicted trajectories
+        Args:
+            instances: data dict to run inference on
+            all_instances: list of instances from previous chunks to stitch together full trajectory
+        Returns: instances dict populated with pred track ids and association matrix scores
         """
         # Extract feature representations with pre-trained encoder.
         for frame in instances:
@@ -250,10 +258,17 @@ class Tracker:
             None
         ]  # (1, N, D=512)
 
-        asso_output = self.model(instances, query_frame=k)  # (L=1, N_t, N)
+        # (L=1, N_t, N)
+        with torch.no_grad():
+            if self.model.transformer.return_embedding:
+                asso_output, embed = self.model(instances, query_frame=k)
+                instances[k]["embeddings"] = embed
+            else:
+                asso_output = self.model(instances, query_frame=k)
         asso_output = asso_output[-1].split(n_t, dim=1)  # (T, N_t, N_i)
         asso_output = model_utils.softmax_asso(asso_output)  # (T, N_t, N_i)
         asso_output = torch.cat(asso_output, dim=1).cpu()  # (N_t, N)
+        instances[k]["traj_score"] = asso_output.clone().numpy()
 
         N_t = instances[k][
             "num_detected"
@@ -270,10 +285,10 @@ class Tracker:
 
         k_inds = [x for x in range(sum(n_t[:k]), sum(n_t[: k + 1]))]
         nonk_inds = [i for i in range(N) if i not in k_inds]
-        asso_nonk = asso_output[:, nonk_inds]  # (N_t, N_p)
+        asso_output = asso_output[:, nonk_inds]  # (N_t, N_p)
+        instances[k]["nonk_traj_score"] = asso_output.clone().numpy()
 
-        pred_boxes = torch.cat([frame["bboxes"] for frame in instances])
-        pred_boxes = Boxes(pred_boxes)
+        pred_boxes, _ = model_utils.get_boxes_times(instances)
         k_boxes = pred_boxes[k_inds]  # n_k x 4
         nonk_boxes = pred_boxes[nonk_inds]  # Np x 4
         # TODO: Insert postprocessing.
@@ -287,12 +302,12 @@ class Tracker:
         # reweighting hyper-parameters for association -> they use 0.9
 
         # (n_k x Np) x (Np x M) --> n_k x M
-        asso_nonk = post_processing.weight_decay_time(
-            asso_nonk, self.decay_time, reid_features, T, k
+        asso_output = post_processing.weight_decay_time(
+            asso_output.clone(), self.decay_time, reid_features, T, k
         )
-        traj_score = torch.mm(asso_nonk, id_inds.cpu())  # (N_t, M)
+        asso_output = torch.mm(asso_output.clone(), id_inds.cpu())  # (N_t, M)
         instances[k]["decay_time_traj_score"] = pd.DataFrame(
-            (traj_score).numpy(), columns=unique_ids.cpu().numpy()
+            (asso_output).detach().numpy(), columns=unique_ids.cpu().numpy()
         )
         instances[k]["decay_time_traj_score"].index.name = "Current Frame Instances"
         instances[k]["decay_time_traj_score"].columns.name = "Unique IDs"
@@ -314,13 +329,16 @@ class Tracker:
             ]  # M
 
             last_boxes = nonk_boxes[last_inds]  # M x 4
-            last_ious = post_processing._pairwise_iou(k_boxes, last_boxes)  # n_k x M
+            last_ious = post_processing._pairwise_iou(
+                Boxes(k_boxes), Boxes(last_boxes)
+            )  # n_k x M
         else:
-            last_ious = traj_score.new_zeros(traj_score.shape)
-
-        traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious)
+            last_ious = asso_output.new_zeros(asso_output.shape)
+        asso_output = post_processing.weight_iou(
+            asso_output.clone(), self.iou, last_ious
+        )
         instances[k]["with_iou_traj_score"] = pd.DataFrame(
-            (traj_score).numpy(), columns=unique_ids.cpu().numpy()
+            (asso_output).numpy(), columns=unique_ids.cpu().numpy()
         )
         instances[k]["with_iou_traj_score"].index.name = "Current Frame Instances"
         instances[k]["with_iou_traj_score"].columns.name = "Unique IDs"
@@ -329,12 +347,11 @@ class Tracker:
 
         # threshold for continuing a tracking or starting a new track -> they use 1.0
         # todo -> should also work without pos_embed
-
-        traj_score = post_processing.filter_max_center_dist(
-            traj_score, self.max_center_dist, k_boxes, nonk_boxes, id_inds
+        asso_output = post_processing.filter_max_center_dist(
+            asso_output.clone(), self.max_center_dist, k_boxes, nonk_boxes, id_inds
         )
         instances[k]["max_center_dist_traj_score"] = pd.DataFrame(
-            (traj_score).numpy(), columns=unique_ids.cpu().numpy()
+            (asso_output).numpy(), columns=unique_ids.cpu().numpy()
         )
         instances[k][
             "max_center_dist_traj_score"
@@ -343,7 +360,7 @@ class Tracker:
 
         ################################################################################
 
-        match_i, match_j = linear_sum_assignment((-traj_score))
+        match_i, match_j = linear_sum_assignment((-asso_output))
 
         track_ids = ids.new_full((N_t,), -1)
         for i, j in zip(match_i, match_j):
@@ -368,7 +385,7 @@ class Tracker:
         instances[k]["pred_track_ids"] = track_ids
 
         instances[k]["final_traj_score"] = pd.DataFrame(
-            (traj_score).numpy(), columns=unique_ids.cpu().numpy()
+            (asso_output.clone()).numpy(), columns=unique_ids.cpu().numpy()
         )
         instances[k]["final_traj_score"].index.name = "Current Frame Instances"
         instances[k]["final_traj_score"].columns.name = "Unique IDs"
