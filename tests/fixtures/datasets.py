@@ -4,22 +4,22 @@ import pytest
 
 @pytest.fixture
 def sleap_data_dir(pytestconfig):
-    return os.path.join(pytestconfig.rootdir, "data/sleap")
+    return os.path.join(pytestconfig.rootdir, "tests/data/sleap")
 
 
 @pytest.fixture
 def icy_data_dir(pytestconfig):
-    return os.path.join(pytestconfig.rootdir, "data/microscopy/icy")
+    return os.path.join(pytestconfig.rootdir, "tests/data/microscopy/icy")
 
 
 @pytest.fixture
 def isbi_data_dir(pytestconfig):
-    return os.path.join(pytestconfig.rootdir, "data/microscopy/isbi")
+    return os.path.join(pytestconfig.rootdir, "tests/data/microscopy/isbi")
 
 
 @pytest.fixture
 def trackmate_data_dir(pytestconfig):
-    return os.path.join(pytestconfig.rootdir, "data/microscopy/trackmate")
+    return os.path.join(pytestconfig.rootdir, "tests/data/microscopy/trackmate")
 
 
 @pytest.fixture
