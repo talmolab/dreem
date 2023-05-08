@@ -51,16 +51,18 @@ class TrackingDataset(LightningDataModule):
             train_dl: Training dataloader. Only used for overriding `train_dataloader`.
             val_ds: Sleap or Microscopy Validation set
             val_dl : Validation dataloader. Only used for overriding `val_dataloader`.
+            test_ds: Sleap or Microscopy test set
+            test_dl : Test dataloader. Only used for overriding `test_dataloader`.
         """
-        # assert (
-        #     train_ds is not None or train_dl is not None
-        # ), "Must pass in either a train dataset or train dataloader"
-        # assert (
-        #     val_ds is not None or val_dl is not None
-        # ), "Must pass in either a val dataset or val dataset"
-        # assert (
-        #     test_ds is not None or test_dl is not None
-        # ), "Must pass in either a test dataset or test dataset"
+        assert (
+            train_ds is not None or train_dl is not None
+        ), "Must pass in either a train dataset or train dataloader"
+        assert (
+            val_ds is not None or val_dl is not None
+        ), "Must pass in either a val dataset or val dataset"
+        assert (
+            test_ds is not None or test_dl is not None
+        ), "Must pass in either a test dataset or test dataset"
         super().__init__()
         self.train_ds = train_ds
         self.train_dl = train_dl
@@ -77,16 +79,17 @@ class TrackingDataset(LightningDataModule):
         Returns: The Training Dataloader.
         """
         if self.train_dl is None:
+            generator = (
+                torch.Generator(device="cuda") if torch.cuda.is_available() else None
+            )
             return DataLoader(
                 self.train_ds,
                 batch_size=1,
                 shuffle=True,
-                pin_memory=False,
+                pin_memory=pin_memory,
                 collate_fn=self.train_ds.no_batching_fn,
-                num_workers=0,
-                generator=torch.Generator(device="cuda")
-                if torch.cuda.is_available()
-                else None,
+                num_workers=num_workers,
+                generator=generator if torch.cuda.is_available() else None,
             )
         else:
             return self.train_dl
@@ -100,9 +103,9 @@ class TrackingDataset(LightningDataModule):
                 self.val_ds,
                 batch_size=1,
                 shuffle=False,
-                pin_memory=False,
+                pin_memory=pin_memory,
                 collate_fn=self.train_ds.no_batching_fn,
-                num_workers=0,
+                num_workers=num_workers,
                 generator=None,
             )
         else:

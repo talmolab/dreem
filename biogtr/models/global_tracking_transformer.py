@@ -102,6 +102,9 @@ class GlobalTrackingTransformer(nn.Module):
                 frame["features"] = z
 
         # Extract association matrix with transformer.
-        asso_preds = self.transformer(instances, query_frame=query_frame)
+        if self.transformer.return_embedding:
+            asso_preds, emb = self.transformer(instances, query_frame=query_frame)
+        else:
+            asso_preds = self.transformer(instances, query_frame=query_frame)
 
-        return asso_preds
+        return (asso_preds, emb) if self.transformer.return_embedding else asso_preds
