@@ -7,6 +7,7 @@ from biogtr.inference import post_processing
 from biogtr.inference.boxes import Boxes
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from scipy.optimize import linear_sum_assignment
+from copy import deepcopy
 
 
 class Tracker:
@@ -265,10 +266,10 @@ class Tracker:
                 instances[k]["embeddings"] = embed
             else:
                 asso_output = self.model(instances, query_frame=k)
+
         asso_output = asso_output[-1].split(n_t, dim=1)  # (T, N_t, N_i)
         asso_output = model_utils.softmax_asso(asso_output)  # (T, N_t, N_i)
         asso_output = torch.cat(asso_output, dim=1).cpu()  # (N_t, N)
-        instances[k]["traj_score"] = asso_output.clone().numpy()
 
         N_t = instances[k][
             "num_detected"
@@ -277,6 +278,7 @@ class Tracker:
         N_p = (
             N - N_t
         )  # Number of instances in the window not including the current/query frame.
+
         ids = torch.cat(
             [x["pred_track_ids"] for t, x in enumerate(instances) if t != k], dim=0
         ).view(
@@ -285,8 +287,7 @@ class Tracker:
 
         k_inds = [x for x in range(sum(n_t[:k]), sum(n_t[: k + 1]))]
         nonk_inds = [i for i in range(N) if i not in k_inds]
-        asso_output = asso_output[:, nonk_inds]  # (N_t, N_p)
-        instances[k]["nonk_traj_score"] = asso_output.clone().numpy()
+        asso_nonk = asso_output[:, nonk_inds]  # (N_t, N_p)
 
         pred_boxes, _ = model_utils.get_boxes_times(instances)
         k_boxes = pred_boxes[k_inds]  # n_k x 4
@@ -294,7 +295,7 @@ class Tracker:
         # TODO: Insert postprocessing.
 
         unique_ids = torch.unique(ids)  # (M,)
-        # M = len(unique_ids)  # Number of existing tracks.
+        M = len(unique_ids)  # Number of existing tracks.
         id_inds = (unique_ids[None, :] == ids[:, None]).float()  # (N_p, M)
 
         ################################################################################
@@ -302,16 +303,16 @@ class Tracker:
         # reweighting hyper-parameters for association -> they use 0.9
 
         # (n_k x Np) x (Np x M) --> n_k x M
-        asso_output = post_processing.weight_decay_time(
-            asso_output.clone(), self.decay_time, reid_features, T, k
+        traj_score = post_processing.weight_decay_time(
+            asso_nonk, self.decay_time, reid_features, T, k
         )
-        asso_output = torch.mm(asso_output.clone(), id_inds.cpu())  # (N_t, M)
+        traj_score = torch.mm(traj_score, id_inds.cpu())  # (N_t, M)
+
         instances[k]["decay_time_traj_score"] = pd.DataFrame(
-            (asso_output).detach().numpy(), columns=unique_ids.cpu().numpy()
+            deepcopy((traj_score).numpy()), columns=unique_ids.cpu().numpy()
         )
         instances[k]["decay_time_traj_score"].index.name = "Current Frame Instances"
         instances[k]["decay_time_traj_score"].columns.name = "Unique IDs"
-
         ################################################################################
 
         # with iou -> combining with location in tracker, they set to True
@@ -333,34 +334,20 @@ class Tracker:
                 Boxes(k_boxes), Boxes(last_boxes)
             )  # n_k x M
         else:
-            last_ious = asso_output.new_zeros(asso_output.shape)
-        asso_output = post_processing.weight_iou(
-            asso_output.clone(), self.iou, last_ious
-        )
-        instances[k]["with_iou_traj_score"] = pd.DataFrame(
-            (asso_output).numpy(), columns=unique_ids.cpu().numpy()
-        )
-        instances[k]["with_iou_traj_score"].index.name = "Current Frame Instances"
-        instances[k]["with_iou_traj_score"].columns.name = "Unique IDs"
+            last_ious = traj_score.new_zeros(traj_score.shape)
+        traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious)
 
         ################################################################################
 
         # threshold for continuing a tracking or starting a new track -> they use 1.0
         # todo -> should also work without pos_embed
-        asso_output = post_processing.filter_max_center_dist(
-            asso_output.clone(), self.max_center_dist, k_boxes, nonk_boxes, id_inds
+        traj_score = post_processing.filter_max_center_dist(
+            traj_score, self.max_center_dist, k_boxes, nonk_boxes, id_inds
         )
-        instances[k]["max_center_dist_traj_score"] = pd.DataFrame(
-            (asso_output).numpy(), columns=unique_ids.cpu().numpy()
-        )
-        instances[k][
-            "max_center_dist_traj_score"
-        ].index.name = "Current Frame Instances"
-        instances[k]["max_center_dist_traj_score"].columns.name = "Unique IDs"
 
         ################################################################################
 
-        match_i, match_j = linear_sum_assignment((-asso_output))
+        match_i, match_j = linear_sum_assignment((-traj_score))
 
         track_ids = ids.new_full((N_t,), -1)
         for i, j in zip(match_i, match_j):
@@ -373,7 +360,7 @@ class Tracker:
             thresh = (
                 overlap_thresh * id_inds[:, j].sum() if mult_thresh else overlap_thresh
             )
-            if asso_output[i, j] > thresh:
+            if traj_score[i, j] > thresh:
                 track_ids[i] = unique_ids[j]
 
         for i in range(N_t):
@@ -383,14 +370,9 @@ class Tracker:
 
         instances[k]["matches"] = (match_i, match_j)
         instances[k]["pred_track_ids"] = track_ids
-
         instances[k]["final_traj_score"] = pd.DataFrame(
-            (asso_output.clone()).numpy(), columns=unique_ids.cpu().numpy()
+            deepcopy((traj_score).numpy()), columns=unique_ids.cpu().numpy()
         )
         instances[k]["final_traj_score"].index.name = "Current Frame Instances"
         instances[k]["final_traj_score"].columns.name = "Unique IDs"
-
-        # instances[k]["pos_emb"] = embeddings["pos"]
-        # instances[k]["temp_emb"] = embeddings["temp"]
-
         return instances, id_count
