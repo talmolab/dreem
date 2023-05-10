@@ -1,4 +1,4 @@
-name: /home/jovyan/micromamba/envs/biogtr
+name: biogtr
 channels:
   - pytorch
   - defaults
