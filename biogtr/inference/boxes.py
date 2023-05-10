@@ -66,7 +66,10 @@ class Boxes:
         return area
 
     def clip(self, box_size: Tuple[int, int]) -> None:
-        """Clip (in place) the boxes by limiting x coordinates to the range [0, width] and y coordinates to the range [0, height].
+        """Clip (in place) the boxes.
+
+        Limits x coordinates to the range [0, width]
+        and y coordinates to the range [0, height].
 
         Args:
             box_size (height, width): The clipping box's size.

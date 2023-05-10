@@ -89,7 +89,7 @@ class ATTWeightHead(torch.nn.Module):
         query: torch.Tensor,
         key: torch.Tensor,
     ) -> torch.Tensor:
-        """Computes the attention weights of the given query tensor using the key tensor.
+        """Computes the attention weights of a query tensor using the key tensor.
 
         Args:
             query: Input tensor of shape (batch_size, num_frame_instances, feature_dim).

@@ -6,7 +6,8 @@ def get_matches(instances: list[dict]) -> tuple[dict, list, int]:
     """Get comparison between predicted and gt trajectory labels.
 
     Args:
-        instances: a list of dicts where each dict corresponds to a frame and contains the video_id, frame_id, gt labels and predicted labels
+        instances: a list of dicts where each dict corresponds to a frame and
+        contains the video_id, frame_id, gt labels and predicted labels
 
     Returns:
         matches: a dict containing predicted and gt trajectory labels
@@ -40,7 +41,8 @@ def get_switches(matches: dict, indices: list) -> dict:
         indices: a list of frame indices being used
 
     Returns:
-        A dict of dicts containing the frame at which the switch occured and the change in labels
+        A dict of dicts containing the frame at which the switch occured
+        and the change in labels
     """
     track, switches = {}, {}
     # unique_gt_ids = np.unique([k.split(" ")[0] for k in list(matches.keys())])
@@ -75,7 +77,8 @@ def get_switch_count(switches: dict) -> int:
     """Get the number of mislabeled predicted trajectories.
 
     Args:
-        switches: a dict of dicts containing the mislabeled trajectories and the frames at which they occur
+        switches: a dict of dicts containing the mislabeled trajectories
+        and the frames at which they occur
 
     Returns:
         the number of switched labels in the video chunk

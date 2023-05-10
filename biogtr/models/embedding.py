@@ -8,7 +8,10 @@ import torch
 
 
 class Embedding(torch.nn.Module):
-    """Class that wraps around different embedding types. Used for both learned and fixed embeddings."""
+    """Class that wraps around different embedding types.
+
+    Used for both learned and fixed embeddings.
+    """
 
     def __init__(self):
         """Initialize embeddings."""

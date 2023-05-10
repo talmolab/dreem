@@ -1,8 +1,6 @@
 """Module containing logic for going from association -> assignment."""
 import torch
 import pandas as pd
-from typing import Union
-from torch.nn import Module
 from biogtr.models import model_utils
 from biogtr.inference import post_processing
 from biogtr.inference.boxes import Boxes
@@ -34,7 +32,8 @@ class Tracker:
             overlap_thresh: the trajectory overlap threshold to be used for assignment
             mult_thresh: Whether or not to use weight threshold
             decay_time: weight for `decay_time` postprocessing
-            iou: Either [None, '', "mult" or "max"] Whether to use multiplicative or max iou reweighting
+            iou: Either [None, '', "mult" or "max"]
+                 Whether to use multiplicative or max iou reweighting
             max_center_dist: distance threshold for filtering trajectory score matrix
         """
         self.model = model
@@ -52,9 +51,11 @@ class Tracker:
 
         Args:
             instances: data dict to run inference on
-            all_instances: list of instances from previous chunks to stitch together full trajectory
+            all_instances: list of instances from previous chunks
+                           to stitch together full trajectory
 
-        Returns: instances dict populated with pred track ids and association matrix scores
+        Returns:
+            instances dict populated with pred track ids and association matrix scores
         """
         return self.track(instances, all_instances)
 
@@ -65,7 +66,8 @@ class Tracker:
             instances: data dict to run inference on
             all_instances: list of instances from previous chunks to stitch together full trajectory
 
-        Returns: instances dict populated with pred track ids and association matrix scores
+        Returns:
+            instances dict populated with pred track ids and association matrix scores
         """
         # Extract feature representations with pre-trained encoder.
         for frame in instances:
@@ -208,7 +210,9 @@ class Tracker:
         return instances
 
     def _run_global_tracker(self, instances, k, id_count, overlap_thresh, mult_thresh):
-        """Run_global_tracker performs the actual tracking (Hungarian algorithm) and track assigning.
+        """Run_global_tracker performs the actual tracking.
+
+        Uses Hungarian algorithm to do track assigning.
 
         Args:
             instances: A list of dictionaries, one dictionary for each frame. An example

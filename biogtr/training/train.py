@@ -24,7 +24,9 @@ torch.set_default_device(device)
 # not sure we need hydra? could just do argparse + omegaconf?
 @hydra.main(config_path="configs", config_name=None, version_base=None)
 def main(cfg: DictConfig):
-    """Main function for training. Handles all config parsing and initialization then calls `trainer.train()`.
+    """Main function for training.
+
+    Handles all config parsing and initialization then calls `trainer.train()`.
 
     Args:
         cfg: The config dict parsed by `hydra`

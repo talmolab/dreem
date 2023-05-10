@@ -41,7 +41,8 @@ class AssoLoss(nn.Module):
             asso_preds: a list containing the association matrix at each frame
             instances: a list of dictionaries for each frame containing gt labels.
 
-        Returns: the association loss between predicted association and actual
+        Returns:
+            the association loss between predicted association and actual
         """
         # get number of detected objects and ground truth ids
         n_t = [frame["num_detected"] for frame in instances]

@@ -113,8 +113,9 @@ class MicroscopyDataset(Dataset):
     def __getitem__(self, idx):
         """Get an element of the dataset.
 
-        Returns
-            a list of dicts where each dict corresponds a frame in the chunk and each value is a `torch.Tensor`.
+        Returns:
+            a list of dicts where each dict corresponds a frame in the chunk
+            and each value is a `torch.Tensor`.
 
             Dict Elements:
                 {

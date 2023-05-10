@@ -1,4 +1,4 @@
-"""Module containing logic for post-processing association matrix before tracking."""
+"""Helper functions for post-processing association matrix pre-tracking."""
 import torch
 from biogtr.inference.boxes import Boxes
 from copy import deepcopy
@@ -11,7 +11,10 @@ def weight_decay_time(
     T: int = None,
     k: int = None,
 ) -> torch.Tensor:
-    """Weight association matrix by number of frames the ith object is from the jth object in the association matrix.
+    """Weight association matrix by time.
+
+    Weighs matrix by number of frames the ith object is from the jth object
+    in the association matrix.
 
     Args:
         asso_output: the association matrix to be reweighted
@@ -40,7 +43,7 @@ def weight_decay_time(
 
 
 def _pairwise_intersection(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
-    """Given two lists of boxes of size N and M, compute the intersection area between __all__ N x M pairs of boxes.
+    """Compute the intersection area between __all__ N x M pairs of boxes.
 
     The box order must be (xmin, ymin, xmax, ymax)
 
@@ -62,7 +65,7 @@ def _pairwise_intersection(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
 
 
 def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
-    """Given two lists of boxes of size N and M, compute the IoU (intersection over union) between **all** N x M pairs of boxes.
+    """Compute intersection over union between all N x M pairs of boxes.
 
     The box order must be (xmin, ymin, xmax, ymax).
 

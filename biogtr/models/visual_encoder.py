@@ -12,7 +12,10 @@ import torch.nn.functional as F
 
 
 class VisualEncoder(torch.nn.Module):
-    """Class wrapping around a visual feature extractor backbone. Currently CNN only."""
+    """Class wrapping around a visual feature extractor backbone.
+
+    Currently CNN only.
+    """
 
     def __init__(self, model_name: str, cfg: dict, d_model: int = 512):
         """Initialize Visual Encoder.

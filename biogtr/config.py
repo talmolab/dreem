@@ -17,7 +17,9 @@ class Config:
     """Class handling loading components based on config params."""
 
     def __init__(self, cfg: DictConfig):
-        """Initialize the class with config from hydra/omega conf. First uses `base_param` file then overwrites with specific `params_config`.
+        """Initialize the class with config from hydra/omega conf.
+
+        First uses `base_param` file then overwrites with specific `params_config`.
 
         Args:
             cfg: The `DictConfig` containing all the hyperparameters needed for training/evaluation
@@ -34,7 +36,9 @@ class Config:
         print(self.cfg.keys())
 
     def set_hparams(self, hparams: dict):
-        """Setter function for overwriting specific hparams. Useful for changing 1 or 2 hyperparameters such as dataset.
+        """Setter function for overwriting specific hparams.
+
+        Useful for changing 1 or 2 hyperparameters such as dataset.
 
         Args:
             hparams: A dict containing the hyperparameter to be overwritten and the value to be changed to

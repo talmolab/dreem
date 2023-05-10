@@ -73,8 +73,8 @@ def centroid_bbox(
 ) -> torch.Tensor:
     """Calculate bbox around instance centroid.
 
-    This is useful for ensuring that crops are centered around each instance in the case of incorrect pose
-    estimates.
+    This is useful for ensuring that crops are centered around each instance
+    in the case of incorrect pose estimates.
 
     Args:
         instance: a labeled instance in a frame
@@ -362,7 +362,7 @@ def parse_ICY(xml_path: str) -> pd.DataFrame:
 def parse_ISBI(xml_file: str) -> pd.DataFrame:
     """Parse .xml labels file from ISBI particle tracing challenge.
 
-    logic adapted fromhttps://github.com/sylvainprigent/napari-tracks-reader/blob/main/napari_tracks_reader/_isbi_io.py.
+    logic adapted from https://github.com/sylvainprigent/napari-tracks-reader/blob/main/napari_tracks_reader/_isbi_io.py.
 
     Args:
         xml_file: path to .xml labels file containing gt trajectory ids from ISBI
@@ -450,7 +450,8 @@ def build_augmentations(augmentations: dict):
     """Get augmentations for dataset.
 
     Args:
-        augmentations: a dict containing the name of the augmentations and their parameters
+        augmentations: a dict containing the name of the augmentations
+                       and their parameters
 
     Returns:
         An Albumentations composition of different augmentations.
