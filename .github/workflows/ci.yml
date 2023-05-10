@@ -8,7 +8,7 @@ on:
       - "biogtr/**"
       - "tests/**"
       - ".github/workflows/ci.yml"
-      - "environment.yml"
+      - "environment_cpu.yml"
       - "pyproject.toml"
   push:
     branches:
@@ -18,7 +18,7 @@ on:
       - "biogtr/**"
       - "tests/**"
       - ".github/workflows/ci.yml"
-      - "environment.yml"
+      - "environment_cpu.yml"
       - "pyproject.toml"
 
 defaults:
