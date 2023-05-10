@@ -79,7 +79,7 @@ jobs:
         # https://github.com/mamba-org/provision-with-micromamba
         uses: mamba-org/provision-with-micromamba@main
         with:
-          environment-file: environment.yml
+          environment-file: environment_cpu.yml
           cache-env: true
           channel-priority: flexible
 
