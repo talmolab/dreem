@@ -1,4 +1,4 @@
-name: /home/jovyan/micromamba/envs/biogtr-cpu
+name: biogtr-cpu
 channels:
   - defaults
   - nvidia
