@@ -1,10 +1,15 @@
 name: biogtr
+
 channels:
+  - pytorch
+  - nvidia
   - conda-forge
+  - defaults
+
 dependencies:
   - python=3.9
-  - cudnn
   - pytorch
+  - cpuonly
   - torchvision
   - lightning
   - imageio
@@ -12,9 +17,8 @@ dependencies:
   - ffmpeg
   - albumentations
   - pip
-  - torchaudio
-  - cpuonly
-  - imageio-ffmpeg
-  - ca-certificates
-  - certifi
-  - openssl
+  - pip:
+    - matplotlib
+    - sleap-io
+    - "--editable=.[dev]"
+    - imageio[ffmpeg]
