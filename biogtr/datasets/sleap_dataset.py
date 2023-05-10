@@ -136,7 +136,7 @@ class SleapDataset(Dataset):
             lf_img = vid_reader.get_data(i)
 
             img = tvf.to_tensor(lf_img)
-            
+
             _, h, w = img.shape
 
             for instance in lf:
@@ -151,7 +151,7 @@ class SleapDataset(Dataset):
                 if aug is not None:
                     augmented = aug(image=img, keypoints=torch.vstack(centroids))
                     img, centroids = augmented["image"], augmented["keypoints"]
-                    
+
                 if self.crop_type == "centroid":
                     bbox = data_utils.pad_bbox(
                         data_utils.centroid_bbox(instance, anchors, self.crop_size),
