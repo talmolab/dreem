@@ -1,10 +1,10 @@
+"""Module containing model helper functions."""
 from typing import Dict, List, Tuple
 import torch
 
 
 def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
-    """
-    Extracts the bounding boxes and frame indices from the input list of instances.
+    """Extracts the bounding boxes and frame indices from the input list of instances.
 
     Args:
         instances (List[Dict]): List of instance dictionaries
@@ -30,20 +30,21 @@ def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
     return boxes, times
 
 
-def softmax_asso(asso_output):
+def softmax_asso(asso_output: list[torch.Tensor]) -> list[torch.Tensor]:
     """Applies the softmax activation function on asso_output.
+
     Args:
         asso_output: Same structure as before. It's a list of tensors.
         An example is shown  below. The shape is modified.
+
     Returns:
         asso_output: Exactly the same as before but with the softmax applied.
-    # ------------------------ An example of asso_output ----------------------- #
-    N_i: number of detected instances in i-th frame of window.
-    N_t: number of instances in current/query frame (rightmost frame of the window).
-    T: length of window.
-    asso_output is of shape: (T, N_t, N_i).
+        # ------------------------ An example of asso_output ----------------------- #
+        N_i: number of detected instances in i-th frame of window.
+        N_t: number of instances in current/query frame (rightmost frame of the window).
+        T: length of window.
+        asso_output is of shape: (T, N_t, N_i).
     """
-
     # N_i: number of detected instances in i-th frame of window.
     # N_t: number of instances in current frame (rightmost frame of the window).
     # T: length of window.

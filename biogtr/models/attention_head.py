@@ -1,3 +1,5 @@
+"""Module containing different components of multi-head attention heads."""
+
 import torch
 import torch.nn.functional as F
 
@@ -5,6 +7,8 @@ import torch.nn.functional as F
 
 
 class MLP(torch.nn.Module):
+    """Multi-Layer Perceptron (MLP) module."""
+
     def __init__(
         self,
         input_dim: int,
@@ -13,8 +17,7 @@ class MLP(torch.nn.Module):
         num_layers: int,
         dropout: float = 0.0,
     ):
-        """
-        Multi-Layer Perceptron (MLP) module.
+        """Initialize MLP.
 
         Args:
             input_dim: Dimensionality of the input features.
@@ -44,8 +47,7 @@ class MLP(torch.nn.Module):
             self.layers = []
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass of the MLP.
+        """Forward pass of the MLP.
 
         Args:
             x: Input tensor of shape (batch_size, num_instances, input_dim).
@@ -53,7 +55,6 @@ class MLP(torch.nn.Module):
         Returns:
             Output tensor of shape (batch_size, num_instances, output_dim).
         """
-
         for i, layer in enumerate(self.layers):
             x = F.relu(layer(x)) if i < self.num_layers - 1 else layer(x)
             if i < self.num_layers - 1 and self.dropout > 0.0:
@@ -63,14 +64,15 @@ class MLP(torch.nn.Module):
 
 
 class ATTWeightHead(torch.nn.Module):
+    """Single attention head."""
+
     def __init__(
         self,
         feature_dim: int,
         num_layers: int,
         dropout: float,
     ):
-        """
-        Initializes an instance of ATTWeightHead.
+        """Initializes an instance of ATTWeightHead.
 
         Args:
             feature_dim: The dimensionality of input features.
@@ -87,8 +89,7 @@ class ATTWeightHead(torch.nn.Module):
         query: torch.Tensor,
         key: torch.Tensor,
     ) -> torch.Tensor:
-        """
-        Computes the attention weights of the given query tensor using the key tensor.
+        """Computes the attention weights of the given query tensor using the key tensor.
 
         Args:
             query: Input tensor of shape (batch_size, num_frame_instances, feature_dim).

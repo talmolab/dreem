@@ -1,3 +1,5 @@
+"""Module containing microscopy dataset."""
+
 from PIL import Image
 from biogtr.datasets import data_utils
 from torch.utils.data import Dataset
@@ -7,6 +9,8 @@ import torch
 
 
 class MicroscopyDataset(Dataset):
+    """Dataset for loading Microscopy Data."""
+
     def __init__(
         self,
         videos: list[str],
@@ -19,8 +23,7 @@ class MicroscopyDataset(Dataset):
         mode: str = "Train",
         augs: dict = None,
     ):
-        """
-        Dataset for loading Microscopy Data
+        """Initialize MicroscopyDataset.
 
         Args:
             videos: paths to raw microscopy videos
@@ -89,33 +92,47 @@ class MicroscopyDataset(Dataset):
             self.label_idx = [i for i in range(len(self.videos))]
 
     def __len__(self):
+        """Get length of dataset.
+
+        Returns:
+            the length of the dataset
+        """
         return len(self.chunked_frame_idx)
 
     def no_batching_fn(self, batch):
+        """Collate function used to overwrite dataloader batching function.
+
+        Args:
+            batch: the chunk of frames to be returned
+
+        Returns:
+            the batch
+        """
         return batch
 
     def __getitem__(self, idx):
-        """
-        Get an element of the dataset. Returns a list of dicts where each dict
-        corresponds a frame in the chunk and each value is a `torch.Tensor`.
+        """Get an element of the dataset.
 
-        Dict Elements:
-            {
-                "video_id": The video being passed through the transformer,
-                "img_shape": the shape of each frame,
-                "frame_id": the specific frame in the entire video being used,
-                "num_detected": The number of objects in the frame,
-                "gt_track_ids": The ground truth labels,
-                "bboxes": The bounding boxes of each object,
-                "crops": The raw pixel crops,
-                "features": The feature vectors for each crop outputed by the
-                    CNN encoder,
-                "pred_track_ids": The predicted trajectory labels from the
-                    tracker,
-                "asso_output": the association matrix preprocessing,
-                "matches": the true positives from the model,
-                "traj_score": the association matrix post processing,
-            }
+        Returns
+            a list of dicts where each dict corresponds a frame in the chunk and each value is a `torch.Tensor`.
+
+            Dict Elements:
+                {
+                    "video_id": The video being passed through the transformer,
+                    "img_shape": the shape of each frame,
+                    "frame_id": the specific frame in the entire video being used,
+                    "num_detected": The number of objects in the frame,
+                    "gt_track_ids": The ground truth labels,
+                    "bboxes": The bounding boxes of each object,
+                    "crops": The raw pixel crops,
+                    "features": The feature vectors for each crop outputed by the
+                        CNN encoder,
+                    "pred_track_ids": The predicted trajectory labels from the
+                        tracker,
+                    "asso_output": the association matrix preprocessing,
+                    "matches": the true positives from the model,
+                    "traj_score": the association matrix post processing,
+                }
         """
         label_idx = self.label_idx[idx]
         frame_idx = self.chunked_frame_idx[idx]

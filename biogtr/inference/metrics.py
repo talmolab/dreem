@@ -1,13 +1,13 @@
-"""
-Helper functions for calculating mot metrics
-"""
+"""Helper functions for calculating mot metrics."""
 import numpy as np
 
 
 def get_matches(instances: list[dict]) -> tuple[dict, list, int]:
-    """Get comparison between predicted and gt trajectory labels
+    """Get comparison between predicted and gt trajectory labels.
+
     Args:
         instances: a list of dicts where each dict corresponds to a frame and contains the video_id, frame_id, gt labels and predicted labels
+
     Returns:
         matches: a dict containing predicted and gt trajectory labels
         indices: the frame indices being compared
@@ -33,11 +33,14 @@ def get_matches(instances: list[dict]) -> tuple[dict, list, int]:
 
 
 def get_switches(matches: dict, indices: list) -> dict:
-    """Get misassigned predicted trajectory labels
+    """Get misassigned predicted trajectory labels.
+
     Args:
         matches: a dict containing the gt and predicted labels
         indices: a list of frame indices being used
-    Returns: A dict of dicts containing the frame at which the switch occured and the change in labels
+
+    Returns:
+        A dict of dicts containing the frame at which the switch occured and the change in labels
     """
     track, switches = {}, {}
     # unique_gt_ids = np.unique([k.split(" ")[0] for k in list(matches.keys())])
@@ -69,11 +72,13 @@ def get_switches(matches: dict, indices: list) -> dict:
 
 
 def get_switch_count(switches: dict) -> int:
-    """
-    Get the number of mislabeled predicted trajectories
-    Returns: the number of switched labels in the video chunk
+    """Get the number of mislabeled predicted trajectories.
+
     Args:
         switches: a dict of dicts containing the mislabeled trajectories and the frames at which they occur
+
+    Returns:
+        the number of switched labels in the video chunk
     """
     only_switches = {k: v for k, v in switches.items() if v != {}}
     sw_cnt = sum([len(i) for i in list(only_switches.values())])

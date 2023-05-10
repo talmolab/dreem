@@ -1,3 +1,4 @@
+"""Module containing GTR model used for training."""
 from biogtr.models.transformer import Transformer
 from biogtr.models.visual_encoder import VisualEncoder
 from torch import nn
@@ -6,6 +7,8 @@ from torch import nn
 
 
 class GlobalTrackingTransformer(nn.Module):
+    """Modular GTR model composed of visual encoder + transformer used for tracking."""
+
     def __init__(
         self,
         encoder_model: str = "resnet18",
@@ -26,8 +29,8 @@ class GlobalTrackingTransformer(nn.Module):
         return_embedding: bool = False,
         decoder_self_attn: bool = False,
     ):
-        """
-        Transformer module.
+        """Initialize GTR.
+
         Args:
             encoder_model: Name of the CNN architecture to use (e.g. "resnet18", "resnet50").
             encoder_cfg: Dictionary of arguments to pass to the CNN constructor,
@@ -71,7 +74,6 @@ class GlobalTrackingTransformer(nn.Module):
                 pass for each case. Overriding the features through kwargs will
                 likely throw errors due to incorrect tensor shapes.
         """
-
         super().__init__()
 
         self.visual_encoder = VisualEncoder(encoder_model, encoder_cfg, d_model)
@@ -94,7 +96,22 @@ class GlobalTrackingTransformer(nn.Module):
             decoder_self_attn=decoder_self_attn,
         )
 
-    def forward(self, instances, all_instances=None, query_frame=None):
+    def forward(
+        self,
+        instances: list[dict],
+        all_instances: list[dict] = None,
+        query_frame: int = None,
+    ):
+        """Forward pass of GTR Model to get asso matrix.
+
+        Args:
+            instances: List of dicts from chunk containing crops of objects + gt label info
+            all_instances: List of dicts containing crops of objects + gt label info. Used for stitching together full trajectory
+            query_frame: Frame index used as query for self attention. Only used in sliding inference where query frame is the last frame in the window.
+
+        Returns:
+            An N_T x N association matrix
+        """
         # Extract feature representations with pre-trained encoder.
         for frame in instances:
             if (frame["num_detected"] > 0).item():

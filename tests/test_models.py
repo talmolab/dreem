@@ -1,3 +1,4 @@
+"""Test model modules."""
 import pytest
 import torch
 import numpy as np
@@ -19,6 +20,7 @@ torch.set_default_device("cpu")
 
 
 def test_mlp():
+    """Test MLP logic."""
     b, n, f = 1, 10, 1024  # batch size, num instances, features
 
     mlp = MLP(input_dim=f, hidden_dim=f, output_dim=f, num_layers=2, dropout=0.1)
@@ -29,6 +31,7 @@ def test_mlp():
 
 
 def test_att_weight_head():
+    """Test self-attention head logic."""
     b, n, f = 1, 10, 1024  # batch size, num instances, features
 
     att_weight_head = ATTWeightHead(feature_dim=f, num_layers=2, dropout=0.1)
@@ -41,6 +44,7 @@ def test_att_weight_head():
 
 
 def test_encoder():
+    """Test feature extractor logic."""
     b, c, h, w = 1, 1, 100, 100  # batch size, channels, height, width
 
     features = 512
@@ -60,6 +64,7 @@ def test_encoder():
 
 
 def test_embedding():
+    """Test embedding logic."""
     emb = Embedding()
 
     frames = 32
@@ -89,6 +94,7 @@ def test_embedding():
 
 
 def test_embedding_kwargs():
+    """Test embedding config logic."""
     emb = Embedding()
 
     frames = 32
@@ -135,6 +141,7 @@ def test_embedding_kwargs():
 
 
 def test_transformer_encoder():
+    """Test transformer encoder layer logic."""
     feats = 256
 
     transformer_encoder = TransformerEncoderLayer(
@@ -159,6 +166,7 @@ def test_transformer_encoder():
 
 
 def test_transformer_decoder():
+    """Test transformer decoder layer logic."""
     feats = 512
 
     transformer_decoder = TransformerDecoderLayer(
@@ -188,6 +196,7 @@ def test_transformer_decoder():
 
 
 def test_transformer_basic():
+    """Test full transformer logic."""
     feats = 256
     num_frames = 32
     num_detected = 10
@@ -220,6 +229,7 @@ def test_transformer_basic():
 
 
 def test_transformer_embedding_validity():
+    """Test embedding usage."""
     # use lower feats and single layer for efficiency
     feats = 256
 
@@ -257,6 +267,7 @@ def test_transformer_embedding_validity():
 
 
 def test_transformer_embedding():
+    """Test transformer using embedding."""
     feats = 256
     num_frames = 3
     num_detected = 10
@@ -301,6 +312,7 @@ def test_transformer_embedding():
 
 
 def test_tracking_transformer():
+    """Test GTR logic."""
     feats = 512
     num_frames = 5
     num_detected = 20

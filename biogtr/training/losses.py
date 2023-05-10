@@ -1,3 +1,4 @@
+"""Module containing different loss functions to be optimized."""
 from biogtr.models.model_utils import get_boxes_times
 from torch import nn
 from typing import List, Tuple
@@ -10,12 +11,21 @@ import torchvision
 
 
 class AssoLoss(nn.Module):
+    """Default association loss used for training GTR model."""
+
     def __init__(
         self,
         neg_unmatched: bool = False,
         epsilon: float = 1e-4,
         asso_weight: float = 1.0,
     ):
+        """Initialize Loss function.
+
+        Args:
+            neg_unmatched: Whether or not to set unmatched objects to background
+            epsilon: small number used for numeric precision to prevent dividing by zero
+            asso_weight: How much to weight the association loss by
+        """
         super().__init__()
 
         self.neg_unmatched = neg_unmatched
@@ -25,6 +35,14 @@ class AssoLoss(nn.Module):
     def forward(
         self, asso_preds: List[torch.Tensor], instances: List[dict]
     ) -> torch.Tensor:
+        """Calculate association loss.
+
+        Args:
+            asso_preds: a list containing the association matrix at each frame
+            instances: a list of dictionaries for each frame containing gt labels.
+
+        Returns: the association loss between predicted association and actual
+        """
         # get number of detected objects and ground truth ids
         n_t = [frame["num_detected"] for frame in instances]
         target_inst_id = torch.cat([frame["gt_track_ids"] for frame in instances])
@@ -79,8 +97,7 @@ class AssoLoss(nn.Module):
         target_inst_id: torch.Tensor,
         n_t: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Compute the association ground truth for a batch
+        """Compute the association ground truth for a batch.
 
         Args:
             pred_box: predicted bounding boxes (N x 4)
@@ -96,9 +113,7 @@ class AssoLoss(nn.Module):
                     truth instances over time
                 match_cues: Tensor indicating which instance is assigned to each gt
                     detection (K x 3) or (N,)
-
         """
-
         # compute ious over bboxes, ignore pairs with different time stamps
         ious = torchvision.ops.box_iou(pred_box, target_box)
         ious[pred_time[:, None] != target_time[None, :]] = -1.0
@@ -156,8 +171,7 @@ class AssoLoss(nn.Module):
         match_cues: torch.Tensor,
         n_t: torch.Tensor,
     ) -> torch.Tensor:
-        """
-        Calculate association loss between predicted and gt boxes
+        """Calculate association loss between predicted and gt boxes.
 
         Args:
             asso_pred: Association matrix output from the transformer forward
@@ -171,7 +185,6 @@ class AssoLoss(nn.Module):
         Returns:
             loss: association loss normalized by number of objects
         """
-
         # get matches between preds and gt
         src_inds, target_inds = self._match(asso_pred, asso_gt, match_cues, n_t)
 
@@ -210,8 +223,7 @@ class AssoLoss(nn.Module):
         match_cues: torch.Tensor,
         n_t: torch.Tensor,
     ) -> torch.Tensor:
-        """
-        Match predicted scores to gt scores using match cues
+        """Match predicted scores to gt scores using match cues.
 
         Args:
             asso_pred: Association matrix output from the transformer forward
@@ -226,7 +238,6 @@ class AssoLoss(nn.Module):
             src_inds: Matched source indices (N,)
             target_inds: Matched target indices (N,)
         """
-
         src_inds = torch.where(match_cues >= 0)[0]
         target_inds = match_cues[src_inds]
 

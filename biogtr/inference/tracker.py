@@ -1,3 +1,4 @@
+"""Module containing logic for going from association -> assignment."""
 import torch
 import pandas as pd
 from typing import Union
@@ -11,6 +12,8 @@ from copy import deepcopy
 
 
 class Tracker:
+    """Tracker class used for assignment based on sliding inference from GTR."""
+
     def __init__(
         self,
         model: GlobalTrackingTransformer,
@@ -22,9 +25,11 @@ class Tracker:
         iou: str = None,
         max_center_dist: float = None,
     ):
-        """Initialize a tracker to run inference
+        """Initialize a tracker to run inference.
+
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
+            window_size: the size of the window used during sliding inference
             use_vis_feats: Whether or not to use visual feature extractor
             overlap_thresh: the trajectory overlap threshold to be used for assignment
             mult_thresh: Whether or not to use weight threshold
@@ -43,20 +48,23 @@ class Tracker:
         self.max_center_dist = max_center_dist
 
     def __call__(self, instances: list[dict], all_instances: list = None):
-        """Wrapper around `track` to enable `tracker()` instead of `tracker.track()`
+        """Wrapper around `track` to enable `tracker()` instead of `tracker.track()`.
+
         Args:
             instances: data dict to run inference on
             all_instances: list of instances from previous chunks to stitch together full trajectory
+
         Returns: instances dict populated with pred track ids and association matrix scores
         """
         return self.track(instances, all_instances)
 
     def track(self, instances: list[dict], all_instances: list = None):
-        """
-        Run tracker and get predicted trajectories
+        """Run tracker and get predicted trajectories.
+
         Args:
             instances: data dict to run inference on
             all_instances: list of instances from previous chunks to stitch together full trajectory
+
         Returns: instances dict populated with pred track ids and association matrix scores
         """
         # Extract feature representations with pre-trained encoder.
@@ -92,12 +100,13 @@ class Tracker:
         )
 
     def sliding_inference(self, instances, window_size, all_instances=None):
-        """Performs sliding inference on the input video (instances) with a given
-        window size.
+        """Performs sliding inference on the input video (instances) with a given window size.
+
         Args:
             instances: A list of dictionaries, one dictionary for each frame. An example
             is provided below.
             window_size: An integer.
+
         Returns:
             instances: A list of dictionaries, one dictionary for each frame. An example
             is provided below.
@@ -119,7 +128,6 @@ class Tracker:
             ...
         ]
         """
-
         # B: batch size.
         # D: embedding dimension.
         # nc: number of channels.
@@ -200,8 +208,8 @@ class Tracker:
         return instances
 
     def _run_global_tracker(self, instances, k, id_count, overlap_thresh, mult_thresh):
-        """run_global_tracker performs the actual tracking (Hungarian algorithm) and
-        track assigning.
+        """Run_global_tracker performs the actual tracking (Hungarian algorithm) and track assigning.
+
         Args:
             instances: A list of dictionaries, one dictionary for each frame. An example
             is provided below.
@@ -211,33 +219,33 @@ class Tracker:
             overlap is necessary for assigning a new instance to an existing identity.
             mult_thresh: A boolean for whether or not multiple thresholds should be used.
             This is not functional as of now.
+
         Returns:
             instances: The exact list of dictionaries as before but with assigned track ids
             and new track ids for the query frame. Refer to the example for the structure.
             id_count: An integer for the updated identity count so far.
-        # ------------------------- An example of instances ------------------------ #
-        NOTE: This instances variable is the window subset of the instances variable in sliding_inference.
-        *: each item in instances is a frame in the window. So it follows
-            that each frame in the window has * detected instances.
-        D: embedding dimension.
-        N_i: number of detected instances in i-th frame of window.
-        T: length of window.
-        The features in instances can be of shape (2 to T, *, D) when stacked together.
-        instances = [
-            {
-                # Each dictionary is a frame.
-                "frame_id": frame index int,
-                "num_detected": N_i,
-                "gt_track_ids": (N_i,),
-                "poses": (N_i, 13, 2),  # 13 keypoints for the pose (x, y) coords.
-                "bboxes": (N_i, 4),  # in pascal_voc unrounded unnormalized
-                "features": (N_i, D),
-                "pred_track_ids": (N_i,),  # Before assignnment, these are all -1.
-            },
-            ...
-        ]
+            # ------------------------- An example of instances ------------------------ #
+            NOTE: This instances variable is the window subset of the instances variable in sliding_inference.
+            *: each item in instances is a frame in the window. So it follows
+                that each frame in the window has * detected instances.
+            D: embedding dimension.
+            N_i: number of detected instances in i-th frame of window.
+            T: length of window.
+            The features in instances can be of shape (2 to T, *, D) when stacked together.
+            instances = [
+                {
+                    # Each dictionary is a frame.
+                    "frame_id": frame index int,
+                    "num_detected": N_i,
+                    "gt_track_ids": (N_i,),
+                    "poses": (N_i, 13, 2),  # 13 keypoints for the pose (x, y) coords.
+                    "bboxes": (N_i, 4),  # in pascal_voc unrounded unnormalized
+                    "features": (N_i, D),
+                    "pred_track_ids": (N_i,),  # Before assignnment, these are all -1.
+                },
+                ...
+            ]
         """
-
         # *: each item in instances is a frame in the window. So it follows
         #    that each frame in the window has * detected instances.
         # D: embedding dimension.

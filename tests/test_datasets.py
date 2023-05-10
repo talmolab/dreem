@@ -1,3 +1,4 @@
+"""Test dataset logic."""
 import torch
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
@@ -6,6 +7,11 @@ from torch.utils.data import DataLoader
 
 
 def test_sleap_dataset(two_flies):
+    """Test sleap dataset logic.
+
+    Args:
+        two_flies: two flies fixture used for testing
+    """
     clip_length = 32
 
     train_ds = SleapDataset(
@@ -25,6 +31,11 @@ def test_sleap_dataset(two_flies):
 
 
 def test_icy_dataset(ten_icy_particles):
+    """Test icy dataset logic.
+
+    Args:
+        ten_icy_particles: icy fixture used for testing
+    """
     clip_length = 8
 
     train_ds = MicroscopyDataset(
@@ -44,6 +55,11 @@ def test_icy_dataset(ten_icy_particles):
 
 
 def test_tracking_dataset(two_flies):
+    """Test lightning dataset logic.
+
+    Args:
+        two_flies: two flies fixture used for testing
+    """
     batch_size = 2
     clip_length = 16
     num_workers = 0

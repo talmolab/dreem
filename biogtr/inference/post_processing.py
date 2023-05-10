@@ -1,3 +1,4 @@
+"""Module containing logic for post-processing association matrix before tracking."""
 import torch
 from biogtr.inference.boxes import Boxes
 from copy import deepcopy
@@ -10,7 +11,8 @@ def weight_decay_time(
     T: int = None,
     k: int = None,
 ) -> torch.Tensor:
-    """Weight association matrix by number of frames the ith object is from the jth object in the association matrix
+    """Weight association matrix by number of frames the ith object is from the jth object in the association matrix.
+
     Args:
         asso_output: the association matrix to be reweighted
         decay_time: the scale to weight the asso_output by
@@ -38,12 +40,13 @@ def weight_decay_time(
 
 
 def _pairwise_intersection(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
-    """
-    Given two lists of boxes of size N and M,
-    compute the intersection area between __all__ N x M pairs of boxes.
+    """Given two lists of boxes of size N and M, compute the intersection area between __all__ N x M pairs of boxes.
+
     The box order must be (xmin, ymin, xmax, ymax)
+
     Args:
         boxes1,boxes2 (Boxes): two `Boxes`. Contains N & M boxes, respectively.
+
     Returns:
         Tensor: intersection, sized [N,M].
     """
@@ -59,12 +62,13 @@ def _pairwise_intersection(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
 
 
 def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
-    """
-    Given two lists of boxes of size N and M, compute the IoU
-    (intersection over union) between **all** N x M pairs of boxes.
+    """Given two lists of boxes of size N and M, compute the IoU (intersection over union) between **all** N x M pairs of boxes.
+
     The box order must be (xmin, ymin, xmax, ymax).
+
     Args:
         boxes1,boxes2 (Boxes): two `Boxes`. Contains N & M boxes, respectively.
+
     Returns:
         Tensor: IoU, sized [N,M].
     """
@@ -84,14 +88,17 @@ def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
 def weight_iou(
     asso_output: torch.Tensor, method: str = None, last_ious: torch.Tensor = None
 ):
-    """Weight the association matrix by the IOU between object bboxes across frames
+    """Weight the association matrix by the IOU between object bboxes across frames.
+
     Args:
         asso_output: An N_t x N association matrix
         method: string indicating whether to use a max weighting or multiplicative weighting
                 Max weighting: take `max(traj_score, iou)`
                 multiplicative weighting: `iou*weight + traj_score`
         last_ious: torch Tensor containing the ious between current and previous frames
-    Returns: An N_t x N association matrix weighted by the IOU
+
+    Returns:
+        An N_t x N association matrix weighted by the IOU
     """
     if method is not None and method != "":
         assert last_ious is not None, "Need `last_ious` to weight traj_score by `IOU`"
@@ -114,15 +121,17 @@ def filter_max_center_dist(
     nonk_boxes: torch.Tensor = None,
     id_inds: torch.Tensor = None,
 ):
-    """
-    Filter trajectory score by distances between objects across frames
+    """Filter trajectory score by distances between objects across frames.
+
     Args:
         asso_output: An N_t x N association matrix
         max_center_dist: The euclidean distance threshold between bboxes
         k_boxes: The bounding boxes in the current frame
         nonk_boxes: the boxes not in the current frame
         id_inds: track ids
-    Returns: An N_t x N association matrix
+
+    Returns:
+        An N_t x N association matrix
     """
     if max_center_dist is not None and max_center_dist > 0:
         assert (

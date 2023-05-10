@@ -1,3 +1,4 @@
+"""Test inference logic."""
 import torch
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.inference.tracker import Tracker
@@ -5,6 +6,7 @@ from biogtr.inference import post_processing
 
 
 def test_tracker():
+    """Test tracker module."""
     feats = 512
     num_frames = 5
     num_detected = 2
@@ -63,6 +65,7 @@ def test_tracker():
 
 
 def test_post_processing():
+    """Test postprocessing methods"""
     T = 8
     k = 5
     D = 512

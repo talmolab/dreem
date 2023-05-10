@@ -1,3 +1,4 @@
+"""Module containing logic for loading sleap datasets."""
 import torch
 import imageio
 import sleap_io as sio
@@ -7,6 +8,8 @@ from torchvision.transforms import functional as tvf
 
 
 class SleapDataset(Dataset):
+    """Dataset for loading animal behavior data from sleap."""
+
     def __init__(
         self,
         slp_files: list[str],
@@ -20,11 +23,11 @@ class SleapDataset(Dataset):
         tfm: callable = None,
         tfm_cfg: dict = None,
     ):
-        """
-        Dataset for loading tracking annotations stored in .slp files
+        """Initialize SleapDataset.
+
         Args:
             slp_files: a list of .slp files storing tracking annotations
-            vid_files: a list of paths to video files
+            video_files: a list of paths to video files
             padding: amount of padding around object crops
             crop_size: the size of the object crops
             chunk: whether or not to chunk the dataset into batches
@@ -74,38 +77,49 @@ class SleapDataset(Dataset):
             self.label_idx = [i for i in range(len(self.labels))]
 
     def __len__(self) -> int:
-        """
-        Get the size of the dataset
-        Returns the size or the number of chunks in the dataset
+        """Get the size of the dataset.
+
+        Returns:
+            the size or the number of chunks in the dataset
         """
         return len(self.chunked_frame_idx)
 
     def no_batching_fn(self, batch):
+        """Collate function used to overwrite dataloader batching function.
+
+        Args:
+            batch: the chunk of frames to be returned
+
+        Returns:
+            The batch
+        """
         return batch
 
     def __getitem__(self, idx) -> list[dict]:
-        """
-        Get an element of the dataset
-        Returns a list of dicts where each dict corresponds a frame in the chunk and each value is a `torch.Tensor`
-        Dict Elements:
-        {
-                    "video_id": The video being passed through the transformer,
-                    "img_shape": the shape of each frame,
-                    "frame_id": the specific frame in the entire video being used,
-                    "num_detected": The number of objects in the frame,
-                    "gt_track_ids": The ground truth labels,
-                    "bboxes": The bounding boxes of each object,
-                    "crops": The raw pixel crops,
-                    "features": The feature vectors for each crop outputed by the CNN encoder,
-                    "pred_track_ids": The predicted trajectory labels from the tracker,
-                    "asso_output": the association matrix preprocessing,
-                    "matches": the true positives from the model,
-                    "traj_score": the association matrix post processing,
-            }
-            Args:
-                idx: the index of the batch. Note this is not the index of the video or the frame.
-        """
+        """Get an element of the dataset.
 
+        Args:
+            idx: the index of the batch. Note this is not the index of the video or the frame.
+
+        Returns:
+            A list of dicts where each dict corresponds a frame in the chunk and each value is a `torch.Tensor`
+            Dict Elements:
+            {
+                        "video_id": The video being passed through the transformer,
+                        "img_shape": the shape of each frame,
+                        "frame_id": the specific frame in the entire video being used,
+                        "num_detected": The number of objects in the frame,
+                        "gt_track_ids": The ground truth labels,
+                        "bboxes": The bounding boxes of each object,
+                        "crops": The raw pixel crops,
+                        "features": The feature vectors for each crop outputed by the CNN encoder,
+                        "pred_track_ids": The predicted trajectory labels from the tracker,
+                        "asso_output": the association matrix preprocessing,
+                        "matches": the true positives from the model,
+                        "traj_score": the association matrix post processing,
+                }
+
+        """
         label_idx = self.label_idx[idx]
         frame_idx = self.chunked_frame_idx[idx]
 

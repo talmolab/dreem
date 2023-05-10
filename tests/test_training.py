@@ -1,3 +1,4 @@
+"""Test training logic."""
 import torch
 from biogtr.training.losses import AssoLoss
 
@@ -8,6 +9,7 @@ torch.set_default_device("cpu")
 
 
 def test_asso_loss():
+    """Test asso loss."""
     num_frames = 5
     num_detected = 20
     img_shape = (1, 128, 128)

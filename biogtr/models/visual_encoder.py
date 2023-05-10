@@ -1,3 +1,5 @@
+"""Module for different visual feature extractors."""
+
 from typing import Tuple
 import torch
 import torchvision
@@ -10,15 +12,17 @@ import torch.nn.functional as F
 
 
 class VisualEncoder(torch.nn.Module):
+    """Class wrapping around a visual feature extractor backbone. Currently CNN only."""
+
     def __init__(self, model_name: str, cfg: dict, d_model: int = 512):
-        """
+        """Initialize Visual Encoder.
+
         Args:
             model_name (str): Name of the CNN architecture to use (e.g. "resnet18", "resnet50").
             cfg (dict): Dictionary of arguments to pass to the CNN constructor,
                 e.g: `cfg = {"weights": "ResNet18_Weights.DEFAULT"}`
             d_model (int): Output embedding dimension.
         """
-
         super().__init__()
 
         self.model_name = model_name
@@ -35,7 +39,8 @@ class VisualEncoder(torch.nn.Module):
     def select_feature_extractor(
         self, model_name: str, cfg: dict
     ) -> Tuple[torch.nn.Module, int]:
-        """
+        """Get feature extractor based on name and config.
+
         Args:
             model_name (str): Name of the CNN architecture to use (e.g. "resnet18", "resnet50").
             cfg (dict): Dictionary of arguments to pass to the CNN constructor,
@@ -44,7 +49,6 @@ class VisualEncoder(torch.nn.Module):
         Returns:
             The CNN feature extractor and output dimension for the given CNN architecture.
         """
-
         if model_name == "resnet18":
             model = torchvision.models.resnet18(**cfg)
             out_dim = 512
@@ -57,14 +61,14 @@ class VisualEncoder(torch.nn.Module):
         return model, out_dim
 
     def forward(self, img: torch.Tensor) -> torch.Tensor:
-        """
+        """Forward pass of feature extractor to get feature vector.
+
         Args:
             img: Input image tensor of shape (B, C, H, W).
 
         Returns:
             feats: Normalized output tensor of shape (B, d_model).
         """
-
         # If grayscale, tile the image to 3 channels.
         if img.shape[1] == 1:
             img = img.repeat([1, 3, 1, 1])  # (B, nc=3, H, W)

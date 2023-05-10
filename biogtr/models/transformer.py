@@ -1,5 +1,4 @@
-"""
-DETR Transformer class.
+"""DETR Transformer class.
 
 Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 
@@ -27,6 +26,8 @@ import torch.nn.functional as F
 
 
 class Transformer(torch.nn.Module):
+    """Transformer class."""
+
     def __init__(
         self,
         d_model: int = 1024,
@@ -45,10 +46,8 @@ class Transformer(torch.nn.Module):
         return_embedding: bool = False,
         decoder_self_attn: bool = False,
     ):
-        super().__init__()
+        """Initialize Transformer.
 
-        """
-        Transformer module.
         Args:
             d_model: The number of features in the encoder/decoder inputs.
             nhead: The number of heads in the transfomer encoder/decoder.
@@ -91,6 +90,7 @@ class Transformer(torch.nn.Module):
                 pass for each case. Overriding the features through kwargs will
                 likely throw errors due to incorrect tensor shapes.
         """
+        super().__init__()
 
         self.d_model = d_model
 
@@ -158,12 +158,14 @@ class Transformer(torch.nn.Module):
         self._reset_parameters()
 
     def _reset_parameters(self):
+        """Initialize model weights from xavier distribution."""
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
     def forward(self, instances, query_frame=None):
         """A forward pass through the transformer and attention head.
+
         Args:
             instances: A list of dictionaries, one dictionary for each frame
             query_frame: An integer (k) specifying the frame within the window to be queried.
@@ -187,7 +189,6 @@ class Transformer(torch.nn.Module):
             ...
         ]
         """
-
         reid_features = torch.cat(
             [frame["features"] for frame in instances], dim=0
         ).unsqueeze(0)
@@ -272,24 +273,27 @@ class Transformer(torch.nn.Module):
 
 
 class TransformerEncoder(nn.Module):
+    """A transformer encoder block composed of encoder layers."""
+
     def __init__(
         self, encoder_layer: nn.Module, num_layers: int, norm: nn.Module = None
     ):
-        super().__init__()
+        """Initialize transformer encoder.
 
-        """
         Args:
-            encoder_layer: An instance of the TransformerDecoderLayer.
+            encoder_layer: An instance of the TransformerEncoderLayer.
             num_layers: The number of encoder layers to be stacked.
             norm: The normalization layer to be applied.
         """
+        super().__init__()
 
         self.layers = _get_clones(encoder_layer, num_layers)
         self.num_layers = num_layers
         self.norm = norm
 
     def forward(self, src: torch.Tensor, pos_emb: torch.Tensor = None) -> torch.Tensor:
-        """
+        """Forward pass of encoder layer.
+
         Args:
             src: The input tensor of shape (N_t, B, D).
             pos_emb: The positional embedding tensor of shape (N_t, D).
@@ -309,6 +313,8 @@ class TransformerEncoder(nn.Module):
 
 
 class TransformerDecoder(nn.Module):
+    """Transformer Decoder Block composed of Transformer Decoder Layers."""
+
     def __init__(
         self,
         decoder_layer: nn.Module,
@@ -316,16 +322,15 @@ class TransformerDecoder(nn.Module):
         return_intermediate: bool = False,
         norm: nn.Module = None,
     ):
-        super().__init__()
+        """Initialize transformer decoder block.
 
-        """
         Args:
             decoder_layer: An instance of TransformerDecoderLayer.
             num_layers: The number of decoder layers to be stacked.
             return_intermediate: Return intermediate layers from decoder.
             norm: The normalization layer to be applied.
         """
-
+        super().__init__()
         self.layers = _get_clones(decoder_layer, num_layers)
         self.num_layers = num_layers
         self.return_intermediate = return_intermediate
@@ -334,7 +339,8 @@ class TransformerDecoder(nn.Module):
     def forward(
         self, tgt: torch.Tensor, memory: torch.Tensor, pos_emb=None, tgt_pos_emb=None
     ):
-        """
+        """Forward pass of the decoder block.
+
         Args:
             tgt: Target sequence for decoder to generate (N_t, B, D).
             memory: Output from encoder, that decoder uses to attend to relevant
@@ -345,7 +351,6 @@ class TransformerDecoder(nn.Module):
         Returns:
             The output tensor of shape (L, N_t, B, D).
         """
-
         output = tgt
 
         intermediate = []
@@ -373,6 +378,8 @@ class TransformerDecoder(nn.Module):
 
 
 class TransformerEncoderLayer(nn.Module):
+    """A single transformer encoder layer."""
+
     def __init__(
         self,
         d_model: int = 1024,
@@ -382,9 +389,8 @@ class TransformerEncoderLayer(nn.Module):
         activation: str = "relu",
         norm: bool = False,
     ):
-        super().__init__()
+        """Initialize a transformer encoder layer.
 
-        """
         Args:
             d_model: The number of features in the encoder inputs.
             nhead: The number of heads for the encoder.
@@ -393,7 +399,7 @@ class TransformerEncoderLayer(nn.Module):
             activation: Activation function to use.
             norm: If True, normalize output of encoder.
         """
-
+        super().__init__()
         self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
         self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
@@ -408,7 +414,8 @@ class TransformerEncoderLayer(nn.Module):
         self.activation = _get_activation_fn(activation)
 
     def forward(self, src: torch.Tensor, pos: torch.Tensor = None):
-        """
+        """Forward pass of the encoder layer.
+
         Args:
             src: Input sequence for encoder (N_t, B, D).
             pos: Position embedding, if provided is added to src
@@ -416,7 +423,6 @@ class TransformerEncoderLayer(nn.Module):
         Returns:
             The output tensor of shape (N_t, B, D).
         """
-
         src = src if pos is None else src + pos
         q = k = src
 
@@ -436,6 +442,8 @@ class TransformerEncoderLayer(nn.Module):
 
 
 class TransformerDecoderLayer(nn.Module):
+    """A single transformer decoder layer."""
+
     def __init__(
         self,
         d_model: int = 1024,
@@ -446,9 +454,8 @@ class TransformerDecoderLayer(nn.Module):
         norm: bool = False,
         decoder_self_attn: bool = False,
     ):
-        super().__init__()
+        """Initialize transformer decoder layer.
 
-        """
         Args:
             d_model: The number of features in the decoder inputs.
             nhead: The number of heads for the decoder.
@@ -458,6 +465,7 @@ class TransformerDecoderLayer(nn.Module):
             norm: If True, normalize output of decoder.
             decoder_self_attn: If True, use decoder self attention
         """
+        super().__init__()
 
         self.decoder_self_attn = decoder_self_attn
 
@@ -480,7 +488,8 @@ class TransformerDecoderLayer(nn.Module):
         self.activation = _get_activation_fn(activation)
 
     def forward(self, tgt, memory, pos=None, tgt_pos=None):
-        """
+        """Forward pass of decoder layer.
+
         Args:
             tgt: Target sequence for decoder to generate (N_t, B, D).
             memory: Output from encoder, that decoder uses to attend to relevant
@@ -491,7 +500,6 @@ class TransformerDecoderLayer(nn.Module):
         Returns:
             The output tensor of shape (N_t, B, D).
         """
-
         tgt = tgt if tgt_pos is None else tgt + tgt_pos
         memory = memory if pos is None else memory + pos
 
@@ -522,7 +530,8 @@ class TransformerDecoderLayer(nn.Module):
 
 
 def _get_clones(module: nn.Module, N: int) -> nn.ModuleList:
-    """
+    """Generate repeated clones of same layer type.
+
     Args:
         module: The module to be copied.
         N: The number of copies to be made.
@@ -530,12 +539,12 @@ def _get_clones(module: nn.Module, N: int) -> nn.ModuleList:
     Returns:
         A ModuleList containing N copies of the given module.
     """
-
     return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
 
 def _get_activation_fn(activation: str) -> callable:
-    """
+    """Choose activation function to be used.
+
     Args:
         activation: The string name of the activation function to use
 

@@ -1,3 +1,5 @@
+"""Module containing training, validation and inference logic using pytorch lightning."""
+
 from typing import Any, Optional
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 import torch
@@ -7,12 +9,10 @@ from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
 from pytorch_lightning import LightningModule
 
-"""
-Lightning Wrapper around GlobalTrackingTransformer. Used to train model + run eval
-"""
-
 
 class GTRRunner(LightningModule):
+    """A lightning wrapper around GTR modeul used for training, validation and inference."""
+
     def __init__(
         self,
         model: GlobalTrackingTransformer,
@@ -23,7 +23,8 @@ class GTRRunner(LightningModule):
         train_metrics=[""],
         val_metrics=["sw_cnt"],
     ):
-        """Initialize a lightning module for GTR
+        """Initialize a lightning module for GTR.
+
         Args:
             model: GlobalTrackingTransformer model to be trained/used for eval
             tracker_cfg: The parameters used for the tracker post-processing
@@ -44,22 +45,28 @@ class GTRRunner(LightningModule):
         self.val_metrics = val_metrics
 
     def forward(self, instances) -> torch.Tensor:
-        """The forward pass of the lightning module
+        """The forward pass of the lightning module.
+
         Args:
             instances: a list of dicts where each dict is a frame with gt data
-        Returns: An association matrix between objects
+
+        Returns:
+            An association matrix between objects
         """
         return self.model(instances)
 
     def training_step(
         self, train_batch: list[dict], batch_idx: int
     ) -> dict[str, float]:
-        """Method outlining the training procedure for model
+        """Method outlining the training procedure for model.
+
         Args:
             train_batch: A single batch from the dataset which is a list of dicts
             with length `clip_length` where each dict is a frame
             batch_idx: the batch number used by lightning
-        Returns: A dict containing the train loss plus any other metrics specified during initialization
+
+        Returns:
+            A dict containing the train loss plus any other metrics specified during initialization
         """
         result = self._shared_eval_step(train_batch[0], self.train_metrics)
         for metric, val in result.items():
@@ -69,12 +76,15 @@ class GTRRunner(LightningModule):
     def validation_step(
         self, val_batch: list[dict], batch_idx: int
     ) -> dict[str, float]:
-        """Method outlining the val procedure for model
+        """Method outlining the val procedure for model.
+
         Args:
             val_batch: A single batch from the dataset which is a list of dicts
             with length `clip_length` where each dict is a frame
             batch_idx: the batch number used by lightning
-        Returns: A dict containing the val loss plus any other metrics specified during initialization
+
+        Returns:
+            A dict containing the val loss plus any other metrics specified during initialization
         """
         result = self._shared_eval_step(val_batch[0], eval_metrics=self.val_metrics)
         for metric, val in result.items():
@@ -82,12 +92,15 @@ class GTRRunner(LightningModule):
         return result
 
     def test_step(self, test_batch: list[dict], batch_idx: int) -> dict[str, float]:
-        """Method outlining the test procedure for model
+        """Method outlining the test procedure for model.
+
         Args:
             val_batch: A single batch from the dataset which is a list of dicts
             with length `clip_length` where each dict is a frame
             batch_idx: the batch number used by lightning
-        Returns: A dict containing the val loss plus any other metrics specified during initialization
+
+        Returns:
+            A dict containing the val loss plus any other metrics specified during initialization
         """
         result = self._shared_eval_step(test_batch[0], eval_metrics=self.test_metrics)
         for metric, val in result.items():
@@ -96,22 +109,28 @@ class GTRRunner(LightningModule):
 
     def predict_step(self, batch: list[dict], batch_idx: int) -> dict:
         """Method describing inference for model. Computes association + assignment.
+
         Args:
             batch: A single batch from the dataset which is a list of dicts
             with length `clip_length` where each dict is a frame
             batch_idx: the batch number used by lightning
-        Returns: A list of dicts where each dict is a frame and contains the predicted track ids from the model.
+
+        Returns:
+            A list of dicts where each dict is a frame and contains the predicted track ids from the model.
         """
         tracker = Tracker(self.model, **self.tracker_cfg)
         instances_pred = tracker(batch[0])
         return instances_pred
 
     def _shared_eval_step(self, instances, eval_metrics=["sw_cnt"]):
-        """Helper function for running evaluation used by train, test, and val steps
+        """Helper function for running evaluation used by train, test, and val steps.
+
         Args:
             instances: A list of dicts where each dict is a frame containing gt data
             eval_metrics: A list of metrics calculated and saved
-        Returns: a dict containing the loss and any other metrics specified by `eval_metrics`
+
+        Returns:
+            a dict containing the loss and any other metrics specified by `eval_metrics`
         """
         logits = self.model(instances)
         loss = self.loss(logits, instances)
@@ -127,9 +146,10 @@ class GTRRunner(LightningModule):
         return return_metrics
 
     def configure_optimizers(self) -> dict:
-        """
-        Get optimizers and schedulers for training. Is overridden by config but defaults to Adam + ReduceLROnPlateau
-        Returns: an optimizer config dict containing the optimizer, scheduler, and scheduler params
+        """Get optimizers and schedulers for training. Is overridden by config but defaults to Adam + ReduceLROnPlateau.
+
+        Returns:
+            an optimizer config dict containing the optimizer, scheduler, and scheduler params
         """
         # todo: init from config
         if self.optimizer is None:

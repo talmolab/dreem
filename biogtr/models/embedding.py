@@ -1,3 +1,5 @@
+"""Module containing different position and temporal embeddings."""
+
 from typing import Tuple
 import math
 import torch
@@ -6,7 +8,10 @@ import torch
 
 
 class Embedding(torch.nn.Module):
+    """Class that wraps around different embedding types. Used for both learned and fixed embeddings."""
+
     def __init__(self):
+        """Initialize embeddings."""
         super().__init__()
         # empty init for flexibility
         pass
@@ -14,11 +19,12 @@ class Embedding(torch.nn.Module):
     def _torch_int_div(
         self, tensor1: torch.Tensor, tensor2: torch.Tensor
     ) -> torch.Tensor:
-        """
-        Performs integer division of two tensors.
+        """Performs integer division of two tensors.
+
         Args:
             tensor1: dividend tensor.
             tensor2: divisor tensor.
+
         Returns:
             torch.Tensor, resulting tensor.
         """
@@ -33,8 +39,8 @@ class Embedding(torch.nn.Module):
         normalize: bool = False,
         **kwargs,
     ) -> torch.Tensor:
-        """
-        Generates sine positional embeddings for boxes using given parameters.
+        """Computes sine positional embeddings for boxes using given parameters.
+
         Args:
             boxes: the input boxes.
             features: number of position features to use.
@@ -42,10 +48,10 @@ class Embedding(torch.nn.Module):
                 A higher temp (e.g 10000) gives a larger spread of values
             scale: A scale factor to use if normalizing
             normalize: Whether to normalize the input before computing embedding
+
         Returns:
             torch.Tensor, the sine positional embeddings.
         """
-
         # update default parameters with kwargs if available
         params = {
             "features": features,
@@ -95,17 +101,17 @@ class Embedding(torch.nn.Module):
         over_boxes: bool = True,
         **kwargs,
     ) -> torch.Tensor:
-        """
-        Generates learned positional embeddings for boxes using given parameters.
+        """Computes learned positional embeddings for boxes using given parameters.
+
         Args:
             boxes: the input boxes.
             features: Number of features in attention head.
             learn_pos_emb_num: Size of the dictionary of embeddings.
             over_boxes: If True, use box dimensions, rather than box offset and shape.
+
         Returns:
             torch.Tensor, the learned positional embeddings.
         """
-
         params = {
             "features": features,
             "learn_pos_emb_num": learn_pos_emb_num,
@@ -153,16 +159,16 @@ class Embedding(torch.nn.Module):
         learn_temp_emb_num: int = 16,
         **kwargs,
     ) -> torch.Tensor:
-        """
-        Generates learned temporal embeddings for times using given parameters.
+        """Computes learned temporal embeddings for times using given parameters.
+
         Args:
             times: the input times.
             features: Number of features in attention head.
             learn_temp_emb_num: Size of the dictionary of embeddings.
+
         Returns:
             torch.Tensor, the learned temporal embeddings.
         """
-
         params = {
             "features": features,
             "learn_temp_emb_num": learn_temp_emb_num,
@@ -188,15 +194,15 @@ class Embedding(torch.nn.Module):
     def _compute_weights(
         self, data: torch.Tensor, learn_emb_num: int = 16
     ) -> Tuple[torch.Tensor, ...]:
-        """
-        Generates left and right learned embedding weights.
+        """Computes left and right learned embedding weights.
+
         Args:
             data: the input data (e.g boxes or times).
             learn_temp_emb_num: Size of the dictionary of embeddings.
+
         Returns:
             A torch.Tensor for each of the left/right indices and weights, respectively
         """
-
         data = data * learn_emb_num
 
         left_index = data.clamp(min=0, max=learn_emb_num - 1).long()  # N x 4
