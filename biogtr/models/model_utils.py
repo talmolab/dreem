@@ -1,5 +1,5 @@
 """Module containing model helper functions."""
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Iterable
 import torch
 
 
@@ -65,3 +65,76 @@ def softmax_asso(asso_output: list[torch.Tensor]) -> list[torch.Tensor]:
         asso_active.append(asso)
 
     return asso_active  # (T, N_t, N_i)
+
+
+def init_optimizer(params: Iterable, config: dict):
+    """Initialize optimizer based on config parameters
+
+    Args:
+        params: model parameters to be optimized
+        config: optimizer hyperparameters including optimizer name
+
+    Returns:
+        optimizer: A torch.Optimizer with specified params
+    """
+
+    optimizer = config["name"]
+    optimizer_params = {
+        param: val for param, val in config.items() if param.lower() != "name"
+    }
+
+    try:
+        optimizer_class = getattr(torch.optim, optimizer)
+    except AttributeError:
+        if optimizer_class is None:
+            print(
+                f"Couldn't instantiate {optimizer} as given. Trying with capitalization"
+            )
+            optimizer_class = getattr(torch.optim, optimizer.lower().capitalize())
+        if optimizer_class is None:
+            print(
+                f"Couldnt instantiate {optimizer} with capitalization, Final attempt with all caps"
+            )
+            optimizer_class = getattr(torch.optim, optimizer.upper(), None)
+
+    if optimizer_class is None:
+        raise ValueError(f"Unsupported optimizer type: {optimizer}")
+
+    return optimizer_class(params, **optimizer_params)
+
+
+def init_scheduler(optimizer: torch.optim.Optimizer, config: dict):
+    """Initialize optimizer based on config parameters
+
+    Args:
+        optimizer: optimizer for which to adjust lr
+        config: lr scheduler hyperparameters including scheduler name name
+
+    Returns:
+        scheduler: A scheduler with specified params
+    """
+
+    scheduler = config["name"]
+    scheduler_params = {
+        param: val for param, val in config.items() if param.lower() != "name"
+    }
+    try:
+        scheduler_class = getattr(torch.optim.lr_scheduler, scheduler)
+    except AttributeError:
+        if scheduler_class is None:
+            print(
+                f"Couldn't instantiate {scheduler} as given. Trying with capitalization"
+            )
+            scheduler_class = getattr(
+                torch.optim.lr_scheduler, scheduler.lower().capitalize()
+            )
+        if scheduler_class is None:
+            print(
+                f"Couldnt instantiate {scheduler} with capitalization, Final attempt with all caps"
+            )
+            scheduler_class = getattr(torch.optim.lr_scheduler, scheduler.upper(), None)
+
+    if scheduler_class is None:
+        raise ValueError(f"Unsupported optimizer type: {scheduler}")
+
+    return scheduler_class(optimizer, **scheduler_params)

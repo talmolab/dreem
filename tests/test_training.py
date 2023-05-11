@@ -66,6 +66,26 @@ def test_gtr_runner():
 
     gtr_runner = GTRRunner()
 
+    optim_scheduler = gtr_runner.configure_optimizers()
+
+    assert isinstance(optim_scheduler["optimizer"], torch.optim.Adam)
+    assert isinstance(
+        optim_scheduler["lr_scheduler"]["scheduler"],
+        torch.optim.lr_scheduler.ReduceLROnPlateau,
+    )
+
+    optim_cfg = {"name": "SGD", "lr": 1e-3}
+    scheduler_cfg = {"name": "CosineAnnealingLR", "T_max": 1}
+
+    gtr_runner = GTRRunner(optimizer_cfg=optim_cfg, scheduler_cfg=scheduler_cfg)
+    optim_scheduler = gtr_runner.configure_optimizers()
+
+    assert isinstance(optim_scheduler["optimizer"], torch.optim.SGD)
+    assert isinstance(
+        optim_scheduler["lr_scheduler"]["scheduler"],
+        torch.optim.lr_scheduler.CosineAnnealingLR,
+    )
+
     for epoch in range(epochs):
         for i, batch in enumerate(train_ds):
             assert gtr_runner.model.training

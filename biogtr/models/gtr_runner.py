@@ -7,6 +7,7 @@ from biogtr.inference.tracker import Tracker
 from biogtr.inference import metrics
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
+from biogtr.models.model_utils import init_optimizer, init_scheduler
 from pytorch_lightning import LightningModule
 
 
@@ -172,16 +173,14 @@ class GTRRunner(LightningModule):
         if self.optimizer_cfg is None:
             optimizer = torch.optim.Adam(self.parameters(), lr=1e-4, betas=(0.9, 0.999))
         else:
-            optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_cfg)
+            optimizer = init_optimizer(self.parameters(), self.optimizer_cfg)
 
         if self.scheduler_cfg is None:
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
                 optimizer, "min", 0.5, 10
             )
         else:
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                optimizer, **self.scheduler_cfg
-            )
+            scheduler = init_scheduler(optimizer, self.scheduler_cfg)
 
         return {
             "optimizer": optimizer,

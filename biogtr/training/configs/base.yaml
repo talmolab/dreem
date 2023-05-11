@@ -30,6 +30,7 @@ loss:
 
 #currently assumes adam. TODO adapt logic for other optimizers like sgd
 optimizer:
+  name: "Adam"
   lr: 0.001
   betas: [0.9, 0.999]
   eps: 1e-8
@@ -56,7 +57,7 @@ gtr_runner:
   train_metrics: [""]
   val_metrics: ["sw_cnt"]
   test_metrics: ["sw_cnt"]
-  
+
 dataset:
   train_dataset:
     slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']
