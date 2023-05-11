@@ -64,33 +64,7 @@ def test_gtr_runner():
             )
         train_ds.append([instances])
 
-    embedding_meta = {
-        "embedding_type": "fixed_pos",
-        "kwargs": {"temperature": num_detected, "scale": num_frames, "normalize": True},
-    }
-
-    tracking_transformer = GlobalTrackingTransformer(
-        encoder_model="resnet18",
-        encoder_cfg={"weights": "ResNet18_Weights.DEFAULT"},
-        d_model=feats,
-        num_encoder_layers=1,
-        num_decoder_layers=1,
-        dim_feedforward=feats,
-        feature_dim_attn_head=feats,
-        embedding_meta=embedding_meta,
-        return_embedding=True,
-    )
-    loss = AssoLoss()
-    tracker_cfg = {
-        "window_size": 8,
-        "use_vis_feats": True,
-        "overlap_thresh": 0.01,
-        "mult_thresh": True,
-        "decay_time": None,
-        "iou": None,
-        "max_center_dist": None,
-    }
-    gtr_runner = GTRRunner(tracking_transformer, tracker_cfg, loss)
+    gtr_runner = GTRRunner()
 
     for epoch in range(epochs):
         for i, batch in enumerate(train_ds):

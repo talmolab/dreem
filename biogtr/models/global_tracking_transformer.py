@@ -28,6 +28,7 @@ class GlobalTrackingTransformer(nn.Module):
         embedding_meta: dict = None,
         return_embedding: bool = False,
         decoder_self_attn: bool = False,
+        **kwargs,
     ):
         """Initialize GTR.
 

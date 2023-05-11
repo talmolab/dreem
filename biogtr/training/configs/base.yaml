@@ -1,9 +1,27 @@
 model:
-  d_model: 256
+  ckpt_path: null
+  encoder_model: "resnet18"
+  encoder_cfg: {}
+  d_model: 1024
+  nhead: 8
   num_encoder_layers: 1
   num_decoder_layers: 1
-  dim_feedforward: 256
-  feature_dim_attn_head: 256
+  dim_feedforward: 1024
+  dropout: 0.1
+  activation: "relu"
+  return_intermediate_dec: False
+  feature_dim_attn_head: 1024
+  norm: False
+  num_layers_attn_head: 2
+  dropout_attn_head: 0.1
+  embedding_meta: 
+    embedding_type: 'learned_pos_temp'
+    kwargs: 
+      learn_pos_emb_num': 16
+      learn_temp_emb_num': 16
+      over_boxes': False
+  return_embedding: False
+  decoder_self_attn: False
 
 loss:
   neg_unmatched: false
@@ -34,6 +52,11 @@ tracker:
   iou: null
   max_center_dist: null
 
+gtr_runner:
+  train_metrics: [""]
+  val_metrics: ["sw_cnt"]
+  test_metrics: ["sw_cnt"]
+  
 dataset:
   train_dataset:
     slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']

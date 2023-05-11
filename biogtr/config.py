@@ -5,6 +5,7 @@ import sys
 import ast
 import torch
 import pytorch_lightning as pl
+from biogtr.models.gtr_runner import GTRRunner
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
 from biogtr.datasets.sleap_dataset import SleapDataset
@@ -33,7 +34,14 @@ class Config:
         else:
             # just use base config
             self.cfg = base_cfg
-        print(self.cfg.keys())
+
+    def __repr__(self):
+        """Object representation of config class"""
+        return f"Config({self.cfg})"
+
+    def __str__(self):
+        """String representation of config class"""
+        return f"Config({self.cfg})"
 
     def set_hparams(self, hparams: dict):
         """Setter function for overwriting specific hparams.
@@ -66,6 +74,23 @@ class Config:
         for key, val in tracker_params.items():
             tracker_cfg[key] = val
         return tracker_cfg
+
+    def get_gtr_runner(self):
+        """Get lightning module for training, validation, and inference"""
+        model_params = self.cfg.model
+        tracker_params = self.cfg.tracker
+        optimizer_params = self.cfg.optimizer
+        scheduler_params = self.cfg.scheduler
+        loss_params = self.cfg.loss
+        gtr_runner_params = self.cfg.gtr_runner
+        return GTRRunner(
+            model_params,
+            tracker_params,
+            loss_params,
+            optimizer_params,
+            scheduler_params,
+            **gtr_runner_params,
+        )
 
     def get_dataset(
         self, type: str, mode: str
@@ -179,7 +204,7 @@ class Config:
             A lightning Logger with specified params
         """
         logger_params = self.cfg.logging
-        return pl.loggers.WandbLogger(**logger_params)
+        return pl.loggers.WandbLogger(config=self.cfg, **logger_params)
 
     def get_early_stopping(self) -> pl.callbacks.EarlyStopping:
         """Getter for lightning early stopping callback.
@@ -226,3 +251,7 @@ class Config:
             devices=devices,
             **trainer_params,
         )
+
+    def get_ckpt_path(self):
+        """Get model ckpt path for loading"""
+        return self.cfg.model.ckpt_path

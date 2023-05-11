@@ -1,9 +1,16 @@
-"""Training script for training and evaluating single GTR model."""
+"""Training script for training model.
+
+Used for training a single model or deploying a batch train job on RUNAI CLI
+"""
 from biogtr.config import Config
 from biogtr.datasets.tracking_dataset import TrackingDataset
 from biogtr.models.gtr_runner import GTRRunner
 from omegaconf import DictConfig
+from pprint import pprint
+
+import os
 import hydra
+import pandas as pd
 import pytorch_lightning as pl
 import sys
 import torch
@@ -27,26 +34,45 @@ def main(cfg: DictConfig):
     """Main function for training.
 
     Handles all config parsing and initialization then calls `trainer.train()`.
+    If `batch_config` is included then run will be assumed to be a batch job.
 
     Args:
         cfg: The config dict parsed by `hydra`
     """
     train_cfg = Config(cfg)
+    pprint(f"Base train config: {train_cfg.cfg}")
 
+    # update with parameters for batch train job
+    if "batch_config" in cfg.keys():
+        try:
+            index = int(os.environ["POD_INDEX"])
+        # For testing without deploying a job on runai
+        except KeyError:
+            print("Pod Index Not found! Setting index to 0")
+            index = 0
+        print(f"Pod Index: {index}")
+
+        hparams_df = pd.read_csv(cfg.batch_config)
+        hparams = hparams_df.iloc[index].to_dict()
+
+        print("Updating the following hparams to the following values")
+        pprint(hparams)
+        train_cfg.set_hparams(hparams)
+    print(f"Updated train config: {train_cfg}")
     # update with extra cli args
-    hparams = {}
+    hparams_cli = {}
     for arg in sys.argv[1:]:
         if arg.startswith("+"):
             key, val = arg[1:].split("=")
             if key in ["base_config", "params_config"]:
                 continue
             try:
-                hparams[key] = val
+                hparams_cli[key] = val
             except (SyntaxError, ValueError) as e:
                 print(e)
                 pass
 
-    train_cfg.set_hparams(hparams)
+    train_cfg.set_hparams(hparams_cli)
 
     model = train_cfg.get_model()
     train_dataset = train_cfg.get_dataset(type="sleap", mode="train")
@@ -58,16 +84,11 @@ def main(cfg: DictConfig):
     test_dataset = train_cfg.get_dataset(type="sleap", mode="test")
     test_dataloader = train_cfg.get_dataloader(test_dataset, mode="test")
 
-    loss = train_cfg.get_loss()
-    optimizer = train_cfg.get_optimizer(model.parameters())
-    scheduler = train_cfg.get_scheduler(optimizer)
     dataset = TrackingDataset(
         train_dl=train_dataloader, val_dl=val_dataloader, test_dl=test_dataloader
     )
-    tracker_cfg = train_cfg.get_tracker_cfg()
-    model = GTRRunner(
-        model, tracker_cfg, loss, optimizer=optimizer, scheduler=scheduler
-    )
+
+    model = train_cfg.get_gtr_runner()
 
     # test with 1 epoch and single batch, this should be controlled from config
     # todo: get to work with multi-gpu training
@@ -86,7 +107,8 @@ def main(cfg: DictConfig):
         devices=1 if torch.cuda.is_available() else "cpu",
     )
 
-    trainer.fit(model, dataset)
+    ckpt_path = train_cfg.get_ckpt_path()
+    trainer.fit(model, dataset, ckpt_path=ckpt_path)
 
 
 if __name__ == "__main__":
@@ -98,4 +120,6 @@ if __name__ == "__main__":
     # python train.py +base_config=configs/base.yaml +params_config=configs/params.yaml
     # override with params config, and specific params:
     # python train.py +base_config=configs/base.yaml +params_config=configs/params.yaml +model.norm=True +model.decoder_self_attn=True +dataset.padding=10
+    # deploy batch train job:
+    # python train.py +base_config=configs/base.yaml +batch_config=test_batch_train.yaml
     main()
