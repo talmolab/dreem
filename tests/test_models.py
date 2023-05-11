@@ -11,7 +11,7 @@ from biogtr.models.transformer import (
     TransformerDecoderLayer,
 )
 from biogtr.models.visual_encoder import VisualEncoder
-from biogtr.inference.tracker import Tracker
+
 
 # todo: add named tensor tests
 # todo: add fixtures

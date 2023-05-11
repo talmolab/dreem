@@ -23,8 +23,9 @@ class GTRRunner(LightningModule):
         loss: AssoLoss,
         optimizer: torch.optim.Optimizer = None,
         scheduler: torch.optim.lr_scheduler.LRScheduler = None,
-        train_metrics=[""],
-        val_metrics=["sw_cnt"],
+        train_metrics: list[str] = [""],
+        val_metrics: list[str] = ["sw_cnt"],
+        test_metrics: list[str] = ["sw_cnt"],
     ):
         """Initialize a lightning module for GTR.
 
@@ -37,6 +38,7 @@ class GTRRunner(LightningModule):
             scheduler: lr_scheduler used to overwrite `configure_optimizer
             train_metrics: a list of metrics to be calculated during training
             val_metrics: a list of metrics to be calculated during validation
+            test_metrics: a list of metrics to be calculated at test time
         """
         super().__init__()
 
@@ -47,6 +49,7 @@ class GTRRunner(LightningModule):
         self.scheduler = scheduler
         self.train_metrics = train_metrics
         self.val_metrics = val_metrics
+        self.test_metrics = test_metrics
 
     def forward(self, instances) -> torch.Tensor:
         """The forward pass of the lightning module.
@@ -138,7 +141,10 @@ class GTRRunner(LightningModule):
         Returns:
             a dict containing the loss and any other metrics specified by `eval_metrics`
         """
-        logits = self.model(instances)
+        if self.model.transformer.return_embedding:
+            logits, _ = self(instances)
+        else:
+            logits = self(instances)
         loss = self.loss(logits, instances)
 
         return_metrics = {"loss": loss}

@@ -6,7 +6,10 @@ from biogtr.inference import post_processing
 
 
 def test_tracker():
-    """Test tracker module."""
+    """Test tracker module.
+
+    Tests that tracker works with/without post processing
+    """
     feats = 512
     num_frames = 5
     num_detected = 2
@@ -65,7 +68,11 @@ def test_tracker():
 
 
 def test_post_processing():
-    """Test postprocessing methods"""
+    """Test postprocessing methods.
+
+    Tests each postprocessing method to ensure that
+    it filters only when the condition is satisfied.
+    """
     T = 8
     k = 5
     D = 512
