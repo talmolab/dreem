@@ -39,6 +39,7 @@ def test_asso_loss():
 
 
 def test_gtr_runner():
+    """Test GTR Runner."""
     feats = 512
     num_frames = 5
     num_detected = 20
