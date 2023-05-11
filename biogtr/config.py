@@ -5,6 +5,7 @@ import sys
 import ast
 import torch
 import pytorch_lightning as pl
+from biogtr.models.model_utils import init_optimizer, init_scheduler
 from biogtr.models.gtr_runner import GTRRunner
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
@@ -171,7 +172,7 @@ class Config:
             A torch Optimizer with specified params
         """
         optimizer_params = self.cfg.optimizer
-        return torch.optim.Adam(params=params, **optimizer_params)
+        return init_optimizer(params, optimizer_params)
 
     def get_scheduler(
         self, optimizer: torch.optim.Optimizer
@@ -184,9 +185,7 @@ class Config:
             A torch learning rate scheduler with specified params
         """
         lr_scheduler_params = self.cfg.scheduler
-        return torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer=optimizer, **lr_scheduler_params
-        )
+        return init_scheduler(optimizer, lr_scheduler_params)
 
     def get_loss(self) -> AssoLoss:
         """Getter for loss functions.
