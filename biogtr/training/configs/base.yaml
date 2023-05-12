@@ -17,9 +17,9 @@ model:
   embedding_meta: 
     embedding_type: 'learned_pos_temp'
     kwargs: 
-      learn_pos_emb_num': 16
-      learn_temp_emb_num': 16
-      over_boxes': False
+      learn_pos_emb_num: 16
+      learn_temp_emb_num: 16
+      over_boxes: False
   return_embedding: False
   decoder_self_attn: False
 
@@ -38,6 +38,7 @@ optimizer:
 
 #currently assumes reduce lr on plateau
 scheduler:
+  name: "ReduceLROnPlateau"
   mode: "min"
   factor: 0.5
   patience: 10
@@ -53,7 +54,7 @@ tracker:
   iou: null
   max_center_dist: null
 
-gtr_runner:
+runner:
   train_metrics: [""]
   val_metrics: ["sw_cnt"]
   test_metrics: ["sw_cnt"]
@@ -102,14 +103,14 @@ logging:
   entity: null
   job_type: "train"
   notes: "Example train job"
-  dir: "./models"
+  dir: "./logs"
   group: "example"
-  save_dir: './models'
+  save_dir: './logs'
   project: "GTR"
   log_model: "all"
 
 early_stopping:
-  monitor: "train_loss"
+  monitor: "val_loss"
   min_delta: 0.1
   patience: 10
   mode: "min"
@@ -118,9 +119,10 @@ early_stopping:
   divergence_threshold: 30
 
 checkpointing:
-  monitor: "train_loss"
+  monitor: ["val_loss","val_sw_cnt"]
   verbose: true
   save_last: true
+  dirpath: null
   auto_insert_metric_name: true
   every_n_epochs: 10
 

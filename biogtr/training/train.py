@@ -4,7 +4,6 @@ Used for training a single model or deploying a batch train job on RUNAI CLI
 """
 from biogtr.config import Config
 from biogtr.datasets.tracking_dataset import TrackingDataset
-from biogtr.models.gtr_runner import GTRRunner
 from omegaconf import DictConfig
 from pprint import pprint
 
@@ -12,7 +11,6 @@ import os
 import hydra
 import pandas as pd
 import pytorch_lightning as pl
-import sys
 import torch
 import torch.multiprocessing
 
@@ -40,8 +38,6 @@ def main(cfg: DictConfig):
         cfg: The config dict parsed by `hydra`
     """
     train_cfg = Config(cfg)
-    pprint(f"Base train config: {train_cfg.cfg}")
-
     # update with parameters for batch train job
     if "batch_config" in cfg.keys():
         try:
@@ -55,24 +51,12 @@ def main(cfg: DictConfig):
         hparams_df = pd.read_csv(cfg.batch_config)
         hparams = hparams_df.iloc[index].to_dict()
 
-        print("Updating the following hparams to the following values")
-        pprint(hparams)
-        train_cfg.set_hparams(hparams)
-    print(f"Updated train config: {train_cfg}")
-    # update with extra cli args
-    hparams_cli = {}
-    for arg in sys.argv[1:]:
-        if arg.startswith("+"):
-            key, val = arg[1:].split("=")
-            if key in ["base_config", "params_config"]:
-                continue
-            try:
-                hparams_cli[key] = val
-            except (SyntaxError, ValueError) as e:
-                print(e)
-                pass
-
-    train_cfg.set_hparams(hparams_cli)
+        if train_cfg.set_hparams(hparams):
+            print("Updated the following hparams to the following values")
+            pprint(hparams)
+    else:
+        hparams = {}
+    pprint(f"Final train config: {train_cfg}")
 
     model = train_cfg.get_model()
     train_dataset = train_cfg.get_dataset(type="sleap", mode="train")
@@ -94,11 +78,10 @@ def main(cfg: DictConfig):
     # todo: get to work with multi-gpu training
     logger = train_cfg.get_logger()
 
-    callbacks = [
-        pl.callbacks.LearningRateMonitor(),
-        train_cfg.get_checkpointing("./models"),
-        train_cfg.get_early_stopping(),
-    ]
+    callbacks = []
+    _ = callbacks.extend(train_cfg.get_checkpointing())
+    _ = callbacks.append(pl.callbacks.LearningRateMonitor())
+    _ = callbacks.append(train_cfg.get_early_stopping())
 
     trainer = train_cfg.get_trainer(
         callbacks,
@@ -115,11 +98,11 @@ if __name__ == "__main__":
     # example calls:
 
     # train with base config:
-    # python train.py +base_config=configs/base.yaml
+    # python train.py --config-dir=./configs --config-name=base
     # override with params config:
-    # python train.py +base_config=configs/base.yaml +params_config=configs/params.yaml
+    # python train.py --config-dir=./configs --config-name=base +params_config=configs/params.yaml
     # override with params config, and specific params:
-    # python train.py +base_config=configs/base.yaml +params_config=configs/params.yaml +model.norm=True +model.decoder_self_attn=True +dataset.padding=10
+    # python train.py --config-dir=./configs --config-name=base +params_config=configs/params.yaml model.norm=True model.decoder_self_attn=True dataset.padding=10
     # deploy batch train job:
-    # python train.py +base_config=configs/base.yaml +batch_config=test_batch_train.yaml
+    # python train.py --config-dir=./configs --config-name=base +batch_config=test_batch_train.csv
     main()

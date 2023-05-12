@@ -13,6 +13,7 @@ from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from omegaconf import DictConfig, OmegaConf
 from typing import Union, Iterable
+from pprint import pprint
 
 
 class Config:
@@ -26,34 +27,47 @@ class Config:
         Args:
             cfg: The `DictConfig` containing all the hyperparameters needed for training/evaluation
         """
-        base_cfg = OmegaConf.load(cfg.base_config)
+        base_cfg = cfg
+        print(f"Base Config: {cfg}")
 
         if "params_config" in cfg:
             # merge configs
             params_config = OmegaConf.load(cfg.params_config)
+            pprint(f"Overwriting base config with {params_config}")
             self.cfg = OmegaConf.merge(base_cfg, params_config)
         else:
             # just use base config
             self.cfg = base_cfg
 
     def __repr__(self):
-        """Object representation of config class"""
+        """Object representation of config class."""
         return f"Config({self.cfg})"
 
     def __str__(self):
-        """String representation of config class"""
+        """String representation of config class."""
         return f"Config({self.cfg})"
 
-    def set_hparams(self, hparams: dict):
+    def set_hparams(self, hparams: dict) -> bool:
         """Setter function for overwriting specific hparams.
 
         Useful for changing 1 or 2 hyperparameters such as dataset.
 
         Args:
-            hparams: A dict containing the hyperparameter to be overwritten and the value to be changed to
+            hparams: A dict containing the hyperparameter to be overwritten and the value to be changed t
+
+        Returns:
+            `True` if config is successfully updated, `False` otherwise
         """
+        if hparams == {} or hparams is None:
+            print("Nothing to update!")
+            return False
         for hparam, val in hparams.items():
-            OmegaConf.update(self.cfg, hparam, val)
+            try:
+                OmegaConf.update(self.cfg, hparam, val)
+            except Exception as e:
+                print(f"Failed to update {hparam} to {val} due to {e}")
+                return False
+        return True
 
     def get_model(self) -> GlobalTrackingTransformer:
         """Getter for gtr model.
@@ -77,13 +91,13 @@ class Config:
         return tracker_cfg
 
     def get_gtr_runner(self):
-        """Get lightning module for training, validation, and inference"""
+        """Get lightning module for training, validation, and inference."""
         model_params = self.cfg.model
         tracker_params = self.cfg.tracker
         optimizer_params = self.cfg.optimizer
         scheduler_params = self.cfg.scheduler
         loss_params = self.cfg.loss
-        gtr_runner_params = self.cfg.gtr_runner
+        gtr_runner_params = self.cfg.runner
         return GTRRunner(
             model_params,
             tracker_params,
@@ -214,16 +228,30 @@ class Config:
         early_stopping_params = self.cfg.early_stopping
         return pl.callbacks.EarlyStopping(**early_stopping_params)
 
-    def get_checkpointing(self, dirpath: str) -> pl.callbacks.ModelCheckpoint:
+    def get_checkpointing(self) -> pl.callbacks.ModelCheckpoint:
         """Getter for lightning checkpointing callback.
 
-        Args:
-            dirpath: The path to the directory where checkpoints will be stored
         Returns:
             A lightning checkpointing callback with specified params
         """
-        checkpoint_params = self.cfg.checkpointing
-        return pl.callbacks.ModelCheckpoint(dirpath=dirpath, **checkpoint_params)
+        # convert to dict to enable extracting/removing params
+        checkpoint_params = OmegaConf.to_container(self.cfg.checkpointing, resolve=True)
+        logging_params = self.cfg.logging
+        if "dirpath" not in checkpoint_params or checkpoint_params["dirpath"] is None:
+            dirpath = f"./models/{logging_params.group}/{logging_params.name}"
+
+        else:
+            dirpath = checkpoint_params["dirpath"]
+        _ = checkpoint_params.pop("dirpath")
+        checkpointers = []
+        monitor = checkpoint_params.pop("monitor")
+        for metric in monitor:
+            checkpointer = pl.callbacks.ModelCheckpoint(
+                monitor=metric, dirpath=dirpath, **checkpoint_params
+            )
+            checkpointer.CHECKPOINT_NAME_LAST = f"{{epoch}}-best-{{{metric}}}"
+            checkpointers.append(checkpointer)
+        return checkpointers
 
     def get_trainer(
         self,
@@ -252,5 +280,5 @@ class Config:
         )
 
     def get_ckpt_path(self):
-        """Get model ckpt path for loading"""
+        """Get model ckpt path for loading."""
         return self.cfg.model.ckpt_path
