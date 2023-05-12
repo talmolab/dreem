@@ -33,10 +33,10 @@ class GTRRunner(LightningModule):
         Args:
             model_cfg: hyperparameters for GlobalTrackingTransformer
             tracker_cfg: The parameters used for the tracker post-processing
-            loss: hyperparameters for AssoLoss
+            loss_cfg: hyperparameters for AssoLoss
             optimizer_cfg: hyper parameters used for optimizer.
                        Only used to overwrite `configure_optimizer`
-            scheduler: hyperparameters for lr_scheduler used to overwrite `configure_optimizer
+            scheduler_cfg: hyperparameters for lr_scheduler used to overwrite `configure_optimizer
             train_metrics: a list of metrics to be calculated during training
             val_metrics: a list of metrics to be calculated during validation
             test_metrics: a list of metrics to be calculated at test time
