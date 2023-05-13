@@ -347,7 +347,7 @@ class Tracker:
             )  # n_k x M
         else:
             last_ious = traj_score.new_zeros(traj_score.shape)
-        traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious)
+        traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious.cpu())
 
         ################################################################################
 
