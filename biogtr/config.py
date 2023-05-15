@@ -37,11 +37,11 @@ class Config:
             self.cfg = base_cfg
 
     def __repr__(self):
-        """Object representation of config class"""
+        """Object representation of config class."""
         return f"Config({self.cfg})"
 
     def __str__(self):
-        """String representation of config class"""
+        """String representation of config class."""
         return f"Config({self.cfg})"
 
     def set_hparams(self, hparams: dict):
@@ -77,7 +77,7 @@ class Config:
         return tracker_cfg
 
     def get_gtr_runner(self):
-        """Get lightning module for training, validation, and inference"""
+        """Get lightning module for training, validation, and inference."""
         model_params = self.cfg.model
         tracker_params = self.cfg.tracker
         optimizer_params = self.cfg.optimizer
@@ -252,5 +252,5 @@ class Config:
         )
 
     def get_ckpt_path(self):
-        """Get model ckpt path for loading"""
+        """Get model ckpt path for loading."""
         return self.cfg.model.ckpt_path
