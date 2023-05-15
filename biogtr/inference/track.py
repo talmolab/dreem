@@ -21,8 +21,7 @@ torch.set_default_device(device)
 def inference(
     model: GTRRunner, dataloader: torch.utils.data.DataLoader
 ) -> list[pd.DataFrame]:
-    """
-    Run Inference.
+    """Run Inference.
 
     Args:
         model: model loaded from checkpoint used for inference
@@ -116,6 +115,7 @@ def main(cfg: DictConfig):
             f"{Path(pred_cfg.cfg.dataset.test_dataset.slp_files[i]).stem}_tracking_results",
         )
         print(f"Saving to {outpath}")
+        # TODO: Figure out how to overwrite sleap labels instance labels w pred instance labels then save as a new slp file
         pred.to_csv(outpath, index=False)
 
 
