@@ -107,13 +107,10 @@ class Config:
             **gtr_runner_params,
         )
 
-    def get_dataset(
-        self, type: str, mode: str
-    ) -> Union[SleapDataset, MicroscopyDataset]:
+    def get_dataset(self, mode: str) -> Union[SleapDataset, MicroscopyDataset]:
         """Getter for datasets.
 
         Args:
-            type: Either "sleap" or "microscopy". Whether to return a `SleapDataset` or `MicroscopyDataset`
             mode: [None, "train", "test", "val"]. Indicates whether to use train, val, or test params for dataset
         Returns:
             Either a `SleapDataset` or `MicroscopyDataset` with params indicated by cfg
@@ -128,13 +125,13 @@ class Config:
             raise ValueError(
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
-        if type.lower() == "sleap":
+        if "slp_files" in dataset_params:
             return SleapDataset(**dataset_params)
-        elif type.lower() == "microscopy":
+        elif "tracks" in dataset_params or "source" in dataset_params:
             return MicroscopyDataset(**dataset_params)
         else:
             raise ValueError(
-                f"`type` must be one of ['sleap', 'microscopy'] not '{type}'!"
+                "Could not resolve dataset type from Config! Please include either `slp_files` or `tracks`/`source`"
             )
 
     def get_dataloader(
@@ -164,10 +161,12 @@ class Config:
             torch.multiprocessing.set_sharing_strategy("file_system")
         else:
             pin_memory = False
-
-        generator = (
-            torch.Generator(device="cuda") if torch.cuda.is_available() else None
-        )
+        if dataloader_params.shuffle:
+            generator = (
+                torch.Generator(device="cuda") if torch.cuda.is_available() else None
+            )
+        else:
+            generator = None
         return torch.utils.data.DataLoader(
             dataset=dataset,
             batch_size=1,
@@ -281,4 +280,9 @@ class Config:
 
     def get_ckpt_path(self):
         """Get model ckpt path for loading."""
-        return self.cfg.model.ckpt_path
+        # for eval
+        if "ckpt_path" in self.cfg:
+            return self.cfg.ckpt_path
+        # for training
+        else:
+            return self.cfg.model.ckpt_path
