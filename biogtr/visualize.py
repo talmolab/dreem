@@ -17,25 +17,25 @@ import imageio
 palette = sns.color_palette("tab10")
 
 
-def fill_missing(Y: np.ndarray, kind: str = "linear") -> np.ndarray:
+def fill_missing(data: np.ndarray, kind: str = "linear") -> np.ndarray:
     """Fills missing values independently along each dimension after the first.
 
     Args:
-        Y: the array for which to fill missing value
+        data: the array for which to fill missing value
         kind: How to interpolate missing values using `scipy.interpoloate.interp1d`
 
     Returns:
         The array with missing values filled in
     """
     # Store initial shape.
-    initial_shape = Y.shape
+    initial_shape = data.shape
 
     # Flatten after first dim.
-    Y = Y.reshape((initial_shape[0], -1))
+    data = data.reshape((initial_shape[0], -1))
 
     # Interpolate along each slice.
-    for i in range(Y.shape[-1]):
-        y = Y[:, i]
+    for i in range(data.shape[-1]):
+        y = data[:, i]
 
         # Build interpolant.
         x = np.flatnonzero(~np.isnan(y))
@@ -50,12 +50,12 @@ def fill_missing(Y: np.ndarray, kind: str = "linear") -> np.ndarray:
         y[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), y[~mask])
 
         # Save slice
-        Y[:, i] = y
+        data[:, i] = y
 
     # Restore to initial shape.
-    Y = Y.reshape(initial_shape)
+    data = data.reshape(initial_shape)
 
-    return Y
+    return data
 
 
 def annotate_video(
