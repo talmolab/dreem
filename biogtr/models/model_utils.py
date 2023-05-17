@@ -70,6 +70,8 @@ def softmax_asso(asso_output: list[torch.Tensor]) -> list[torch.Tensor]:
 
 def init_optimizer(params: Iterable, config: dict):
     """Initialize optimizer based on config parameters.
+    
+    Allows more flexibility in which optimizer to use
 
     Args:
         params: model parameters to be optimized
@@ -104,7 +106,9 @@ def init_optimizer(params: Iterable, config: dict):
 
 
 def init_scheduler(optimizer: torch.optim.Optimizer, config: dict):
-    """Initialize optimizer based on config parameters.
+    """Initialize scheduler based on config parameters.
+
+    Allows more flexibility in choosing which scheduler to use.
 
     Args:
         optimizer: optimizer for which to adjust lr
