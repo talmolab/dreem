@@ -64,33 +64,27 @@ def test_gtr_runner():
             )
         train_ds.append([instances])
 
-    embedding_meta = {
-        "embedding_type": "fixed_pos",
-        "kwargs": {"temperature": num_detected, "scale": num_frames, "normalize": True},
-    }
+    gtr_runner = GTRRunner()
 
-    tracking_transformer = GlobalTrackingTransformer(
-        encoder_model="resnet18",
-        encoder_cfg={"weights": "ResNet18_Weights.DEFAULT"},
-        d_model=feats,
-        num_encoder_layers=1,
-        num_decoder_layers=1,
-        dim_feedforward=feats,
-        feature_dim_attn_head=feats,
-        embedding_meta=embedding_meta,
-        return_embedding=True,
+    optim_scheduler = gtr_runner.configure_optimizers()
+
+    assert isinstance(optim_scheduler["optimizer"], torch.optim.Adam)
+    assert isinstance(
+        optim_scheduler["lr_scheduler"]["scheduler"],
+        torch.optim.lr_scheduler.ReduceLROnPlateau,
     )
-    loss = AssoLoss()
-    tracker_cfg = {
-        "window_size": 8,
-        "use_vis_feats": True,
-        "overlap_thresh": 0.01,
-        "mult_thresh": True,
-        "decay_time": None,
-        "iou": None,
-        "max_center_dist": None,
-    }
-    gtr_runner = GTRRunner(tracking_transformer, tracker_cfg, loss)
+
+    optim_cfg = {"name": "SGD", "lr": 1e-3}
+    scheduler_cfg = {"name": "CosineAnnealingLR", "T_max": 1}
+
+    gtr_runner = GTRRunner(optimizer_cfg=optim_cfg, scheduler_cfg=scheduler_cfg)
+    optim_scheduler = gtr_runner.configure_optimizers()
+
+    assert isinstance(optim_scheduler["optimizer"], torch.optim.SGD)
+    assert isinstance(
+        optim_scheduler["lr_scheduler"]["scheduler"],
+        torch.optim.lr_scheduler.CosineAnnealingLR,
+    )
 
     for epoch in range(epochs):
         for i, batch in enumerate(train_ds):

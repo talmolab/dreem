@@ -7,6 +7,7 @@ from biogtr.inference.tracker import Tracker
 from biogtr.inference import metrics
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
+from biogtr.models.model_utils import init_optimizer, init_scheduler
 from pytorch_lightning import LightningModule
 
 
@@ -18,11 +19,11 @@ class GTRRunner(LightningModule):
 
     def __init__(
         self,
-        model: GlobalTrackingTransformer,
-        tracker_cfg: dict,
-        loss: AssoLoss,
-        optimizer: torch.optim.Optimizer = None,
-        scheduler: torch.optim.lr_scheduler.LRScheduler = None,
+        model_cfg: dict = {},
+        tracker_cfg: dict = {},
+        loss_cfg: dict = {},
+        optimizer_cfg: dict = None,
+        scheduler_cfg: dict = None,
         train_metrics: list[str] = [""],
         val_metrics: list[str] = ["sw_cnt"],
         test_metrics: list[str] = ["sw_cnt"],
@@ -30,23 +31,26 @@ class GTRRunner(LightningModule):
         """Initialize a lightning module for GTR.
 
         Args:
-            model: GlobalTrackingTransformer model to be trained/used for eval
+            model_cfg: hyperparameters for GlobalTrackingTransformer
             tracker_cfg: The parameters used for the tracker post-processing
-            loss: AssoLoss function to optimize
-            optimizer: optimizer to train model with.
+            loss_cfg: hyperparameters for AssoLoss
+            optimizer_cfg: hyper parameters used for optimizer.
                        Only used to overwrite `configure_optimizer`
-            scheduler: lr_scheduler used to overwrite `configure_optimizer
+            scheduler_cfg: hyperparameters for lr_scheduler used to overwrite `configure_optimizer
             train_metrics: a list of metrics to be calculated during training
             val_metrics: a list of metrics to be calculated during validation
             test_metrics: a list of metrics to be calculated at test time
         """
         super().__init__()
+        self.save_hyperparameters()
 
-        self.model = model
+        self.model = GlobalTrackingTransformer(**model_cfg)
+        self.loss = AssoLoss(**loss_cfg)
+
         self.tracker_cfg = tracker_cfg
-        self.loss = loss
-        self.optimizer = optimizer
-        self.scheduler = scheduler
+        self.optimizer_cfg = optimizer_cfg
+        self.scheduler_cfg = scheduler_cfg
+
         self.train_metrics = train_metrics
         self.val_metrics = val_metrics
         self.test_metrics = test_metrics
@@ -166,19 +170,17 @@ class GTRRunner(LightningModule):
             an optimizer config dict containing the optimizer, scheduler, and scheduler params
         """
         # todo: init from config
-        if self.optimizer is None:
-            optimizer = torch.optim.Adam(
-                self.model.parameters(), lr=1e-4, betas=(0.9, 0.999)
-            )
+        if self.optimizer_cfg is None:
+            optimizer = torch.optim.Adam(self.parameters(), lr=1e-4, betas=(0.9, 0.999))
         else:
-            optimizer = self.optimizer
+            optimizer = init_optimizer(self.parameters(), self.optimizer_cfg)
 
-        if self.scheduler is None:
+        if self.scheduler_cfg is None:
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
                 optimizer, "min", 0.5, 10
             )
         else:
-            scheduler = self.scheduler
+            scheduler = init_scheduler(optimizer, self.scheduler_cfg)
 
         return {
             "optimizer": optimizer,

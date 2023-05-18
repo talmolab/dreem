@@ -2,15 +2,15 @@ model:
   ckpt_path: null
   encoder_model: "resnet18"
   encoder_cfg: {}
-  d_model: 1024
+  d_model: 512
   nhead: 8
   num_encoder_layers: 1
   num_decoder_layers: 1
-  dim_feedforward: 1024
+  dim_feedforward: 512
   dropout: 0.1
   activation: "relu"
   return_intermediate_dec: False
-  feature_dim_attn_head: 1024
+  feature_dim_attn_head: 512
   norm: False
   num_layers_attn_head: 2
   dropout_attn_head: 0.1
@@ -61,30 +61,30 @@ runner:
 
 dataset:
   train_dataset:
-    slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']
-    video_files: ['190612_110405_wt_18159111_rig2.2@11730.mp4']
+    slp_files: ['tests/data/sleap/two_flies.slp']
+    video_files: ['tests/data/sleap/two_flies.mp4']
     padding: 5
     crop_size: 128
     chunk: true
-    clip_length: 32
+    clip_length: 4
     crop_type: 'centroid'
 
   val_dataset:
-    slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']
-    video_files: ['190612_110405_wt_18159111_rig2.2@11730.mp4']
+    slp_files: ['tests/data/sleap/two_flies.slp']
+    video_files: ['tests/data/sleap/two_flies.mp4']
     padding: 5
     crop_size: 128 
     chunk: True
-    clip_length: 32
+    clip_length: 8
     crop_type: 'centroid'
 
   test_dataset:
-    slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']
-    video_files: ['190612_110405_wt_18159111_rig2.2@11730.mp4']
+    slp_files: ['tests/data/sleap/two_flies.slp']
+    video_files: ['tests/data/sleap/two_flies.mp4']
     padding: 5
     crop_size: 128 
     chunk: True
-    clip_length: 32
+    clip_length: 16
     crop_type: 'centroid'
 
 dataloader:
