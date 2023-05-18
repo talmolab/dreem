@@ -280,9 +280,4 @@ class Config:
 
     def get_ckpt_path(self):
         """Get model ckpt path for loading."""
-        # for eval
-        if "ckpt_path" in self.cfg:
-            return self.cfg.ckpt_path
-        # for training
-        else:
-            return self.cfg.model.ckpt_path
+        return self.cfg.model.ckpt_path

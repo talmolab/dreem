@@ -59,13 +59,13 @@ def main(cfg: DictConfig):
     pprint(f"Final train config: {train_cfg}")
 
     model = train_cfg.get_model()
-    train_dataset = train_cfg.get_dataset(type="sleap", mode="train")
+    train_dataset = train_cfg.get_dataset(mode="train")
     train_dataloader = train_cfg.get_dataloader(train_dataset, mode="train")
 
-    val_dataset = train_cfg.get_dataset(type="sleap", mode="val")
+    val_dataset = train_cfg.get_dataset(mode="val")
     val_dataloader = train_cfg.get_dataloader(val_dataset, mode="val")
 
-    test_dataset = train_cfg.get_dataset(type="sleap", mode="test")
+    test_dataset = train_cfg.get_dataset(mode="test")
     test_dataloader = train_cfg.get_dataloader(test_dataset, mode="test")
 
     dataset = TrackingDataset(
