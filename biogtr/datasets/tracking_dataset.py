@@ -37,15 +37,6 @@ class TrackingDataset(LightningDataModule):
             test_ds: Sleap or Microscopy test set
             test_dl : Test dataloader. Only used for overriding `test_dataloader`.
         """
-        assert (
-            train_ds is not None or train_dl is not None
-        ), "Must pass in either a train dataset or train dataloader"
-        assert (
-            val_ds is not None or val_dl is not None
-        ), "Must pass in either a val dataset or val dataset"
-        assert (
-            test_ds is not None or test_dl is not None
-        ), "Must pass in either a test dataset or test dataset"
         super().__init__()
         self.train_ds = train_ds
         self.train_dl = train_dl
@@ -66,7 +57,9 @@ class TrackingDataset(LightningDataModule):
 
         Returns: The Training Dataloader.
         """
-        if self.train_dl is None:
+        if self.train_dl is None and self.train_ds is None:
+            return None
+        elif self.train_dl is None:
             generator = (
                 torch.Generator(device="cuda") if torch.cuda.is_available() else None
             )
@@ -87,7 +80,9 @@ class TrackingDataset(LightningDataModule):
 
         Returns: The validation dataloader.
         """
-        if self.val_dl is None:
+        if self.val_dl is None and self.val_ds is None:
+            return None
+        elif self.val_dl is None:
             return DataLoader(
                 self.val_ds,
                 batch_size=1,
@@ -105,7 +100,9 @@ class TrackingDataset(LightningDataModule):
 
         Returns: The test dataloader
         """
-        if self.test_dl is None:
+        if self.test_dl is None and self.test_ds is None:
+            return None
+        elif self.test_dl is None:
             return DataLoader(
                 self.test_ds,
                 batch_size=1,
