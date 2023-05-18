@@ -1,6 +1,7 @@
 """Module containing model helper functions."""
 from typing import Dict, List, Tuple, Iterable
 import torch
+from copy import deepcopy
 
 
 def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -18,7 +19,7 @@ def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
     _, h, w = instances[0]["img_shape"].flatten()
 
     for fidx, instance in enumerate(instances):
-        bbox = instance["bboxes"]
+        bbox = deepcopy(instance["bboxes"])
         bbox[:, [0, 2]] /= w
         bbox[:, [1, 3]] /= h
 
@@ -69,6 +70,8 @@ def softmax_asso(asso_output: list[torch.Tensor]) -> list[torch.Tensor]:
 
 def init_optimizer(params: Iterable, config: dict):
     """Initialize optimizer based on config parameters.
+
+    Allows more flexibility in which optimizer to use
 
     Allows more flexibility in which optimizer to use
 
