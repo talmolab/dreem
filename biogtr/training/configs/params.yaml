@@ -1,0 +1,14 @@
+model:
+  num_encoder_layers: 2
+  num_decoder_layers: 2
+  embedding_meta:
+    embedding_type: 'learned_pos'
+    kwargs:
+      learn_pos_emb_num: 16
+      over_boxes: True
+
+dataset:
+  train_dataset:
+    slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']
+    video_files: ['190612_110405_wt_18159111_rig2.2@11730.mp4']
+    clip_length: 16

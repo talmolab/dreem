@@ -8,7 +8,7 @@ on:
       - "biogtr/**"
       - "tests/**"
       - ".github/workflows/ci.yml"
-      - "environment.yml"
+      - "environment_cpu.yml"
       - "pyproject.toml"
   push:
     branches:
@@ -18,7 +18,7 @@ on:
       - "biogtr/**"
       - "tests/**"
       - ".github/workflows/ci.yml"
-      - "environment.yml"
+      - "environment_cpu.yml"
       - "pyproject.toml"
 
 defaults:
@@ -79,7 +79,7 @@ jobs:
         # https://github.com/mamba-org/provision-with-micromamba
         uses: mamba-org/provision-with-micromamba@main
         with:
-          environment-file: environment.yml
+          environment-file: environment_cpu.yml
           cache-env: true
           channel-priority: flexible
 

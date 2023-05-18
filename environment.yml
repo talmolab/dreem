@@ -22,3 +22,5 @@ dependencies:
     - matplotlib
     - sleap-io
     - "--editable=.[dev]"
+    - imageio[ffmpeg]
+    - hydra-core

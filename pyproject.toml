@@ -26,7 +26,7 @@ dependencies = [
 dynamic = ["version"]
 
 [tool.setuptools.dynamic]
-version = {attr = "biogtr.__version__"}
+version = {attr = "biogtr.version.__version__"}
 readme = {file = ["README.md"]}
 
 [project.optional-dependencies]
