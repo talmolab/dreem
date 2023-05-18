@@ -70,7 +70,7 @@ def softmax_asso(asso_output: list[torch.Tensor]) -> list[torch.Tensor]:
 
 def init_optimizer(params: Iterable, config: dict):
     """Initialize optimizer based on config parameters.
-    
+
     Allows more flexibility in which optimizer to use
 
     Allows more flexibility in which optimizer to use
