@@ -1,7 +1,9 @@
 """Module containing logic for loading sleap datasets."""
 import torch
 import imageio
+import numpy as np
 import sleap_io as sio
+import random
 from biogtr.datasets import data_utils
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as tvf
@@ -20,10 +22,9 @@ class SleapDataset(Dataset):
         clip_length: int = 500,
         crop_type: str = "centroid",
         mode: str = "train",
-        tfm: callable = None,
-        tfm_cfg: dict = None,
+        augs: dict = None,
     ):
-        """Initialize SleapDataset.
+        """Initialize Sleap Dataset.
 
         Args:
             slp_files: a list of .slp files storing tracking annotations
@@ -32,12 +33,19 @@ class SleapDataset(Dataset):
             crop_size: the size of the object crops
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
-            crop_type: `centroid` or `pose` - determines whether to crop around a centroid or around a pose
-            mode: `train` or `val`. Determines whether this dataset is used for training or validation.
-            Currently doesn't affect dataset logic
-            tfm: The augmentation function from albumentations
-            tfm_cfg: The config for the augmentations
+            crop_type: `centroid` or `pose` - determines whether to crop around
+                a centroid or around a pose
+            mode: `train` or `val`. Determines whether this dataset is used for
+                training or validation. Currently doesn't affect dataset logic
+            augs: An optional dict mapping augmentations to parameters. The keys
+                should map directly to augmentation classes in albumentations. Example:
+                    augs = {
+                        'Rotate': {'limit': [-90, 90]},
+                        'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0},
+                        'RandomContrast': {'limit': 0.2}
+                    }
         """
+
         self.slp_files = slp_files
         self.video_files = video_files
         self.padding = padding
@@ -46,8 +54,8 @@ class SleapDataset(Dataset):
         self.clip_length = clip_length
         self.crop_type = crop_type
         self.mode = mode
-        self.tfm = tfm
-        self.tfm_cfg = tfm_cfg
+
+        self.augs = data_utils.build_augmentations(augs) if augs else None
 
         assert self.crop_type in ["centroid", "pose"], "Invalid crop type!"
 
@@ -56,8 +64,6 @@ class SleapDataset(Dataset):
         self.anchor_names = [
             data_utils.sorted_anchors(labels) for labels in self.labels
         ]
-        # for label in self.labels:
-        # label.remove_empty_instances(keep_empty_frames=False)
 
         self.frame_idx = [torch.arange(len(label)) for label in self.labels]
 
@@ -133,25 +139,19 @@ class SleapDataset(Dataset):
         video_name = self.video_files[label_idx]
 
         vid_reader = imageio.get_reader(video_name, "ffmpeg")
-        if self.tfm is not None and self.tfm_cfg is not None:
-            aug = self.tfm(**self.frm_cfg)
-        elif self.tfm is not None and self.tfm_cfg is None:
-            aug = self.tfm
-        else:
-            aug = None
 
         instances = []
+
         for i in frame_idx:
-            gt_track_ids, bboxes, crops = [], [], []
+            gt_track_ids, bboxes, crops, poses = [], [], [], []
 
             i = int(i)
 
             lf = video[i]
             lf_img = vid_reader.get_data(i)
 
-            img = tvf.to_tensor(lf_img)
-
-            _, h, w = img.shape
+            # albumentations requires np array, crop wants tensors. convert to
+            # tensor after augmenting
 
             for instance in lf:
                 # gt_track_ids
@@ -161,22 +161,40 @@ class SleapDataset(Dataset):
                 # might be necessary later so commenting out for now
                 # poses.append(torch.Tensor(instance.numpy()).astype("float32"))
 
-                # bboxes
-                if aug is not None:
-                    augmented = aug(image=img, keypoints=torch.vstack(centroids))
-                    img, centroids = augmented["image"], augmented["keypoints"]
+                # should we interpolate nan values instead?
+                for anchor in anchors:
+                    cx, cy = instance[anchor].x, instance[anchor].y
+                    poses.append([cx, cy])
+                    if not np.isnan(cx):
+                        break
 
+            # augs
+            if self.augs is not None:
+                augmented = self.augs(image=lf_img, keypoints=np.vstack(poses))
+                img, _ = augmented["image"], augmented["keypoints"]
+
+            img = tvf.to_tensor(img)
+
+            _, h, w = img.shape
+
+            # don't like this repeated loop through frames. Todo: change
+            # cropping to np arrays, then finally convert to tensors.
+            for instance in lf:
                 if self.crop_type == "centroid":
                     bbox = data_utils.pad_bbox(
                         data_utils.centroid_bbox(instance, anchors, self.crop_size),
                         padding=self.padding,
                     )
                     crop = data_utils.crop_bbox(img, bbox)
+
                 elif self.crop_type == "pose":
+                    # this is broken, sleap-io handles points differently
+                    # and torch.nanmin seems deprecated. fix pose_bbox function
                     bbox = data_utils.pose_bbox(instance, self.padding, (w, h))
                     crop = data_utils.resize_and_pad(
                         data_utils.crop_bbox(img, bbox), self.crop_size
                     )
+
                 bboxes.append(bbox)
                 crops.append(crop)
 
