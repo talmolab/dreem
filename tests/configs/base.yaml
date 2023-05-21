@@ -44,7 +44,7 @@ scheduler:
   patience: 10
   threshold: 1e-4
   threshold_mode: "rel"
-  
+
 tracker:
   window_size: 8
   use_vis_feats: true
@@ -67,25 +67,22 @@ dataset:
     crop_size: 128
     chunk: true
     clip_length: 4
-    crop_type: 'centroid'
 
   val_dataset:
     slp_files: ['tests/data/sleap/two_flies.slp']
     video_files: ['tests/data/sleap/two_flies.mp4']
     padding: 5
-    crop_size: 128 
+    crop_size: 128
     chunk: True
     clip_length: 8
-    crop_type: 'centroid'
 
   test_dataset:
     slp_files: ['tests/data/sleap/two_flies.slp']
     video_files: ['tests/data/sleap/two_flies.mp4']
     padding: 5
-    crop_size: 128 
+    crop_size: 128
     chunk: True
     clip_length: 16
-    crop_type: 'centroid'
 
 dataloader:
   train_dataloader:
@@ -136,8 +133,3 @@ trainer:
   log_every_n_steps: 1
   max_epochs: 100
   min_epochs: 10
-
-
-
-
-

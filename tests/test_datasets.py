@@ -20,7 +20,6 @@ def test_sleap_dataset(two_flies):
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
-        crop_type="centroid",
     )
 
     instances = next(iter(train_ds))
@@ -72,7 +71,6 @@ def test_tracking_dataset(two_flies):
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
-        crop_type="centroid",
     )
 
     train_sleap_dl = DataLoader(
@@ -91,7 +89,6 @@ def test_tracking_dataset(two_flies):
         crop_size=128,
         chunk=False,
         clip_length=clip_length,
-        crop_type="centroid",
     )
 
     val_sleap_dl = DataLoader(
@@ -110,7 +107,6 @@ def test_tracking_dataset(two_flies):
         crop_size=128,
         chunk=False,
         clip_length=clip_length,
-        crop_type="centroid",
     )
 
     test_sleap_dl = DataLoader(

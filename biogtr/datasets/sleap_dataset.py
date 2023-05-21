@@ -1,4 +1,5 @@
 """Module containing logic for loading sleap datasets."""
+import albumentations as A
 import torch
 import imageio
 import numpy as np
@@ -20,9 +21,8 @@ class SleapDataset(Dataset):
         crop_size: int = 128,
         chunk: bool = True,
         clip_length: int = 500,
-        crop_type: str = "centroid",
         mode: str = "train",
-        augs: dict = None,
+        augmentations: dict = None,
     ):
         """Initialize Sleap Dataset.
 
@@ -33,16 +33,14 @@ class SleapDataset(Dataset):
             crop_size: the size of the object crops
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
-            crop_type: `centroid` or `pose` - determines whether to crop around
-                a centroid or around a pose
             mode: `train` or `val`. Determines whether this dataset is used for
                 training or validation. Currently doesn't affect dataset logic
-            augs: An optional dict mapping augmentations to parameters. The keys
+            augmentations: An optional dict mapping augmentations to parameters. The keys
                 should map directly to augmentation classes in albumentations. Example:
-                    augs = {
-                        'Rotate': {'limit': [-90, 90]},
-                        'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0},
-                        'RandomContrast': {'limit': 0.2}
+                    augmentations = {
+                        'Rotate': {'limit': [-90, 90], 'p': 0.5},
+                        'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0, 'p': 0.2},
+                        'RandomContrast': {'limit': 0.2, 'p': 0.6}
                     }
         """
 
@@ -52,14 +50,18 @@ class SleapDataset(Dataset):
         self.crop_size = crop_size
         self.chunk = chunk
         self.clip_length = clip_length
-        self.crop_type = crop_type
         self.mode = mode
 
-        self.augs = data_utils.build_augmentations(augs) if augs else None
-
-        assert self.crop_type in ["centroid", "pose"], "Invalid crop type!"
+        self.augmentations = (
+            data_utils.build_augmentations(augmentations) if augmentations else None
+        )
 
         self.labels = [sio.load_slp(slp_file) for slp_file in self.slp_files]
+
+        # do we need this? would need to update with sleap-io
+
+        # for label in self.labels:
+        # label.remove_empty_instances(keep_empty_frames=False)
 
         self.anchor_names = [
             data_utils.sorted_anchors(labels) for labels in self.labels
@@ -148,52 +150,64 @@ class SleapDataset(Dataset):
             i = int(i)
 
             lf = video[i]
-            lf_img = vid_reader.get_data(i)
-
-            # albumentations requires np array, crop wants tensors. convert to
-            # tensor after augmenting
+            img = vid_reader.get_data(i)
 
             for instance in lf:
                 # gt_track_ids
                 gt_track_ids.append(video.tracks.index(instance.track))
 
-                # # poses
-                # might be necessary later so commenting out for now
-                # poses.append(torch.Tensor(instance.numpy()).astype("float32"))
+                pose = dict(
+                    zip(
+                        [n.name for n in instance.skeleton.nodes],
+                        [
+                            [p.x, p.y]
+                            for _, p in instance.points.items()
+                            if not np.isnan(p.x) and not np.isnan(p.y)
+                        ],
+                    )
+                )
+                poses.append(pose)
 
-                # should we interpolate nan values instead?
-                for anchor in anchors:
-                    cx, cy = instance[anchor].x, instance[anchor].y
-                    poses.append([cx, cy])
-                    if not np.isnan(cx):
-                        break
+            # augmentations
+            if self.augmentations is not None:
+                for transform in self.augmentations:
+                    if isinstance(transform, A.CoarseDropout):
+                        transform.fill_value = random.randint(0, 255)
 
-            # augs
-            if self.augs is not None:
-                augmented = self.augs(image=lf_img, keypoints=np.vstack(poses))
-                img, _ = augmented["image"], augmented["keypoints"]
+                augmented = self.augmentations(
+                    image=img, keypoints=np.vstack([list(s.values()) for s in poses])
+                )
+
+                img, aug_poses = augmented["image"], augmented["keypoints"]
+
+                aug_poses = [
+                    arr
+                    for arr in np.split(
+                        np.array(aug_poses), np.array([len(s) for s in poses]).cumsum()
+                    )
+                    if arr.size != 0
+                ]
+
+                aug_poses = [
+                    dict(zip(list(pose_dict.keys()), aug_pose_arr.tolist()))
+                    for aug_pose_arr, pose_dict in zip(aug_poses, poses)
+                ]
+
+                _ = [pose.update(aug_pose) for pose, aug_pose in zip(poses, aug_poses)]
 
             img = tvf.to_tensor(img)
 
             _, h, w = img.shape
 
-            # don't like this repeated loop through frames. Todo: change
-            # cropping to np arrays, then finally convert to tensors.
-            for instance in lf:
-                if self.crop_type == "centroid":
-                    bbox = data_utils.pad_bbox(
-                        data_utils.centroid_bbox(instance, anchors, self.crop_size),
-                        padding=self.padding,
-                    )
-                    crop = data_utils.crop_bbox(img, bbox)
+            for pose in poses:
+                bbox = data_utils.pad_bbox(
+                    data_utils.centroid_bbox(
+                        np.array(list(pose.values())), anchors, self.crop_size
+                    ),
+                    padding=self.padding,
+                )
 
-                elif self.crop_type == "pose":
-                    # this is broken, sleap-io handles points differently
-                    # and torch.nanmin seems deprecated. fix pose_bbox function
-                    bbox = data_utils.pose_bbox(instance, self.padding, (w, h))
-                    crop = data_utils.resize_and_pad(
-                        data_utils.crop_bbox(img, bbox), self.crop_size
-                    )
+                crop = data_utils.crop_bbox(img, bbox)
 
                 bboxes.append(bbox)
                 crops.append(crop)

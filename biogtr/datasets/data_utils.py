@@ -85,7 +85,7 @@ def centroid_bbox(
         Bounding box in [y1, x1, y2, x2] format.
     """
     for anchor in anchors:
-        cx, cy = instance[anchor].x, instance[anchor].y
+        cx, cy = instance[anchor][0], instance[anchor][1]
         if not np.isnan(cx):
             break
 
