@@ -54,6 +54,35 @@ def test_icy_dataset(ten_icy_particles):
     assert len(instances[0]["gt_track_ids"]) == instances[0]["num_detected"].item()
 
 
+def test_isbi_dataset(isbi_microtubules, isbi_receptors):
+    """Test isbi dataset logic.
+
+    Args:
+        isbi_microtubules: isbi microtubules fixture used for testing
+        isbi_receptors: isbi receptors fixture used for testing
+    """
+
+    clip_length = 8
+
+    for ds in [isbi_microtubules, isbi_receptors]:
+        num_objects = 47 if ds == isbi_microtubules else 61
+
+        train_ds = MicroscopyDataset(
+            videos=[ds[0]],
+            tracks=[ds[1]],
+            source="isbi",
+            crop_size=64,
+            chunk=True,
+            clip_length=clip_length,
+        )
+
+        instances = next(iter(train_ds))
+
+        assert len(instances) == clip_length
+        assert len(instances[0]["gt_track_ids"]) == num_objects
+        assert len(instances[0]["gt_track_ids"]) == instances[0]["num_detected"].item()
+
+
 def test_tracking_dataset(two_flies):
     """Test lightning dataset logic.
 

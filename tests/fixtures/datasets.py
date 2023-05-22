@@ -1,5 +1,5 @@
 """Fixtures for testing biogtr."""
-
+import glob
 import os
 import pytest
 
@@ -65,4 +65,18 @@ def ten_icy_particles(icy_data_dir):
     """ICY 10 particles tif and gt xml file paths."""
     image = os.path.join(icy_data_dir, "10_cells_1_crop.tif")
     gt = os.path.join(icy_data_dir, "10_cells_1_gt.xml")
+    return [image, gt]
+
+
+@pytest.fixture
+def isbi_microtubules(isbi_data_dir):
+    image = sorted(glob.glob(os.path.join(isbi_data_dir, "microtubules", "*.tif")))
+    gt = glob.glob(os.path.join(isbi_data_dir, "microtubules", "*.xml"))[0]
+    return [image, gt]
+
+
+@pytest.fixture
+def isbi_receptors(isbi_data_dir):
+    image = sorted(glob.glob(os.path.join(isbi_data_dir, "receptors", "*.tif")))
+    gt = glob.glob(os.path.join(isbi_data_dir, "receptors", "*.xml"))[0]
     return [image, gt]
