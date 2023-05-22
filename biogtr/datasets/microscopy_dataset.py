@@ -1,10 +1,11 @@
 """Module containing microscopy dataset."""
-
 from PIL import Image
 from biogtr.datasets import data_utils
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as tvf
+import albumentations as A
 import numpy as np
+import random
 import torch
 
 
@@ -21,7 +22,7 @@ class MicroscopyDataset(Dataset):
         chunk: bool = False,
         clip_length: int = 10,
         mode: str = "Train",
-        augs: dict = None,
+        augmentations: dict = None,
     ):
         """Initialize MicroscopyDataset.
 
@@ -35,7 +36,7 @@ class MicroscopyDataset(Dataset):
             clip_length: the number of frames in each chunk
             mode: `train` or `val`. Determines whether this dataset is used for
                 training or validation. Currently doesn't affect dataset logic
-            augs: An optional dict mapping augmentations to parameters. The keys
+            augmentations: An optional dict mapping augmentations to parameters. The keys
                 should map directly to augmentation classes in albumentations. Example:
                     augs = {
                         'Rotate': {'limit': [-90, 90]},
@@ -51,7 +52,9 @@ class MicroscopyDataset(Dataset):
         self.padding = padding
         self.mode = mode
 
-        self.augs = data_utils.build_augmentations(augs) if augs else None
+        self.augmentations = (
+            data_utils.build_augmentations(augmentations) if augmentations else None
+        )
 
         if source.lower() == "trackmate":
             self.parse = data_utils.parse_trackmate
@@ -156,21 +159,33 @@ class MicroscopyDataset(Dataset):
 
                 x = lf[lf["TRACK_ID"] == instance]["POSITION_X"].iloc[0]
                 y = lf[lf["TRACK_ID"] == instance]["POSITION_Y"].iloc[0]
-                centroids.append(torch.tensor([x, y]).to(torch.float32))
+                centroids.append([x, y])
 
             # albumentations wants (spatial, channels), ensure correct dims
-            if self.augs is not None:
-                augmented = self.augs(image=img, keypoints=torch.vstack(centroids))
+            if self.augmentations is not None:
+                for transform in self.augmentations:
+                    # this is for occlusion simulation, can remove if we don't
+                    # want it
+                    if isinstance(transform, A.CoarseDropout):
+                        transform.fill_value = random.randint(0, 255)
+
+                augmented = self.augmentations(
+                    image=img,
+                    keypoints=np.vstack(centroids),
+                )
                 img, centroids = augmented["image"], augmented["keypoints"]
+
+            img = torch.Tensor(img)
 
             for c in centroids:
                 bbox = data_utils.pad_bbox(
                     data_utils.get_bbox([int(c[0]), int(c[1])], self.crop_size),
                     padding=self.padding,
                 )
-                bboxes.append(bbox)
+                crop = data_utils.crop_bbox(img, bbox)
 
-            img = torch.Tensor(img)
+                bboxes.append(bbox)
+                crops.append(crop)
 
             # torch wants (channels, spatial) - ensure correct dims
             if len(img.shape) == 2:
@@ -178,10 +193,6 @@ class MicroscopyDataset(Dataset):
             elif len(img.shape) == 3:
                 if img.shape[2] == 3:
                     img = img.T  # todo: check for edge cases
-
-            for bbox in bboxes:
-                crop = data_utils.crop_bbox(img, bbox)
-                crops.append(crop)
 
             instances.append(
                 {

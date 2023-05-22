@@ -197,8 +197,6 @@ class SleapDataset(Dataset):
 
             img = tvf.to_tensor(img)
 
-            _, h, w = img.shape
-
             for pose in poses:
                 bbox = data_utils.pad_bbox(
                     data_utils.centroid_bbox(

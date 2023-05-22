@@ -4,6 +4,7 @@ from numpy.typing import ArrayLike
 from torchvision.transforms import functional as tvf
 from xml.etree import cElementTree as et
 import albumentations as A
+import math
 import numpy as np
 import pandas as pd
 import sleap_io as sio
@@ -445,7 +446,6 @@ class LazyTiffStack:
         self.file.close()
 
 
-# todo: type
 def build_augmentations(augmentations: dict):
     """Get augmentations for dataset.
 
@@ -461,4 +461,23 @@ def build_augmentations(augmentations: dict):
         aug_class = getattr(A, aug_name)
         aug = aug_class(**aug_args)
         aug_list.append(aug)
-    return A.Compose(aug_list, p=1.0, keypoint_params=A.KeypointParams(format="xy"))
+
+    augs = A.Compose(
+        aug_list,
+        p=1.0,
+        keypoint_params=A.KeypointParams(format="xy", remove_invisible=False),
+    )
+
+    return augs
+
+
+def get_max_padding(height, width):
+    diagonal = math.ceil(math.sqrt(height**2 + width**2))
+
+    pad_y = int((diagonal - height) / 2)
+    pad_x = int((diagonal - width) / 2)
+
+    padded_height = height + pad_y
+    padded_width = width + pad_x
+
+    return padded_height, padded_width
