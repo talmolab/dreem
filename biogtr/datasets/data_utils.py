@@ -188,144 +188,100 @@ def sorted_anchors(labels: sio.Labels) -> list[str]:
     return sorted_anchors
 
 
-"""
-PARSERS
-"""
+def parse_trackmate(data_path: str) -> pd.DataFrame:
+    if data_path.endswith(".xml"):
+        root = et.fromstring(open(xml_path).read())
 
+        objects = []
+        features = root.find("Model").find("FeatureDeclarations").find("SpotFeatures")
+        features = [c.get("feature") for c in list(features)] + ["ID"]
 
-def parse_trackmate_xml(xml_path: str) -> pd.DataFrame:
-    """Parse trackmate XML labels file.
+        spots = root.find("Model").find("AllSpots")
 
-    Logic adapted from https://github.com/hadim/pytrackmate.
+        objects = []
 
-    Args:
-        xml_path: string path to xml file storing trackmate trajectory labels
+        for frame in spots.findall("SpotsInFrame"):
+            for spot in frame.findall("Spot"):
+                single_object = []
+                for label in features:
+                    single_object.append(spot.get(label))
+                objects.append(single_object)
 
-    Returns:
-        `pandas DataFrame` containing frame number, track_ids,
-        and centroid x,y coordinates in pixels
-    """
-    root = et.fromstring(open(xml_path).read())
+        tracks_df = pd.DataFrame(objects, columns=features)
+        tracks_df = tracks_df.astype(np.float)
 
-    objects = []
-    features = root.find("Model").find("FeatureDeclarations").find("SpotFeatures")
-    features = [c.get("feature") for c in list(features)] + ["ID"]
+        filtered_track_ids = [
+            int(track.get("TRACK_ID"))
+            for track in root.find("Model").find("FilteredTracks").findall("TrackID")
+        ]
 
-    spots = root.find("Model").find("AllSpots")
-    trajs = pd.DataFrame([])
-    objects = []
-    for frame in spots.findall("SpotsInFrame"):
-        for spot in frame.findall("Spot"):
-            single_object = []
-            for label in features:
-                single_object.append(spot.get(label))
-            objects.append(single_object)
+        label_id = 0
+        tracks_df["label"] = np.nan
 
-    trajs = pd.DataFrame(objects, columns=features)
-    trajs = trajs.astype(np.float)
+        tracks = root.find("Model").find("AllTracks")
+        for track in tracks.findall("Track"):
+            track_id = int(track.get("TRACK_ID"))
+            if track_id in filtered_track_ids:
+                spot_ids = [
+                    (
+                        edge.get("SPOT_SOURCE_ID"),
+                        edge.get("SPOT_TARGET_ID"),
+                        edge.get("EDGE_TIME"),
+                    )
+                    for edge in track.findall("Edge")
+                ]
+                spot_ids = np.array(spot_ids).astype("float")[:, :2]
+                spot_ids = set(spot_ids.flatten())
 
-    filtered_track_ids = [
-        int(track.get("TRACK_ID"))
-        for track in root.find("Model").find("FilteredTracks").findall("TrackID")
-    ]
+                tracks_df.loc[tracks_df["ID"].isin(spot_ids), "TRACK_ID"] = label_id
+                label_id += 1
 
-    label_id = 0
-    trajs["label"] = np.nan
+    elif data_path.endswith("csv"):
+        tracks_df = pd.read_csv(csv_path, encoding="ISO-8859-1")
 
-    tracks = root.find("Model").find("AllTracks")
-    for track in tracks.findall("Track"):
-        track_id = int(track.get("TRACK_ID"))
-        if track_id in filtered_track_ids:
-            spot_ids = [
-                (
-                    edge.get("SPOT_SOURCE_ID"),
-                    edge.get("SPOT_TARGET_ID"),
-                    edge.get("EDGE_TIME"),
-                )
-                for edge in track.findall("Edge")
-            ]
-            spot_ids = np.array(spot_ids).astype("float")[:, :2]
-            spot_ids = set(spot_ids.flatten())
-
-            trajs.loc[trajs["ID"].isin(spot_ids), "TRACK_ID"] = label_id
-            label_id += 1
-    trajs = trajs.apply(pd.to_numeric, errors="coerce", downcast="integer")
-    posx_key = "POSITION_X"
-    posy_key = "POSITION_Y"
-    frame_key = "FRAME"
-    track_key = "TRACK_ID"
-    trajs = trajs.rename(
-        mapper={
-            "X": posx_key,
-            "Y": posy_key,
-            "x": posx_key,
-            "y": posy_key,
-            "Slice n°": frame_key,
-            "Track n°": track_key,
-        },
-        axis=1,
-    )
-    return trajs
-
-
-def parse_trackmate_csv(csv_path: str) -> pd.DataFrame:
-    """Parse trackmate .csv trajectory labels file.
-
-    Args:
-        csv_path: path to trackmate .csv trajectory labels file
-
-    Returns:
-        `pandas DataFrame containing frame index, gt track id
-        and centroid x,y coordinates in pixels
-    """
-    track = pd.read_csv(csv_path, encoding="ISO-8859-1")
-    track = track.apply(pd.to_numeric, errors="coerce", downcast="integer")
-    posx_key = "POSITION_X"
-    posy_key = "POSITION_Y"
-    frame_key = "FRAME"
-    track_key = "TRACK_ID"
-    track = track.rename(
-        mapper={
-            "X": posx_key,
-            "Y": posy_key,
-            "x": posx_key,
-            "y": posy_key,
-            "Slice n°": frame_key,
-            "Track n°": track_key,
-            "t": frame_key,
-        },
-        axis=1,
-    )
-    # 0 index track and frame ids
-    if min(track[frame_key]) == 1:
-        track[frame_key] = track[frame_key] - 1
-    if min(track[track_key] == 1):
-        track[track_key] = track[track_key] - 1
-    return track
-
-
-def parse_trackmate(trackmate_labels: str) -> pd.DataFrame:
-    """Wrapper around `parse_trackmate_csv` and `parse_trackmate_xml`."""
-    if ".xml" in trackmate_labels:
-        return parse_trackmate_xml(trackmate_labels)
-    elif ".csv" in trackmate_labels:
-        return parse_trackmate_csv(trackmate_labels)
     else:
-        raise ValueError("Trackmate labels file must be a `.xml` or `.csv`!")
+        raise ValueError(f"Unsupported trackmate file extension: {data_path}")
+
+    tracks_df = tracks_df.apply(pd.to_numeric, errors="coerce", downcast="integer")
+
+    posx_key = "POSITION_X"
+    posy_key = "POSITION_Y"
+    frame_key = "FRAME"
+    track_key = "TRACK_ID"
+
+    mapper = {
+        "X": posx_key,
+        "Y": posy_key,
+        "x": posx_key,
+        "y": posy_key,
+        "Slice n°": frame_key,
+        "Track n°": track_key,
+    }
+
+    if "t" in tracks_df:
+        mapper.update({"t": frame_key})
+
+    tracks_df = tracks_df.rename(mapper=mapper, axis=1)
+
+    if data_path.endswith(".csv"):
+        # 0 index track and frame ids
+        if min(tracks_df[frame_key]) == 1:
+            tracks_df[frame_key] = tracks_df[frame_key] - 1
+
+        if min(tracks_df[track_key] == 1):
+            tracks_df[track_key] = tracks_df[track_key] - 1
+
+    return tracks_df
 
 
-def parse_ICY(xml_path: str) -> pd.DataFrame:
-    """Parse .xml labels file from synthetic data generated by ICY.
+def parse_synthetic(xml_path: str, source: str = "icy") -> pd.DataFrame:
+    if source.lower() == "icy":
+        root_tag = "trackgroup"
+    elif source.lower() == "isbi":
+        root_tag = "TrackContestISBI2012"
+    else:
+        raise ValueError(f"{source} source mode not supported")
 
-    Logic adapted from https://github.com/sylvainprigent/napari-tracks-reader/blob/main/napari_tracks_reader/_icy_io.py.
-
-    Args:
-        xml_path: path to .xml file containing ICY gt trajectory labels
-
-    Returns:
-        pandas DataFrame containing frame idx, gt track id
-        and centroid x,y coordinates in pixels
-    """
     tree = et.parse(xml_path)
 
     root = tree.getroot()
@@ -334,7 +290,7 @@ def parse_ICY(xml_path: str) -> pd.DataFrame:
     # get the trackgroup element
     idx_trackgroup = 0
     for i in range(len(root)):
-        if root[i].tag == "trackgroup":
+        if root[i].tag == root_tag:
             idx_trackgroup = i
             break
 
@@ -342,7 +298,12 @@ def parse_ICY(xml_path: str) -> pd.DataFrame:
     track_id = -1
     for track_element in root[idx_trackgroup]:
         track_id += 1
-        ids_map[track_element.attrib["id"]] = track_id
+
+        try:
+            ids_map[track_element.attrib["id"]] = track_id
+        except:
+            pass
+
         for detection_element in track_element:
             row = [
                 float(track_id),
@@ -352,59 +313,15 @@ def parse_ICY(xml_path: str) -> pd.DataFrame:
             ]
             tracks = np.concatenate((tracks, [row]), axis=0)
 
-    trajs = pd.DataFrame(
+    tracks_df = pd.DataFrame(
         tracks, columns=["TRACK_ID", "FRAME", "POSITION_Y", "POSITION_X"]
     )
-    trajs = trajs.apply(pd.to_numeric, errors="coerce", downcast="integer")
-    return trajs
+
+    tracks_df = tracks_df.apply(pd.to_numeric, errors="coerce", downcast="integer")
+
+    return tracks_df
 
 
-# todo: consolidate ICY / ISBY parser into one (only differ by a couple lines)
-def parse_ISBI(xml_file: str) -> pd.DataFrame:
-    """Parse .xml labels file from ISBI particle tracing challenge.
-
-    logic adapted from https://github.com/sylvainprigent/napari-tracks-reader/blob/main/napari_tracks_reader/_isbi_io.py.
-
-    Args:
-        xml_file: path to .xml labels file containing gt trajectory ids from ISBI
-
-    Returns:
-        pandas DataFrame containing frame idx, gt track id and
-        centroid x,y coordinates in pixels
-    """
-    tree = et.parse(xml_file)
-    root = tree.getroot()
-
-    tracks = np.empty((0, 4))
-
-    # get the trackgroup element
-    idx_trackcontest = 0
-    for i in range(len(root)):
-        if root[i].tag == "TrackContestISBI2012":
-            idx_trackcontest = i
-            break
-
-    # parse tracks=particles
-    track_id = -1
-    for particle_element in root[idx_trackcontest]:
-        track_id += 1
-        for detection_element in particle_element:
-            row = [
-                float(track_id),
-                float(detection_element.attrib["t"]),
-                float(detection_element.attrib["y"]),
-                float(detection_element.attrib["x"]),
-            ]
-            tracks = np.concatenate((tracks, [row]), axis=0)
-
-    trajs = pd.DataFrame(
-        tracks, columns=["TRACK_ID", "FRAME", "POSITION_Y", "POSITION_X"]
-    )
-    trajs = trajs.apply(pd.to_numeric, errors="coerce", downcast="integer")
-    return trajs
-
-
-# todo: type
 class LazyTiffStack:
     """Class used for loading tiffs without loading into memory."""
 

@@ -57,18 +57,16 @@ class MicroscopyDataset(Dataset):
         )
 
         if source.lower() == "trackmate":
-            self.parse = data_utils.parse_trackmate
-        elif source.lower() == "icy":
-            self.parse = data_utils.parse_ICY
-        elif source.lower() == "isbi":
-            self.parse = data_utils.parse_ISBI
+            parser = data_utils.parse_trackmate
+        elif source.lower() in ["icy", "isbi"]:
+            parser = lambda x: data_utils.parse_synthetic(x, source=source)
         else:
             raise ValueError(
                 f"{source} is unsupported! Must be one of [trackmate, icy, isbi]"
             )
 
         self.labels = [
-            self.parse(self.tracks[video_idx])
+            parser(self.tracks[video_idx])
             for video_idx in torch.arange(len(self.tracks))
         ]
 
@@ -143,14 +141,21 @@ class MicroscopyDataset(Dataset):
         labels = self.labels[label_idx]
         labels = labels.dropna(how="all")
 
-        video = data_utils.LazyTiffStack(self.videos[label_idx])
+        video = self.videos[label_idx]
+
+        if type(video) != list:
+            video = data_utils.LazyTiffStack(self.videos[label_idx])
 
         instances = []
 
         for i in frame_idx:
             gt_track_ids, centroids, bboxes, crops = [], [], [], []
 
-            img = video.get_section(i)
+            img = (
+                video.get_section(i)
+                if type(video) != list
+                else np.array(Image.open(video[i]))
+            )
 
             lf = labels[labels["FRAME"].astype(int) == i.item()]
 
@@ -164,8 +169,7 @@ class MicroscopyDataset(Dataset):
             # albumentations wants (spatial, channels), ensure correct dims
             if self.augmentations is not None:
                 for transform in self.augmentations:
-                    # this is for occlusion simulation, can remove if we don't
-                    # want it
+                    # for occlusion simulation, can remove if we don't want
                     if isinstance(transform, A.CoarseDropout):
                         transform.fill_value = random.randint(0, 255)
 
@@ -177,6 +181,13 @@ class MicroscopyDataset(Dataset):
 
             img = torch.Tensor(img)
 
+            # torch wants (channels, spatial) - ensure correct dims
+            if len(img.shape) == 2:
+                img = img.unsqueeze(0)
+            elif len(img.shape) == 3:
+                if img.shape[2] == 3:
+                    img = img.T  # todo: check for edge cases
+
             for c in centroids:
                 bbox = data_utils.pad_bbox(
                     data_utils.get_bbox([int(c[0]), int(c[1])], self.crop_size),
@@ -186,13 +197,6 @@ class MicroscopyDataset(Dataset):
 
                 bboxes.append(bbox)
                 crops.append(crop)
-
-            # torch wants (channels, spatial) - ensure correct dims
-            if len(img.shape) == 2:
-                img = img.unsqueeze(0)
-            elif len(img.shape) == 3:
-                if img.shape[2] == 3:
-                    img = img.T  # todo: check for edge cases
 
             instances.append(
                 {
