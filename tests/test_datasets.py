@@ -1,9 +1,10 @@
 """Test dataset logic."""
-import torch
-from biogtr.datasets.sleap_dataset import SleapDataset
+from biogtr.datasets.data_utils import get_max_padding
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
+from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.tracking_dataset import TrackingDataset
 from torch.utils.data import DataLoader
+import torch
 
 
 def test_sleap_dataset(two_flies):
@@ -170,3 +171,96 @@ def test_tracking_dataset(two_flies):
         and tracking_ds.val_dataloader().batch_size == 2
         and tracking_ds.test_dataloader().batch_size == 2
     )
+
+
+def test_augmentations(two_flies, ten_icy_particles):
+    """Test augmentations.
+
+    Args:
+        two_flies: flies fixture used for testing
+        ten_icy_particles: icy fixture used for testing
+    """
+
+    no_augs_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+    )
+
+    no_augs_instances = next(iter(no_augs_ds))
+
+    augmentations = {
+        "Rotate": {"limit": 45, "p": 1.0},
+        "GaussianBlur": {"blur_limit": (3, 7), "sigma_limit": 0, "p": 1.0},
+        "GaussNoise": {
+            "var_limit": (10.0, 50.0),
+            "mean": 0,
+            "per_channel": True,
+            "p": 1.0,
+        },
+    }
+
+    augs_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+        augmentations=augmentations,
+    )
+
+    augs_instances = next(iter(augs_ds))
+
+    a = no_augs_instances[0]["crops"]
+    b = augs_instances[0]["crops"]
+
+    assert not torch.all(a.eq(b))
+
+    no_augs_ds = MicroscopyDataset(
+        videos=[ten_icy_particles[0]],
+        tracks=[ten_icy_particles[1]],
+        source="icy",
+        crop_size=64,
+        chunk=True,
+        clip_length=8,
+    )
+
+    no_augs_instances = next(iter(no_augs_ds))
+
+    # pad before rotation
+    padded_height, padded_width = get_max_padding(512, 512)
+
+    pad = {
+        "PadIfNeeded": {
+            "min_height": padded_height,
+            "min_width": padded_width,
+            "border_mode": 0,
+        }
+    }
+
+    pad.update(augmentations)
+    augmentations = pad
+
+    # add another to end
+    motion = {"MotionBlur": {"blur_limit": (3, 7), "p": 0.5}}
+
+    augmentations.update(motion)
+
+    augs_ds = MicroscopyDataset(
+        videos=[ten_icy_particles[0]],
+        tracks=[ten_icy_particles[1]],
+        source="icy",
+        crop_size=64,
+        chunk=True,
+        clip_length=8,
+        augmentations=augmentations,
+    )
+
+    augs_instances = next(iter(augs_ds))
+
+    a = no_augs_instances[0]["crops"]
+    b = augs_instances[0]["crops"]
+
+    assert not torch.all(a.eq(b))
