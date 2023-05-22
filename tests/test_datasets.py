@@ -54,6 +54,30 @@ def test_icy_dataset(ten_icy_particles):
     assert len(instances[0]["gt_track_ids"]) == instances[0]["num_detected"].item()
 
 
+def test_trackmate_dataset(trackmate_lysosomes):
+    """Test trackmate dataset logic.
+
+    Args:
+        trackmate_lysosomes: trackmate fixture used for testing
+    """
+    clip_length = 8
+
+    train_ds = MicroscopyDataset(
+        videos=[trackmate_lysosomes[0]],
+        tracks=[trackmate_lysosomes[1]],
+        source="trackmate",
+        crop_size=64,
+        chunk=True,
+        clip_length=clip_length,
+    )
+
+    instances = next(iter(train_ds))
+
+    assert len(instances) == clip_length
+    assert len(instances[0]["gt_track_ids"]) == 26
+    assert len(instances[0]["gt_track_ids"]) == instances[0]["num_detected"].item()
+
+
 def test_isbi_dataset(isbi_microtubules, isbi_receptors):
     """Test isbi dataset logic.
 

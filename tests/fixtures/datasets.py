@@ -80,3 +80,10 @@ def isbi_receptors(isbi_data_dir):
     image = sorted(glob.glob(os.path.join(isbi_data_dir, "receptors", "*.tif")))
     gt = glob.glob(os.path.join(isbi_data_dir, "receptors", "*.xml"))[0]
     return [image, gt]
+
+
+@pytest.fixture
+def trackmate_lysosomes(trackmate_data_dir):
+    image = glob.glob(os.path.join(trackmate_data_dir, "*.tif"))[0]
+    gt = glob.glob(os.path.join(trackmate_data_dir, "*.csv"))[0]
+    return [image, gt]
