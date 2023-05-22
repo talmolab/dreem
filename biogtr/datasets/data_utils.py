@@ -236,8 +236,8 @@ def parse_trackmate(data_path: str) -> pd.DataFrame:
                 tracks_df.loc[tracks_df["ID"].isin(spot_ids), "TRACK_ID"] = label_id
                 label_id += 1
 
-    elif data_path.endswith("csv"):
-        tracks_df = pd.read_csv(csv_path, encoding="ISO-8859-1")
+    elif data_path.endswith(".csv"):
+        tracks_df = pd.read_csv(data_path, encoding="ISO-8859-1")
 
     else:
         raise ValueError(f"Unsupported trackmate file extension: {data_path}")
@@ -391,10 +391,7 @@ def build_augmentations(augmentations: dict):
 def get_max_padding(height, width):
     diagonal = math.ceil(math.sqrt(height**2 + width**2))
 
-    pad_y = int((diagonal - height) / 2)
-    pad_x = int((diagonal - width) / 2)
-
-    padded_height = height + pad_y
-    padded_width = width + pad_x
+    padded_height = height + (diagonal - height)
+    padded_width = width + (diagonal - width)
 
     return padded_height, padded_width
