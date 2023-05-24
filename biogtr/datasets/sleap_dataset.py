@@ -24,7 +24,7 @@ class SleapDataset(Dataset):
         mode: str = "train",
         augmentations: dict = None,
     ):
-        """Initialize Sleap Dataset.
+        """Initialize SleapDataset.
 
         Args:
             slp_files: a list of .slp files storing tracking annotations
@@ -43,7 +43,6 @@ class SleapDataset(Dataset):
                         'RandomContrast': {'limit': 0.2, 'p': 0.6}
                     }
         """
-
         self.slp_files = slp_files
         self.video_files = video_files
         self.padding = padding
