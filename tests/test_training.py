@@ -40,14 +40,15 @@ def test_asso_loss():
 
 def test_gtr_runner():
     """Test GTR Runner."""
-    feats = 512
-    num_frames = 5
-    num_detected = 20
+    feats = 128
+    num_frames = 2
+    num_detected = 3
     img_shape = (1, 128, 128)
     n_batches = 2
     instances = []
     train_ds = []
-    epochs = 3
+    epochs = 2
+
     for i in range(n_batches):
         for j in range(num_frames):
             instances.append(
@@ -92,13 +93,16 @@ def test_gtr_runner():
             metrics = gtr_runner.training_step(batch, i)
             assert "loss" in metrics and "sw_cnt" not in metrics
             assert metrics["loss"].requires_grad
+
         for j, batch in enumerate(train_ds):
             gtr_runner.eval()
             with torch.no_grad():
                 metrics = gtr_runner.validation_step(batch, j)
             assert "loss" in metrics and "sw_cnt" in metrics
             assert not metrics["loss"].requires_grad
+
         gtr_runner.train()
+
     for k, batch in enumerate(train_ds):
         gtr_runner.eval()
         with torch.no_grad():

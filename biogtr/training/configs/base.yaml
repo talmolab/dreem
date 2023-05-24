@@ -44,7 +44,7 @@ scheduler:
   patience: 10
   threshold: 1e-4
   threshold_mode: "rel"
-  
+
 tracker:
   window_size: 8
   use_vis_feats: true
@@ -67,7 +67,6 @@ dataset:
     crop_size: 128
     chunk: true
     clip_length: 32
-    crop_type: 'centroid'
 
   val_dataset:
     slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']
@@ -76,7 +75,6 @@ dataset:
     crop_size: 128 
     chunk: True
     clip_length: 32
-    crop_type: 'centroid'
 
   test_dataset:
     slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']
@@ -85,7 +83,6 @@ dataset:
     crop_size: 128 
     chunk: True
     clip_length: 32
-    crop_type: 'centroid'
 
 dataloader:
   train_dataloader:
@@ -136,8 +133,3 @@ trainer:
   log_every_n_steps: 1
   max_epochs: 100
   min_epochs: 10
-
-
-
-
-

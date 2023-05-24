@@ -1,7 +1,10 @@
 """Module containing logic for loading sleap datasets."""
+import albumentations as A
 import torch
 import imageio
+import numpy as np
 import sleap_io as sio
+import random
 from biogtr.datasets import data_utils
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as tvf
@@ -18,10 +21,8 @@ class SleapDataset(Dataset):
         crop_size: int = 128,
         chunk: bool = True,
         clip_length: int = 500,
-        crop_type: str = "centroid",
         mode: str = "train",
-        tfm: callable = None,
-        tfm_cfg: dict = None,
+        augmentations: dict = None,
     ):
         """Initialize SleapDataset.
 
@@ -32,11 +33,15 @@ class SleapDataset(Dataset):
             crop_size: the size of the object crops
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
-            crop_type: `centroid` or `pose` - determines whether to crop around a centroid or around a pose
-            mode: `train` or `val`. Determines whether this dataset is used for training or validation.
-            Currently doesn't affect dataset logic
-            tfm: The augmentation function from albumentations
-            tfm_cfg: The config for the augmentations
+            mode: `train` or `val`. Determines whether this dataset is used for
+                training or validation. Currently doesn't affect dataset logic
+            augmentations: An optional dict mapping augmentations to parameters. The keys
+                should map directly to augmentation classes in albumentations. Example:
+                    augmentations = {
+                        'Rotate': {'limit': [-90, 90], 'p': 0.5},
+                        'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0, 'p': 0.2},
+                        'RandomContrast': {'limit': 0.2, 'p': 0.6}
+                    }
         """
         self.slp_files = slp_files
         self.video_files = video_files
@@ -44,20 +49,22 @@ class SleapDataset(Dataset):
         self.crop_size = crop_size
         self.chunk = chunk
         self.clip_length = clip_length
-        self.crop_type = crop_type
         self.mode = mode
-        self.tfm = tfm
-        self.tfm_cfg = tfm_cfg
 
-        assert self.crop_type in ["centroid", "pose"], "Invalid crop type!"
+        self.augmentations = (
+            data_utils.build_augmentations(augmentations) if augmentations else None
+        )
 
         self.labels = [sio.load_slp(slp_file) for slp_file in self.slp_files]
+
+        # do we need this? would need to update with sleap-io
+
+        # for label in self.labels:
+        # label.remove_empty_instances(keep_empty_frames=False)
 
         self.anchor_names = [
             data_utils.sorted_anchors(labels) for labels in self.labels
         ]
-        # for label in self.labels:
-        # label.remove_empty_instances(keep_empty_frames=False)
 
         self.frame_idx = [torch.arange(len(label)) for label in self.labels]
 
@@ -133,50 +140,72 @@ class SleapDataset(Dataset):
         video_name = self.video_files[label_idx]
 
         vid_reader = imageio.get_reader(video_name, "ffmpeg")
-        if self.tfm is not None and self.tfm_cfg is not None:
-            aug = self.tfm(**self.frm_cfg)
-        elif self.tfm is not None and self.tfm_cfg is None:
-            aug = self.tfm
-        else:
-            aug = None
 
         instances = []
+
         for i in frame_idx:
-            gt_track_ids, bboxes, crops = [], [], []
+            gt_track_ids, bboxes, crops, poses = [], [], [], []
 
             i = int(i)
 
             lf = video[i]
-            lf_img = vid_reader.get_data(i)
-
-            img = tvf.to_tensor(lf_img)
-
-            _, h, w = img.shape
+            img = vid_reader.get_data(i)
 
             for instance in lf:
                 # gt_track_ids
                 gt_track_ids.append(video.tracks.index(instance.track))
 
-                # # poses
-                # might be necessary later so commenting out for now
-                # poses.append(torch.Tensor(instance.numpy()).astype("float32"))
-
-                # bboxes
-                if aug is not None:
-                    augmented = aug(image=img, keypoints=torch.vstack(centroids))
-                    img, centroids = augmented["image"], augmented["keypoints"]
-
-                if self.crop_type == "centroid":
-                    bbox = data_utils.pad_bbox(
-                        data_utils.centroid_bbox(instance, anchors, self.crop_size),
-                        padding=self.padding,
+                pose = dict(
+                    zip(
+                        [n.name for n in instance.skeleton.nodes],
+                        [
+                            [p.x, p.y]
+                            for _, p in instance.points.items()
+                            if not np.isnan(p.x) and not np.isnan(p.y)
+                        ],
                     )
-                    crop = data_utils.crop_bbox(img, bbox)
-                elif self.crop_type == "pose":
-                    bbox = data_utils.pose_bbox(instance, self.padding, (w, h))
-                    crop = data_utils.resize_and_pad(
-                        data_utils.crop_bbox(img, bbox), self.crop_size
+                )
+                poses.append(pose)
+
+            # augmentations
+            if self.augmentations is not None:
+                for transform in self.augmentations:
+                    if isinstance(transform, A.CoarseDropout):
+                        transform.fill_value = random.randint(0, 255)
+
+                augmented = self.augmentations(
+                    image=img, keypoints=np.vstack([list(s.values()) for s in poses])
+                )
+
+                img, aug_poses = augmented["image"], augmented["keypoints"]
+
+                aug_poses = [
+                    arr
+                    for arr in np.split(
+                        np.array(aug_poses), np.array([len(s) for s in poses]).cumsum()
                     )
+                    if arr.size != 0
+                ]
+
+                aug_poses = [
+                    dict(zip(list(pose_dict.keys()), aug_pose_arr.tolist()))
+                    for aug_pose_arr, pose_dict in zip(aug_poses, poses)
+                ]
+
+                _ = [pose.update(aug_pose) for pose, aug_pose in zip(poses, aug_poses)]
+
+            img = tvf.to_tensor(img)
+
+            for pose in poses:
+                bbox = data_utils.pad_bbox(
+                    data_utils.centroid_bbox(
+                        np.array(list(pose.values())), anchors, self.crop_size
+                    ),
+                    padding=self.padding,
+                )
+
+                crop = data_utils.crop_bbox(img, bbox)
+
                 bboxes.append(bbox)
                 crops.append(crop)
 
