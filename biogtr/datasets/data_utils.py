@@ -292,6 +292,7 @@ def parse_synthetic(xml_path: str, source: str = "icy") -> pd.DataFrame:
 
     Args:
         xml_path: path to .xml file containing ICY or ISBI gt trajectory labels
+        source: synthetic dataset type. Should be either icy or isbi
 
     Returns:
         pandas DataFrame containing frame idx, gt track id
