@@ -1,5 +1,6 @@
 """Test inference logic."""
 import torch
+import pytest
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.inference.tracker import Tracker
 from biogtr.inference import post_processing
@@ -67,7 +68,8 @@ def test_tracker():
     assert len(instances_pred[test_frame]["pred_track_ids"] == num_detected)
 
 
-def test_post_processing():
+@pytest.mark.parametrize("set_default_device", ["cpu"], indirect=True)
+def test_post_processing(set_default_device):
     """Test postprocessing methods.
 
     Tests each postprocessing method to ensure that
@@ -82,12 +84,16 @@ def test_post_processing():
     N = N_t * T
     reid_features = torch.rand((1, 2, D))
     asso_nonk = torch.rand((N_t, N_p))
+
     decay_time = 0
+
     assert (
         asso_nonk
         == post_processing.weight_decay_time(asso_nonk, decay_time, reid_features, T, k)
     ).all()
+
     decay_time = 0.9
+
     assert not (
         asso_nonk
         == post_processing.weight_decay_time(asso_nonk, decay_time, reid_features, T, k)
@@ -95,13 +101,17 @@ def test_post_processing():
 
     asso_output = torch.rand((N_t, M))
     ious = torch.rand((N_t, M))
+
     assert (asso_output == post_processing.weight_iou(asso_output, None, ious)).all()
+
     assert not (
         asso_output == post_processing.weight_iou(asso_output, "mult", ious)
     ).all()
+
     assert not (
         asso_output == post_processing.weight_iou(asso_output, "max", ious)
     ).all()
+
     assert not (
         post_processing.weight_iou(asso_output, "mult", ious)
         == post_processing.weight_iou(asso_output, "max", ious)
@@ -111,6 +121,7 @@ def test_post_processing():
     k_boxes = torch.rand((N_t, 4)) * im_size
     nonk_boxes = torch.rand((N_p, 4)) * im_size
     id_inds = torch.tile(torch.Tensor([0, 1]), (N_p, 1))
+
     assert (
         asso_output
         == post_processing.filter_max_center_dist(
@@ -121,6 +132,7 @@ def test_post_processing():
             id_inds=id_inds,
         )
     ).all()
+
     assert not (
         asso_output
         == post_processing.filter_max_center_dist(
