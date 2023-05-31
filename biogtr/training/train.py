@@ -4,9 +4,9 @@ Used for training a single model or deploying a batch train job on RUNAI CLI
 """
 from biogtr.config import Config
 from biogtr.datasets.tracking_dataset import TrackingDataset
+from multiprocessing import cpu_count
 from omegaconf import DictConfig
 from pprint import pprint
-
 import os
 import hydra
 import pandas as pd
@@ -26,7 +26,6 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 torch.set_default_device(device)
 
 
-# not sure we need hydra? could just do argparse + omegaconf?
 @hydra.main(config_path="configs", config_name=None, version_base=None)
 def main(cfg: DictConfig):
     """Main function for training.
@@ -74,8 +73,6 @@ def main(cfg: DictConfig):
 
     model = train_cfg.get_gtr_runner()
 
-    # test with 1 epoch and single batch, this should be controlled from config
-    # todo: get to work with multi-gpu training
     logger = train_cfg.get_logger()
 
     callbacks = []
@@ -83,11 +80,14 @@ def main(cfg: DictConfig):
     _ = callbacks.append(pl.callbacks.LearningRateMonitor())
     _ = callbacks.append(train_cfg.get_early_stopping())
 
+    accelerator = "gpu" if torch.cuda.is_available() else "cpu"
+    devices = torch.cuda.device_count() if torch.cuda.is_available() else cpu_count()
+
     trainer = train_cfg.get_trainer(
         callbacks,
         logger,
-        accelerator="gpu" if torch.cuda.is_available() else "cpu",
-        devices=1 if torch.cuda.is_available() else "cpu",
+        accelerator=accelerator,
+        devices=devices,
     )
 
     ckpt_path = train_cfg.get_ckpt_path()
@@ -99,10 +99,14 @@ if __name__ == "__main__":
 
     # train with base config:
     # python train.py --config-dir=./configs --config-name=base
+
     # override with params config:
     # python train.py --config-dir=./configs --config-name=base +params_config=configs/params.yaml
+
     # override with params config, and specific params:
     # python train.py --config-dir=./configs --config-name=base +params_config=configs/params.yaml model.norm=True model.decoder_self_attn=True dataset.padding=10
+
     # deploy batch train job:
     # python train.py --config-dir=./configs --config-name=base +batch_config=test_batch_train.csv
+
     main()
