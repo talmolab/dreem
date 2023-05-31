@@ -125,6 +125,7 @@ class Config:
             raise ValueError(
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
+
         if "slp_files" in dataset_params:
             return SleapDataset(**dataset_params)
         elif "tracks" in dataset_params or "source" in dataset_params:
@@ -209,14 +210,32 @@ class Config:
         loss_params = self.cfg.loss
         return AssoLoss(**loss_params)
 
-    def get_logger(self) -> pl.loggers.WandbLogger:
-        """Getter for lightning logging callback.
+    def get_logger(self):
+        """Getter for logging callback.
 
         Returns:
-            A lightning Logger with specified params
+        A Logger with specified params
         """
         logger_params = self.cfg.logging
-        return pl.loggers.WandbLogger(config=self.cfg, **logger_params)
+        logger_type = logger_params.pop("logger_type", None)
+
+        valid_loggers = [
+            "CSVLogger",
+            "TensorBoardLogger",
+            "WandbLogger",
+        ]
+
+        if logger_type in valid_loggers:
+            logger_class = getattr(pl.loggers, logger_type)
+            try:
+                return logger_class(**logger_params)
+            except Exception as e:
+                print(e, logger_type)
+        else:
+            print(
+                f"{logger_type} not one of {valid_loggers} or set to None, skipping logging"
+            )
+            return None
 
     def get_early_stopping(self) -> pl.callbacks.EarlyStopping:
         """Getter for lightning early stopping callback.
@@ -237,7 +256,10 @@ class Config:
         checkpoint_params = OmegaConf.to_container(self.cfg.checkpointing, resolve=True)
         logging_params = self.cfg.logging
         if "dirpath" not in checkpoint_params or checkpoint_params["dirpath"] is None:
-            dirpath = f"./models/{logging_params.group}/{logging_params.name}"
+            if "group" in logging_params:
+                dirpath = f"./models/{logging_params.group}/{logging_params.name}"
+            else:
+                dirpath = "./models/{logging_params.name}"
 
         else:
             dirpath = checkpoint_params["dirpath"]
