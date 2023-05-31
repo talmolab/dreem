@@ -5,7 +5,7 @@ import sys
 import ast
 import torch
 import pytorch_lightning as pl
-from biogtr.models.model_utils import init_optimizer, init_scheduler
+from biogtr.models.model_utils import init_optimizer, init_scheduler, init_logger
 from biogtr.models.gtr_runner import GTRRunner
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
@@ -217,25 +217,7 @@ class Config:
         A Logger with specified params
         """
         logger_params = self.cfg.logging
-        logger_type = logger_params.pop("logger_type", None)
-
-        valid_loggers = [
-            "CSVLogger",
-            "TensorBoardLogger",
-            "WandbLogger",
-        ]
-
-        if logger_type in valid_loggers:
-            logger_class = getattr(pl.loggers, logger_type)
-            try:
-                return logger_class(**logger_params)
-            except Exception as e:
-                print(e, logger_type)
-        else:
-            print(
-                f"{logger_type} not one of {valid_loggers} or set to None, skipping logging"
-            )
-            return None
+        return init_logger(logger_params)
 
     def get_early_stopping(self) -> pl.callbacks.EarlyStopping:
         """Getter for lightning early stopping callback.

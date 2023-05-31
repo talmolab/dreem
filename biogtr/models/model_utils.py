@@ -1,7 +1,8 @@
 """Module containing model helper functions."""
-from typing import Dict, List, Tuple, Iterable
-import torch
 from copy import deepcopy
+from typing import Dict, List, Tuple, Iterable
+from pytorch_lightning import loggers
+import torch
 
 
 def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -35,43 +36,29 @@ def softmax_asso(asso_output: list[torch.Tensor]) -> list[torch.Tensor]:
     """Applies the softmax activation function on asso_output.
 
     Args:
-        asso_output: Same structure as before. It's a list of tensors.
-        An example is shown  below. The shape is modified.
+        asso_output: Raw logits output of the tracking transformer. A list of
+            torch tensors of shape (T, N_t, N_i) where:
+                T: the length of the window
+                N_t: number of instances in current/query frame (rightmost frame
+                    of the window).
+                N_i: number of detected instances in i-th frame of window.
 
     Returns:
-        asso_output: Exactly the same as before but with the softmax applied.
-        # ------------------------ An example of asso_output ----------------------- #
-        N_i: number of detected instances in i-th frame of window.
-        N_t: number of instances in current/query frame (rightmost frame of the window).
-        T: length of window.
-        asso_output is of shape: (T, N_t, N_i).
+        asso_output: Probabilities following softmax function, with same shape
+            as input.
     """
-    # N_i: number of detected instances in i-th frame of window.
-    # N_t: number of instances in current frame (rightmost frame of the window).
-    # T: length of window.
-
-    # asso_output: (T, N_t, N_i)
-
     asso_active = []
     for asso in asso_output:
-        # asso: (N_t, N_i)
-
-        # I'm guessing what they are doing here is giving the model a chance to pick "uncertain".
-        # If the model doesn't find any high associations between 2 instances within the window,
-        # this "uncertain" category will have the highest probability and the other classes/categories
-        # will have lower probability.
         asso = torch.cat([asso, asso.new_zeros((asso.shape[0], 1))], dim=1).softmax(
             dim=1
         )[:, :-1]
         asso_active.append(asso)
 
-    return asso_active  # (T, N_t, N_i)
+    return asso_active
 
 
 def init_optimizer(params: Iterable, config: dict):
     """Initialize optimizer based on config parameters.
-
-    Allows more flexibility in which optimizer to use
 
     Allows more flexibility in which optimizer to use
 
@@ -114,7 +101,7 @@ def init_scheduler(optimizer: torch.optim.Optimizer, config: dict):
 
     Args:
         optimizer: optimizer for which to adjust lr
-        config: lr scheduler hyperparameters including scheduler name name
+        config: lr scheduler hyperparameters including scheduler name
 
     Returns:
         scheduler: A scheduler with specified params
@@ -143,3 +130,35 @@ def init_scheduler(optimizer: torch.optim.Optimizer, config: dict):
         raise ValueError(f"Unsupported optimizer type: {scheduler}")
 
     return scheduler_class(optimizer, **scheduler_params)
+
+
+def init_logger(config: dict):
+    """Initialize logger based on config parameters.
+
+    Allows more flexibility in choosing which logger to use.
+
+    Args:
+        config: logger hyperparameters
+
+    Returns:
+        logger: A logger with specified params (or None).
+    """
+    logger_type = config.pop("logger_type", None)
+
+    valid_loggers = [
+        "CSVLogger",
+        "TensorBoardLogger",
+        "WandbLogger",
+    ]
+
+    if logger_type in valid_loggers:
+        logger_class = getattr(loggers, logger_type)
+        try:
+            return logger_class(**config)
+        except Exception as e:
+            print(e, logger_type)
+    else:
+        print(
+            f"{logger_type} not one of {valid_loggers} or set to None, skipping logging"
+        )
+        return None
