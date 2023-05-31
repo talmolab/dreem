@@ -78,11 +78,12 @@ def test_post_processing(set_default_device):
     T = 8
     k = 5
     D = 512
-    M = 2
-    N_t = 2
+    M = 5
+    N_t = 5
     N_p = N_t * (T - 1)
     N = N_t * T
-    reid_features = torch.rand((1, 2, D))
+
+    reid_features = torch.rand((1, N_t, D))
     asso_nonk = torch.rand((N_t, N_p))
 
     decay_time = 0
@@ -120,7 +121,7 @@ def test_post_processing(set_default_device):
     im_size = 128
     k_boxes = torch.rand((N_t, 4)) * im_size
     nonk_boxes = torch.rand((N_p, 4)) * im_size
-    id_inds = torch.tile(torch.Tensor([0, 1]), (N_p, 1))
+    id_inds = torch.tile(torch.cat((torch.zeros(M - 1), torch.ones(1))), (N_p, 1))
 
     assert (
         asso_output
