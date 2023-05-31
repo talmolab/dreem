@@ -1,19 +1,16 @@
 # to implement - config class that handles getters/setters
 """Data structures for handling config parsing."""
-import hydra
-import sys
-import ast
-import torch
-import pytorch_lightning as pl
-from biogtr.models.model_utils import init_optimizer, init_scheduler, init_logger
-from biogtr.models.gtr_runner import GTRRunner
-from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
-from biogtr.training.losses import AssoLoss
-from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
+from biogtr.datasets.sleap_dataset import SleapDataset
+from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
+from biogtr.models.gtr_runner import GTRRunner
+from biogtr.models.model_utils import init_optimizer, init_scheduler, init_logger
+from biogtr.training.losses import AssoLoss
 from omegaconf import DictConfig, OmegaConf
-from typing import Union, Iterable
 from pprint import pprint
+from typing import Union, Iterable
+import pytorch_lightning as pl
+import torch
 
 
 class Config:
@@ -25,7 +22,8 @@ class Config:
         First uses `base_param` file then overwrites with specific `params_config`.
 
         Args:
-            cfg: The `DictConfig` containing all the hyperparameters needed for training/evaluation
+            cfg: The `DictConfig` containing all the hyperparameters needed for
+                training/evaluation
         """
         base_cfg = cfg
         print(f"Base Config: {cfg}")
@@ -53,7 +51,8 @@ class Config:
         Useful for changing 1 or 2 hyperparameters such as dataset.
 
         Args:
-            hparams: A dict containing the hyperparameter to be overwritten and the value to be changed t
+            hparams: A dict containing the hyperparameter to be overwritten and
+                the value to be changed
 
         Returns:
             `True` if config is successfully updated, `False` otherwise
@@ -111,7 +110,9 @@ class Config:
         """Getter for datasets.
 
         Args:
-            mode: [None, "train", "test", "val"]. Indicates whether to use train, val, or test params for dataset
+            mode: [None, "train", "test", "val"]. Indicates whether to use
+                train, val, or test params for dataset
+
         Returns:
             Either a `SleapDataset` or `MicroscopyDataset` with params indicated by cfg
         """
@@ -132,7 +133,8 @@ class Config:
             return MicroscopyDataset(**dataset_params)
         else:
             raise ValueError(
-                "Could not resolve dataset type from Config! Please include either `slp_files` or `tracks`/`source`"
+                "Could not resolve dataset type from Config! Please include \
+                either `slp_files` or `tracks`/`source`"
             )
 
     def get_dataloader(
@@ -142,7 +144,9 @@ class Config:
 
         Args:
             dataset: the Sleap or Microscopy Dataset used to initialize the dataloader
-            mode: either ["train", "val", or "test"] indicates which dataset config to use
+            mode: either ["train", "val", or "test"] indicates which dataset
+                config to use
+
         Returns:
             A torch dataloader for `dataset` with parameters configured as specified
         """
@@ -181,7 +185,9 @@ class Config:
         """Getter for optimizer.
 
         Args:
-            params: iterable of model parameters to optimize or dicts defining parameter groups
+            params: iterable of model parameters to optimize or dicts defining
+                parameter groups
+
         Returns:
             A torch Optimizer with specified params
         """
@@ -195,6 +201,7 @@ class Config:
 
         Args:
             optimizer: The optimizer to wrap the scheduler around
+
         Returns:
             A torch learning rate scheduler with specified params
         """
@@ -214,7 +221,7 @@ class Config:
         """Getter for logging callback.
 
         Returns:
-        A Logger with specified params
+            A Logger with specified params
         """
         logger_params = self.cfg.logging
         return init_logger(logger_params)
@@ -266,10 +273,12 @@ class Config:
         """Getter for the lightning trainer.
 
         Args:
-            callbacks: a list of lightning callbacks preconfigured to be used for training
+            callbacks: a list of lightning callbacks preconfigured to be used
+                for training
             logger: the Wandb logger used for logging during training
             accelerator: either "gpu" or "cpu" specifies which device to use
             devices: The number of gpus to be used. 0 means cpu
+
         Returns:
             A lightning Trainer with specified params
         """
