@@ -9,6 +9,21 @@ model:
 
 dataset:
   train_dataset:
-    slp_files: ['190612_110405_wt_18159111_rig2.2@11730.slp']
-    video_files: ['190612_110405_wt_18159111_rig2.2@11730.mp4']
     clip_length: 32
+    augmentations:
+      Rotate:
+        limit: 45
+        p: 1.0
+      GaussianBlur:
+        blur_limit: [3,7]
+        sigma_limit: 0
+        p: 1.0
+
+logging:
+  logger_type: 'CSVLogger'
+
+trainer:
+  limit_train_batches: 1
+  limit_test_batches: 1
+  limit_val_batches: 1
+  max_epochs: 1

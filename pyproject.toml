@@ -34,3 +34,6 @@ dev = ["pytest", "pytest-cov", "black", "pydocstyle", "toml", "twine", "build"]
 
 [project.scripts]
 biogtr = "biogtr.cli:cli"
+
+[tool.black]
+line-length = 88

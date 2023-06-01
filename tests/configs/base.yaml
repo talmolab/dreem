@@ -97,14 +97,8 @@ dataloader:
 
 logging:
   name: "example_train"
-  entity: null
-  job_type: "train"
-  notes: "Example train job"
-  dir: "./logs"
-  group: "example"
-  save_dir: './logs'
-  project: "GTR"
-  log_model: "all"
+  save_dir: "./logs"
+  logger_type: null
 
 early_stopping:
   monitor: "val_loss"

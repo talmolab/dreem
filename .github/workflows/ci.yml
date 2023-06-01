@@ -55,7 +55,7 @@ jobs:
     - name: Run Black
       run: |
         black --check biogtr tests
-    
+
     - name: Run pydocstyle
       run: |
         pydocstyle --convention=google biogtr/

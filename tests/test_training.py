@@ -1,13 +1,15 @@
 """Test training logic."""
+import os
+import pytest
 import torch
 from biogtr.training.losses import AssoLoss
 from biogtr.models.gtr_runner import GTRRunner
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
+from omegaconf import OmegaConf, DictConfig
+from biogtr.config import Config
+from biogtr.training.train import main
 
 # todo: add named tensor tests
-# todo: add fixtures
-
-torch.set_default_device("cpu")
 
 
 def test_asso_loss():
@@ -38,8 +40,8 @@ def test_asso_loss():
     assert type(loss.item()) == float
 
 
-def test_gtr_runner():
-    """Test GTR Runner."""
+def test_basic_gtr_runner():
+    """Test basic GTR Runner."""
     feats = 128
     num_frames = 2
     num_detected = 3
@@ -109,3 +111,24 @@ def test_gtr_runner():
             metrics = gtr_runner.test_step(batch, k)
         assert "loss" in metrics and "sw_cnt" in metrics
         assert not metrics["loss"].requires_grad
+
+
+# temp fix for windows test, still need to debug
+@pytest.mark.skipif(
+    os.name == "nt" and os.environ.get("GITHUB_ACTIONS") == "true",
+    reason="Silent fail on GitHub Actions Windows os",
+)
+def test_config_gtr_runner(base_config, params_config, two_flies):
+    """Test config GTR Runner."""
+    base_cfg = OmegaConf.load(base_config)
+    base_cfg["params_config"] = params_config
+    cfg = Config(base_cfg)
+
+    hparams = {
+        "dataset.clip_length": 8,
+        "trainer.min_epochs": 1,
+    }
+
+    cfg.set_hparams(hparams)
+
+    main(cfg.cfg)

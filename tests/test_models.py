@@ -14,9 +14,6 @@ from biogtr.models.visual_encoder import VisualEncoder
 
 
 # todo: add named tensor tests
-# todo: add fixtures
-
-torch.set_default_device("cpu")
 
 
 def test_mlp():
