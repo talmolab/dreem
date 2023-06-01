@@ -95,16 +95,12 @@ jobs:
         shell: bash -l {0}
         run: |
           pytest
-        env:
-          OVERRIDE_DEVICE: cpu
 
       - name: Test with pytest (with coverage)
         if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.python == 3.9 }}
         shell: bash -l {0}
         run: |
           pytest --cov=biogtr --cov-report=xml tests/
-        env:
-          OVERRIDE_DEVICE: cpu
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
