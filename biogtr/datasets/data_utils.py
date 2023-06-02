@@ -2,9 +2,11 @@
 from PIL import Image
 from numpy.typing import ArrayLike
 from torchvision.transforms import functional as tvf
+from typing import List, Dict
 from xml.etree import cElementTree as et
 import albumentations as A
 import math
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sleap_io as sio
@@ -430,3 +432,39 @@ def get_max_padding(height: int, width: int) -> tuple:
     padded_width = width + (diagonal - width)
 
     return padded_height, padded_width
+
+
+def view_training_batch(
+    instances: List[Dict[str, List[np.ndarray]]], num_frames: int = 1
+) -> None:
+    """Displays a grid of images from a batch of training instances.
+
+    Args:
+        instances: A list of training instances, where each instance is a
+            dictionary containing the object crops.
+        num_frames: The number of frames to display per instance.
+
+    Returns:
+        None
+    """
+    num_crops = len(instances[0]["crops"])
+    num_columns = num_crops
+    num_rows = num_frames
+
+    base_size = 2
+    fig_size = (base_size * num_columns, base_size * num_rows)
+
+    fig, axes = plt.subplots(num_rows, num_columns, figsize=fig_size)
+
+    for i in range(num_frames):
+        for j, data in enumerate(instances[i]["crops"]):
+            try:
+                ax = axes[j] if num_frames == 1 else axes[i, j]
+                ax.imshow(data.T)
+                ax.axis("off")
+            except Exception as e:
+                print(e)
+                pass
+
+    plt.tight_layout()
+    plt.show()

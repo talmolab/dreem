@@ -127,3 +127,8 @@ trainer:
   log_every_n_steps: 1
   max_epochs: 100
   min_epochs: 10
+
+view_batch:
+  enable: False
+  num_frames: 1
+  no_train: False
