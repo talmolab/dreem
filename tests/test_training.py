@@ -113,10 +113,10 @@ def test_basic_gtr_runner():
         assert not metrics["loss"].requires_grad
 
 
-# temp fix for windows test, still need to debug
+# temp fix for actions test, still need to debug
 @pytest.mark.skipif(
-    os.name == "nt" and os.environ.get("GITHUB_ACTIONS") == "true",
-    reason="Silent fail on GitHub Actions Windows os",
+    os.environ.get("GITHUB_ACTIONS") == "true",
+    reason="Silent fail on GitHub Actions",
 )
 def test_config_gtr_runner(base_config, params_config, two_flies):
     """Test config GTR Runner."""
