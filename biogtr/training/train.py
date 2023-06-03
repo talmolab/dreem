@@ -4,6 +4,7 @@ Used for training a single model or deploying a batch train job on RUNAI CLI
 """
 from biogtr.config import Config
 from biogtr.datasets.tracking_dataset import TrackingDataset
+from biogtr.datasets.data_utils import view_training_batch
 from multiprocessing import cpu_count
 from omegaconf import DictConfig
 from pprint import pprint
@@ -37,6 +38,7 @@ def main(cfg: DictConfig):
         cfg: The config dict parsed by `hydra`
     """
     train_cfg = Config(cfg)
+
     # update with parameters for batch train job
     if "batch_config" in cfg.keys():
         try:
@@ -70,6 +72,13 @@ def main(cfg: DictConfig):
     dataset = TrackingDataset(
         train_dl=train_dataloader, val_dl=val_dataloader, test_dl=test_dataloader
     )
+
+    if cfg.view_batch.enable:
+        instances = next(iter(train_dataset))
+        view_training_batch(instances, num_frames=cfg.view_batch.num_frames)
+
+        if cfg.view_batch.no_train:
+            return
 
     model = train_cfg.get_gtr_runner()
 

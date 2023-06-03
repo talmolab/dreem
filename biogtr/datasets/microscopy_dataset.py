@@ -66,8 +66,7 @@ class MicroscopyDataset(Dataset):
             )
 
         self.labels = [
-            parser(self.tracks[video_idx])
-            for video_idx in torch.arange(len(self.tracks))
+            parser(self.tracks[video_idx]) for video_idx in range(len(self.tracks))
         ]
 
         self.frame_idx = [

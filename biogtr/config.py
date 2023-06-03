@@ -248,7 +248,7 @@ class Config:
             if "group" in logging_params:
                 dirpath = f"./models/{logging_params.group}/{logging_params.name}"
             else:
-                dirpath = "./models/{logging_params.name}"
+                dirpath = f"./models/{logging_params.name}"
 
         else:
             dirpath = checkpoint_params["dirpath"]
