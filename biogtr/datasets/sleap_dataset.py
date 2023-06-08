@@ -144,7 +144,7 @@ class SleapDataset(Dataset):
         instances = []
 
         for i in frame_idx:
-            gt_track_ids, bboxes, crops, poses = [], [], [], []
+            gt_track_ids, bboxes, crops, poses, shown_poses = [], [], [], [], []
 
             i = int(i)
 
@@ -155,17 +155,23 @@ class SleapDataset(Dataset):
                 # gt_track_ids
                 gt_track_ids.append(video.tracks.index(instance.track))
 
-                pose = dict(
-                    zip(
-                        [n.name for n in instance.skeleton.nodes],
-                        [
-                            [p.x, p.y]
-                            for _, p in instance.points.items()
-                            if not np.isnan(p.x) and not np.isnan(p.y)
-                        ],
+                poses.append(
+                    dict(
+                        zip(
+                            [n.name for n in instance.skeleton.nodes],
+                            np.array(instance.numpy()).tolist(),
+                        )
                     )
                 )
-                poses.append(pose)
+
+                shown_poses.append(
+                    dict(
+                        zip(
+                            [n.name for n in instance.skeleton.nodes],
+                            [[p.x, p.y] for p in instance.points.values()],
+                        )
+                    )
+                )
 
             # augmentations
             if self.augmentations is not None:
@@ -174,7 +180,8 @@ class SleapDataset(Dataset):
                         transform.fill_value = random.randint(0, 255)
 
                 augmented = self.augmentations(
-                    image=img, keypoints=np.vstack([list(s.values()) for s in poses])
+                    image=img,
+                    keypoints=np.vstack([list(s.values()) for s in shown_poses]),
                 )
 
                 img, aug_poses = augmented["image"], augmented["keypoints"]
@@ -182,14 +189,15 @@ class SleapDataset(Dataset):
                 aug_poses = [
                     arr
                     for arr in np.split(
-                        np.array(aug_poses), np.array([len(s) for s in poses]).cumsum()
+                        np.array(aug_poses),
+                        np.array([len(s) for s in shown_poses]).cumsum(),
                     )
                     if arr.size != 0
                 ]
 
                 aug_poses = [
                     dict(zip(list(pose_dict.keys()), aug_pose_arr.tolist()))
-                    for aug_pose_arr, pose_dict in zip(aug_poses, poses)
+                    for aug_pose_arr, pose_dict in zip(aug_poses, shown_poses)
                 ]
 
                 _ = [pose.update(aug_pose) for pose, aug_pose in zip(poses, aug_poses)]

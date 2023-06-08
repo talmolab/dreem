@@ -71,16 +71,15 @@ def get_bbox(center: ArrayLike, size: int) -> torch.Tensor:
     return bbox
 
 
-def centroid_bbox(
-    instance: sio.Instance, anchors: list, crop_size: int
-) -> torch.Tensor:
+def centroid_bbox(points: ArrayLike, anchors: list, crop_size: int) -> torch.Tensor:
     """Calculate bbox around instance centroid.
 
     This is useful for ensuring that crops are centered around each instance
     in the case of incorrect pose estimates.
 
     Args:
-        instance: a labeled instance in a frame
+        points: 2d array of centroid coordinates where each row corresponds to a
+            different anchor point.
         anchors: indices of a given anchor point to use as the centroid
         crop_size: Integer specifying the crop height and width
 
@@ -88,7 +87,7 @@ def centroid_bbox(
         Bounding box in [y1, x1, y2, x2] format.
     """
     for anchor in anchors:
-        cx, cy = instance[anchor][0], instance[anchor][1]
+        cx, cy = points[anchor][0], points[anchor][1]
         if not np.isnan(cx):
             break
 
