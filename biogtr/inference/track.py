@@ -64,7 +64,7 @@ def inference(
             save_dict["Frame"] = frame_ids
             save_dict["X"] = X
             save_dict["Y"] = Y
-            save_dict["Predicted Track ID"] = pred_track_ids
+            save_dict["Pred_track_id"] = pred_track_ids
             save_df = pd.DataFrame(save_dict)
             saved.append(save_df)
 
