@@ -135,11 +135,14 @@ class SleapDataset(Dataset):
         anchors = [
             video.skeletons[0].node_names.index(anchor_name)
             for anchor_name in self.anchor_names[label_idx]
-        ]  # get the nodes from the skeleton
+        ]
 
         video_name = self.video_files[label_idx]
 
         vid_reader = imageio.get_reader(video_name, "ffmpeg")
+
+        img = vid_reader.get_data(0)
+        crop_shape = (img.shape[-1], *(self.crop_size + 2 * self.padding,) * 2)
 
         instances = []
 
@@ -179,10 +182,13 @@ class SleapDataset(Dataset):
                     if isinstance(transform, A.CoarseDropout):
                         transform.fill_value = random.randint(0, 255)
 
-                augmented = self.augmentations(
-                    image=img,
-                    keypoints=np.vstack([list(s.values()) for s in shown_poses]),
-                )
+                if shown_poses:
+                    keypoints = np.vstack([list(s.values()) for s in shown_poses])
+
+                else:
+                    keypoints = []
+
+                augmented = self.augmentations(image=img, keypoints=keypoints)
 
                 img, aug_poses = augmented["image"], augmented["keypoints"]
 
@@ -217,6 +223,10 @@ class SleapDataset(Dataset):
                 bboxes.append(bbox)
                 crops.append(crop)
 
+            stacked_crops = (
+                torch.stack(crops) if crops else torch.empty((0, *crop_shape))
+            )
+
             instances.append(
                 {
                     "video_id": torch.tensor([label_idx]),
@@ -224,8 +234,8 @@ class SleapDataset(Dataset):
                     "frame_id": torch.tensor([i]),
                     "num_detected": torch.tensor([len(bboxes)]),
                     "gt_track_ids": torch.tensor(gt_track_ids),
-                    "bboxes": torch.stack(bboxes),
-                    "crops": torch.stack(crops),
+                    "bboxes": torch.stack(bboxes) if bboxes else torch.empty((0, 4)),
+                    "crops": stacked_crops,
                     "features": torch.tensor([]),
                     "pred_track_ids": torch.tensor([-1 for _ in range(len(bboxes))]),
                     "asso_output": torch.tensor([]),
