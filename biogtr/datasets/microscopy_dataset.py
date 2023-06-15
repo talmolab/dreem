@@ -92,7 +92,6 @@ class MicroscopyDataset(BaseDataset):
         Args:
             idx: the index of the batch.
         """
-
         return self.label_idx[idx], self.chunked_frame_idx[idx]
 
     def get_instances(self, label_idx: List[int], frame_idx: List[int]) -> list[dict]:

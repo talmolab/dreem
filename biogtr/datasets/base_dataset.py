@@ -1,3 +1,4 @@
+"""Module containing logic for loading datasets."""
 from biogtr.datasets import data_utils
 from torch.utils.data import Dataset
 from typing import List
@@ -5,6 +6,8 @@ import torch
 
 
 class BaseDataset(Dataset):
+    """Base Dataset for microscopy and sleap datasets to override."""
+
     def __init__(
         self,
         files: list[str],
