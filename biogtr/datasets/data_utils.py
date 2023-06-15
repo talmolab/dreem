@@ -458,9 +458,15 @@ def view_training_batch(
     for i in range(num_frames):
         for j, data in enumerate(instances[i]["crops"]):
             try:
-                ax = axes[j] if num_frames == 1 else axes[i, j]
+                ax = (
+                    axes[j]
+                    if num_frames == 1
+                    else (axes[i] if num_crops == 1 else axes[i, j])
+                )
+
                 ax.imshow(data.T)
                 ax.axis("off")
+
             except Exception as e:
                 print(e)
                 pass
