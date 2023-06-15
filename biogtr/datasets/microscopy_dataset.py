@@ -87,6 +87,12 @@ class MicroscopyDataset(BaseDataset):
         self.create_chunks()
 
     def get_indices(self, idx):
+        """Retrieves label and frame indices given batch index.
+
+        Args:
+            idx: the index of the batch.
+        """
+
         return self.label_idx[idx], self.chunked_frame_idx[idx]
 
     def get_instances(self, label_idx: List[int], frame_idx: List[int]) -> list[dict]:

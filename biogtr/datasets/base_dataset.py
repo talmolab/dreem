@@ -44,7 +44,7 @@ class BaseDataset(Dataset):
         self.labels = None
 
     def create_chunks(self):
-        """Get indexing for data
+        """Get indexing for data.
 
         Creates both indexes for selecting dataset (label_idx) and frame in
         dataset (chunked_frame_idx). If chunking is false, we index directly
@@ -100,7 +100,7 @@ class BaseDataset(Dataset):
             idx: the index of the batch. Note this is not the index of the video
             or the frame.
 
-         Returns:
+        Returns:
             A list of dicts where each dict corresponds a frame in the chunk and
             each value is a `torch.Tensor`. Dict elements can be seen in
             subclasses
@@ -124,7 +124,7 @@ class BaseDataset(Dataset):
         raise NotImplementedError("Must be implemented in subclass")
 
     def get_instances(self, label_idx: List[int], frame_idx: List[int]):
-        """Builds instances dict given label and frame indices
+        """Builds instances dict given label and frame indices.
 
         This method should be implemented in any subclass of the BaseDataset.
 
