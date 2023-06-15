@@ -1,10 +1,35 @@
 """Test dataset logic."""
+from biogtr.datasets.base_dataset import BaseDataset
 from biogtr.datasets.data_utils import get_max_padding
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.tracking_dataset import TrackingDataset
 from torch.utils.data import DataLoader
+import pytest
 import torch
+
+
+def test_base_dataset():
+    """Test BaseDataset logic."""
+
+    class DummyDataset(BaseDataset):
+        pass
+
+    ds = DummyDataset(
+        files=[], padding=0, crop_size=0, chunk=False, clip_length=0, mode=""
+    )
+
+    with pytest.raises(NotImplementedError):
+        ds.get_indices(0)
+
+    with pytest.raises(NotImplementedError):
+        ds.get_instances([], [])
+
+    with pytest.raises(NotImplementedError):
+        ds.__getitem__(0)
+
+    with pytest.raises(AttributeError):
+        ds.__len__()
 
 
 def test_sleap_dataset(two_flies):
