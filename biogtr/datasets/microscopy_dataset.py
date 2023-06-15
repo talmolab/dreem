@@ -1,15 +1,17 @@
 """Module containing microscopy dataset."""
 from PIL import Image
 from biogtr.datasets import data_utils
+from biogtr.datasets.base_dataset import BaseDataset
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as tvf
+from typing import List
 import albumentations as A
 import numpy as np
 import random
 import torch
 
 
-class MicroscopyDataset(Dataset):
+class MicroscopyDataset(BaseDataset):
     """Dataset for loading Microscopy Data."""
 
     def __init__(
@@ -44,6 +46,10 @@ class MicroscopyDataset(Dataset):
                         'RandomContrast': {'limit': 0.2}
                     }
         """
+        super().__init__(
+            videos + tracks, padding, crop_size, chunk, clip_length, mode, augmentations
+        )
+
         self.videos = videos
         self.tracks = tracks
         self.chunk = chunk
@@ -76,42 +82,19 @@ class MicroscopyDataset(Dataset):
             for video in self.videos
         ]
 
-        if self.chunk:
-            self.chunks = [
-                [i * self.clip_length for i in range(len(video) // self.clip_length)]
-                for video in self.frame_idx
-            ]
+        # Method in BaseDataset. Creates label_idx and chunked_frame_idx to be
+        # used in call to get_instances()
+        self.create_chunks()
 
-            self.chunked_frame_idx, self.label_idx = [], []
-            for i, (split, frame_idx) in enumerate(zip(self.chunks, self.frame_idx)):
-                frame_idx_split = torch.split(frame_idx, self.clip_length)
-                self.chunked_frame_idx.extend(frame_idx_split)
-                self.label_idx.extend(len(frame_idx_split) * [i])
-        else:
-            self.chunked_frame_idx = self.frame_idx
-            self.label_idx = [i for i in range(len(self.videos))]
+    def get_indices(self, idx):
+        return self.label_idx[idx], self.chunked_frame_idx[idx]
 
-    def __len__(self):
-        """Get length of dataset.
-
-        Returns:
-            the length of the dataset
-        """
-        return len(self.chunked_frame_idx)
-
-    def no_batching_fn(self, batch):
-        """Collate function used to overwrite dataloader batching function.
+    def get_instances(self, label_idx: List[int], frame_idx: List[int]) -> list[dict]:
+        """Get an element of the dataset.
 
         Args:
-            batch: the chunk of frames to be returned
-
-        Returns:
-            the batch
-        """
-        return batch
-
-    def __getitem__(self, idx):
-        """Get an element of the dataset.
+            label_idx: index of the labels
+            frame_idx: index of the frames
 
         Returns:
             a list of dicts where each dict corresponds a frame in the chunk
@@ -135,8 +118,6 @@ class MicroscopyDataset(Dataset):
                     "traj_score": the association matrix post processing,
                 }
         """
-        label_idx = self.label_idx[idx]
-        frame_idx = self.chunked_frame_idx[idx]
         labels = self.labels[label_idx]
         labels = labels.dropna(how="all")
 
