@@ -17,6 +17,7 @@ class BaseDataset(Dataset):
         clip_length: int,
         mode: str,
         augmentations: dict = None,
+        gt_list: str = None,
     ):
         """Initialize Dataset.
 
@@ -45,6 +46,7 @@ class BaseDataset(Dataset):
         # Initialize in subclasses
         self.frame_idx = None
         self.labels = None
+        self.gt_list = None
 
     def create_chunks(self):
         """Get indexing for data.
