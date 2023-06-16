@@ -31,6 +31,8 @@ class BaseDataset(Dataset):
                 training or validation. Currently doesn't affect dataset logic
             augmentations: An optional dict mapping augmentations to parameters.
                 See subclasses for details.
+            gt_list: An optional path to .txt file containing ground truth for
+                cell tracking challenge datasets.
         """
         self.files = files
         self.padding = padding
