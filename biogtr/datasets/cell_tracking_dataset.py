@@ -75,7 +75,7 @@ class CellTrackingDataset(BaseDataset):
             data_utils.build_augmentations(augmentations) if augmentations else None
         )
 
-        if gt_list is None:
+        if gt_list is not None:
             self.gt_list = pd.read_csv(
                 gt_list,
                 delimiter=" ",
