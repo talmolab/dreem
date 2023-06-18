@@ -182,7 +182,8 @@ class CellTrackingDataset(BaseDataset):
                     image=img,
                     keypoints=np.vstack(centroids),
                 )
-                img_sec, centroids = augmented["image"], augmented["keypoints"]
+
+                img, centroids = augmented["image"], augmented["keypoints"]
 
             img = torch.Tensor(img).unsqueeze(0)
 
