@@ -1,10 +1,36 @@
 """Test dataset logic."""
+from biogtr.datasets.base_dataset import BaseDataset
 from biogtr.datasets.data_utils import get_max_padding
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.tracking_dataset import TrackingDataset
+from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset
 from torch.utils.data import DataLoader
+import pytest
 import torch
+
+
+def test_base_dataset():
+    """Test BaseDataset logic."""
+
+    class DummyDataset(BaseDataset):
+        pass
+
+    ds = DummyDataset(
+        files=[], padding=0, crop_size=0, chunk=False, clip_length=0, mode=""
+    )
+
+    with pytest.raises(NotImplementedError):
+        ds.get_indices(0)
+
+    with pytest.raises(NotImplementedError):
+        ds.get_instances([], [])
+
+    with pytest.raises(NotImplementedError):
+        ds.__getitem__(0)
+
+    with pytest.raises(AttributeError):
+        ds.__len__()
 
 
 def test_sleap_dataset(two_flies):
@@ -105,6 +131,51 @@ def test_isbi_dataset(isbi_microtubules, isbi_receptors):
         assert len(instances) == clip_length
         assert len(instances[0]["gt_track_ids"]) == num_objects
         assert len(instances[0]["gt_track_ids"]) == instances[0]["num_detected"].item()
+
+
+def test_cell_tracking_dataset(cell_tracking):
+    """Test cell tracking dataset logic.
+
+    Args:
+        cell_tracking: HL60 nuclei fixture used for testing
+    """
+
+    clip_length = 8
+
+    train_ds = CellTrackingDataset(
+        raw_images=[cell_tracking[0]],
+        gt_images=[cell_tracking[1]],
+        crop_size=128,
+        chunk=True,
+        clip_length=clip_length,
+        gt_list=cell_tracking[2],
+    )
+
+    instances = next(iter(train_ds))
+
+    gt_track_ids_1 = instances[0]["gt_track_ids"]
+
+    assert len(instances) == clip_length
+    assert len(gt_track_ids_1) == 30
+    assert len(gt_track_ids_1) == instances[0]["num_detected"].item()
+
+    # fall back to using np.unique when gt_list not available
+    train_ds = CellTrackingDataset(
+        raw_images=[cell_tracking[0]],
+        gt_images=[cell_tracking[1]],
+        crop_size=128,
+        chunk=True,
+        clip_length=clip_length,
+    )
+
+    instances = next(iter(train_ds))
+
+    gt_track_ids_2 = instances[0]["gt_track_ids"]
+
+    assert len(instances) == clip_length
+    assert len(gt_track_ids_2) == 30
+    assert len(gt_track_ids_2) == instances[0]["num_detected"].item()
+    assert gt_track_ids_1.all() == gt_track_ids_2.all()
 
 
 def test_tracking_dataset(two_flies):

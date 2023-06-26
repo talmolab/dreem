@@ -6,11 +6,12 @@ import numpy as np
 import sleap_io as sio
 import random
 from biogtr.datasets import data_utils
-from torch.utils.data import Dataset
+from biogtr.datasets.base_dataset import BaseDataset
 from torchvision.transforms import functional as tvf
+from typing import List
 
 
-class SleapDataset(Dataset):
+class SleapDataset(BaseDataset):
     """Dataset for loading animal behavior data from sleap."""
 
     def __init__(
@@ -43,6 +44,16 @@ class SleapDataset(Dataset):
                         'RandomContrast': {'limit': 0.2, 'p': 0.6}
                     }
         """
+        super().__init__(
+            slp_files + video_files,
+            padding,
+            crop_size,
+            chunk,
+            clip_length,
+            mode,
+            augmentations,
+        )
+
         self.slp_files = slp_files
         self.video_files = video_files
         self.padding = padding
@@ -68,45 +79,24 @@ class SleapDataset(Dataset):
 
         self.frame_idx = [torch.arange(len(label)) for label in self.labels]
 
-        if self.chunk:
-            self.chunks = [
-                [i * self.clip_length for i in range(len(label) // self.clip_length)]
-                for label in self.labels
-            ]
+        # Method in BaseDataset. Creates label_idx and chunked_frame_idx to be
+        # used in call to get_instances()
+        self.create_chunks()
 
-            self.chunked_frame_idx, self.label_idx = [], []
-            for i, (split, frame_idx) in enumerate(zip(self.chunks, self.frame_idx)):
-                frame_idx_split = torch.split(frame_idx, self.clip_length)
-                self.chunked_frame_idx.extend(frame_idx_split)
-                self.label_idx.extend(len(frame_idx_split) * [i])
-        else:
-            self.chunked_frame_idx = self.frame_idx
-            self.label_idx = [i for i in range(len(self.labels))]
-
-    def __len__(self) -> int:
-        """Get the size of the dataset.
-
-        Returns:
-            the size or the number of chunks in the dataset
-        """
-        return len(self.chunked_frame_idx)
-
-    def no_batching_fn(self, batch):
-        """Collate function used to overwrite dataloader batching function.
+    def get_indices(self, idx):
+        """Retrieves label and frame indices given batch index.
 
         Args:
-            batch: the chunk of frames to be returned
-
-        Returns:
-            The batch
+            idx: the index of the batch.
         """
-        return batch
+        return self.label_idx[idx], self.chunked_frame_idx[idx]
 
-    def __getitem__(self, idx) -> list[dict]:
+    def get_instances(self, label_idx: List[int], frame_idx: List[int]) -> list[dict]:
         """Get an element of the dataset.
 
         Args:
-            idx: the index of the batch. Note this is not the index of the video or the frame.
+            label_idx: index of the labels
+            frame_idx: index of the frames
 
         Returns:
             A list of dicts where each dict corresponds a frame in the chunk and each value is a `torch.Tensor`
@@ -127,9 +117,6 @@ class SleapDataset(Dataset):
                 }
 
         """
-        label_idx = self.label_idx[idx]
-        frame_idx = self.chunked_frame_idx[idx]
-
         video = self.labels[label_idx]
 
         anchors = [
@@ -155,7 +142,6 @@ class SleapDataset(Dataset):
             img = vid_reader.get_data(i)
 
             for instance in lf:
-                # gt_track_ids
                 gt_track_ids.append(video.tracks.index(instance.track))
 
                 poses.append(
