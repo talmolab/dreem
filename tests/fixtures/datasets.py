@@ -1,110 +1,108 @@
 """Fixtures for testing biogtr."""
-import glob
-import os
 import pytest
+from pathlib import Path
 
 
 @pytest.fixture
 def sleap_data_dir(pytestconfig):
     """Dir path to sleap data."""
-    return os.path.join(pytestconfig.rootdir, "tests/data/sleap")
+    return Path(pytestconfig.rootdir) / "tests/data/sleap"
 
 
 @pytest.fixture
 def icy_data_dir(pytestconfig):
     """Dir path to icy data."""
-    return os.path.join(pytestconfig.rootdir, "tests/data/microscopy/icy")
+    return Path(pytestconfig.rootdir) / "tests/data/microscopy/icy"
 
 
 @pytest.fixture
 def isbi_data_dir(pytestconfig):
     """Dir path to isbi data."""
-    return os.path.join(pytestconfig.rootdir, "tests/data/microscopy/isbi")
+    return Path(pytestconfig.rootdir) / "tests/data/microscopy/isbi"
 
 
 @pytest.fixture
 def trackmate_data_dir(pytestconfig):
     """Dir path to trackmate data."""
-    return os.path.join(pytestconfig.rootdir, "tests/data/microscopy/trackmate")
+    return Path(pytestconfig.rootdir) / "tests/data/microscopy/trackmate"
 
 
 @pytest.fixture
 def cell_tracking_data_dir(pytestconfig):
     """Dir path to cell tracking challenge data."""
-    return os.path.join(pytestconfig.rootdir, "tests/data/microscopy/cell_tracking")
+    return Path(pytestconfig.rootdir) / "tests/data/microscopy/cell_tracking"
 
 
 @pytest.fixture
 def single_fly(sleap_data_dir):
     """Sleap single fly .slp and video file paths."""
-    slp_file = os.path.join(sleap_data_dir, "single_fly.slp")
-    video_file = os.path.join(sleap_data_dir, "single_fly.mp4")
+    slp_file = Path(sleap_data_dir) / "single_fly.slp"
+    video_file = Path(sleap_data_dir) / "single_fly.mp4"
     return [slp_file, video_file]
 
 
 @pytest.fixture
 def two_flies(sleap_data_dir):
     """Sleap two flies .slp and video file paths."""
-    slp_file = os.path.join(sleap_data_dir, "two_flies.slp")
-    video_file = os.path.join(sleap_data_dir, "two_flies.mp4")
+    slp_file = Path(sleap_data_dir) / "two_flies.slp"
+    video_file = Path(sleap_data_dir) / "two_flies.mp4"
     return [slp_file, video_file]
 
 
 @pytest.fixture
 def three_flies(sleap_data_dir):
     """Sleap three flies .slp and video file paths."""
-    slp_file = os.path.join(sleap_data_dir, "three_flies.slp")
-    video_file = os.path.join(sleap_data_dir, "three_flies.mp4")
+    slp_file = Path(sleap_data_dir) / "three_flies.slp"
+    video_file = Path(sleap_data_dir) / "three_flies.mp4"
     return [slp_file, video_file]
 
 
 @pytest.fixture
 def ten_zfish(sleap_data_dir):
     """Idtracker 10 zebrafish slp and video file paths."""
-    slp_file = os.path.join(sleap_data_dir, "ten_zfish.slp")
-    video_file = os.path.join(sleap_data_dir, "ten_zfish.mp4")
+    slp_file = Path(sleap_data_dir) / "ten_zfish.slp"
+    video_file = Path(sleap_data_dir) / "ten_zfish.mp4"
     return [slp_file, video_file]
 
 
 @pytest.fixture
 def ten_icy_particles(icy_data_dir):
     """ICY 10 particles tif and gt xml file paths."""
-    image = os.path.join(icy_data_dir, "10_cells_1_crop.tif")
-    gt = os.path.join(icy_data_dir, "10_cells_1_gt.xml")
-    return [image, gt]
+    image = Path(icy_data_dir) / "10_cells_1_crop.tif"
+    gt = Path(icy_data_dir) / "10_cells_1_gt.xml"
+    return [str(image), str(gt)]
 
 
 @pytest.fixture
 def isbi_microtubules(isbi_data_dir):
     """ISBI microtubuules tif and gt xml file paths."""
-    image = sorted(glob.glob(os.path.join(isbi_data_dir, "microtubules", "*.tif")))
-    gt = glob.glob(os.path.join(isbi_data_dir, "microtubules", "*.xml"))[0]
+    isbi_micro_dir = Path(isbi_data_dir) / "microtubules"
+    image = sorted(isbi_micro_dir.glob("*.tif"))
+    gt = list(isbi_micro_dir.glob("*.xml"))[0]
     return [image, gt]
 
 
 @pytest.fixture
 def isbi_receptors(isbi_data_dir):
     """ISBI receptors tif and gt xml file paths."""
-    image = sorted(glob.glob(os.path.join(isbi_data_dir, "receptors", "*.tif")))
-    gt = glob.glob(os.path.join(isbi_data_dir, "receptors", "*.xml"))[0]
+    isbi_receptor_dir = Path(isbi_data_dir) / "receptors"
+    image = sorted(isbi_receptor_dir.glob("*.tif"))
+    gt = list(isbi_receptor_dir.glob("*.xml"))[0]
     return [image, gt]
 
 
 @pytest.fixture
 def trackmate_lysosomes(trackmate_data_dir):
     """Trackmate lysosomes tif and gt csv file paths."""
-    image = glob.glob(os.path.join(trackmate_data_dir, "*.tif"))[0]
-    gt = glob.glob(os.path.join(trackmate_data_dir, "*.csv"))[0]
-    return [image, gt]
+    image = list(Path(trackmate_data_dir).glob("*.tif"))[0]
+    gt = list(Path(trackmate_data_dir).glob("*.csv"))[0]
+    return [str(image), str(gt)]
 
 
 @pytest.fixture
 def cell_tracking(cell_tracking_data_dir):
     """Cell tracking challenge tif and gt txt file paths."""
-    image = sorted(
-        glob.glob(os.path.join(cell_tracking_data_dir, "raw_images", "*.tif"))
-    )
-    gt = sorted(glob.glob(os.path.join(cell_tracking_data_dir, "gt_images", "*.tif")))
-    gt_list = os.path.join(cell_tracking_data_dir, "man_track.txt")
-
+    image = sorted((Path(cell_tracking_data_dir) / "raw_images").glob("*.tif"))
+    gt = sorted((Path(cell_tracking_data_dir) / "gt_images").glob("*.tif"))
+    gt_list = str(Path(cell_tracking_data_dir) / "man_track.txt")
     return [image, gt, gt_list]
