@@ -5,7 +5,7 @@ from biogtr.datasets.base_dataset import BaseDataset
 from scipy.ndimage import measurements
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as tvf
-from typing import List
+from typing import List, Optional
 import albumentations as A
 import glob
 import numpy as np
@@ -26,8 +26,8 @@ class CellTrackingDataset(BaseDataset):
         crop_size: int = 20,
         chunk: bool = False,
         clip_length: int = 10,
-        mode: str = "Train",
-        augmentations: dict = None,
+        mode: str = "train",
+        augmentations: Optional[dict] = None,
         gt_list: str = None,
     ):
         """Initialize CellTrackingDataset.
@@ -35,7 +35,6 @@ class CellTrackingDataset(BaseDataset):
         Args:
             raw_images: paths to raw microscopy images
             gt_images: paths to gt label images
-            source: file format of gt labels based on label generator
             padding: amount of padding around object crops
             crop_size: the size of the object crops
             chunk: whether or not to chunk the dataset into batches
@@ -49,8 +48,9 @@ class CellTrackingDataset(BaseDataset):
                         'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0},
                         'RandomContrast': {'limit': 0.2}
                     }
-            gt_list: An optional path to .txt file containing gt ids (cell
-                tracking challenge format)
+            gt_list: An optional path to .txt file containing gt ids stored in cell
+                tracking challenge format: "track_id", "start_frame",
+                "end_frame", "parent_id"
         """
         super().__init__(
             raw_images + gt_images,
@@ -136,6 +136,8 @@ class CellTrackingDataset(BaseDataset):
         for i in frame_idx:
             gt_track_ids, centroids, bboxes, crops = [], [], [], []
 
+            i = int(i)
+
             img = image[i]
             gt_sec = gt[i]
 
@@ -168,7 +170,7 @@ class CellTrackingDataset(BaseDataset):
                     )
 
                     gt_track_ids.append(int(instance))
-                    centroids.append(torch.tensor([x, y]).to(torch.float32))
+                    centroids.append([x, y])
                     bboxes.append(bbox)
 
             # albumentations wants (spatial, channels), ensure correct dims

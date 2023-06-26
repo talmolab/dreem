@@ -49,6 +49,7 @@ class BaseDataset(Dataset):
         self.frame_idx = None
         self.labels = None
         self.gt_list = None
+        self.chunks = None
 
     def create_chunks(self):
         """Get indexing for data.
@@ -58,13 +59,6 @@ class BaseDataset(Dataset):
         using the frame ids. Setting chunking to true creates a list of lists
         containing chunk frames for indexing. This is useful for computational
         efficiency and data shuffling. To be called by subclass __init__()
-
-        Args:
-            None
-
-        Returns:
-            None
-
         """
         if self.chunk:
             self.chunks = [

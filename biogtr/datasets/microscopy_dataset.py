@@ -4,7 +4,6 @@ from biogtr.datasets import data_utils
 from biogtr.datasets.base_dataset import BaseDataset
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as tvf
-from typing import List
 import albumentations as A
 import numpy as np
 import random
@@ -94,7 +93,7 @@ class MicroscopyDataset(BaseDataset):
         """
         return self.label_idx[idx], self.chunked_frame_idx[idx]
 
-    def get_instances(self, label_idx: List[int], frame_idx: List[int]) -> list[dict]:
+    def get_instances(self, label_idx: list[int], frame_idx: list[int]) -> list[dict]:
         """Get an element of the dataset.
 
         Args:
