@@ -3,6 +3,7 @@ from biogtr.datasets.data_utils import get_max_padding
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.tracking_dataset import TrackingDataset
+from biogtr.models.model_utils import get_device
 from torch.utils.data import DataLoader
 import torch
 
@@ -117,7 +118,12 @@ def test_tracking_dataset(two_flies):
     clip_length = 16
     num_workers = 0
     pin_memory = num_workers > 0
-    generator = torch.Generator(device="cuda") if torch.cuda.is_available() else None
+
+    device = get_device()
+
+    # generator fails on mps device, relevant issue:
+    # https://github.com/pytorch/pytorch/issues/77764
+    generator = torch.Generator(device=device) if device != "mps" else None
 
     train_sleap_ds = SleapDataset(
         [two_flies[0]],
@@ -134,7 +140,7 @@ def test_tracking_dataset(two_flies):
         num_workers=num_workers,
         collate_fn=train_sleap_ds.no_batching_fn,
         pin_memory=pin_memory,
-        generator=generator,
+        generator=None,
     )
 
     val_sleap_ds = SleapDataset(

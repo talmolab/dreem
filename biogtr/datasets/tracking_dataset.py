@@ -1,10 +1,11 @@
 """Module containing Lightning module wrapper around all other datasets."""
-import torch
-from pytorch_lightning import LightningDataModule
-from typing import Union
-from torch.utils.data import DataLoader
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
+from biogtr.models.model_utils import get_device
+from pytorch_lightning import LightningDataModule
+from torch.utils.data import DataLoader
+from typing import Union
+import torch
 
 
 """
@@ -60,9 +61,12 @@ class TrackingDataset(LightningDataModule):
         if self.train_dl is None and self.train_ds is None:
             return None
         elif self.train_dl is None:
-            generator = (
-                torch.Generator(device="cuda") if torch.cuda.is_available() else None
-            )
+            device = get_device()
+
+            # generator fails on mps device, relevant issue:
+            # https://github.com/pytorch/pytorch/issues/77764
+            generator = torch.Generator(device=device) if device != "mps" else None
+
             return DataLoader(
                 self.train_ds,
                 batch_size=1,
@@ -70,7 +74,7 @@ class TrackingDataset(LightningDataModule):
                 pin_memory=False,
                 collate_fn=self.train_ds.no_batching_fn,
                 num_workers=0,
-                generator=generator if torch.cuda.is_available() else None,
+                generator=generator,
             )
         else:
             return self.train_dl
