@@ -97,10 +97,6 @@ def main(cfg: DictConfig):
         accelerator = "cpu"
         devices = cpu_count()
 
-    print("device: ", device)
-    print("accelerator: ", accelerator)
-    print("devices: ", devices)
-
     trainer = train_cfg.get_trainer(
         callbacks,
         logger,
