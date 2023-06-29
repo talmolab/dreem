@@ -165,8 +165,7 @@ def init_logger(config: dict):
 
 
 def get_device():
-    """
-    Utility function to get available device.
+    """Utility function to get available device.
 
     Returns:
         str: The available device (one of 'cuda', 'mps', or 'cpu').
