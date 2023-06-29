@@ -1,36 +1,40 @@
-"""Module containing microscopy dataset."""
+"""Module containing cell tracking challenge dataset."""
 from PIL import Image
 from biogtr.datasets import data_utils
 from biogtr.datasets.base_dataset import BaseDataset
+from scipy.ndimage import measurements
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as tvf
+from typing import List, Optional
 import albumentations as A
+import glob
 import numpy as np
+import os
+import pandas as pd
 import random
 import torch
 
 
-class MicroscopyDataset(BaseDataset):
-    """Dataset for loading Microscopy Data."""
+class CellTrackingDataset(BaseDataset):
+    """Dataset for loading cell tracking challenge data."""
 
     def __init__(
         self,
-        videos: list[str],
-        tracks: list[str],
-        source: str,
+        raw_images: list[str],
+        gt_images: list[str],
         padding: int = 5,
         crop_size: int = 20,
         chunk: bool = False,
         clip_length: int = 10,
-        mode: str = "Train",
-        augmentations: dict = None,
+        mode: str = "train",
+        augmentations: Optional[dict] = None,
+        gt_list: str = None,
     ):
-        """Initialize MicroscopyDataset.
+        """Initialize CellTrackingDataset.
 
         Args:
-            videos: paths to raw microscopy videos
-            tracks: paths to trackmate gt labels (either .xml or .csv)
-            source: file format of gt labels based on label generator
+            raw_images: paths to raw microscopy images
+            gt_images: paths to gt label images
             padding: amount of padding around object crops
             crop_size: the size of the object crops
             chunk: whether or not to chunk the dataset into batches
@@ -44,13 +48,23 @@ class MicroscopyDataset(BaseDataset):
                         'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0},
                         'RandomContrast': {'limit': 0.2}
                     }
+            gt_list: An optional path to .txt file containing gt ids stored in cell
+                tracking challenge format: "track_id", "start_frame",
+                "end_frame", "parent_id"
         """
         super().__init__(
-            videos + tracks, padding, crop_size, chunk, clip_length, mode, augmentations
+            raw_images + gt_images,
+            padding,
+            crop_size,
+            chunk,
+            clip_length,
+            mode,
+            augmentations,
+            gt_list,
         )
 
-        self.videos = videos
-        self.tracks = tracks
+        self.videos = raw_images
+        self.labels = gt_images
         self.chunk = chunk
         self.clip_length = clip_length
         self.crop_size = crop_size
@@ -61,25 +75,17 @@ class MicroscopyDataset(BaseDataset):
             data_utils.build_augmentations(augmentations) if augmentations else None
         )
 
-        if source.lower() == "trackmate":
-            parser = data_utils.parse_trackmate
-        elif source.lower() in ["icy", "isbi"]:
-            parser = lambda x: data_utils.parse_synthetic(x, source=source)
-        else:
-            raise ValueError(
-                f"{source} is unsupported! Must be one of [trackmate, icy, isbi]"
+        if gt_list is not None:
+            self.gt_list = pd.read_csv(
+                gt_list,
+                delimiter=" ",
+                header=None,
+                names=["track_id", "start_frame", "end_frame", "parent_id"],
             )
+        else:
+            self.gt_list = None
 
-        self.labels = [
-            parser(self.tracks[video_idx]) for video_idx in range(len(self.tracks))
-        ]
-
-        self.frame_idx = [
-            torch.arange(Image.open(video).n_frames)
-            if type(video) == str
-            else torch.arange(len(video))
-            for video in self.videos
-        ]
+        self.frame_idx = [torch.arange(len(image)) for image in self.labels]
 
         # Method in BaseDataset. Creates label_idx and chunked_frame_idx to be
         # used in call to get_instances()
@@ -93,7 +99,7 @@ class MicroscopyDataset(BaseDataset):
         """
         return self.label_idx[idx], self.chunked_frame_idx[idx]
 
-    def get_instances(self, label_idx: list[int], frame_idx: list[int]) -> list[dict]:
+    def get_instances(self, label_idx: List[int], frame_idx: List[int]) -> list[dict]:
         """Get an element of the dataset.
 
         Args:
@@ -122,33 +128,50 @@ class MicroscopyDataset(BaseDataset):
                     "traj_score": the association matrix post processing,
                 }
         """
-        labels = self.labels[label_idx]
-        labels = labels.dropna(how="all")
-
-        video = self.videos[label_idx]
-
-        if type(video) != list:
-            video = data_utils.LazyTiffStack(self.videos[label_idx])
+        image = self.videos[label_idx]
+        gt = self.labels[label_idx]
 
         instances = []
 
         for i in frame_idx:
             gt_track_ids, centroids, bboxes, crops = [], [], [], []
 
-            img = (
-                video.get_section(i)
-                if type(video) != list
-                else np.array(Image.open(video[i]))
-            )
+            i = int(i)
 
-            lf = labels[labels["FRAME"].astype(int) == i.item()]
+            img = image[i]
+            gt_sec = gt[i]
 
-            for instance in sorted(lf["TRACK_ID"].unique()):
-                gt_track_ids.append(int(instance))
+            img = np.array(Image.open(img))
+            gt_sec = np.array(Image.open(gt_sec))
 
-                x = lf[lf["TRACK_ID"] == instance]["POSITION_X"].iloc[0]
-                y = lf[lf["TRACK_ID"] == instance]["POSITION_Y"].iloc[0]
-                centroids.append([x, y])
+            if img.dtype == np.uint16:
+                img = ((img - img.min()) * (1 / (img.max() - img.min()) * 255)).astype(
+                    np.uint8
+                )
+
+            if self.gt_list is None:
+                unique_instances = np.unique(gt_sec)
+            else:
+                unique_instances = self.gt_list["track_id"].unique()
+
+            for instance in unique_instances:
+                # not all instances are in the frame, and they also label the
+                # background instance as zero
+                if instance in gt_sec and instance != 0:
+                    mask = gt_sec == instance
+                    center_of_mass = measurements.center_of_mass(mask)
+
+                    # scipy returns yx
+                    x, y = center_of_mass[::-1]
+
+                    bbox = data_utils.pad_bbox(
+                        data_utils.get_bbox([int(x), int(y)], self.crop_size),
+                        padding=self.padding,
+                    )
+
+                    gt_track_ids.append(int(instance))
+                    centroids.append([x, y])
+                    bboxes.append(bbox)
 
             # albumentations wants (spatial, channels), ensure correct dims
             if self.augmentations is not None:
@@ -161,25 +184,13 @@ class MicroscopyDataset(BaseDataset):
                     image=img,
                     keypoints=np.vstack(centroids),
                 )
+
                 img, centroids = augmented["image"], augmented["keypoints"]
 
-            img = torch.Tensor(img)
+            img = torch.Tensor(img).unsqueeze(0)
 
-            # torch wants (channels, spatial) - ensure correct dims
-            if len(img.shape) == 2:
-                img = img.unsqueeze(0)
-            elif len(img.shape) == 3:
-                if img.shape[2] == 3:
-                    img = img.T  # todo: check for edge cases
-
-            for c in centroids:
-                bbox = data_utils.pad_bbox(
-                    data_utils.get_bbox([int(c[0]), int(c[1])], self.crop_size),
-                    padding=self.padding,
-                )
+            for bbox in bboxes:
                 crop = data_utils.crop_bbox(img, bbox)
-
-                bboxes.append(bbox)
                 crops.append(crop)
 
             instances.append(

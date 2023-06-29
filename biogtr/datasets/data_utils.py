@@ -434,7 +434,7 @@ def get_max_padding(height: int, width: int) -> tuple:
 
 
 def view_training_batch(
-    instances: List[Dict[str, List[np.ndarray]]], num_frames: int = 1
+    instances: List[Dict[str, List[np.ndarray]]], num_frames: int = 1, cmap=None
 ) -> None:
     """Displays a grid of images from a batch of training instances.
 
@@ -464,7 +464,7 @@ def view_training_batch(
                     else (axes[i] if num_crops == 1 else axes[i, j])
                 )
 
-                ax.imshow(data.T)
+                ax.imshow(data.T) if cmap is None else ax.imshow(data.T, cmap=cmap)
                 ax.axis("off")
 
             except Exception as e:

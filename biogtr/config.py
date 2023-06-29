@@ -3,6 +3,7 @@
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.models import model_utils
+from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.models.gtr_runner import GTRRunner
 from biogtr.training.losses import AssoLoss
@@ -106,7 +107,9 @@ class Config:
             **gtr_runner_params,
         )
 
-    def get_dataset(self, mode: str) -> Union[SleapDataset, MicroscopyDataset]:
+    def get_dataset(
+        self, mode: str
+    ) -> Union[SleapDataset, MicroscopyDataset, CellTrackingDataset]:
         """Getter for datasets.
 
         Args:
@@ -127,10 +130,13 @@ class Config:
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
 
+        # todo: handle this better
         if "slp_files" in dataset_params:
             return SleapDataset(**dataset_params)
         elif "tracks" in dataset_params or "source" in dataset_params:
             return MicroscopyDataset(**dataset_params)
+        elif "raw_images" in dataset_params:
+            return CellTrackingDataset(**dataset_params)
         else:
             raise ValueError(
                 "Could not resolve dataset type from Config! Please include \
@@ -138,7 +144,9 @@ class Config:
             )
 
     def get_dataloader(
-        self, dataset: Union[SleapDataset, MicroscopyDataset], mode: str
+        self,
+        dataset: Union[SleapDataset, MicroscopyDataset, CellTrackingDataset],
+        mode: str,
     ) -> torch.utils.data.DataLoader:
         """Getter for dataloader.
 

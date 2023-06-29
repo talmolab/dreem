@@ -2,6 +2,9 @@
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.models.model_utils import get_device
+from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset
+from biogtr.datasets.microscopy_dataset import MicroscopyDataset
+from biogtr.datasets.sleap_dataset import SleapDataset
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 from typing import Union
@@ -21,11 +24,17 @@ class TrackingDataset(LightningDataModule):
 
     def __init__(
         self,
-        train_ds: Union[SleapDataset, MicroscopyDataset, None] = None,
+        train_ds: Union[
+            SleapDataset, MicroscopyDataset, CellTrackingDataset, None
+        ] = None,
         train_dl: DataLoader = None,
-        val_ds: Union[SleapDataset, MicroscopyDataset, None] = None,
+        val_ds: Union[
+            SleapDataset, MicroscopyDataset, CellTrackingDataset, None
+        ] = None,
         val_dl: DataLoader = None,
-        test_ds: Union[SleapDataset, MicroscopyDataset, None] = None,
+        test_ds: Union[
+            SleapDataset, MicroscopyDataset, CellTrackingDataset, None
+        ] = None,
         test_dl: DataLoader = None,
     ):
         """Initialize tracking dataset.
