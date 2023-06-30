@@ -492,7 +492,6 @@ class FixedRandomSampler(torch.utils.data.Sampler):
             num_epochs: The number of epochs to generate indices
                 for. Allows for random sampling over epochs.
         """
-
         self.num_samples = len(dataset)
         self.seed = seed
         if num_epochs is None:
