@@ -285,9 +285,9 @@ class Config:
             A lightning Trainer with specified params
         """
         if "accelerator" not in self.cfg.trainer:
-            self.set_hparams('trainer.accelerator', accelerator)
+            self.set_hparams({'trainer.accelerator': accelerator})
         if "devices" not in self.cfg.trainer:
-            self.set_hparams('trainer.devices', devices)
+            self.set_hparams({'trainer.devices': devices})
 
         trainer_params = self.cfg.trainer
         
