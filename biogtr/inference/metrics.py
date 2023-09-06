@@ -3,6 +3,7 @@ import numpy as np
 import motmetrics as mm
 from biogtr.inference.post_processing import _pairwise_iou
 from biogtr.inference.boxes import Boxes
+from typing import Union
 
 
 def get_matches(instances: list[dict]) -> tuple[dict, list, int]:
@@ -91,7 +92,7 @@ def get_switch_count(switches: dict) -> int:
     return sw_cnt
 
 
-def to_track_eval(instances):
+def to_track_eval(instances: list[dict]) -> dict:
     """Reformats instances, the output from `sliding_inference` to be used by `TrackEval.`
 
     Args:
@@ -217,7 +218,7 @@ def to_track_eval(instances):
     return data
 
 
-def get_track_evals(data, metrics):
+def get_track_evals(data: dict, metrics: dict) -> dict:
     results = {}
     for metric_name, metric in metrics.items():
         result = metric.eval_sequence(data)
@@ -225,7 +226,7 @@ def get_track_evals(data, metrics):
     return results
 
 
-def get_pymotmetrics(data, metrics="all", key="tracker_ids", save=None):
+def get_pymotmetrics(data: dict, metrics: Union[str, tuple] = "all", key: str = "tracker_ids", save: str = None):
     """Given data and a key, evaluate the predictions.
 
     Args:
