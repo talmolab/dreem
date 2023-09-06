@@ -3,7 +3,7 @@ import numpy as np
 import motmetrics as mm
 from biogtr.inference.post_processing import _pairwise_iou
 from biogtr.inference.boxes import Boxes
-from typing import Union
+from typing import Union, Iterable
 
 
 def get_matches(instances: list[dict]) -> tuple[dict, list, int]:
@@ -266,15 +266,15 @@ def get_pymotmetrics(data: dict, metrics: Union[str, tuple] = "all", key: str = 
         metric.split("|")[0] for metric in mh.list_metrics_markdown().split("\n")[2:-1]
     ]
 
-    if type(metrics) == tuple:
+    if type(metrics) == str:
+        metrics_list = all_metrics
+        
+    elif isinstance(metrics, Iterable):
         metrics = [metric.lower() for metric in metrics]
         metrics_list = [metric for metric in all_metrics if metric.lower() in metrics]
         
-    elif type(metrics) == str:
-        metrics_list = all_metrics
-
     else:
-        raise TypeError("Metrics must either be a tuple of strings or `all`")
+        raise TypeError(f"Metrics must either be an iterable of strings or `all` not: {type(metrics)}")
     
     summary = mh.compute(acc, metrics=metrics_list, name="acc")
     summary = summary.transpose()
