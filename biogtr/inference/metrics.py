@@ -266,7 +266,7 @@ def get_pymotmetrics(data, metrics="all", key="tracker_ids", save=None):
         metric.split("|")[0] for metric in mh.list_metrics_markdown().split("\n")[2:-1]
     ]
 
-    if type(metrics) == list:
+    if type(metrics) == tuple:
         metrics = [metric.lower() for metric in metrics]
         metrics_list = [metric for metric in all_metrics if metric.lower() in metrics]
         
@@ -274,7 +274,7 @@ def get_pymotmetrics(data, metrics="all", key="tracker_ids", save=None):
         metrics_list = all_metrics
 
     else:
-        raise TypeError("Metrics must either be a list of strings or `all`")
+        raise TypeError("Metrics must either be a tuple of strings or `all`")
     
     summary = mh.compute(acc, metrics=metrics_list, name="acc")
     summary = summary.transpose()
