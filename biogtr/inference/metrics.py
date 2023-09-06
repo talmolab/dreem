@@ -164,7 +164,6 @@ def to_track_eval(instances: list[dict]) -> dict:
             unique_gt_ids.extend(list(set(gt_track_ids).difference(set(unique_gt_ids))))
         
         eval_matrix = _pairwise_iou(boxes, boxes)
-        print(eval_matrix)
 #         eval_matrix = np.full((len(gt_track_ids), len(pred_track_ids)), np.nan)
 
 #         for i, feature_i in enumerate(features):

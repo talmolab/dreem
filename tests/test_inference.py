@@ -169,7 +169,6 @@ def test_metrics():
                     "pred_track_ids": torch.arange(num_detected),
                 }
             )
-            print(instances_pred[i*j]['bboxes'])
     instances_mm = metrics.to_track_eval(instances_pred)
     clear_mot = metrics.get_pymotmetrics(instances_mm)
 
@@ -186,7 +185,6 @@ def test_metrics():
 
     instances_mm = metrics.to_track_eval(instances_pred)
     clear_mot = metrics.get_pymotmetrics(instances_mm)
-    print(instances_mm)
 
     matches, indices, _ = metrics.get_matches(instances_pred)
 
