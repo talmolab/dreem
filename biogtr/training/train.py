@@ -99,8 +99,7 @@ def main(cfg: DictConfig):
         devices=devices,
     )
 
-    ckpt_path = train_cfg.get_ckpt_path()
-    trainer.fit(model, dataset, ckpt_path=ckpt_path)
+    trainer.fit(model, dataset)
 
 
 if __name__ == "__main__":
