@@ -75,6 +75,8 @@ class Tracker:
         """
 # Extract feature representations with pre-trained encoder.
 
+        _ = model.eval()
+    
         if not self.persistent_tracking:
             # print(f'Clearing Queue after tracking')
             self.track_queue.clear()
@@ -93,7 +95,7 @@ class Tracker:
                 # comment out to turn encoder off
 
                 # Assuming the encoder is already trained or train encoder jointly.
-                elif 'features' not in frame or frame['features'] == None:
+                elif 'features' not in frame or frame['features'] == None or len(frame['features']) == 0:
                     with torch.no_grad():
                         z = model.visual_encoder(frame["crops"])
                         frame["features"] = z
@@ -264,6 +266,7 @@ class Tracker:
 
         # Number of instances in each frame of the window.
         # E.g.: instances_per_frame: [4, 5, 6, 7]; window of length 4 with 4 detected instances in the first frame of the window.
+        
         _ = model.eval()
         instances_per_frame = [frame["num_detected"] for frame in instances]
 
@@ -279,7 +282,8 @@ class Tracker:
                 instances[query_frame]["embeddings"] = embed
             else:
                 asso_output = model(instances, query_frame=query_frame)
-        
+        # if query_frame == 1:
+        #     print(asso_output)
         asso_output = asso_output[-1].split(instances_per_frame, dim=1)  # (window_size, n_query, N_i)
         asso_output = model_utils.softmax_asso(asso_output)  # (window_size, n_query, N_i)
         asso_output = torch.cat(asso_output, dim=1).cpu()  # (n_query, total_instances)
