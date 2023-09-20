@@ -159,13 +159,13 @@ class Tracker:
                 self.track_queue.clear()
                 
             if len(self.track_queue) == 0 or sum([len(frame["pred_track_ids"]) for frame in self.track_queue]) == 0:
-                print(f'Initializing track on batch {batch_idx} frame {instances[batch_idx]["frame_id"]}')
+                # print(f'Initializing track on batch {batch_idx} frame {instances[batch_idx]["frame_id"]}')
                 instances[batch_idx]["pred_track_ids"] = torch.arange(
                     0, len(instances[batch_idx]["bboxes"])
                 )
 
                 id_count = len(instances[batch_idx]["bboxes"])
-                print(f'Initial tracks are {instances[batch_idx]["pred_track_ids"]}')
+                # print(f'Initial tracks are {instances[batch_idx]["pred_track_ids"]}')
                 self.track_queue.append(instances[batch_idx])
 
             else:   
