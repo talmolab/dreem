@@ -237,7 +237,7 @@ class Config:
         Returns:
             A Logger with specified params
         """
-        logger_params = self.cfg.logging
+        logger_params = OmegaConf.to_container(self.cfg.logging, resolve=True)
         return init_logger(logger_params)
 
     def get_early_stopping(self) -> pl.callbacks.EarlyStopping:
