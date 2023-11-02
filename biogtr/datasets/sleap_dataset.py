@@ -144,9 +144,13 @@ class SleapDataset(BaseDataset):
             frame = int(frame)
             
             lf = video[frame]
-
-            img = vid_reader.get_data(frame)
-
+            
+            try:
+                img = vid_reader.get_data(frame)
+            except IndexError as e:
+                print(f"Could not read frame {frame} from {video_name}")
+                continue
+                
             for instance in lf:
                 gt_track_ids.append(video.tracks.index(instance.track))
 
@@ -207,8 +211,17 @@ class SleapDataset(BaseDataset):
 
             for pose in shown_poses:
 
-                if self.anchor in pose: 
-                    centroid = pose[self.anchor]
+                if self.anchor in pose:
+                    anchor = self.anchor
+                elif self.anchor.lower() in pose:
+                    anchor = self.anchor.lower()
+                elif self.anchor.upper() in pose:
+                    anchor = self.anchor.upper()
+                else:
+                    anchor = "midpoint"
+                    
+                if anchor != "midpoint":
+                    centroid = pose[anchor]
 
                     if not np.isnan(centroid).any():
                         bbox = data_utils.pad_bbox(
