@@ -1,6 +1,7 @@
 """Module containing logic for going from association -> assignment."""
 import torch
 import pandas as pd
+import warnings
 from biogtr.models import model_utils
 from biogtr.inference import post_processing
 from biogtr.inference.boxes import Boxes
@@ -22,7 +23,9 @@ class Tracker:
         decay_time: float = None,
         iou: str = None,
         max_center_dist: float = None,
-        persistent_tracking: bool = False
+        persistent_tracking: bool = False,
+        max_gap: int = -1,
+        verbose = False
     ):
         """Initialize a tracker to run inference.
 
@@ -47,6 +50,14 @@ class Tracker:
         self.iou = iou
         self.max_center_dist = max_center_dist
         self.persistent_tracking = persistent_tracking
+        self.verbose = verbose
+        
+        self.max_gap = max_gap
+        self.curr_gap = 0
+        if self.max_gap >=0 and self.max_gap <= self.window_size:
+            self.max_gap = self.window_size
+            
+        self.id_count = 0
 
     def __call__(self, model: GlobalTrackingTransformer, instances: list[dict], all_instances: list = None):
         """Wrapper around `track` to enable `tracker()` instead of `tracker.track()`.
@@ -109,8 +120,9 @@ class Tracker:
         )
         
         if not self.persistent_tracking:
-            # print(f'Clearing Queue after tracking')
+            if self.verbose: warnings.warn(f'Clearing Queue after tracking')
             self.track_queue.clear()
+            self.id_count = 0
             
         return instances_pred
 
@@ -151,46 +163,80 @@ class Tracker:
         # W: width.
 
         video_len = len(instances)
-        id_count = 0
+        id_count = self.id_count
 
         for batch_idx in range(video_len):
-                
-            if (self.persistent_tracking and instances[batch_idx]['frame_id'] == 0):
+            
+            if self.verbose: 
+                warnings.warn(f"Current number of tracks is {id_count}")
+                              
+            if (self.persistent_tracking and instances[batch_idx]['frame_id'] == 0): #check for new video and clear queue
                 self.track_queue.clear()
+                self.id_count = 0
                 
+            '''
+            Initialize tracks on first frame of video or first instance of detections.
+            '''
             if len(self.track_queue) == 0 or sum([len(frame["pred_track_ids"]) for frame in self.track_queue]) == 0:
-                # print(f'Initializing track on batch {batch_idx} frame {instances[batch_idx]["frame_id"]}')
+                
+                if self.verbose: warnings.warn(f'Initializing track on batch {batch_idx} frame {instances[batch_idx]["frame_id"].item()}')
+                
                 instances[batch_idx]["pred_track_ids"] = torch.arange(
                     0, len(instances[batch_idx]["bboxes"])
                 )
 
                 id_count = len(instances[batch_idx]["bboxes"])
-                # print(f'Initial tracks are {instances[batch_idx]["pred_track_ids"]}')
-                self.track_queue.append(instances[batch_idx])
-
-            else:   
-                instances_to_track = (list(self.track_queue) + [instances[batch_idx]])[-window_size:]
                 
-                if sum([frame['num_detected'] for frame in instances_to_track]) == 0:
-                    print("No detections to track!")
+                if self.verbose: warnings.warn(f'Initial tracks are {instances[batch_idx]["pred_track_ids"].cpu().tolist()}')
+                
+                if instances[batch_idx]['num_detected'] > 0:
+
+                    self.track_queue.append(instances[batch_idx])
+                    self.curr_gap = 0
+                else:
+                    self.curr_gap += 1
+                    if self.verbose: warnings.warn(f"No detections in frame {batch_idx}, {instances[batch_idx]['frame_id'].item()}. Skipping frame in queue. Current gap size: {self.curr_gap}")
+
+            else:
+                
+                if instances[batch_idx]['num_detected'] == 0: #Check if there are detections. If there are skip and increment gap count
                     
                     instances[batch_idx]["pred_track_ids"] = torch.arange(
-                    0, len(instances[batch_idx]["bboxes"])
-                    )
+                        0, len(instances[batch_idx]["bboxes"])
+                        )
+                    self.curr_gap += 1
                     
-                    self.track_queue.append(instances[batch_idx])
-                    continue
+                    if self.verbose: warnings.warn(f"No detections in frame {batch_idx}, {instances[batch_idx]['frame_id'].item()}. Skipping frame in queue. Current gap size: {self.curr_gap}")
                 
-                query_ind = min(window_size - 1, len(instances_to_track) - 1)
+                
+                else: #detections found. Track and reset gap counter
+                    self.curr_gap = 0 
+                     
+                    instances_to_track = (list(self.track_queue) + [instances[batch_idx]])[-window_size:]
+                        
+                    if len(self.track_queue) == self.track_queue.maxlen:
+                        tracked_frame = self.track_queue.pop()
+                        tracked_frame["tracked"] = True
+                        
+                    self.track_queue.append(instances[batch_idx])
                     
-                instances[batch_idx], id_count = self._run_global_tracker(
-                    model,
-                    instances_to_track,
-                    query_frame=query_ind,
-                    id_count=id_count,
-                    overlap_thresh=self.overlap_thresh,
-                    mult_thresh=self.mult_thresh,
-                )
+                    query_ind = min(window_size - 1, len(instances_to_track) - 1)
+                        
+                    instances[batch_idx], id_count = self._run_global_tracker(
+                        model,
+                        instances_to_track,
+                        query_frame=query_ind,
+                        id_count=id_count,
+                        overlap_thresh=self.overlap_thresh,
+                        mult_thresh=self.mult_thresh,
+                    )
+                
+                if self.curr_gap == self.max_gap: #Check if we've reached the max gap size and reset tracks.
+                    
+                    if self.verbose: warnings.warn(f"Number of consecutive frames with missing detections has exceeded threshold of {self.max_gap}!")
+                    
+                    self.track_queue.clear()
+                    self.curr_gap = 0
 
             """
             # If first frame.
@@ -214,10 +260,10 @@ class Tracker:
             #     instances[frame_id - window_size]["features"] = None
 
         # TODO: Insert postprocessing.
-
-        for frame in instances[:len(instances)-window_size]:
-            frame["features"] = frame["features"].cpu()
-
+        # for frame in instances:
+        #     if "tracked" in frame.keys():
+        #         frame['features'] = frame['features'].cpu()
+        self.id_count = id_count
         return instances
 
     def _run_global_tracker(self, model: GlobalTrackingTransformer, instances, query_frame, id_count, overlap_thresh, mult_thresh):
