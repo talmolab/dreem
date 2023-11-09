@@ -11,7 +11,7 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
     * added fixed embeddings over boxes
 """
 
-
+from biogtr.data_structures import Frame
 from biogtr.models.attention_head import ATTWeightHead
 from biogtr.models.embedding import Embedding
 from biogtr.models.model_utils import get_boxes_times
@@ -163,11 +163,11 @@ class Transformer(torch.nn.Module):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
-    def forward(self, instances, query_frame=None):
+    def forward(self, frames: list[Frame], query_frame: int=None):
         """A forward pass through the transformer and attention head.
 
         Args:
-            instances: A list of dictionaries, one dictionary for each frame
+            frames: A list of Frames (See `biogtr.data_structures.Frame for more info.)
             query_frame: An integer (k) specifying the frame within the window to be queried.
 
         Returns:
@@ -175,34 +175,22 @@ class Transformer(torch.nn.Module):
                 L: number of decoder blocks
                 n_query: number of instances in current query/frame
                 total_instances: number of instances in window
-
-        # ------------------------- An example of instances ------------------------ #
-        instances = [
-            {
-                # Each dictionary is a frame.
-                "frame_id": frame index int,
-                "num_detected": N_i, # num of detected instances in i-th frame
-                "bboxes": (N_i, 4),  # in pascal_voc unrounded unnormalized
-                "features": (N_i, embed_dim), # embed_dim = embedding dimension
-                ...
-            },
-            ...
-        ]
         """
         reid_features = torch.cat(
-            [frame["features"] for frame in instances], dim=0
+            [frame.get_features() for frame in frames], dim=0
         ).unsqueeze(0)
-
-        window_length = len(instances)
-        instances_per_frame = [frame["num_detected"] for frame in instances]
+    
+        window_length = len(frames)
+        instances_per_frame = [frame.num_detected for frame in frames]
         total_instances = sum(instances_per_frame)
         embed_dim = reid_features.shape[-1]
-
+        
+        #print(f'T: {window_length}; N: {total_instances}; N_t: {instances_per_frame} n_reid: {reid_features.shape}')
         if self.embedding_meta:
             kwargs = self.embedding_meta.get("kwargs", {})
 
-            pred_box, pred_time = get_boxes_times(instances)  # total_instances x 4
-
+            pred_box, pred_time = get_boxes_times(frames)  # total_instances x 4
+            
             embedding_type = self.embedding_meta["embedding_type"]
 
             if "temp" in embedding_type:
@@ -269,7 +257,7 @@ class Transformer(torch.nn.Module):
             asso_output.append(self.attn_head(x, memory).view(n_query, total_instances))
 
         # (L=1, n_query, total_instances)
-        return (asso_output, pos_emb) if self.return_embedding else asso_output
+        return (asso_output, pos_emb) if self.return_embedding else (asso_output, None)
 
 
 class TransformerEncoder(nn.Module):

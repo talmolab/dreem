@@ -1,17 +1,19 @@
 """Helper functions for calculating mot metrics."""
 import numpy as np
 import motmetrics as mm
+import torch
+from biogtr.data_structures import Frame
 from biogtr.inference.post_processing import _pairwise_iou
 from biogtr.inference.boxes import Boxes
 from typing import Union, Iterable
 
 
-def get_matches(instances: list[dict]) -> tuple[dict, list, int]:
+def get_matches(frames: list[Frame]) -> tuple[dict, list, int]:
     """Get comparison between predicted and gt trajectory labels.
 
     Args:
-        instances: a list of dicts where each dict corresponds to a frame and
-        contains the video_id, frame_id, gt labels and predicted labels
+        instances: a list of Frames containing the video_id, frame_id,
+        gt labels and predicted labels
 
     Returns:
         matches: a dict containing predicted and gt trajectory labels
@@ -21,17 +23,15 @@ def get_matches(instances: list[dict]) -> tuple[dict, list, int]:
     matches = {}
     indices = []
 
-    video_id = instances[0]["video_id"].item()
+    video_id = frames[0].video_id.item()
 
-    for idx, instance in enumerate(instances):
-        indices.append(instance["frame_id"].item())
-        for i, gt_track_id in enumerate(instance["gt_track_ids"]):
-            gt_track_id = instance["gt_track_ids"][i]
-            pred_track_id = instance["pred_track_ids"][i]
+    for idx, frame in enumerate(frames):
+        indices.append(frame.frame_id.item())
+        for gt_track_id, pred_track_id in zip(frame.get_gt_track_ids(), frame.get_pred_track_ids()):
             match = f"{gt_track_id} -> {pred_track_id}"
 
             if match not in matches:
-                matches[match] = np.full(len(instances), 0)
+                matches[match] = np.full(len(frames), 0)
 
             matches[match][idx] = 1
     return matches, indices, video_id
@@ -92,35 +92,14 @@ def get_switch_count(switches: dict) -> int:
     return sw_cnt
 
 
-def to_track_eval(instances: list[dict]) -> dict:
-    """Reformats instances, the output from `sliding_inference` to be used by `TrackEval.`
+def to_track_eval(frames: list[Frame]) -> dict:
+    """Reformats frames the output from `sliding_inference` to be used by `TrackEval.`
 
     Args:
-        instances: A list of dictionaries. One for each frame. An example is provided below.
+        instances: A list of Frames. `See biogtr.data_structures for more info.`
 
     Returns:
         data: A dictionary. Example provided below.
-
-    # ------------------------- An example of instances ------------------------ #
-
-    D: embedding dimension.
-    N_i: number of detected instances in i-th frame of window.
-
-    instances = [
-        {
-            # Each dictionary is a frame.
-
-            "frame_id": frame index int,
-            "num_detected": N_i,
-            "gt_track_ids": (N_i,),
-            "poses": (N_i, 13, 2),  # 13 keypoints for the pose (x, y) coords.
-            "bboxes": (N_i, 4),  # in pascal_voc unrounded unnormalized
-            "features": (N_i, D),  # Features are deleted but can optionally be kept if need be.
-            "pred_track_ids": (N_i,),
-        },
-        {},  # Frame 2.
-        ...
-    ]
 
     # --------------------------- An example of data --------------------------- #
 
@@ -147,30 +126,30 @@ def to_track_eval(instances: list[dict]) -> dict:
     similarity_scores = []
 
     data = {}
-    #cos_sim = torch.nn.CosineSimilarity()
+    cos_sim = torch.nn.CosineSimilarity()
 
-    for fidx, instance in enumerate(instances):
-        gt_track_ids = instance["gt_track_ids"].cpu().numpy().tolist()
-        pred_track_ids = instance["pred_track_ids"].cpu().numpy().tolist()
-        boxes = Boxes(instance['bboxes'].cpu())
+    for fidx, frame in enumerate(frames):
+        gt_track_ids = frame.get_gt_track_ids().cpu().numpy().tolist()
+        pred_track_ids = frame.get_pred_track_ids().cpu().numpy().tolist()
+        boxes = Boxes(frame.get_bboxes().cpu())
 
         gt_ids.append(np.array(gt_track_ids))
         track_ids.append(np.array(pred_track_ids))
 
-        num_tracker_dets += len(instance["pred_track_ids"])
+        num_tracker_dets += len(pred_track_ids)
         num_gt_dets += len(gt_track_ids)
 
         if not set(gt_track_ids).issubset(set(unique_gt_ids)):
             unique_gt_ids.extend(list(set(gt_track_ids).difference(set(unique_gt_ids))))
         
-        eval_matrix = _pairwise_iou(boxes, boxes)
-#         eval_matrix = np.full((len(gt_track_ids), len(pred_track_ids)), np.nan)
+        #eval_matrix = _pairwise_iou(boxes, boxes)
+        eval_matrix = np.full((len(gt_track_ids), len(pred_track_ids)), np.nan)
 
-#         for i, feature_i in enumerate(features):
-#             for j, feature_j in enumerate(features):
-#                 eval_matrix[i][j] = cos_sim(
-#                     feature_i.unsqueeze(0), feature_j.unsqueeze(0)
-#                 )
+        for i, feature_i in enumerate(frame.get_features()):
+            for j, feature_j in enumerate(features):
+                eval_matrix[i][j] = cos_sim(
+                    feature_i.unsqueeze(0), feature_j.unsqueeze(0)
+                )
 
         # eval_matrix
         #                      pred_track_ids
@@ -212,7 +191,7 @@ def to_track_eval(instances: list[dict]) -> dict:
         raise(e)
     data["tracker_ids"] = track_ids
     data["similarity_scores"] = similarity_scores
-    data["num_timesteps"] = len(instances)
+    data["num_timesteps"] = len(frames)
 
     return data
 

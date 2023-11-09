@@ -2,6 +2,7 @@
 
 from biogtr.config import Config
 from biogtr.models.gtr_runner import GTRRunner
+from biogtr.data_structures import Frame
 from biogtr.datasets.tracking_dataset import TrackingDataset
 from omegaconf import DictConfig
 from pprint import pprint
@@ -17,20 +18,21 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 torch.set_default_device(device)
 
-def export_trajectories(instances_pred: list[dict], save_path: str = None):
+def export_trajectories(frames_pred: list[Frame], save_path: str = None):
     save_dict = {}
     frame_ids = []
     X, Y = [], []
     pred_track_ids = []
-    for frame in instances_pred:
-        for i in range(frame["num_detected"]):
-            frame_ids.append(frame["frame_id"].item())
-            bbox = frame["bboxes"][i]
+    for frame in frames_pred:
+        for i, instance in range(frame.instances):
+            frame_ids.append(frame.frame_id.item())
+            bbox = instance.bbox
             y = (bbox[2] + bbox[0]) / 2
             x = (bbox[3] + bbox[1]) / 2
             X.append(x.item())
             Y.append(y.item())
-            pred_track_ids.append(frame["pred_track_ids"][i].item())
+            pred_track_ids.append(instance.pred_track_id.item())
+
     save_dict["Frame"] = frame_ids
     save_dict["X"] = X
     save_dict["Y"] = Y
@@ -60,7 +62,7 @@ def inference(
 
     for batch in preds:
         for frame in batch:
-            vid_trajectories[frame["video_id"]].append(frame)
+            vid_trajectories[frame.video_id].append(frame)
 
     saved = []
 
@@ -72,16 +74,15 @@ def inference(
             X, Y = [], []
             pred_track_ids = []
             for frame in video:
-                for i in range(frame["num_detected"]):
-                    video_ids.append(frame["video_id"].item())
-                    frame_ids.append(frame["frame_id"].item())
-                    bbox = frame["bboxes"][i]
-
+                for i, instance in frame.instances:
+                    video_ids.append(frame.video_id.item())
+                    frame_ids.append(frame.frame_id.item())
+                    bbox = instance.bbox
                     y = (bbox[2] + bbox[0]) / 2
                     x = (bbox[3] + bbox[1]) / 2
                     X.append(x.item())
                     Y.append(y.item())
-                    pred_track_ids.append(frame["pred_track_ids"][i].item())
+                    pred_track_ids.append(instance.pred_track_id.item())
             save_dict["Video"] = video_ids
             save_dict["Frame"] = frame_ids
             save_dict["X"] = X

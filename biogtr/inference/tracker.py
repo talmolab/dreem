@@ -2,6 +2,7 @@
 import torch
 import pandas as pd
 import warnings
+from biogtr.data_structures import Frame
 from biogtr.models import model_utils
 from biogtr.inference import post_processing
 from biogtr.inference.boxes import Boxes
@@ -59,42 +60,39 @@ class Tracker:
             
         self.id_count = 0
 
-    def __call__(self, model: GlobalTrackingTransformer, instances: list[dict], all_instances: list = None):
+    def __call__(self, model: GlobalTrackingTransformer, frames: list[Frame]):
         """Wrapper around `track` to enable `tracker()` instead of `tracker.track()`.
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
-            instances: data dict to run inference on
-            all_instances: list of instances from previous chunks
-                           to stitch together full trajectory
+            frames: list of Frames to run inference on
 
         Returns:
-            instances dict populated with pred track ids and association matrix scores
+            List of frames containing association matrix scores and instances populated with pred track ids. 
         """
-        return self.track(model, instances, all_instances)
+        return self.track(model, frames)
 
-    def track(self, model: GlobalTrackingTransformer, instances: list[dict], all_instances: list = None):
+    def track(self, model: GlobalTrackingTransformer, frames: list[dict]):
         """Run tracker and get predicted trajectories.
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
-            instances: data dict to run inference on
-            all_instances: list of instances from previous chunks to stitch together full trajectory
+            frames: data dict to run inference on
 
         Returns:
-            instances dict populated with pred track ids and association matrix scores
+            List of Frames populated with pred track ids and association matrix scores
         """
 # Extract feature representations with pre-trained encoder.
 
         _ = model.eval()
 
-        for frame in instances:
-            if (frame["num_detected"] > 0).item():
+        for frame in frames:
+            if frame.has_instances():
                 if not self.use_vis_feats:
-                    num_frame_instances = frame["crops"].shape[0]
-                    frame["features"] = torch.zeros(
-                        num_frame_instances, model.d_model
-                    )
+                    for instance in frame.instances:
+                        instance.features = torch.zeros(
+                            1, model.d_model
+                        )
                     # frame["features"] = torch.randn(
                     #     num_frame_instances, self.model.d_model
                     # )
@@ -102,10 +100,13 @@ class Tracker:
                 # comment out to turn encoder off
 
                 # Assuming the encoder is already trained or train encoder jointly.
-                elif 'features' not in frame or frame['features'] == None or len(frame['features']) == 0:
+                elif not frame.has_features():
                     with torch.no_grad():
-                        z = model.visual_encoder(frame["crops"])
-                        frame["features"] = z
+                        crops = frame.get_crops()
+                        z = model.visual_encoder(crops)
+
+                        for i, z_i in enumerate(z):
+                            frame.instances[i].features = z_i
 
         # I feel like this chunk is unnecessary:
         # reid_features = torch.cat(
@@ -116,7 +117,7 @@ class Tracker:
         #     instances, reid_features
         # )
         instances_pred = self.sliding_inference(
-            model, instances, window_size=self.window_size, all_instances=all_instances
+            model, frames, window_size=self.window_size
         )
         
         if not self.persistent_tracking:
@@ -126,35 +127,16 @@ class Tracker:
             
         return instances_pred
 
-    def sliding_inference(self, model: GlobalTrackingTransformer, instances, window_size, all_instances=None):
+    def sliding_inference(self, model: GlobalTrackingTransformer, frames: list[Frame], window_size: int):
         """Performs sliding inference on the input video (instances) with a given window size.
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
-            instances: A list of dictionaries, one dictionary for each frame. An example
-            is provided below.
+            frame: A list of Frames (See `biogtr.data_structures.Frame` for more info).
             window_size: An integer.
 
         Returns:
-            instances: A list of dictionaries, one dictionary for each frame. An example
-            is provided below.
-        # ------------------------- An example of instances ------------------------ #
-        D: embedding dimension.
-        N_i: number of detected instances in i-th frame of window.
-        instances = [
-            {
-                # Each dictionary is a frame.
-                "frame_id": frame index int,
-                "num_detected": N_i,
-                "gt_track_ids": (N_i,),
-                "poses": (N_i, 13, 2),  # 13 keypoints for the pose (x, y) coords.
-                "bboxes": (N_i, 4),  # in pascal_voc unrounded unnormalized
-                "features": (N_i, D),  # Features are deleted but can optionally be kept if need be.
-                "pred_track_ids": (N_i,),  # Filled out after sliding_inference.
-            },
-            {},  # Frame 2.
-            ...
-        ]
+            Frames: A list of Frames populated with pred_track_ids and asso_matrices
         """
         # B: batch size.
         # D: embedding dimension.
@@ -162,7 +144,7 @@ class Tracker:
         # H: height.
         # W: width.
 
-        video_len = len(instances)
+        video_len = len(frames)
         id_count = self.id_count
 
         for batch_idx in range(video_len):
@@ -170,59 +152,58 @@ class Tracker:
             if self.verbose: 
                 warnings.warn(f"Current number of tracks is {id_count}")
                               
-            if (self.persistent_tracking and instances[batch_idx]['frame_id'] == 0): #check for new video and clear queue
+            if (self.persistent_tracking and frames[batch_idx].frame_id == 0): #check for new video and clear queue
                 self.track_queue.clear()
                 self.id_count = 0
                 
             '''
             Initialize tracks on first frame of video or first instance of detections.
             '''
-            if len(self.track_queue) == 0 or sum([len(frame["pred_track_ids"]) for frame in self.track_queue]) == 0:
+            if len(self.track_queue) == 0 or sum([len(frame.get_pred_track_ids()) for frame in self.track_queue]) == 0:
                 
-                if self.verbose: warnings.warn(f'Initializing track on batch {batch_idx} frame {instances[batch_idx]["frame_id"].item()}')
+                if self.verbose: warnings.warn(f'Initializing track on batch {batch_idx} frame {frames[batch_idx].frame_id.item()}')
                 
-                instances[batch_idx]["pred_track_ids"] = torch.arange(
-                    0, len(instances[batch_idx]["bboxes"])
-                )
+                for i, instance in enumerate(frames[batch_idx].instances):
+                    instance.pred_track_id = i
 
-                id_count = len(instances[batch_idx]["bboxes"])
+                id_count = frames[batch_idx].num_detected
                 
-                if self.verbose: warnings.warn(f'Initial tracks are {instances[batch_idx]["pred_track_ids"].cpu().tolist()}')
+                if self.verbose: warnings.warn(f'Initial tracks are {frames[batch_idx].get_pred_track_ids().cpu().tolist()}')
                 
-                if instances[batch_idx]['num_detected'] > 0:
+                if frames[batch_idx].has_instances():
 
-                    self.track_queue.append(instances[batch_idx])
+                    self.track_queue.append(frames[batch_idx])
                     self.curr_gap = 0
                 else:
                     self.curr_gap += 1
-                    if self.verbose: warnings.warn(f"No detections in frame {batch_idx}, {instances[batch_idx]['frame_id'].item()}. Skipping frame in queue. Current gap size: {self.curr_gap}")
+                    if self.verbose: warnings.warn(f"No detections in frame {batch_idx}, {frames[batch_idx].frame_id.item()}. Skipping frame in queue. Current gap size: {self.curr_gap}")
 
             else:
                 
-                if instances[batch_idx]['num_detected'] == 0: #Check if there are detections. If there are skip and increment gap count
+                if not frames[batch_idx].has_instances(): #Check if there are detections. If there are skip and increment gap count
                     
-                    instances[batch_idx]["pred_track_ids"] = torch.arange(
-                        0, len(instances[batch_idx]["bboxes"])
-                        )
+                    for i,instance in enumerate(frames[batch_idx].instances): 
+                        instance.pred_track_id = i
+
                     self.curr_gap += 1
                     
-                    if self.verbose: warnings.warn(f"No detections in frame {batch_idx}, {instances[batch_idx]['frame_id'].item()}. Skipping frame in queue. Current gap size: {self.curr_gap}")
+                    if self.verbose: warnings.warn(f"No detections in frame {batch_idx}, {frames[batch_idx].frame_id.item()}. Skipping frame in queue. Current gap size: {self.curr_gap}")
                 
                 
                 else: #detections found. Track and reset gap counter
                     self.curr_gap = 0 
                      
-                    instances_to_track = (list(self.track_queue) + [instances[batch_idx]])[-window_size:]
+                    instances_to_track = (list(self.track_queue) + [frames[batch_idx]])[-window_size:]
                         
                     if len(self.track_queue) == self.track_queue.maxlen:
                         tracked_frame = self.track_queue.pop()
                         tracked_frame["tracked"] = True
                         
-                    self.track_queue.append(instances[batch_idx])
+                    self.track_queue.append(frames[batch_idx])
                     
                     query_ind = min(window_size - 1, len(instances_to_track) - 1)
                         
-                    instances[batch_idx], id_count = self._run_global_tracker(
+                    frames[batch_idx], id_count = self._run_global_tracker(
                         model,
                         instances_to_track,
                         query_frame=query_ind,
@@ -264,17 +245,16 @@ class Tracker:
         #     if "tracked" in frame.keys():
         #         frame['features'] = frame['features'].cpu()
         self.id_count = id_count
-        return instances
+        return frames
 
-    def _run_global_tracker(self, model: GlobalTrackingTransformer, instances, query_frame, id_count, overlap_thresh, mult_thresh):
+    def _run_global_tracker(self, model: GlobalTrackingTransformer, frames, query_frame, id_count, overlap_thresh, mult_thresh):
         """Run_global_tracker performs the actual tracking.
 
         Uses Hungarian algorithm to do track assigning.
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
-            instances: A list of dictionaries, one dictionary for each frame. An example
-            is provided below.
+            frames: A list of Frames containing reid features. See `biogtr.data_structures` for more info.
             query_frame: An integer for the query frame within the window of instances.
             id_count: The count of total identities so far.
             overlap_thresh: A float number between 0 and 1 specifying how much
@@ -283,32 +263,11 @@ class Tracker:
             This is not functional as of now.
 
         Returns:
-            instances: The exact list of dictionaries as before but with assigned track ids
+            frames: The exact list of frames as before but with assigned track ids
             and new track ids for the query frame. Refer to the example for the structure.
             id_count: An integer for the updated identity count so far.
-            # ------------------------- An example of instances ------------------------ #
-            NOTE: This instances variable is the window subset of the instances variable in sliding_inference.
-            *: each item in instances is a frame in the window. So it follows
-                that each frame in the window has * detected instances.
-            D: embedding dimension.
-            N_i: number of detected instances in i-th frame of window.
-            window_size: length of window.
-            The features in instances can be of shape (2 to window_size, *, D) when stacked together.
-            instances = [
-                {
-                    # Each dictionary is a frame.
-                    "frame_id": frame index int,
-                    "num_detected": N_i,
-                    "gt_track_ids": (N_i,),
-                    "poses": (N_i, 13, 2),  # 13 keypoints for the pose (x, y) coords.
-                    "bboxes": (N_i, 4),  # in pascal_voc unrounded unnormalized
-                    "features": (N_i, D),
-                    "pred_track_ids": (N_i,),  # Before assignnment, these are all -1.
-                },
-                ...
-            ]
         """
-        # *: each item in instances is a frame in the window. So it follows
+        # *: each item in frames is a frame in the window. So it follows
         #    that each frame in the window has * detected instances.
         # D: embedding dimension.
         # total_instances: number of instances in the window.
@@ -322,24 +281,20 @@ class Tracker:
 
         # Number of instances in each frame of the window.
         # E.g.: instances_per_frame: [4, 5, 6, 7]; window of length 4 with 4 detected instances in the first frame of the window.
-        # print([frame['frame_id'].item() for frame in instances])
-        # print([frame['frame_id'].item() for frame in instances])
-        # print([frame['pred_track_ids'] for frame in instances])
+        
         _ = model.eval()
-        instances_per_frame = [frame["num_detected"] for frame in instances]
+        instances_per_frame = [frame.num_detected for frame in frames]
 
         total_instances, window_size = sum(instances_per_frame), len(instances_per_frame)  # Number of instances in window; length of window.
-        reid_features = torch.cat([frame["features"] for frame in instances], dim=0)[
+        reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
             None
         ]  # (1, total_instances, D=512)
 
         # (L=1, n_query, total_instances)
         with torch.no_grad():
-            if model.transformer.return_embedding:
-                asso_output, embed = model(instances, query_frame=query_frame)
-                instances[query_frame]["embeddings"] = embed
-            else:
-                asso_output = model(instances, query_frame=query_frame)
+            asso_output, embed = model(frames, query_frame=query_frame)
+            # if model.transformer.return_embedding:
+                # frames[query_frame].embeddings = embed TODO add embedding to Instance Object
         # if query_frame == 1:
         #     print(asso_output)
         asso_output = asso_output[-1].split(instances_per_frame, dim=1)  # (window_size, n_query, N_i)
@@ -347,11 +302,9 @@ class Tracker:
         asso_output = torch.cat(asso_output, dim=1).cpu()  # (n_query, total_instances)
 
         try:
-            n_query = instances[query_frame][
-                "num_detected"
-            ]  # Number of instances in the current/query frame.
+            n_query = frames[query_frame].num_detected  # Number of instances in the current/query frame.
         except Exception as e:
-            print(len(instances), query_frame, instances[-1])
+            print(len(frames), query_frame, frames[-1])
             raise(e)
 
         n_nonquery = (
@@ -360,19 +313,19 @@ class Tracker:
         
         try:
             instance_ids = torch.cat(
-                [x["pred_track_ids"] for batch_idx, x in enumerate(instances) if batch_idx != query_frame], dim=0
+                [x.get_pred_track_ids() for batch_idx, x in enumerate(frames) if batch_idx != query_frame], dim=0
             ).view(
                 n_nonquery
             )  # (n_nonquery,)
         except Exception as e:
-            print(instances)
+            print(frames)
             raise(e)
 
         query_inds = [x for x in range(sum(instances_per_frame[:query_frame]), sum(instances_per_frame[: query_frame + 1]))]
         nonquery_inds = [i for i in range(total_instances) if i not in query_inds]
         asso_nonquery = asso_output[:, nonquery_inds]  # (n_query, n_nonquery)
 
-        pred_boxes, _ = model_utils.get_boxes_times(instances)
+        pred_boxes, _ = model_utils.get_boxes_times(frames)
         query_boxes = pred_boxes[query_inds]  # n_k x 4
         nonquery_boxes = pred_boxes[nonquery_inds]  #n_nonquery x 4
         # TODO: Insert postprocessing.
@@ -392,11 +345,14 @@ class Tracker:
 
         traj_score = torch.mm(traj_score, id_inds.cpu())  # (n_query, n_traj)
 
-        instances[query_frame]["decay_time_traj_score"] = pd.DataFrame(
+        decay_time_traj_score = pd.DataFrame(
             deepcopy((traj_score).numpy()), columns=unique_ids.cpu().numpy()
         )
-        instances[query_frame]["decay_time_traj_score"].index.name = "Current Frame Instances"
-        instances[query_frame]["decay_time_traj_score"].columns.name = "Unique IDs"
+
+        decay_time_traj_score.index.name = "Current Frame Instances"
+        decay_time_traj_score.columns.name = "Unique IDs"
+
+        frames[query_frame].add_traj_score("decay_time", decay_time_traj_score)
         ################################################################################
 
         # with iou -> combining with location in tracker, they set to True
@@ -408,7 +364,7 @@ class Tracker:
             #    n_nonquery, device=id_inds.device)[:, None]).max(dim=0)[1] # n_traj
 
             last_inds = (
-                id_inds * torch.arange(n_nonquery[0], device=id_inds.device)[:, None]
+                id_inds * torch.arange(n_nonquery, device=id_inds.device)[:, None]
             ).max(dim=0)[
                 1
             ]  # M
@@ -451,14 +407,18 @@ class Tracker:
                 track_ids[i] = id_count
                 id_count += 1
 
-        instances[query_frame]["matches"] = (match_i, match_j)
-        instances[query_frame]["pred_track_ids"] = track_ids
-        instances[query_frame]["final_traj_score"] = pd.DataFrame(
+        frames[query_frame].matches = (match_i, match_j)
+
+        for instance, track_id in zip(frames[query_frame].instances, track_ids):
+            instance.pred_track_id = track_id
+
+        final_traj_score = pd.DataFrame(
             deepcopy((traj_score).numpy()), columns=unique_ids.cpu().numpy()
         )
-        instances[query_frame]["final_traj_score"].index.name = "Current Frame Instances"
-        instances[query_frame]["final_traj_score"].columns.name = "Unique IDs"
+        final_traj_score.index.name = "Current Frame Instances"
+        final_traj_score.columns.name = "Unique IDs"
 
-        self.track_queue.append(instances[query_frame])
+        frames[query_frame].add_traj_score("final", final_traj_score)
+        self.track_queue.append(frames[query_frame])
 
-        return instances[query_frame], id_count
+        return frames[query_frame], id_count

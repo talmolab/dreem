@@ -1,5 +1,6 @@
 """Module containing logic for loading datasets."""
 from biogtr.datasets import data_utils
+from biogtr.data_structures import Frame, Instance
 from torch.utils.data import Dataset
 from typing import List, Union
 import numpy as np
@@ -61,7 +62,7 @@ class BaseDataset(Dataset):
         self.labels = None
         self.gt_list = None
 
-    def create_chunks(self):
+    def create_chunks(self) -> None:
         """Get indexing for data.
 
         Creates both indexes for selecting dataset (label_idx) and frame in
@@ -98,7 +99,7 @@ class BaseDataset(Dataset):
             self.chunked_frame_idx = self.frame_idx
             self.label_idx = [i for i in range(len(self.labels))]
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Get the size of the dataset.
 
         Returns:
@@ -106,7 +107,7 @@ class BaseDataset(Dataset):
         """
         return len(self.chunked_frame_idx)
 
-    def no_batching_fn(self, batch):
+    def no_batching_fn(self, batch) -> List[Frame]:
         """Collate function used to overwrite dataloader batching function.
 
         Args:
@@ -117,7 +118,7 @@ class BaseDataset(Dataset):
         """
         return batch
 
-    def __getitem__(self, idx: int) -> List[dict]:
+    def __getitem__(self, idx: int) -> List[Frame]:
         """Get an element of the dataset.
 
         Args:
@@ -125,10 +126,7 @@ class BaseDataset(Dataset):
             or the frame.
 
         Returns:
-            A list of dicts where each dict corresponds a frame in the chunk and
-            each value is a `torch.Tensor`. Dict elements can be seen in
-            subclasses
-
+            A list of `Frame`s in the chunk containing the metadata + instance features. 
         """
         label_idx, frame_idx = self.get_indices(idx)
 
@@ -148,7 +146,7 @@ class BaseDataset(Dataset):
         raise NotImplementedError("Must be implemented in subclass")
 
     def get_instances(self, label_idx: List[int], frame_idx: List[int]):
-        """Builds instances dict given label and frame indices.
+        """Builds chunk of frames.
 
         This method should be implemented in any subclass of the BaseDataset.
 
