@@ -3,8 +3,6 @@ from PIL import Image
 from biogtr.datasets import data_utils
 from biogtr.datasets.base_dataset import BaseDataset
 from biogtr.data_structures import Frame, Instance
-from torch.utils.data import Dataset
-from torchvision.transforms import functional as tvf
 from typing import Union
 import albumentations as A
 import numpy as np
@@ -27,7 +25,7 @@ class MicroscopyDataset(BaseDataset):
         mode: str = "Train",
         augmentations: dict = None,
         n_chunks: Union[int, float] = 1.0,
-        seed: int = None
+        seed: int = None,
     ):
         """Initialize MicroscopyDataset.
 
@@ -96,7 +94,7 @@ class MicroscopyDataset(BaseDataset):
 
         self.frame_idx = [
             torch.arange(Image.open(video).n_frames)
-            if type(video) == str
+            if isinstance(video, str)
             else torch.arange(len(video))
             for video in self.videos
         ]
@@ -106,7 +104,7 @@ class MicroscopyDataset(BaseDataset):
         self.create_chunks()
 
     def get_indices(self, idx):
-        """Retrieves label and frame indices given batch index.
+        """Retrieve label and frame indices given batch index.
 
         Args:
             idx: the index of the batch.
@@ -128,17 +126,16 @@ class MicroscopyDataset(BaseDataset):
 
         video = self.videos[label_idx]
 
-        if type(video) != list:
+        if not isinstance(video, list):
             video = data_utils.LazyTiffStack(self.videos[label_idx])
 
-        
         frames = []
         for i in frame_idx:
-            instances, gt_track_ids, centroids, bboxes, crops = [], [], [], [], []
+            instances, gt_track_ids, centroids = [], [], []
 
             img = (
                 video.get_section(i)
-                if type(video) != list
+                if isinstance(video, list)
                 else np.array(Image.open(video[i]))
             )
 
@@ -181,14 +178,22 @@ class MicroscopyDataset(BaseDataset):
                 )
                 crop = data_utils.crop_bbox(img, bbox)
 
-                instances.append(Instance(gt_track_id=gt_track_ids[i],
-                                          pred_track_id=-1,
-                                          bbox=bbox,
-                                          crop=crop))
-                
-            frames.append(Frame(video_id=label_idx,
-                                frame_id=i,
-                                img_shape=img.shape,
-                                instances=instances))
-            
+                instances.append(
+                    Instance(
+                        gt_track_id=gt_track_ids[i],
+                        pred_track_id=-1,
+                        bbox=bbox,
+                        crop=crop,
+                    )
+                )
+
+            frames.append(
+                Frame(
+                    video_id=label_idx,
+                    frame_id=i,
+                    img_shape=img.shape,
+                    instances=instances,
+                )
+            )
+
         return frames

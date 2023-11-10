@@ -1,6 +1,6 @@
 """Module containing logic for loading datasets."""
 from biogtr.datasets import data_utils
-from biogtr.data_structures import Frame, Instance
+from biogtr.data_structures import Frame
 from torch.utils.data import Dataset
 from typing import List, Union
 import numpy as np
@@ -21,7 +21,7 @@ class BaseDataset(Dataset):
         augmentations: dict = None,
         n_chunks: Union[int, float] = 1.0,
         seed: int = None,
-        gt_list: str = None
+        gt_list: str = None,
     ):
         """Initialize Dataset.
 
@@ -72,27 +72,28 @@ class BaseDataset(Dataset):
         efficiency and data shuffling. To be called by subclass __init__()
         """
         if self.chunk:
-
             self.chunked_frame_idx, self.label_idx = [], []
             for i, frame_idx in enumerate(self.frame_idx):
                 frame_idx_split = torch.split(frame_idx, self.clip_length)
                 self.chunked_frame_idx.extend(frame_idx_split)
                 self.label_idx.extend(len(frame_idx_split) * [i])
-                
+
             if self.n_chunks > 0 and self.n_chunks <= 1.0:
                 n_chunks = int(self.n_chunks * len(self.chunked_frame_idx))
 
             elif self.n_chunks <= len(self.chunked_frame_idx):
                 n_chunks = int(self.n_chunks)
-                
+
             else:
                 n_chunks = len(self.chunked_frame_idx)
 
             if n_chunks > 0 and n_chunks < len(self.chunked_frame_idx):
-                sample_idx = np.random.choice(np.arange(len(self.chunked_frame_idx)), n_chunks)
+                sample_idx = np.random.choice(
+                    np.arange(len(self.chunked_frame_idx)), n_chunks
+                )
 
                 self.chunked_frame_idx = [self.chunked_frame_idx[i] for i in sample_idx]
-                
+
                 self.label_idx = [self.label_idx[i] for i in sample_idx]
 
         else:
@@ -126,14 +127,14 @@ class BaseDataset(Dataset):
             or the frame.
 
         Returns:
-            A list of `Frame`s in the chunk containing the metadata + instance features. 
+            A list of `Frame`s in the chunk containing the metadata + instance features.
         """
         label_idx, frame_idx = self.get_indices(idx)
 
         return self.get_instances(label_idx, frame_idx)
 
     def get_indices(self, idx: int):
-        """Retrieves label and frame indices given batch index.
+        """Retrieve label and frame indices given batch index.
 
         This method should be implemented in any subclass of the BaseDataset.
 
@@ -146,7 +147,7 @@ class BaseDataset(Dataset):
         raise NotImplementedError("Must be implemented in subclass")
 
     def get_instances(self, label_idx: List[int], frame_idx: List[int]):
-        """Builds chunk of frames.
+        """Build chunk of frames.
 
         This method should be implemented in any subclass of the BaseDataset.
 

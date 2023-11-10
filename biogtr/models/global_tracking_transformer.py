@@ -6,6 +6,7 @@ from torch import nn
 
 # todo: do we want to handle params with configs already here?
 
+
 class GlobalTrackingTransformer(nn.Module):
     """Modular GTR model composed of visual encoder + transformer used for tracking."""
 
@@ -97,12 +98,8 @@ class GlobalTrackingTransformer(nn.Module):
             decoder_self_attn=decoder_self_attn,
         )
 
-    def forward(
-        self,
-        frames: list[Frame],
-        query_frame: int = None
-    ):
-        """Forward pass of GTR Model to get asso matrix.
+    def forward(self, frames: list[Frame], query_frame: int = None):
+        """Execute forward pass of GTR Model to get asso matrix.
 
         Args:
             frames: List of Frames from chunk containing crops of objects + gt label info
@@ -113,7 +110,7 @@ class GlobalTrackingTransformer(nn.Module):
         """
         # Extract feature representations with pre-trained encoder.
         for frame in frames:
-            if frame.has_instances(): 
+            if frame.has_instances():
                 if not frame.has_features():
                     crops = frame.get_crops()
                     z = self.visual_encoder(crops)
@@ -122,5 +119,5 @@ class GlobalTrackingTransformer(nn.Module):
                         frame.instances[i].features = z_i
 
         asso_preds, emb = self.transformer(frames, query_frame=query_frame)
-        
+
         return asso_preds, emb

@@ -3,7 +3,6 @@
 from biogtr.config import Config
 from biogtr.models.gtr_runner import GTRRunner
 from biogtr.data_structures import Frame
-from biogtr.datasets.tracking_dataset import TrackingDataset
 from omegaconf import DictConfig
 from pprint import pprint
 from pathlib import Path
@@ -18,7 +17,16 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 torch.set_default_device(device)
 
+
 def export_trajectories(frames_pred: list[Frame], save_path: str = None):
+    """Convert trajectories to data frame and save as .csv.
+
+    Args:
+        frames_pred: A list of Frames with predicted track ids.
+        save_path: The path to save the predicted trajectories to.
+    Returns:
+        A dictionary containing the predicted track id and centroid coordinates for each instance in the video.
+    """
     save_dict = {}
     frame_ids = []
     X, Y = [], []
@@ -41,6 +49,7 @@ def export_trajectories(frames_pred: list[Frame], save_path: str = None):
     if save_path:
         save_df.to_csv(save_path, index=False)
     return save_df
+
 
 def inference(
     model: GTRRunner, dataloader: torch.utils.data.DataLoader
@@ -96,9 +105,7 @@ def inference(
 
 @hydra.main(config_path="configs", config_name=None, version_base=None)
 def main(cfg: DictConfig):
-    """Main function for running inference.
-
-    handles config parsing, batch deployment and saving results
+    """Run inference based on config file.
 
     Args:
         cfg: A dictconfig loaded from hydra containing checkpoint path and data

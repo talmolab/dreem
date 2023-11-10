@@ -3,9 +3,10 @@ import numpy as np
 import motmetrics as mm
 import torch
 from biogtr.data_structures import Frame
-from biogtr.inference.post_processing import _pairwise_iou
-from biogtr.inference.boxes import Boxes
 from typing import Union, Iterable
+
+# from biogtr.inference.post_processing import _pairwise_iou
+# from biogtr.inference.boxes import Boxes
 
 
 def get_matches(frames: list[Frame]) -> tuple[dict, list, int]:
@@ -27,7 +28,9 @@ def get_matches(frames: list[Frame]) -> tuple[dict, list, int]:
 
     for idx, frame in enumerate(frames):
         indices.append(frame.frame_id.item())
-        for gt_track_id, pred_track_id in zip(frame.get_gt_track_ids(), frame.get_pred_track_ids()):
+        for gt_track_id, pred_track_id in zip(
+            frame.get_gt_track_ids(), frame.get_pred_track_ids()
+        ):
             match = f"{gt_track_id} -> {pred_track_id}"
 
             if match not in matches:
@@ -93,10 +96,10 @@ def get_switch_count(switches: dict) -> int:
 
 
 def to_track_eval(frames: list[Frame]) -> dict:
-    """Reformats frames the output from `sliding_inference` to be used by `TrackEval.`
+    """Reformats frames the output from `sliding_inference` to be used by `TrackEval`.
 
     Args:
-        instances: A list of Frames. `See biogtr.data_structures for more info.`
+        instances: A list of Frames. `See biogtr.data_structures for more info`.
 
     Returns:
         data: A dictionary. Example provided below.
@@ -117,7 +120,6 @@ def to_track_eval(frames: list[Frame]) -> dict:
         "num_timsteps": L,
     }
     """
-
     unique_gt_ids = []
     num_tracker_dets = 0
     num_gt_dets = 0
@@ -131,7 +133,7 @@ def to_track_eval(frames: list[Frame]) -> dict:
     for fidx, frame in enumerate(frames):
         gt_track_ids = frame.get_gt_track_ids().cpu().numpy().tolist()
         pred_track_ids = frame.get_pred_track_ids().cpu().numpy().tolist()
-        boxes = Boxes(frame.get_bboxes().cpu())
+        # boxes = Boxes(frame.get_bboxes().cpu())
 
         gt_ids.append(np.array(gt_track_ids))
         track_ids.append(np.array(pred_track_ids))
@@ -141,12 +143,12 @@ def to_track_eval(frames: list[Frame]) -> dict:
 
         if not set(gt_track_ids).issubset(set(unique_gt_ids)):
             unique_gt_ids.extend(list(set(gt_track_ids).difference(set(unique_gt_ids))))
-        
-        #eval_matrix = _pairwise_iou(boxes, boxes)
+
+        # eval_matrix = _pairwise_iou(boxes, boxes)
         eval_matrix = np.full((len(gt_track_ids), len(pred_track_ids)), np.nan)
 
         for i, feature_i in enumerate(frame.get_features()):
-            for j, feature_j in enumerate(features):
+            for j, feature_j in enumerate(frame.get_features()):
                 eval_matrix[i][j] = cos_sim(
                     feature_i.unsqueeze(0), feature_j.unsqueeze(0)
                 )
@@ -185,10 +187,10 @@ def to_track_eval(frames: list[Frame]) -> dict:
     data["num_gt_dets"] = num_gt_dets
     try:
         data["gt_ids"] = gt_ids
-        #print(data['gt_ids'])
+        # print(data['gt_ids'])
     except Exception as e:
         print(gt_ids)
-        raise(e)
+        raise (e)
     data["tracker_ids"] = track_ids
     data["similarity_scores"] = similarity_scores
     data["num_timesteps"] = len(frames)
@@ -197,6 +199,29 @@ def to_track_eval(frames: list[Frame]) -> dict:
 
 
 def get_track_evals(data: dict, metrics: dict) -> dict:
+    """Run track_eval and get mot metrics.
+
+    Args:
+        data: A dictionary. Example provided below.
+        metrics: mot metrics to be computed
+    Returns:
+        A dictionary with key being the metric, and value being the metric value computed.
+    # --------------------------- An example of data --------------------------- #
+
+    *: number of ids for gt at every frame of the video
+    ^: number of ids for tracker at every frame of the video
+    L: length of video
+
+    data = {
+        "num_gt_ids": total number of unique gt ids,
+        "num_tracker_dets": total number of detections by your detection algorithm,
+        "num_gt_dets": total number of gt detections,
+        "gt_ids": (L, *),  # Ragged np.array
+        "tracker_ids": (L, ^),  # Ragged np.array
+        "similarity_scores": (L, *, ^),  # Ragged np.array
+        "num_timsteps": L,
+    }
+    """
     results = {}
     for metric_name, metric in metrics.items():
         result = metric.eval_sequence(data)
@@ -204,7 +229,12 @@ def get_track_evals(data: dict, metrics: dict) -> dict:
     return results
 
 
-def get_pymotmetrics(data: dict, metrics: Union[str, tuple] = "all", key: str = "tracker_ids", save: str = None):
+def get_pymotmetrics(
+    data: dict,
+    metrics: Union[str, tuple] = "all",
+    key: str = "tracker_ids",
+    save: str = None,
+):
     """Given data and a key, evaluate the predictions.
 
     Args:
@@ -230,7 +260,10 @@ def get_pymotmetrics(data: dict, metrics: Union[str, tuple] = "all", key: str = 
     }
     """
     if not isinstance(metrics, str):
-        metrics = ["num_switches" if metric.lower() == "sw_cnt" else metric for metric in metrics] #backward compatibility
+        metrics = [
+            "num_switches" if metric.lower() == "sw_cnt" else metric
+            for metric in metrics
+        ]  # backward compatibility
     acc = mm.MOTAccumulator(auto_id=True)
 
     for i in range(len(data["gt_ids"])):
@@ -246,22 +279,22 @@ def get_pymotmetrics(data: dict, metrics: Union[str, tuple] = "all", key: str = 
         metric.split("|")[0] for metric in mh.list_metrics_markdown().split("\n")[2:-1]
     ]
 
-    if type(metrics) == str:
+    if isinstance(metrics, str):
         metrics_list = all_metrics
-        
+
     elif isinstance(metrics, Iterable):
         metrics = [metric.lower() for metric in metrics]
         metrics_list = [metric for metric in all_metrics if metric.lower() in metrics]
-        
+
     else:
-        raise TypeError(f"Metrics must either be an iterable of strings or `all` not: {type(metrics)}")
-    
+        raise TypeError(
+            f"Metrics must either be an iterable of strings or `all` not: {type(metrics)}"
+        )
+
     summary = mh.compute(acc, metrics=metrics_list, name="acc")
     summary = summary.transpose()
 
     if save is not None and save != "":
         summary.to_csv(save)
 
-    return summary['acc']
-
-
+    return summary["acc"]

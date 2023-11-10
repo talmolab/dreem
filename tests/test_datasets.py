@@ -65,10 +65,10 @@ def test_sleap_dataset(two_flies):
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
-        n_chunks = chunk_frac
+        n_chunks=chunk_frac,
     )
 
-    assert len(train_ds) == int(ds_length*chunk_frac)
+    assert len(train_ds) == int(ds_length * chunk_frac)
 
     n_chunks = 2
 
@@ -78,7 +78,7 @@ def test_sleap_dataset(two_flies):
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
-        n_chunks = n_chunks
+        n_chunks=n_chunks,
     )
 
     assert len(train_ds) == n_chunks
@@ -90,7 +90,7 @@ def test_sleap_dataset(two_flies):
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
-        n_chunks = 0
+        n_chunks=0,
     )
 
     assert len(train_ds) == ds_length
@@ -101,12 +101,10 @@ def test_sleap_dataset(two_flies):
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
-        n_chunks = ds_length + 10000
+        n_chunks=ds_length + 10000,
     )
 
     assert len(train_ds) == ds_length
-
-
 
 
 def test_icy_dataset(ten_icy_particles):

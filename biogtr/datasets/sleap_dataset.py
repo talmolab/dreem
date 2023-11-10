@@ -29,7 +29,7 @@ class SleapDataset(BaseDataset):
         augmentations: dict = None,
         n_chunks: Union[int, float] = 1.0,
         seed: int = None,
-        verbose: bool = False
+        verbose: bool = False,
     ):
         """Initialize SleapDataset.
 
@@ -38,7 +38,7 @@ class SleapDataset(BaseDataset):
             video_files: a list of paths to video files
             padding: amount of padding around object crops
             crop_size: the size of the object crops
-            anchor: the name of the anchor keypoint to be used as centroid for cropping. 
+            anchor: the name of the anchor keypoint to be used as centroid for cropping.
             If unavailable then crop around the midpoint between all visible anchors.
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
@@ -78,7 +78,7 @@ class SleapDataset(BaseDataset):
         self.n_chunks = n_chunks
         self.seed = seed
         self.anchor = anchor.lower()
-        self.verbose=verbose
+        self.verbose = verbose
 
         # if self.seed is not None:
         #     np.random.seed(self.seed)
@@ -100,7 +100,7 @@ class SleapDataset(BaseDataset):
         self.create_chunks()
 
     def get_indices(self, idx):
-        """Retrieves label and frame indices given batch index.
+        """Retrieve label and frame indices given batch index.
 
         Args:
             idx: the index of the batch.
@@ -140,22 +140,21 @@ class SleapDataset(BaseDataset):
         vid_reader = imageio.get_reader(video_name, "ffmpeg")
 
         img = vid_reader.get_data(0)
-        crop_shape = (img.shape[-1], *(self.crop_size + 2 * self.padding,) * 2)
 
         frames = []
         for i, frame_ind in enumerate(frame_idx):
-            instances, gt_track_ids, bboxes, crops, shown_poses = [], [], [], [], []
+            instances, gt_track_ids, shown_poses = [], [], []
 
             frame_ind = int(frame_ind)
-            
+
             lf = video[frame_ind]
-            
+
             try:
                 img = vid_reader.get_data(frame_ind)
             except IndexError as e:
-                print(f"Could not read frame {frame_ind} from {video_name}")
+                print(f"Could not read frame {frame_ind} from {video_name} due to {e}")
                 continue
-                
+
             for instance in lf:
                 gt_track_ids.append(video.tracks.index(instance.track))
 
@@ -168,9 +167,14 @@ class SleapDataset(BaseDataset):
                     )
                 )
 
-                shown_poses = [{key.lower(): val for key, val in instance.items()
-                                if not np.isnan(val).any()
-                                } for instance in shown_poses]
+                shown_poses = [
+                    {
+                        key.lower(): val
+                        for key, val in instance.items()
+                        if not np.isnan(val).any()
+                    }
+                    for instance in shown_poses
+                ]
             # augmentations
             if self.augmentations is not None:
                 for transform in self.augmentations:
@@ -201,34 +205,37 @@ class SleapDataset(BaseDataset):
                     for aug_pose_arr, pose_dict in zip(aug_poses, shown_poses)
                 ]
 
-                _ = [pose.update(aug_pose) for pose, aug_pose in zip(shown_poses, aug_poses)]
+                _ = [
+                    pose.update(aug_pose)
+                    for pose, aug_pose in zip(shown_poses, aug_poses)
+                ]
 
             img = tvf.to_tensor(img)
 
             for i in range(len(gt_track_ids)):
-                
                 pose = shown_poses[i]
 
                 """Check for anchor"""
                 if self.anchor in pose:
                     anchor = self.anchor
                 else:
-                    if self.verbose: warnings.warn(f"{self.anchor} not in {[key for key in pose.keys()]}! Defaulting to midpoint")
+                    if self.verbose:
+                        warnings.warn(
+                            f"{self.anchor} not in {[key for key in pose.keys()]}! Defaulting to midpoint"
+                        )
                     anchor = "midpoint"
-                    
+
                 if anchor != "midpoint":
                     centroid = pose[anchor]
 
                     if not np.isnan(centroid).any():
                         bbox = data_utils.pad_bbox(
-                                data_utils.get_bbox(
-                                    centroid, self.crop_size
-                                ),
-                                padding=self.padding,
-                            )
-                        
+                            data_utils.get_bbox(centroid, self.crop_size),
+                            padding=self.padding,
+                        )
+
                     else:
-                        #print(f'{self.anchor} contains NaN: {centroid}. Using midpoint')
+                        # print(f'{self.anchor} contains NaN: {centroid}. Using midpoint')
                         bbox = data_utils.pad_bbox(
                             data_utils.pose_bbox(
                                 np.array(list(pose.values())), self.crop_size
@@ -236,7 +243,7 @@ class SleapDataset(BaseDataset):
                             padding=self.padding,
                         )
                 else:
-                    #print(f'{self.anchor} not an available option amongst {pose.keys()}. Using midpoint')
+                    # print(f'{self.anchor} not an available option amongst {pose.keys()}. Using midpoint')
                     bbox = data_utils.pad_bbox(
                         data_utils.pose_bbox(
                             np.array(list(pose.values())), self.crop_size
@@ -245,20 +252,19 @@ class SleapDataset(BaseDataset):
                     )
 
                 crop = data_utils.crop_bbox(img, bbox)
-                
-                instance = Instance(gt_track_id=gt_track_ids[i],
-                                    pred_track_id=-1,
-                                    crop=crop,
-                                    bbox=bbox
-                                   )
-                                    
+
+                instance = Instance(
+                    gt_track_id=gt_track_ids[i], pred_track_id=-1, crop=crop, bbox=bbox
+                )
+
                 instances.append(instance)
-                
-            frame = Frame(video_id=label_idx,
-                          frame_id=frame_ind,
-                          img_shape=img.shape,
-                          instances=instances
-                         )
+
+            frame = Frame(
+                video_id=label_idx,
+                frame_id=frame_ind,
+                img_shape=img.shape,
+                instances=instances,
+            )
             frames.append(frame)
 
         return frames
