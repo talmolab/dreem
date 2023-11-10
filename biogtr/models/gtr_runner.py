@@ -67,8 +67,9 @@ class GTRRunner(LightningModule):
         Returns:
             An association matrix between objects
         """
-        if sum([frame["num_detected"] for frame in instances]) > 0:
-            return self.model(instances)
+        if sum([frame.num_detected for frame in instances]) > 0:
+            asso_preds, _ = self.model(instances)
+            return asso_preds
         return None
 
     def training_step(
@@ -84,6 +85,7 @@ class GTRRunner(LightningModule):
         Returns:
             A dict containing the train loss plus any other metrics specified
         """
+
         result = self._shared_eval_step(train_batch[0], mode="train")
         self.log_metrics(result, "train")
 
@@ -153,10 +155,8 @@ class GTRRunner(LightningModule):
         try:
             eval_metrics = self.metrics[mode]
             persistent_tracking = self.persistent_tracking[mode]
-            if self.model.transformer.return_embedding:
-                logits, _ = self(instances)
-            else:
-                logits = self(instances)
+
+            logits = self(instances)
 
             if not logits:
                 return None
@@ -172,7 +172,7 @@ class GTRRunner(LightningModule):
                 return_metrics.update(clearmot.to_dict())
         except Exception as e:
             print(
-                f'Failed on frame {instances[0]["frame_id"]} of video {instances[0]["video_id"]}'
+                f"Failed on frame {instances[0].frame_id} of video {instances[0].video_id}"
             )
             raise (e)
         return return_metrics
