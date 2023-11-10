@@ -7,6 +7,7 @@ from collections import deque
 
 class TrackQueue:
     """Class handling track local queue system for sliding window.
+
     Each trajectory has its own deque based queue of size `window_size - 1`.
     Elements of the queue are Instance objects that have already been tracked
     and will be compared against later frames for assignment.
@@ -32,7 +33,7 @@ class TrackQueue:
         self._verbose = verbose
 
     def __len__(self):
-        """Length of the queue.
+        """Get length of the queue.
 
         Returns:
             The total number of instances in every sub-queue.
@@ -40,7 +41,7 @@ class TrackQueue:
         return sum([len(queue) for queue in self._queues.values()])
 
     def __repr__(self):
-        """The string representation of the TrackQueue.
+        """Return the string representation of the TrackQueue.
 
         Returns:
             The string representation of the current state of the queue.
@@ -58,8 +59,7 @@ class TrackQueue:
 
     @property
     def window_size(self) -> int:
-        """The maximum number of instances allowed in a sub-queue to be
-        compared against.
+        """The maximum number of instances allowed in a sub-queue to be compared against.
 
         Returns:
             An int representing The maximum number of instances allowed in a
@@ -69,7 +69,7 @@ class TrackQueue:
 
     @window_size.setter
     def window_size(self, window_size: int) -> None:
-        """Function for setting the window size of the queue.
+        """Set the window size of the queue.
 
         Args:
             window_size: An int representing The maximum number of instances
@@ -79,8 +79,7 @@ class TrackQueue:
 
     @property
     def max_gap(self) -> int:
-        """The maximum number of consecutive frames an trajectory can fail to
-        appear before termination.
+        """The maximum number of consecutive frames an trajectory can fail to appear before termination.
 
         Returns:
             An int representing the maximum number of consecutive frames an trajectory can fail to
@@ -90,7 +89,7 @@ class TrackQueue:
 
     @max_gap.setter
     def max_gap(self, max_gap: int) -> None:
-        """Function for setting the max consecutive frame gap allowed for a trajectory.
+        """Set the max consecutive frame gap allowed for a trajectory.
 
         Args:
             max_gap: An int representing the maximum number of consecutive frames an trajectory can fail to
@@ -109,7 +108,7 @@ class TrackQueue:
 
     @curr_track.setter
     def curr_track(self, curr_track: int) -> None:
-        """Function for setting the newest *created* trajectory in the queue.
+        """Set the newest *created* trajectory in the queue.
 
         Args:
             curr_track: The latest *created* trajectory in the queue.
@@ -136,8 +135,7 @@ class TrackQueue:
 
     @property
     def verbose(self) -> bool:
-        """Whether or not to print outputs along operations.
-        Mostly used for debugging.
+        """Indicate whether or not to print outputs along operations. Mostly used for debugging.
 
         Returns:
             A boolean representing whether or not printing is turned on.
@@ -146,7 +144,7 @@ class TrackQueue:
 
     @verbose.setter
     def verbose(self, verbose: bool) -> None:
-        """Function for turning on/off printing.
+        """Turn on/off printing.
 
         Args:
             verbose: A boolean representing whether printing should be on or off.
@@ -154,7 +152,7 @@ class TrackQueue:
         self._verbose = verbose
 
     def end_tracks(self, track_id=None):
-        """Function for terminating tracks and removing them from the queue.
+        """Terminate tracks and removing them from the queue.
 
         Args:
             track_id: The index of the trajectory to be ended and removed.
@@ -177,7 +175,7 @@ class TrackQueue:
         return True
 
     def add_frame(self, frame: Frame) -> None:
-        """Function for adding frames to the queue.
+        """Add frames to the queue.
 
         Each instance from the frame is added to the queue according to its pred_track_id.
         If the corresponding trajectory is not already in the queue then create a new queue for the track.
@@ -250,8 +248,7 @@ class TrackQueue:
         return [frames[frame].to(device) for frame in sorted(frames.keys())]
 
     def increment_gaps(self, pred_track_ids: list[int]) -> dict[int, bool]:
-        """Function for keeping track of number of consecutive frames each
-        trajectory has been missing from the queue.
+        """Keep track of number of consecutive frames each trajectory has been missing from the queue.
 
         If a trajectory has exceeded the `max_gap` then terminate the track and remove it from the queue.
 

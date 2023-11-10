@@ -54,7 +54,7 @@ class Tracker:
         self.verbose = verbose
 
     def __call__(self, model: GlobalTrackingTransformer, frames: list[Frame]):
-        """Wrapper around `track` to enable `tracker()` instead of `tracker.track()`.
+        """Wrap around `track` to enable `tracker()` instead of `tracker.track()`.
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
@@ -121,7 +121,7 @@ class Tracker:
     def sliding_inference(
         self, model: GlobalTrackingTransformer, frames: list[Frame], window_size: int
     ):
-        """Performs sliding inference on the input video (instances) with a given window size.
+        """Perform sliding inference on the input video (instances) with a given window size.
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
@@ -191,7 +191,7 @@ class Tracker:
     def _run_global_tracker(
         self, model: GlobalTrackingTransformer, frames: list[Frame], query_ind: int
     ) -> Frame:
-        """Run_global_tracker performs the actual tracking.
+        """Run global tracker performs the actual tracking.
 
         Uses Hungarian algorithm to do track assigning.
 
