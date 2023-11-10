@@ -135,7 +135,7 @@ class MicroscopyDataset(BaseDataset):
 
             img = (
                 video.get_section(i)
-                if isinstance(video, list)
+                if not isinstance(video, list)
                 else np.array(Image.open(video[i]))
             )
 

@@ -107,9 +107,7 @@ class Tracker:
         # asso_preds, pred_boxes, pred_time, embeddings = self.model(
         #     instances, reid_features
         # )
-        instances_pred = self.sliding_inference(
-            model, frames, window_size=self.window_size
-        )
+        instances_pred = self.sliding_inference(model, frames)
 
         if not self.persistent_tracking:
             if self.verbose:
@@ -118,15 +116,13 @@ class Tracker:
 
         return instances_pred
 
-    def sliding_inference(
-        self, model: GlobalTrackingTransformer, frames: list[Frame], window_size: int
-    ):
+    def sliding_inference(self, model: GlobalTrackingTransformer, frames: list[Frame]):
         """Perform sliding inference on the input video (instances) with a given window size.
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
             frame: A list of Frames (See `biogtr.data_structures.Frame` for more info).
-            window_size: An integer.
+
 
         Returns:
             Frames: A list of Frames populated with pred_track_ids and asso_matrices
@@ -137,7 +133,7 @@ class Tracker:
         # H: height.
         # W: width.
 
-        for batch_idx, frame_to_track in frames:
+        for batch_idx, frame_to_track in enumerate(frames):
             tracked_frames = self.track_queue.collate_tracks()
             if self.verbose:
                 warnings.warn(
@@ -391,5 +387,4 @@ class Tracker:
         final_traj_score.columns.name = "Unique IDs"
 
         query_frame.add_traj_score("final", final_traj_score)
-
         return query_frame
