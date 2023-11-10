@@ -3,6 +3,7 @@ import torch
 from numpy.typing import ArrayLike
 from typing import Union, List
 
+
 class Instance:
     """Class representing a single instance to be tracked."""
 
@@ -65,7 +66,7 @@ class Instance:
         self.to(self._device)
 
     def __repr__(self) -> str:
-        """String representation of the Instance."""
+        """Return string representation of the Instance."""
         return (
             "Instance("
             f"gt_track_id={self._gt_track_id.item()}, "
@@ -78,7 +79,7 @@ class Instance:
         )
 
     def to(self, map_location):
-        """Move instance to different device or change dtype. (See `torch.to` for more info)
+        """Move instance to different device or change dtype. (See `torch.to` for more info).
 
         Args:
             map_location: Either the device or dtype for the instance to be moved.
@@ -104,7 +105,7 @@ class Instance:
 
     @device.setter
     def device(self, device) -> None:
-        """Setter for the device property.
+        """Set for the device property.
 
         Args:
             device: The str representation of the device.
@@ -122,7 +123,7 @@ class Instance:
 
     @gt_track_id.setter
     def gt_track_id(self, track: int):
-        """Function to set the instance ground-truth track id.
+        """Set the instance ground-truth track id.
 
         Args:
            track: An int representing the ground-truth track id.
@@ -133,7 +134,7 @@ class Instance:
             self._gt_track_id = torch.tensor([])
 
     def has_gt_track_id(self) -> bool:
-        """Function for determining if instance has a gt track assignment.
+        """Determine if instance has a gt track assignment.
 
         Returns:
             True if the gt track id is set, otherwise False.
@@ -154,8 +155,8 @@ class Instance:
 
     @pred_track_id.setter
     def pred_track_id(self, track: int) -> None:
-        """Function to set predicted track id.
-        
+        """Set predicted track id.
+
         Args:
             track: an int representing the predicted track id.
         """
@@ -165,22 +166,20 @@ class Instance:
             self._pred_track_id = torch.tensor([])
 
     def has_pred_track_id(self) -> bool:
-        """Function to determine whether instance has predicted track id
-        
+        """Determine whether instance has predicted track id.
+
         Returns:
             True if instance has a pred track id, False otherwise.
-            Note that `-1` represents no assigned pred_track_id while
-            `[]` represents assigned track id of empty instance.
         """
-        if self._pred_track_id == -1:
+        if self._pred_track_id.item() == -1 or self._pred_track_id.shape[0] == 0:
             return False
         else:
             return True
 
     @property
     def bbox(self) -> torch.Tensor:
-        """The bounding box coordinates of the instance in the original frame
-        
+        """The bounding box coordinates of the instance in the original frame.
+
         Returns:
             A (1,4) tensor containing the bounding box coordinates.
         """
@@ -188,7 +187,7 @@ class Instance:
 
     @bbox.setter
     def bbox(self, bbox: ArrayLike) -> None:
-        """Function to set the instance bounding box.
+        """Set the instance bounding box.
 
         Args:
             bbox: an arraylike object containing the bounding box coordinates.
@@ -205,8 +204,8 @@ class Instance:
             self._bbox = self._bbox.unsqueeze(0)
 
     def has_bbox(self) -> bool:
-        """Function for determining if the instance has a bbox.
-        
+        """Determine if the instance has a bbox.
+
         Returns:
             True if the instance has a bounding box, false otherwise.
         """
@@ -226,7 +225,7 @@ class Instance:
 
     @crop.setter
     def crop(self, crop: ArrayLike) -> None:
-        """Function to set the crop of the instance.
+        """Set the crop of the instance.
 
         Args:
             an arraylike object containing the cropped image of the centered instance.
@@ -245,7 +244,7 @@ class Instance:
             self._crop = self._crop.unsqueeze(0)
 
     def has_crop(self) -> bool:
-        """Function to determine if the instance has a crop.
+        """Determine if the instance has a crop.
 
         Returns:
             True if the instance has an image otherwise False.
@@ -257,8 +256,8 @@ class Instance:
 
     @property
     def features(self) -> torch.Tensor:
-        """ReID feature vector from backbone model to be used as input to transformer.
-        
+        """Re-ID feature vector from backbone model to be used as input to transformer.
+
         Returns:
             a (1, d) tensor containing the reid feature vector.
         """
@@ -266,7 +265,7 @@ class Instance:
 
     @features.setter
     def features(self, features: ArrayLike) -> None:
-        """Function to set the reid feature vector of the instance.
+        """Set the reid feature vector of the instance.
 
         Args:
             features: a (1,d) array like object containing the reid features for the instance.
@@ -274,7 +273,7 @@ class Instance:
         if features is None or len(features) == 0:
             self._features = torch.tensor([])
 
-        if not isinstance(features, torch.Tensor):
+        elif not isinstance(features, torch.Tensor):
             self._features = torch.tensor(features)
         else:
             self._features = features
@@ -283,8 +282,8 @@ class Instance:
             self._features = self._features.unsqueeze(0)
 
     def has_features(self) -> bool:
-        """Function for determining if the instance has computed reid features.
-        
+        """Determine if the instance has computed reid features.
+
         Returns:
             True if the instance has reid features, False otherwise.
         """
@@ -296,6 +295,7 @@ class Instance:
 
 class Frame:
     """Data structure containing metadata for a single frame of a video."""
+
     def __init__(
         self,
         video_id: int,
@@ -308,7 +308,7 @@ class Frame:
         device=None,
     ):
         """Initialize Frame.
-        
+
         Args:
             video_id: The video index in the dataset.
             frame_id: The index of the frame in a video.
@@ -336,7 +336,9 @@ class Frame:
         self._asso_output = asso_output
         self._matches = matches
 
-        if isinstance(traj_score, dict):
+        if traj_score is None:
+            self._traj_score = {}
+        elif isinstance(traj_score, dict):
             self._traj_score = traj_score
         else:
             self._traj_score = {"initial": traj_score}
@@ -345,7 +347,7 @@ class Frame:
         self.to(device)
 
     def __repr__(self) -> str:
-        """String representation of the Frame.
+        """Return String representation of the Frame.
 
         Returns:
             The string representation of the frame.
@@ -365,7 +367,7 @@ class Frame:
         )
 
     def to(self, map_location: str):
-        """Function for moving frame to different device or dtype (See `torch.to` for more info).
+        """Move frame to different device or dtype (See `torch.to` for more info).
 
         Args:
             map_location: A string representing the device to move to.
@@ -377,10 +379,10 @@ class Frame:
         self._img_shape = self._img_shape.to(map_location)
 
         if isinstance(self._asso_output, torch.Tensor):
-            self._asso_output = asso_output.to(map_location)
+            self._asso_output = self._asso_output.to(map_location)
 
         if isinstance(self._matches, torch.Tensor):
-            self._matches = matches.to(map_location)
+            self._matches = self._matches.to(map_location)
 
         for key, val in self._traj_score.items():
             if isinstance(val, torch.Tensor):
@@ -403,7 +405,7 @@ class Frame:
 
     @device.setter
     def device(self, device: str) -> None:
-        """Function to set the device.
+        """Set the device.
 
         Note: Do not set `frame.device = device` normally. Use `frame.to(device)` instead.
 
@@ -411,7 +413,6 @@ class Frame:
             device: the device the function should be on.
         """
         self._device = device
-
 
     @property
     def video_id(self) -> torch.Tensor:
@@ -425,8 +426,8 @@ class Frame:
 
     @video_id.setter
     def video_id(self, video_id: int) -> None:
-        """Function for setting the video index.
-        
+        """Set the video index.
+
         Note: Generally the video_id should be immutable after initialization.
 
         Args:
@@ -437,7 +438,7 @@ class Frame:
     @property
     def frame_id(self) -> torch.Tensor:
         """The index of the frame in a full video.
-        
+
         Returns:
             A torch tensor containing the index of the frame in the video.
         """
@@ -445,8 +446,8 @@ class Frame:
 
     @frame_id.setter
     def frame_id(self, frame_id: int) -> None:
-        """Function for setting the frame index of the frame.
-        
+        """Set the frame index of the frame.
+
         Note: The frame_id should generally be immutable after initialization.
 
         Args:
@@ -457,7 +458,7 @@ class Frame:
     @property
     def img_shape(self) -> torch.Tensor:
         """The shape of the pre-cropped frame.
-        
+
         Returns:
             A torch tensor containing the shape of the frame. Should generally be (c, h, w)
         """
@@ -465,7 +466,7 @@ class Frame:
 
     @img_shape.setter
     def img_shape(self, img_shape: ArrayLike) -> None:
-        """Function for setting the shape of the frame image
+        """Set the shape of the frame image.
 
         Note: the img_shape should generally be immutable after initialization.
 
@@ -488,7 +489,7 @@ class Frame:
 
     @instances.setter
     def instances(self, instances: List[Instance]) -> None:
-        """Function for setting the frame's instance
+        """Set the frame's instance.
 
         Args:
             instances: A list of Instances that appear in the frame.
@@ -496,7 +497,7 @@ class Frame:
         self._instances = instances
 
     def has_instances(self) -> bool:
-        """Function for determining whether there are instances in the frame.
+        """Determine whether there are instances in the frame.
 
         Returns:
             True if there are instances in the frame, otherwise False.
@@ -517,14 +518,14 @@ class Frame:
     @property
     def asso_output(self) -> ArrayLike:
         """The association matrix between instances outputed directly by transformer.
-        
-        Returns: 
+
+        Returns:
             An arraylike (n_query, n_nonquery) association matrix between instances.
         """
         return self._asso_output
 
     def has_asso_output(self) -> bool:
-        """Function for determining whether the frame has an association matrix computed.
+        """Determine whether the frame has an association matrix computed.
 
         Returns:
             True if the frame has an association matrix otherwise, False.
@@ -535,10 +536,11 @@ class Frame:
 
     @asso_output.setter
     def asso_output(self, asso_output: ArrayLike) -> None:
-        """Function for setting the association matrix of a frame.
+        """Set the association matrix of a frame.
 
         Args:
-            asso_output: An arraylike (n_query, n_nonquery) association matrix between instances."""
+            asso_output: An arraylike (n_query, n_nonquery) association matrix between instances.
+        """
         self._asso_output = asso_output
 
     @property
@@ -552,7 +554,7 @@ class Frame:
 
     @matches.setter
     def matches(self, matches: tuple) -> None:
-        """Function for setting the frame matches
+        """Set the frame matches.
 
         Args:
             matches: A tuple containing the instance idx and trajectory idx for the matched instance.
@@ -560,7 +562,7 @@ class Frame:
         self._matches = matches
 
     def has_matches(self) -> bool:
-        """Function for whether or not matches have been computed for frame.
+        """Check whether or not matches have been computed for frame.
 
         Returns:
             True if frame contains matches otherwise False.
@@ -570,11 +572,10 @@ class Frame:
         return False
 
     def get_traj_score(self, key=None) -> Union[dict, ArrayLike, None]:
-        """Dictionary containing association matrix between instances and
-        trajectories along postprocessing pipeline.
+        """Get dictionary containing association matrix between instances and trajectories along postprocessing pipeline.
 
         Args:
-            key: The key of the trajectory score to be accessed. 
+            key: The key of the trajectory score to be accessed.
             Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
         Returns:
             - dictionary containing all trajectory scores if key is None
@@ -587,12 +588,12 @@ class Frame:
             try:
                 return self._traj_score[key]
             except KeyError as e:
-                print("Could not access {key} traj_score due to {e}")
+                print(f"Could not access {key} traj_score due to {e}")
                 return None
 
     def add_traj_score(self, key, traj_score: ArrayLike) -> None:
-        """Function for adding trajectory score to dictionary
-        
+        """Add trajectory score to dictionary.
+
         Args:
             key: key associated with traj score to be used in dictionary
             traj_score: association matrix between instances and trajectories
@@ -600,8 +601,8 @@ class Frame:
         self._traj_score[key] = traj_score
 
     def has_traj_score(self) -> bool:
-        """Function for checking if any trajectory association matrix has been saved
-        
+        """Check if any trajectory association matrix has been saved.
+
         Returns:
             True there is at least one association matrix otherwise, false.
         """
@@ -610,8 +611,8 @@ class Frame:
         return True
 
     def has_gt_track_ids(self) -> bool:
-        """Function to check if any of frames instances has a gt track id
-        
+        """Check if any of frames instances has a gt track id.
+
         Returns:
             True if at least 1 instance has a gt track id otherwise False.
         """
@@ -620,7 +621,7 @@ class Frame:
         return False
 
     def get_gt_track_ids(self) -> torch.Tensor:
-        """Function to get the gt track ids of all instances in the frame
+        """Get the gt track ids of all instances in the frame.
 
         Returns:
             an (N,) shaped tensor with the gt track ids of each instance in the frame.
@@ -630,7 +631,7 @@ class Frame:
         return torch.cat([instance.gt_track_id for instance in self.instances])
 
     def has_pred_track_ids(self) -> bool:
-        """Function to check if any of frames instances has a pred track id
+        """Check if any of frames instances has a pred track id.
 
         Returns:
             True if at least 1 instance has a pred track id otherwise False.
@@ -640,7 +641,7 @@ class Frame:
         return False
 
     def get_pred_track_ids(self) -> torch.Tensor:
-        """Function to get the pred track ids of all instances in the frame
+        """Get the pred track ids of all instances in the frame.
 
         Returns:
             an (N,) shaped tensor with the pred track ids of each instance in the frame.
@@ -650,7 +651,7 @@ class Frame:
         return torch.cat([instance.pred_track_id for instance in self.instances])
 
     def has_bboxes(self) -> bool:
-        """Function to check if any of frames instances has a bounding box
+        """Check if any of frames instances has a bounding box.
 
         Returns:
             True if at least 1 instance has a bounding box otherwise False.
@@ -660,17 +661,17 @@ class Frame:
         return False
 
     def get_bboxes(self) -> torch.Tensor:
-        """Function to get the bounding boxes of all instances in the frame
+        """Get the bounding boxes of all instances in the frame.
 
         Returns:
             an (N,4) shaped tensor with bounding boxes of each instance in the frame.
         """
         if not self.has_instances():
-            return torch.empty(0,4)
+            return torch.empty(0, 4)
         return torch.cat([instance.bbox for instance in self.instances], dim=0)
 
     def has_crops(self) -> bool:
-        """Function to check if any of frames instances has a crop
+        """Check if any of frames instances has a crop.
 
         Returns:
             True if at least 1 instance has a crop otherwise False.
@@ -680,7 +681,7 @@ class Frame:
         return False
 
     def get_crops(self) -> torch.Tensor:
-        """Function to get the crops of all instances in the frame
+        """Get the crops of all instances in the frame.
 
         Returns:
             an (N, C, H, W) shaped tensor with crops of each instance in the frame.
@@ -690,7 +691,7 @@ class Frame:
         return torch.cat([instance.crop for instance in self.instances], dim=0)
 
     def has_features(self):
-        """Function to check if any of frames instances has reid features already computed
+        """Check if any of frames instances has reid features already computed.
 
         Returns:
             True if at least 1 instance have reid features otherwise False.
@@ -700,7 +701,7 @@ class Frame:
         return False
 
     def get_features(self):
-        """Function to get the reid feature vectors of all instances in the frame
+        """Get the reid feature vectors of all instances in the frame.
 
         Returns:
             an (N, D) shaped tensor with reid feature vectors of each instance in the frame.
