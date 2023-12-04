@@ -83,6 +83,7 @@ class Instance:
 
         Args:
             map_location: Either the device or dtype for the instance to be moved.
+
         Returns:
             self: reference to the instance moved to correct device/dtype.
         """
@@ -228,7 +229,7 @@ class Instance:
         """Set the crop of the instance.
 
         Args:
-            an arraylike object containing the cropped image of the centered instance.
+            crop: an arraylike object containing the cropped image of the centered instance.
         """
         if crop is None or len(crop) == 0:
             self._crop = torch.tensor([])
@@ -371,6 +372,7 @@ class Frame:
 
         Args:
             map_location: A string representing the device to move to.
+
         Returns:
             The frame moved to a different device/dtype.
         """
@@ -416,8 +418,7 @@ class Frame:
 
     @property
     def video_id(self) -> torch.Tensor:
-        """
-        The index of the video the frame comes from.
+        """The index of the video the frame comes from.
 
         Returns:
             A tensor containing the video index.
@@ -577,6 +578,7 @@ class Frame:
         Args:
             key: The key of the trajectory score to be accessed.
             Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
+
         Returns:
             - dictionary containing all trajectory scores if key is None
             - trajectory score associated with key
@@ -706,4 +708,6 @@ class Frame:
         Returns:
             an (N, D) shaped tensor with reid feature vectors of each instance in the frame.
         """
+        if not self.has_instances():
+            return torch.tensor([])
         return torch.cat([instance.features for instance in self.instances], dim=0)

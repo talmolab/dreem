@@ -157,6 +157,7 @@ class TrackQueue:
         Args:
             track_id: The index of the trajectory to be ended and removed.
             If `None` then then every trajectory is removed and the track queue is reset.
+
         Returns:
             True if the track is successively removed, otherwise False.
             (ie if the track doesn't exist in the queue.)
@@ -222,6 +223,7 @@ class TrackQueue:
             queues, otherwise filter queues by track_ids then merge.
             device: A str representation of the device the frames should be on after merging
             since all instances in the queue are kept on the cpu.
+
         Returns:
             A sorted list of Frame objects from which each instance came from,
             containing the corresponding instances.
@@ -256,6 +258,7 @@ class TrackQueue:
             pred_track_ids: A list of track_ids to be matched against the trajectories in the queue.
             If a trajectory is in `pred_track_ids` then its gap counter is reset,
             otherwise its incremented by 1.
+
         Returns:
             A dictionary containing the trajectory id and a boolean value representing
             whether or not it has exceeded the max allowed gap and been

@@ -41,9 +41,8 @@ class GTRRunner(LightningModule):
             optimizer_cfg: hyper parameters used for optimizer.
                        Only used to overwrite `configure_optimizer`
             scheduler_cfg: hyperparameters for lr_scheduler used to overwrite `configure_optimizer
-            train_metrics: a list of metrics to be calculated during training
-            val_metrics: a list of metrics to be calculated during validation
-            test_metrics: a list of metrics to be calculated at test time
+            metrics: a dict containing the metrics to be computed during train, val, and test.
+            persistent_tracking: a dict containing whether to use persistent tracking during train, val and test inference.
         """
         super().__init__()
         self.save_hyperparameters()
@@ -85,7 +84,6 @@ class GTRRunner(LightningModule):
         Returns:
             A dict containing the train loss plus any other metrics specified
         """
-
         result = self._shared_eval_step(train_batch[0], mode="train")
         self.log_metrics(result, "train")
 
