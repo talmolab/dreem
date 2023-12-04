@@ -24,6 +24,7 @@ def export_trajectories(frames_pred: list[Frame], save_path: str = None):
     Args:
         frames_pred: A list of Frames with predicted track ids.
         save_path: The path to save the predicted trajectories to.
+
     Returns:
         A dictionary containing the predicted track id and centroid coordinates for each instance in the video.
     """
@@ -32,9 +33,9 @@ def export_trajectories(frames_pred: list[Frame], save_path: str = None):
     X, Y = [], []
     pred_track_ids = []
     for frame in frames_pred:
-        for i, instance in range(frame.instances):
+        for i, instance in enumerate(frame.instances):
             frame_ids.append(frame.frame_id.item())
-            bbox = instance.bbox
+            bbox = instance.bbox.squeeze()
             y = (bbox[2] + bbox[0]) / 2
             x = (bbox[3] + bbox[1]) / 2
             X.append(x.item())
