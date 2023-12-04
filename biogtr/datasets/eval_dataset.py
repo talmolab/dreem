@@ -47,7 +47,7 @@ class EvalDataset(Dataset):
                 eval_instances.append(
                     Instance(
                         gt_track_id=gt_instance.gt_track_id,
-                        pred_track_id=pred_instance.pred_track_id,
+                        pred_track_id=pred_instance.gt_track_id,
                         bbox=pred_instance.bbox,
                     )
                 )
