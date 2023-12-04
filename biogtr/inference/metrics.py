@@ -3,6 +3,7 @@ import numpy as np
 import motmetrics as mm
 import torch
 from biogtr.data_structures import Frame
+import warnings
 from typing import Union, Iterable
 
 # from biogtr.inference.post_processing import _pairwise_iou
@@ -26,17 +27,20 @@ def get_matches(frames: list[Frame]) -> tuple[dict, list, int]:
 
     video_id = frames[0].video_id.item()
 
-    for idx, frame in enumerate(frames):
-        indices.append(frame.frame_id.item())
-        for gt_track_id, pred_track_id in zip(
-            frame.get_gt_track_ids(), frame.get_pred_track_ids()
-        ):
-            match = f"{gt_track_id} -> {pred_track_id}"
+    if any([frame.has_instances() for frame in frames]):
+        for idx, frame in enumerate(frames):
+            indices.append(frame.frame_id.item())
+            for gt_track_id, pred_track_id in zip(
+                frame.get_gt_track_ids(), frame.get_pred_track_ids()
+            ):
+                match = f"{gt_track_id} -> {pred_track_id}"
 
-            if match not in matches:
-                matches[match] = np.full(len(frames), 0)
+                if match not in matches:
+                    matches[match] = np.full(len(frames), 0)
 
-            matches[match][idx] = 1
+                matches[match][idx] = 1
+    else:
+        warnings.warn("No instances detected!")
     return matches, indices, video_id
 
 
@@ -52,30 +56,32 @@ def get_switches(matches: dict, indices: list) -> dict:
         and the change in labels
     """
     track, switches = {}, {}
-    # unique_gt_ids = np.unique([k.split(" ")[0] for k in list(matches.keys())])
-    matches_key = np.array(list(matches.keys()))
-    matches = np.array(list(matches.values()))
-    num_frames = matches.shape[1]
+    if len(matches) > 0 and len(indices) > 0:
+        matches_key = np.array(list(matches.keys()))
+        matches = np.array(list(matches.values()))
+        num_frames = matches.shape[1]
 
-    assert num_frames == len(indices)
+        assert num_frames == len(indices)
 
-    for i, idx in zip(range(num_frames), indices):
-        switches[idx] = {}
+        for i, idx in zip(range(num_frames), indices):
+            switches[idx] = {}
 
-        col = matches[:, i]
-        indices = np.where(col == 1)[0]
-        match_i = [(m.split(" ")[0], m.split(" ")[-1]) for m in matches_key[indices]]
+            col = matches[:, i]
+            indices = np.where(col == 1)[0]
+            match_i = [
+                (m.split(" ")[0], m.split(" ")[-1]) for m in matches_key[indices]
+            ]
 
-        for m in match_i:
-            gt, pred = m
+            for m in match_i:
+                gt, pred = m
 
-            if gt in track and track[gt] != pred:
-                switches[idx][gt] = {
-                    "frames": (idx - 1, idx),
-                    "pred tracks (from, to)": (track[gt], pred),
-                }
+                if gt in track and track[gt] != pred:
+                    switches[idx][gt] = {
+                        "frames": (idx - 1, idx),
+                        "pred tracks (from, to)": (track[gt], pred),
+                    }
 
-            track[gt] = pred
+                track[gt] = pred
 
     return switches
 
@@ -240,6 +246,7 @@ def get_pymotmetrics(
     Args:
         data: A dictionary. Example provided below.
         key: The key within instances to look for track_ids (can be "gt_ids" or "tracker_ids").
+
     Returns:
         summary: A pandas DataFrame of all the pymot-metrics.
 
