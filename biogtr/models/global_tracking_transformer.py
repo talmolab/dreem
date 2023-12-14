@@ -1,6 +1,6 @@
 """Module containing GTR model used for training."""
 from biogtr.models.transformer import Transformer
-from biogtr.models.visual_encoder import VisualEncoder
+from biogtr.models.feature_encoders.feature_encoder import FeatureEncoder
 from biogtr.data_structures import Frame
 from torch import nn
 
@@ -12,8 +12,11 @@ class GlobalTrackingTransformer(nn.Module):
 
     def __init__(
         self,
-        encoder_model: str = "resnet18",
-        encoder_cfg: dict = {},
+        feature_encoder_cfg: dict = {
+            "visual_encoder_cfg": {},
+            "lsd_encoder_cfg": None,
+            "flow_encoder_cfg": None,
+        },
         d_model: int = 1024,
         nhead: int = 8,
         num_encoder_layers: int = 6,
@@ -26,7 +29,7 @@ class GlobalTrackingTransformer(nn.Module):
         norm: bool = False,
         num_layers_attn_head: int = 2,
         dropout_attn_head: int = 0.1,
-        embedding_meta: dict = None,
+        embedding_meta: dict = {"pos": None, "temp": None, "rel": None},
         return_embedding: bool = False,
         decoder_self_attn: bool = False,
         **kwargs,
@@ -34,9 +37,8 @@ class GlobalTrackingTransformer(nn.Module):
         """Initialize GTR.
 
         Args:
-            encoder_model: Name of the CNN architecture to use (e.g. "resnet18", "resnet50").
-            encoder_cfg: Dictionary of arguments to pass to the CNN constructor,
-                e.g: `cfg = {"weights": "ResNet18_Weights.DEFAULT"}`
+            feature_encoder_cfg: Dictionary of arguments to pass to the FeatureEncoder constructor,
+                e.g: `{"visual_encoder_cfg": {}, "lsd_encoder_cfg": None, "flow_encoder_cfg": None}`
             d_model: The number of features in the encoder/decoder inputs.
             nhead: The number of heads in the transfomer encoder/decoder.
             num_encoder_layers: The number of encoder-layers in the encoder.
@@ -52,33 +54,13 @@ class GlobalTrackingTransformer(nn.Module):
             embedding_meta: Metadata for positional embeddings. See below.
             return_embedding: Whether to return the positional embeddings
             decoder_self_attn: If True, use decoder self attention.
-            embedding_meta: By default this will be an empty dict and indicate
-                that no positional embeddings should be used. To use positional
-                embeddings, a dict should be passed with the type of embedding to
-                use. Valid options are:
-                    * learned_pos: only learned position embeddings
-                    * learned_temp: only learned temporal embeddings
-                    * learned_pos_temp: learned position and temporal embeddings
-                    * fixed_pos: fixed sine position embeddings
-                    * fixed_pos_temp: fixed sine position and learned temporal embeddings
-                You can additionally pass kwargs to override the default
-                embedding values (see embedding.py function methods for relevant
-                embedding parameters). Example:
-                    embedding_meta = {
-                        'embedding_type': 'learned_pos_temp',
-                        'kwargs': {
-                            'learn_pos_emb_num': 16,
-                            'learn_temp_emb_num': 16,
-                            'over_boxes': False
-                        }
-                    }
-                Note: Embedding features are handled directly in the forward
-                pass for each case. Overriding the features through kwargs will
-                likely throw errors due to incorrect tensor shapes.
+            embedding_meta: Dict containing hyperparameters for pos, temp and rel embeddings.
+                            Must have {"pos", "rel", or "temp"} in keys. `embedding_meta[type]= None` represents turning off that embedding
+                            Ex: {"pos": {"emb_type":"learned"}, "temp": {"emb_type":"learned"}, rel: None}
         """
         super().__init__()
 
-        self.visual_encoder = VisualEncoder(encoder_model, encoder_cfg, d_model)
+        self.feature_encoder = FeatureEncoder(out_dim=d_model, **feature_encoder_cfg)
 
         self.transformer = Transformer(
             d_model=d_model,
@@ -113,7 +95,14 @@ class GlobalTrackingTransformer(nn.Module):
             if frame.has_instances():
                 if not frame.has_features():
                     crops = frame.get_crops()
-                    z = self.visual_encoder(crops)
+                    flows = frame.get_flows()
+                    if self.feature_encoder.pred_lsds:
+                        lsds = crops
+                    else:
+                        lsds = frame.get_lsds()
+                    z = self.feature_encoder(crops=crops, flows=flows, lsds=lsds)[
+                        "combined"
+                    ]
 
                     for i, z_i in enumerate(z):
                         frame.instances[i].features = z_i
