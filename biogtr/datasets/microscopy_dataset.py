@@ -1,9 +1,10 @@
 """Module containing microscopy dataset."""
 from PIL import Image
 from biogtr.datasets import data_utils
+from biogtr.datasets.lazy_loaders import LazyTiffStack
 from biogtr.datasets.base_dataset import BaseDataset
 from biogtr.data_structures import Frame, Instance
-from typing import Union
+from typing import Union, Iterable
 import albumentations as A
 import numpy as np
 import random
@@ -18,6 +19,7 @@ class MicroscopyDataset(BaseDataset):
         videos: list[str],
         tracks: list[str],
         source: str,
+        features: Iterable = ("vis",),
         padding: int = 5,
         crop_size: int = 20,
         chunk: bool = False,
@@ -33,6 +35,7 @@ class MicroscopyDataset(BaseDataset):
             videos: paths to raw microscopy videos
             tracks: paths to trackmate gt labels (either .xml or .csv)
             source: file format of gt labels based on label generator
+            features: The set of features to return. Must be one of {"vis", "lsds", "flows"}
             padding: amount of padding around object crops
             crop_size: the size of the object crops
             chunk: whether or not to chunk the dataset into batches
@@ -51,15 +54,16 @@ class MicroscopyDataset(BaseDataset):
             seed: set a seed for reproducibility
         """
         super().__init__(
-            videos + tracks,
-            padding,
-            crop_size,
-            chunk,
-            clip_length,
-            mode,
-            augmentations,
-            n_chunks,
-            seed,
+            files=videos + tracks,
+            features=features,
+            padding=padding,
+            crop_size=crop_size,
+            chunk=chunk,
+            clip_length=clip_length,
+            mode=mode,
+            augmentations=augmentations,
+            n_chunks=n_chunks,
+            seed=seed,
         )
 
         self.videos = videos
@@ -127,7 +131,7 @@ class MicroscopyDataset(BaseDataset):
         video = self.videos[label_idx]
 
         if not isinstance(video, list):
-            video = data_utils.LazyTiffStack(self.videos[label_idx])
+            video = LazyTiffStack(self.videos[label_idx])
 
         frames = []
         for i in frame_idx:

@@ -13,6 +13,7 @@ class BaseDataset(Dataset):
     def __init__(
         self,
         files: list[str],
+        features: set[str],
         padding: int,
         crop_size: int,
         chunk: bool,
@@ -21,12 +22,14 @@ class BaseDataset(Dataset):
         augmentations: dict = None,
         n_chunks: Union[int, float] = 1.0,
         seed: int = None,
+        verbose: bool = False,
         gt_list: str = None,
     ):
         """Initialize Dataset.
 
         Args:
             files: a list of files, file types are combined in subclasses
+            features: a set containing the features to compute/return one of {"vis", "lsds", "flows"}
             padding: amount of padding around object crops
             crop_size: the size of the object crops
             chunk: whether or not to chunk the dataset into batches
@@ -38,6 +41,7 @@ class BaseDataset(Dataset):
             n_chunks: Number of chunks to subsample from.
                 Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
             seed: set a seed for reproducibility
+            verbose: Whether or not to print debug statements after operations.
             gt_list: An optional path to .txt file containing ground truth for
                 cell tracking challenge datasets.
         """
@@ -49,9 +53,20 @@ class BaseDataset(Dataset):
         self.mode = mode
         self.n_chunks = n_chunks
         self.seed = seed
+        self.verbose = verbose
+        self.profiler = data_utils.Timer(verbose)
 
-        # if self.seed is not None:
-        #     np.random.seed(self.seed)
+        self.return_feats = self.compute_feats = {
+            "masks": False,
+            "lsds": False,
+            "vis": False,
+            "flows": False,
+        }
+
+        for feat in features:
+            self.return_feats[feat] = self.compute_feats[feat] = True
+            if feat == "lsds":
+                self.compute_feats["masks"] = True
 
         self.augmentations = (
             data_utils.build_augmentations(augmentations) if augmentations else None

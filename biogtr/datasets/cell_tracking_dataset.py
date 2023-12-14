@@ -55,16 +55,17 @@ class CellTrackingDataset(BaseDataset):
                 "end_frame", "parent_id"
         """
         super().__init__(
-            raw_images + gt_images,
-            padding,
-            crop_size,
-            chunk,
-            clip_length,
-            mode,
-            augmentations,
-            n_chunks,
-            seed,
-            gt_list,
+            files=raw_images + gt_images,
+            features=("vis",),  # change later
+            padding=padding,
+            crop_size=crop_size,
+            chunk=chunk,
+            clip_length=clip_length,
+            mode=mode,
+            augmentations=augmentations,
+            n_chunks=n_chunks,
+            seed=seed,
+            gt_list=gt_list,
         )
 
         self.videos = raw_images

@@ -12,7 +12,11 @@ class Instance:
         gt_track_id: int = None,
         pred_track_id: int = -1,
         bbox: ArrayLike = torch.empty((0, 4)),
+        pose: dict = {},
         crop: ArrayLike = torch.tensor([]),
+        flow: ArrayLike = torch.tensor([]),
+        mask: ArrayLike = torch.tensor([]),
+        lsd: ArrayLike = torch.tensor([]),
         features: ArrayLike = torch.tensor([]),
         device: str = None,
     ):
@@ -21,9 +25,14 @@ class Instance:
         Args:
             gt_track_id: Ground truth track id - only used for train/eval.
             pred_track_id: Predicted track id. Untracked instance is represented by -1.
-            bbox: The bounding box coordinate of the instance. Defaults to an empty tensor.
-            crop: The crop of the instance.
-            features: The reid features extracted from the CNN backbone used in the transformer.
+            bbox: The bounding box coordinate of the instance of shape (1,4). Defaults to an empty tensor.
+            pose: The dictionary containing {node: point (shape=(1,2)} representing the pose of the instance.
+            Defaults to empty dictionary.
+            crop: The (1,c,h,w) array containing the centered image crop around the instance
+            flow: The (1,2,h,w) array containing the optical flow of the instance
+            mask: The (1,h,w) array containing the rastered skeleton mask of the instance
+            lsd: The (1,6,h,w) array representing the local shape descriptor embedding of the instance.
+            features: The (1,d) vector containing reid features extracted from the CNN backbone used in the transformer.
             device: String representation of the device the instance should be on.
         """
         if gt_track_id is not None:
@@ -44,17 +53,46 @@ class Instance:
         if self._bbox.shape[0] and len(self._bbox.shape) == 1:
             self._bbox = self._bbox.unsqueeze(0)
 
+        self._pose = pose
+
         if not isinstance(crop, torch.Tensor):
             self._crop = torch.tensor(crop)
         else:
             self._crop = crop
+
+        if self._crop.shape[-1] <= 3:
+            self._crop = self._crop.permute(-1, 0, 1)
 
         if len(self._crop.shape) == 2:
             self._crop = self._crop.unsqueeze(0).unsqueeze(0)
         elif len(self._crop.shape) == 3:
             self._crop = self._crop.unsqueeze(0)
 
-        if not isinstance(crop, torch.Tensor):
+        if not isinstance(flow, torch.Tensor):
+            self._flow = torch.tensor(flow)
+        else:
+            self._flow = flow
+
+        if len(self._flow.shape) == 3:
+            self._flow = self._flow.unsqueeze(0)
+
+        if not isinstance(mask, torch.Tensor):
+            self._mask = torch.tensor(mask)
+        else:
+            self._mask = mask
+
+        if len(self._mask.shape) == 3:
+            self._mask = self._mask.unsqueeze(0)
+
+        if not isinstance(lsd, torch.Tensor):
+            self._lsd = torch.tensor(lsd)
+        else:
+            self._lsd = lsd
+
+        if len(self._lsd.shape) == 3:
+            self._lsd = self._lsd.unsqueeze(0)
+
+        if not isinstance(features, torch.Tensor):
             self._features = torch.tensor(features)
         else:
             self._features = features
@@ -72,7 +110,11 @@ class Instance:
             f"gt_track_id={self._gt_track_id.item()}, "
             f"pred_track_id={self._pred_track_id.item()}, "
             f"bbox={self._bbox}, "
+            f"pose=(1, {len(self._pose)}, 2)"
             f"crop={self._crop.shape}, "
+            f"flow={self.has_flow()}, "
+            f"mask={self.has_mask()}"
+            f"lsd={self.has_lsd()}, "
             f"features={self._features.shape}, "
             f"device={self._device}"
             ")"
@@ -92,6 +134,9 @@ class Instance:
         self._bbox = self._bbox.to(map_location)
         self._crop = self._crop.to(map_location)
         self._features = self._features.to(map_location)
+        self._flow = self._flow.to(map_location)
+        self._lsd = self._lsd.to(map_location)
+        self._mask = self._mask.to(map_location)
         self.device = map_location
         return self
 
@@ -216,6 +261,38 @@ class Instance:
             return True
 
     @property
+    def pose(self) -> dict[str, ArrayLike]:
+        """The pose dictionary containing {node_name:pose_coords} where pose_coords are (x,y) coordinates of the keypoint.
+
+        Returns:
+            A dictionary containing the node names and coordinates of instance pose.
+        """
+        return self._pose
+
+    @pose.setter
+    def pose(self, pose: ArrayLike) -> None:
+        """Set the instance bounding box.
+
+        Args:
+            pose: an arraylike object containing the bounding box coordinates.
+        """
+        if pose is None:
+            self._pose = {}
+        else:
+            self._pose = pose
+
+    def has_pose(self) -> bool:
+        """Determine if the instance has a bbox.
+
+        Returns:
+            True if the instance has a bounding box, false otherwise.
+        """
+        if len(self._pose):
+            return True
+        else:
+            return False
+
+    @property
     def crop(self) -> torch.Tensor:
         """The crop of the instance.
 
@@ -238,7 +315,8 @@ class Instance:
                 self._crop = torch.tensor(crop)
             else:
                 self._crop = crop
-
+        if self._crop.shape[-1] <= 3:
+            self._crop = self._crop.permute(-1, 0, 1)
         if len(self._crop.shape) == 2:
             self._crop = self._crop.unsqueeze(0).unsqueeze(0)
         elif len(self._crop.shape) == 3:
@@ -251,6 +329,123 @@ class Instance:
             True if the instance has an image otherwise False.
         """
         if self._crop.shape[0] == 0:
+            return False
+        else:
+            return True
+
+    @property
+    def mask(self) -> torch.Tensor:
+        """The mask of the instance.
+
+        Returns:
+            A (1, h , w) tensor containing the mask rastered around the instance.
+        """
+        return self._mask
+
+    @mask.setter
+    def mask(self, mask: ArrayLike) -> None:
+        """Set the mask of the instance.
+
+        Args:
+            mask: an ArrayLike object of shape (h, w) containing the mask rastered around the instance
+        """
+        if mask is None or len(mask) == 0:
+            self._mask = torch.tensor([])
+        else:
+            if not isinstance(mask, torch.Tensor):
+                self._mask = torch.tensor(mask)
+            else:
+                self._mask = mask
+        if self._mask.shape[-1] <= 3:
+            self._mask = self._mask.permute(-1, 0, 1)
+        if len(self._mask.shape) == 2:
+            self._mask = self._mask.unsqueeze(0).unsqueeze(0)
+        elif len(self._mask.shape) == 3:
+            self._mask = self._mask.unsqueeze(0)
+
+    def has_mask(self) -> bool:
+        """Determine if the instance has a mask.
+
+        Returns:
+            True if the instance has an image otherwise False.
+        """
+        if self._mask.shape[0] == 0:
+            return False
+        else:
+            return True
+
+    @property
+    def lsd(self) -> torch.Tensor:
+        """The local shape descriptor of the instance.
+
+        Returns:
+            A (1, d, h , w) tensor containing the lsd embedding over the crop.
+        """
+        return self._lsd
+
+    @lsd.setter
+    def lsd(self, lsd: ArrayLike) -> None:
+        """Set the lsd of the instance.
+
+        Args:
+            lsd: an arraylike object containing the lsd embedding over the crop.
+        """
+        if lsd is None or len(lsd) == 0:
+            self._lsd = torch.tensor([])
+        else:
+            if not isinstance(lsd, torch.Tensor):
+                self._lsd = torch.tensor(lsd)
+            else:
+                self._lsd = lsd
+
+        if len(self._lsd.shape) == 3:
+            self._lsd = self._lsd.unsqueeze(0)
+
+    def has_lsd(self) -> bool:
+        """Determine if the instance has a local shape descriptor.
+
+        Returns:
+            True if the instance has a local shape descriptor, false otherwise.
+        """
+        if self._lsd.shape[0] == 0:
+            return False
+        else:
+            return True
+
+    @property
+    def flow(self) -> torch.Tensor:
+        """The optical flow of the instance.
+
+        Returns:
+            A (2, h , w) tensor containing the optical flow of an instance between previous and current frame.
+        """
+        return self._flow
+
+    @flow.setter
+    def flow(self, flow: ArrayLike) -> None:
+        """Set the optical flow of the instance.
+
+        Args:
+            flow: an arraylike object containing the optical flow of a crop between previous and current frame.
+        """
+        if flow is None or len(flow) == 0:
+            self._flow = torch.tensor([])
+        else:
+            if not isinstance(flow, torch.Tensor):
+                self._flow = torch.tensor(flow)
+            else:
+                self._flow = flow
+
+        if len(self._flow.shape) == 3:
+            self._flow = self._flow.unsqueeze(0)
+
+    def has_flow(self) -> bool:
+        """Determine if the instance has optical flow.
+
+        Returns:
+            True if the instance has optical flow, false otherwise.
+        """
+        if self._flow.shape[0] == 0:
             return False
         else:
             return True
@@ -692,7 +887,7 @@ class Frame:
             return torch.tensor([])
         return torch.cat([instance.crop for instance in self.instances], dim=0)
 
-    def has_features(self):
+    def has_features(self) -> bool:
         """Check if any of frames instances has reid features already computed.
 
         Returns:
@@ -702,7 +897,7 @@ class Frame:
             return any([instance.has_features() for instance in self.instances])
         return False
 
-    def get_features(self):
+    def get_features(self) -> torch.Tensor:
         """Get the reid feature vectors of all instances in the frame.
 
         Returns:
@@ -711,3 +906,43 @@ class Frame:
         if not self.has_instances():
             return torch.tensor([])
         return torch.cat([instance.features for instance in self.instances], dim=0)
+
+    def has_flows(self) -> bool:
+        """Check if any of frames instances has optical flow already computed.
+
+        Returns:
+            True if at least 1 instance have lsds otherwise False.
+        """
+        if self.has_instances():
+            return any([instance.has_flow() for instance in self.instances])
+        return False
+
+    def get_flows(self) -> torch.Tensor:
+        """Get the optical flow crops of all instances in the frame.
+
+        Returns:
+            an (N, 2, H, W) shaped tensor with optical flow of each instance in the frame.
+        """
+        if not self.has_instances():
+            return torch.tensor([])
+        return torch.cat([instance.flow for instance in self.instances], dim=0)
+
+    def has_lsds(self) -> bool:
+        """Check if any of frames instances has lsds already computed.
+
+        Returns:
+            True if at least 1 instance have lsds otherwise False.
+        """
+        if self.has_instances():
+            return any([instance.has_lsd() for instance in self.instances])
+        return False
+
+    def get_lsds(self) -> torch.Tensor:
+        """Get the optical flow crops of all instances in the frame.
+
+        Returns:
+            an (N, 6, H, W) shaped tensor with lsd of each instance in the frame.
+        """
+        if not self.has_instances():
+            return torch.tensor([])
+        return torch.cat([instance.lsd for instance in self.instances], dim=0)

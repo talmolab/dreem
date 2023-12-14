@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import sleap_io as sio
 import torch
+import time
 
 
 def pad_bbox(bbox: ArrayLike, padding: int = 16) -> torch.Tensor:
@@ -29,27 +30,55 @@ def pad_bbox(bbox: ArrayLike, padding: int = 16) -> torch.Tensor:
     return torch.Tensor([y1, x1, y2, x2])
 
 
-def crop_bbox(img: torch.Tensor, bbox: ArrayLike) -> torch.Tensor:
+def crop_bbox(
+    img: ArrayLike, bbox: ArrayLike, pose: ArrayLike = None, mask=None
+) -> tuple[np.ndarray]:
     """Crop an image to a bounding box.
 
     Args:
-        img: Image as a tensor of shape (channels, height, width).
+        img: Image as ArrayLike Object of shape (channels, height, width).
         bbox: Bounding box in [y1, x1, y2, x2] format.
+        pose: Pose in shape (n, 2) where n is the number of keypoints in the skeleton
+        mask: mask of instances in shape (height, width)
 
     Returns:
-        Cropped pixels as tensor of shape (channels, height, width).
+        Cropped pixels as tensor of shape (channels, height, width) along with keypoints and masks adjusted accordingly.
     """
+    if isinstance(img, torch.Tensor):
+        img = img.numpy()
+    if isinstance(pose, torch.Tensor):
+        pose = pose.numpy()
+    if isinstance(mask, torch.Tensor):
+        mask = mask.numpy()
+
+    if mask is None:
+        aug_mask = np.zeros_like(img)
+    else:
+        aug_mask = mask
+    if pose is None:
+        aug_pose = np.zeros((1, 2))
+    else:
+        aug_pose = pose
     # Crop to the bounding box.
     y1, x1, y2, x2 = bbox
-    crop = tvf.crop(
-        img,
-        top=int(y1.round()),
-        left=int(x1.round()),
-        height=int((y2 - y1).round()),
-        width=int((x2 - x1).round()),
+    crop = A.Compose(
+        [
+            A.augmentations.crops.transforms.Crop(
+                x_min=int(x1), y_min=int(y1), x_max=int(x2), y_max=int(y2)
+            )
+        ],
+        keypoint_params=A.KeypointParams(format="xy", remove_invisible=False),
     )
 
-    return crop
+    cropped = crop(image=img, keypoints=aug_pose, mask=aug_mask)
+
+    aug_img, aug_pose, aug_mask = (
+        cropped["image"],
+        cropped["keypoints"],
+        cropped["mask"],
+    )
+
+    return aug_img, aug_pose, aug_mask
 
 
 def get_bbox(center: ArrayLike, size: Union[int, tuple[int]]) -> torch.Tensor:
@@ -88,7 +117,6 @@ def centroid_bbox(points: ArrayLike, anchors: list, crop_size: int) -> torch.Ten
     Returns:
         Bounding box in [y1, x1, y2, x2] format.
     """
-    print(anchors)
     for anchor in anchors:
         cx, cy = points[anchor][0], points[anchor][1]
         if not np.isnan(cx):
@@ -198,6 +226,41 @@ def sorted_anchors(labels: sio.Labels) -> list[str]:
     sorted_anchors = sorted(anchor_counts.keys(), key=lambda k: anchor_counts[k])
 
     return sorted_anchors
+
+
+def expand_to_rank(
+    x: torch.Tensor, target_rank: int, prepend: bool = True
+) -> torch.Tensor:
+    """Expand a tensor to a target rank by adding singleton dimensions.
+
+    Args:
+        x: Any `torch.Tensor` with rank <= `target_rank`. If the rank is higher than
+            `target_rank`, the tensor will be returned with the same shape.
+        target_rank: Rank to expand the input to.
+        prepend: If True, singleton dimensions are added before the first axis of the
+            data. If False, singleton dimensions are added after the last axis.
+
+    Returns:
+        The expanded tensor of the same dtype as the input, but with rank `target_rank`.
+
+        The output has the same exact data as the input tensor and will be identical if
+        they are both flattened.
+    """
+    if len(x.shape) < 2:
+        source_rank = torch.linalg.matrix_rank(x.unsqueeze(0))
+    else:
+        source_rank = torch.linalg.matrix_rank(x)
+
+    source_rank = source_rank.max()
+    # print(target_rank, source_rank)
+    n_singleton_dims = torch.maximum(target_rank - source_rank, torch.tensor(0)).item()
+
+    singleton_dims = torch.ones((n_singleton_dims), dtype=torch.int32)
+    if prepend:
+        new_shape = torch.concat([singleton_dims, torch.tensor(x.shape)], axis=0)
+    else:
+        new_shape = torch.concat([torch.tensor(x.shape), singleton_dims], axis=0)
+    return x.view(*new_shape)
 
 
 def parse_trackmate(data_path: str) -> pd.DataFrame:
@@ -357,47 +420,6 @@ def parse_synthetic(xml_path: str, source: str = "icy") -> pd.DataFrame:
     return tracks_df
 
 
-class LazyTiffStack:
-    """Class used for loading tiffs without loading into memory."""
-
-    def __init__(self, filename: str):
-        """Initialize class.
-
-        Args:
-            filename: name of tif file to be opened
-        """
-        # expects spatial, channels
-        self.image = Image.open(filename)
-
-    def __getitem__(self, section_idx: int) -> Image:
-        """Get frame.
-
-        Args:
-            section_idx: index of frame or z-slice to get.
-
-        Returns:
-            a PIL image of that frame/z-slice.
-        """
-        self.image.seek(section_idx)
-        return self.image
-
-    def get_section(self, section_idx: int) -> np.array:
-        """Get frame as ndarray.
-
-        Args:
-            section_idx: index of frame or z-slice to get.
-
-        Returns:
-            an np.array of that frame/z-slice.
-        """
-        section = self.__getitem__(section_idx)
-        return np.array(section)
-
-    def close(self):
-        """Close tiff stack."""
-        self.file.close()
-
-
 def build_augmentations(augmentations: dict):
     """Get augmentations for dataset.
 
@@ -418,6 +440,7 @@ def build_augmentations(augmentations: dict):
         aug_list,
         p=1.0,
         keypoint_params=A.KeypointParams(format="xy", remove_invisible=False),
+        # is_check_shapes=False,
     )
 
     return augs
@@ -486,3 +509,36 @@ def view_training_batch(
 
     plt.tight_layout()
     plt.show()
+
+
+class Timer:
+    """Timer class for profiling operations."""
+
+    def __init__(self, verbose=False):
+        """Initialize timer.
+
+        Args:
+            verbose: Whether or not to print the time elapsed for each `time` call.
+        """
+        self.curr_time = time.perf_counter()
+        self.prev_time = self.curr_time
+        self.total_time = 0
+        self.verbose = verbose
+
+    def time(self, op: str) -> float:
+        """Time operation.
+
+        Args:
+            op: A string representing the operation being timed
+
+        Returns:
+            The time elapsed for operation in seconds.
+        """
+        self.prev_time = self.curr_time
+        self.curr_time = time.perf_counter()
+
+        time_elapsed = self.curr_time - self.prev_time
+        if self.verbose:
+            print(f"{op} took {time_elapsed} seconds.")
+        self.total_time += time_elapsed
+        return time_elapsed
