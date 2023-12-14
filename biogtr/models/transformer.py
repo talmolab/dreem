@@ -13,7 +13,11 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 
 from biogtr.data_structures import Frame
 from biogtr.models.attention_head import ATTWeightHead
-from biogtr.models.embedding import Embedding
+from biogtr.models.embeddings.spatial_embedding import SpatialEmbedding
+from biogtr.models.embeddings.temporal_embedding import TemporalEmbedding
+from biogtr.models.embeddings.relative_positional_embedding import (
+    RelativePositionalMask,
+)
 from biogtr.models.model_utils import get_boxes_times
 from torch import nn
 import copy
@@ -41,7 +45,11 @@ class Transformer(torch.nn.Module):
         feature_dim_attn_head: int = 1024,
         num_layers_attn_head: int = 2,
         dropout_attn_head: float = 0.1,
-        embedding_meta: dict = None,
+        embedding_meta: dict = {
+            "pos": {"type": "learned"},
+            "temp": {"type": "learned"},
+            "rel": None,
+        },
         return_embedding: bool = False,
         decoder_self_attn: bool = False,
     ):
@@ -63,31 +71,9 @@ class Transformer(torch.nn.Module):
             embedding_meta: Metadata for positional embeddings. See below.
             return_embedding: Whether to return the positional embeddings
             decoder_self_attn: If True, use decoder self attention.
-
-            embedding_meta: By default this will be an empty dict and indicate
-                that no positional embeddings should be used. To use positional
-                embeddings, a dict should be passed with the type of embedding to
-                use. Valid options are:
-                    * learned_pos: only learned position embeddings
-                    * learned_temp: only learned temporal embeddings
-                    * learned_pos_temp: learned position and temporal embeddings
-                    * fixed_pos: fixed sine position embeddings
-                    * fixed_pos_temp: fixed sine position and learned temporal embeddings
-                You can additionally pass kwargs to override the default
-                embedding values (see embedding.py function methods for relevant
-                embedding parameters). Example:
-
-                    embedding_meta = {
-                        'embedding_type': 'learned_pos_temp',
-                        'kwargs': {
-                            'learn_pos_emb_num': 16,
-                            'learn_temp_emb_num': 16,
-                            'over_boxes': False
-                        }
-                    }
-                Note: Embedding features are handled directly in the forward
-                pass for each case. Overriding the features through kwargs will
-                likely throw errors due to incorrect tensor shapes.
+            embedding_meta: Dict containing hyperparameters for pos, temp and rel embeddings.
+                            Must have {"pos", "rel", or "temp"} in keys. `embedding_meta[type]= None` represents turning off that embedding
+                            Ex: {"pos": {"emb_type":"learned"}, "temp": {"emb_type":"learned"}, rel: None}
         """
         super().__init__()
 
@@ -96,32 +82,32 @@ class Transformer(torch.nn.Module):
         self.embedding_meta = embedding_meta
         self.return_embedding = return_embedding
 
-        if self.embedding_meta:
-            key = "embedding_type"
+        if "pos" in self.embedding_meta and self.embedding_meta["pos"] is not None:
+            pos_emb = self.embedding_meta["pos"]
+            self.pos_emb_type = pos_emb.pop("type")
+            if "learned" in self.pos_emb_type:
+                d_emb = d_model
+            else:
+                d_emb = d_model // 4
+            self.pos_emb = SpatialEmbedding(features=d_emb, **pos_emb)
+        else:
+            self.pos_emb = None
 
-            embedding_types = [
-                "learned_pos",
-                "learned_temp",
-                "learned_pos_temp",
-                "fixed_pos",
-                "fixed_pos_temp",
-            ]
+        if "temp" in self.embedding_meta and self.embedding_meta["temp"] is not None:
+            temp_emb = self.embedding_meta["temp"]
+            self.temp_emb_type = temp_emb.pop("type")
+            self.temp_emb = TemporalEmbedding(features=d_model, **temp_emb)
+        else:
+            self.temp_emb = None
 
-            assert (
-                key in self.embedding_meta
-            ), f"Please provide an embedding type, valid options are {embedding_types}"
-
-            provided_type = self.embedding_meta[key]
-
-            assert (
-                provided_type in embedding_types
-            ), f"{provided_type} is invalid. Please choose a valid type from {embedding_types}"
-
-            self.embedding = Embedding()
+        if "rel" in self.embedding_meta:
+            rel_mask = self.embedding_meta["rel"]
+        else:
+            rel_mask = None
 
         # Transformer Encoder
         encoder_layer = TransformerEncoderLayer(
-            d_model, nhead, dim_feedforward, dropout, activation, norm
+            d_model, nhead, dim_feedforward, dropout, activation, norm, rel_mask
         )
 
         encoder_norm = nn.LayerNorm(d_model) if (norm) else None
@@ -139,6 +125,7 @@ class Transformer(torch.nn.Module):
             activation,
             norm,
             decoder_self_attn,
+            rel_mask,
         )
 
         decoder_norm = nn.LayerNorm(d_model) if (norm) else None
@@ -185,40 +172,44 @@ class Transformer(torch.nn.Module):
         embed_dim = reid_features.shape[-1]
 
         # print(f'T: {window_length}; N: {total_instances}; N_t: {instances_per_frame} n_reid: {reid_features.shape}')
-        if self.embedding_meta:
-            kwargs = self.embedding_meta.get("kwargs", {})
+        pred_box, pred_time = get_boxes_times(frames)  # total_instances x 4
 
-            pred_box, pred_time = get_boxes_times(frames)  # total_instances x 4
+        pred_coords = torch.stack(
+            [
+                (pred_box[:, -2] + pred_box[:, 2]) / 2,
+                (pred_box[:, -1] + pred_box[:, 1]) / 2,
+            ],
+            dim=-1,
+        )
+        if self.temp_emb is not None:
+            temp_emb = self.temp_emb(
+                pred_time / window_length, emb_type=self.temp_emb_type
+            )
 
-            embedding_type = self.embedding_meta["embedding_type"]
-
-            if "temp" in embedding_type:
-                temp_emb = self.embedding._learned_temp_embedding(
-                    pred_time / window_length, features=self.d_model, **kwargs
-                )
-
-                pos_emb = temp_emb
-
-            if "learned" in embedding_type:
-                if "pos" in embedding_type:
-                    pos_emb = self.embedding._learned_pos_embedding(
-                        pred_box, features=self.d_model, **kwargs
-                    )
-
-            else:
-                pos_emb = self.embedding._sine_box_embedding(
-                    pred_box, features=self.d_model // 4, **kwargs
-                )
-
-            if "temp" in embedding_type and embedding_type != "learned_temp":
-                pos_emb = (pos_emb + temp_emb) / 2.0
-
-            pos_emb = pos_emb.view(1, total_instances, embed_dim)
-            pos_emb = pos_emb.permute(
-                1, 0, 2
-            )  # (total_instances, batch_size, embed_dim)
         else:
-            pos_emb = None
+            temp_emb = torch.zeros(total_instances, embed_dim)
+
+        pos_emb = temp_emb
+
+        if self.pos_emb:
+            pos_emb = self.pos_emb(pred_box, emb_type=self.temp_emb_type)
+
+        emb = (pos_emb + temp_emb) / 2.0
+
+        emb = emb.view(total_instances, 1, embed_dim)
+
+        if self.pos_emb is None and self.temp_emb is None:
+            emb = None
+
+        if self.embedding_meta["rel"] is not None:
+            frame_inds = torch.tensor(
+                [
+                    t_i
+                    for t_i, frame in enumerate(frames)
+                    for n_i in range(frame.num_detected)
+                ]
+            )
+            pred_coords = torch.concat([frame_inds.unsqueeze(-1), pred_coords], dim=-1)
 
         query_inds = None
         n_query = total_instances
@@ -238,23 +229,30 @@ class Transformer(torch.nn.Module):
         )  # (total_instances x batch_size x embed_dim)
 
         memory = self.encoder(
-            reid_features, pos_emb=pos_emb
+            reid_features,
+            emb=emb,
+            coords=pred_coords,
         )  # (total_instances, batch_size, embed_dim)
 
         if query_inds is not None:
             tgt = reid_features[query_inds]
-            if pos_emb is not None:
-                tgt_pos_emb = pos_emb[query_inds]
+            if emb is not None:
+                tgt_pos_emb = emb[query_inds]
             else:
-                tgt_pos_emb = pos_emb
+                tgt_pos_emb = emb
         else:
             tgt = reid_features
-            tgt_pos_emb = pos_emb
+            tgt_pos_emb = emb
 
         # tgt: (n_query, batch_size, embed_dim)
 
         hs = self.decoder(
-            tgt, memory, pos_emb=pos_emb, tgt_pos_emb=tgt_pos_emb
+            tgt,
+            memory,
+            src_emb=emb,
+            tgt_emb=tgt_pos_emb,
+            coords=pred_coords,
+            query_inds=query_inds,
         )  # (L, n_query, batch_size, embed_dim)
 
         feats = hs.transpose(1, 2)  # # (L, batch_size, n_query, embed_dim)
@@ -269,7 +267,7 @@ class Transformer(torch.nn.Module):
             asso_output.append(self.attn_head(x, memory).view(n_query, total_instances))
 
         # (L=1, n_query, total_instances)
-        return (asso_output, pos_emb) if self.return_embedding else (asso_output, None)
+        return (asso_output, emb) if self.return_embedding else (asso_output, None)
 
 
 class TransformerEncoder(nn.Module):
@@ -291,7 +289,13 @@ class TransformerEncoder(nn.Module):
         self.num_layers = num_layers
         self.norm = norm
 
-    def forward(self, src: torch.Tensor, pos_emb: torch.Tensor = None) -> torch.Tensor:
+    def forward(
+        self,
+        src: torch.Tensor,
+        emb: torch.Tensor = None,
+        coords=None,
+        padding_mask=None,
+    ) -> torch.Tensor:
         """Execute a forward pass of encoder layer.
 
         Args:
@@ -304,7 +308,7 @@ class TransformerEncoder(nn.Module):
         output = src
 
         for layer in self.layers:
-            output = layer(output, pos=pos_emb)
+            output = layer(output, emb=emb, coords=coords, padding_mask=padding_mask)
 
         if self.norm is not None:
             output = self.norm(output)
@@ -337,7 +341,14 @@ class TransformerDecoder(nn.Module):
         self.norm = norm if norm is not None else nn.Identity()
 
     def forward(
-        self, tgt: torch.Tensor, memory: torch.Tensor, pos_emb=None, tgt_pos_emb=None
+        self,
+        tgt: torch.Tensor,
+        memory: torch.Tensor,
+        src_emb=None,
+        tgt_emb=None,
+        coords=None,
+        padding_mask=None,
+        query_inds=None,
     ):
         """Execute a forward pass of the decoder block.
 
@@ -359,8 +370,11 @@ class TransformerDecoder(nn.Module):
             output = layer(
                 output,
                 memory,
-                pos=pos_emb,
-                tgt_pos=tgt_pos_emb,
+                src_emb=src_emb,
+                tgt_emb=tgt_emb,
+                coords=coords,
+                padding_mask=padding_mask,
+                query_inds=query_inds,
             )
             if self.return_intermediate:
                 intermediate.append(self.norm(output))
@@ -388,6 +402,7 @@ class TransformerEncoderLayer(nn.Module):
         dropout: float = 0.1,
         activation: str = "relu",
         norm: bool = False,
+        rel_mask: dict = None,
     ):
         """Initialize a transformer encoder layer.
 
@@ -398,8 +413,15 @@ class TransformerEncoderLayer(nn.Module):
             dropout: Dropout value applied to the output of encoder.
             activation: Activation function to use.
             norm: If True, normalize output of encoder.
+            rel_mask: dict containing hyperparameters for RelativePositionalMask. None represents turning off RPE.
         """
         super().__init__()
+
+        if rel_mask is not None:
+            self.rel_mask = RelativePositionalMask(n_head=nhead, **rel_mask)
+        else:
+            self.rel_mask = None
+
         self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
         self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
@@ -413,23 +435,36 @@ class TransformerEncoderLayer(nn.Module):
 
         self.activation = _get_activation_fn(activation)
 
-    def forward(self, src: torch.Tensor, pos: torch.Tensor = None):
+    def forward(
+        self,
+        src: torch.Tensor,
+        emb: torch.Tensor = None,
+        coords: torch.Tensor = None,
+        padding_mask: torch.Tensor = None,
+    ):
         """Execute a forward pass of the encoder layer.
 
         Args:
             src: Input sequence for encoder (n_query, batch_size, embed_dim).
-            pos: Position embedding, if provided is added to src
+            emb: Spatiotemporal embedding, if provided is added to src
+            coords: Spatiotemporal coordinates for each sequence. (n_query, x)
+            where dim 1 is temporal coordinate and dims 1:x are spatial coordinates.
+            padding_mask: Currently unused. See `torch.nn.MultiHeadAttention` for more info.
 
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
-        src = src if pos is None else src + pos
+        src = src if emb is None else src + emb
+
         q = k = src
 
+        if self.rel_mask is not None and coords is not None:
+            attn_mask = self.rel_mask(coords, padding_mask=padding_mask)
+        else:
+            attn_mask = None
+
         src2 = self.self_attn(
-            q,
-            k,
-            value=src,
+            q, k, value=src, key_padding_mask=padding_mask, attn_mask=attn_mask
         )[0]
 
         src = src + self.dropout1(src2)
@@ -453,6 +488,7 @@ class TransformerDecoderLayer(nn.Module):
         activation: str = "relu",
         norm: bool = False,
         decoder_self_attn: bool = False,
+        rel_mask: dict = None,
     ):
         """Initialize transformer decoder layer.
 
@@ -464,10 +500,16 @@ class TransformerDecoderLayer(nn.Module):
             activation: Activation function to use.
             norm: If True, normalize output of decoder.
             decoder_self_attn: If True, use decoder self attention
+            rel_mask: dict containing hyperparameters for RelativePositionalMask. None represents turning off RPE.
         """
         super().__init__()
 
         self.decoder_self_attn = decoder_self_attn
+
+        if rel_mask is not None:
+            self.rel_mask = RelativePositionalMask(n_head=nhead, **rel_mask)
+        else:
+            self.rel_mask = None
 
         self.multihead_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
         self.linear1 = nn.Linear(d_model, dim_feedforward)
@@ -487,33 +529,66 @@ class TransformerDecoderLayer(nn.Module):
 
         self.activation = _get_activation_fn(activation)
 
-    def forward(self, tgt, memory, pos=None, tgt_pos=None):
+    def forward(
+        self,
+        tgt,
+        memory,
+        src_emb=None,
+        tgt_emb=None,
+        coords=None,
+        padding_mask=None,
+        query_inds=None,
+    ):
         """Execute forward pass of decoder layer.
 
         Args:
             tgt: Target sequence for decoder to generate (n_query, batch_size, embed_dim).
             memory: Output from encoder, that decoder uses to attend to relevant
                 parts of input sequence (total_instances, batch_size, embed_dim)
-            pos_emb: The input positional embedding tensor of shape (n_query, embed_dim).
-            tgt_pos_emb: The target positional embedding of shape (n_query, embed_dim)
+            src_emb: The input spatiotemporal embedding tensor of shape (n_query, embed_dim).
+            tgt_emb: The target spatiotemporal embedding of shape (n_query, embed_dim)
+            coords: Spatiotemporal coordinates for each sequence. (n_query, x)
+            where dim 1 is temporal coordinate and dims 1:x are spatial coordinates.
+            padding_mask: Currently unused. See `torch.nn.MultiHeadAttention` for more info.
+            query_inds: list of query indices used to slice relative positional mask during decoder self/cross-attention.
 
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
-        tgt = tgt if tgt_pos is None else tgt + tgt_pos
-        memory = memory if pos is None else memory + pos
+        tgt = tgt if tgt_emb is None else tgt + tgt_emb
+        memory = memory if src_emb is None else memory + src_emb
 
         q = k = tgt
 
         if self.decoder_self_attn:
-            tgt2 = self.self_attn(q, k, value=tgt)[0]
+            if self.rel_mask is not None:
+                self_attn_mask = self.rel_mask(
+                    coords,
+                    mode="self",
+                    padding_mask=padding_mask,
+                    query_inds=query_inds,
+                )
+            else:
+                self_attn_mask = None
+            tgt2 = self.self_attn(
+                q, k, value=tgt, key_padding_mask=padding_mask, attn_mask=self_attn_mask
+            )[0]
             tgt = tgt + self.dropout1(tgt2)
             tgt = self.norm1(tgt)
+
+        if self.rel_mask is not None:
+            x_attn_mask = self.rel_mask(
+                coords, mode="cross", padding_mask=padding_mask, query_inds=query_inds
+            )
+        else:
+            x_attn_mask = None
 
         tgt2 = self.multihead_attn(
             query=tgt,  # (n_query, batch_size, embed_dim)
             key=memory,  # (total_instances, batch_size, embed_dim)
             value=memory,  # (total_instances, batch_size, embed_dim)
+            key_padding_mask=padding_mask,
+            attn_mask=x_attn_mask,  # (N, B, D)
         )[
             0
         ]  # (n_query, batch_size, embed_dim)

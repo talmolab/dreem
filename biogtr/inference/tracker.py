@@ -81,25 +81,27 @@ class Tracker:
 
         _ = model.eval()
 
-        for frame in frames:
-            if frame.has_instances():
-                if not self.use_vis_feats:
-                    for instance in frame.instances:
-                        instance.features = torch.zeros(1, model.d_model)
-                    # frame["features"] = torch.randn(
-                    #     num_frame_instances, self.model.d_model
-                    # )
+        # I think we should just handle this in the forward pass of the model and just have a check to only compute once.
 
-                # comment out to turn encoder off
+        # for frame in frames:
+        #     if frame.has_instances():
+        #         if not self.use_vis_feats:
+        #             for instance in frame.instances:
+        #                 instance.features = torch.zeros(1, model.d_model)
+        #             # frame["features"] = torch.randn(
+        #             #     num_frame_instances, self.model.d_model
+        #             # )
 
-                # Assuming the encoder is already trained or train encoder jointly.
-                elif not frame.has_features():
-                    with torch.no_grad():
-                        crops = frame.get_crops()
-                        z = model.visual_encoder(crops)
+        #         # comment out to turn encoder off
 
-                        for i, z_i in enumerate(z):
-                            frame.instances[i].features = z_i
+        #         # Assuming the encoder is already trained or train encoder jointly.
+        #         elif not frame.has_features():
+        #             with torch.no_grad():
+        #                 crops = frame.get_crops()
+        #                 z = model.visual_encoder(crops)
+
+        #                 for i, z_i in enumerate(z):
+        #                     frame.instances[i].features = z_i
 
         # I feel like this chunk is unnecessary:
         # reid_features = torch.cat(
@@ -109,6 +111,7 @@ class Tracker:
         # asso_preds, pred_boxes, pred_time, embeddings = self.model(
         #     instances, reid_features
         # )
+
         instances_pred = self.sliding_inference(model, frames)
 
         if not self.persistent_tracking:
@@ -228,10 +231,6 @@ class Tracker:
         mult_thresh = self.mult_thresh
         n_traj = self.track_queue.n_tracks
 
-        reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
-            None
-        ]  # (1, total_instances, D=512)
-
         # (L=1, n_query, total_instances)
         with torch.no_grad():
             asso_output, embed = model(frames, query_frame=query_ind)
@@ -247,6 +246,10 @@ class Tracker:
         )  # (window_size, n_query, N_i)
         asso_output = torch.cat(asso_output, dim=1).cpu()  # (n_query, total_instances)
 
+        reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
+            None
+        ]  # (1, total_instances, D=512)
+        
         try:
             n_query = (
                 query_frame.num_detected
