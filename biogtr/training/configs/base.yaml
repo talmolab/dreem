@@ -1,7 +1,12 @@
 model:
   ckpt_path: null
-  encoder_model: "resnet18"
-  encoder_cfg: {}
+  feature_encoder_cfg:
+    visual_encoder_cfg: 
+      model_name: "resnet50",
+      cfg: 
+        weights: "ResNet50_Weights.DEFAULT"
+    lsd_encoder_cfg: null
+    flow_encoder_cfg: null
   d_model: 1024
   nhead: 8
   num_encoder_layers: 1
@@ -15,11 +20,14 @@ model:
   num_layers_attn_head: 2
   dropout_attn_head: 0.1
   embedding_meta: 
-    embedding_type: 'learned_pos_temp'
-    kwargs: 
-      learn_pos_emb_num: 16
-      learn_temp_emb_num: 16
+    pos:
+      emb_type: "learned"
+      learn_emb_num: 16
       over_boxes: False
+    temp:
+      emb_type: "learned"
+      learn_emb_num: 16
+    rel: null
   return_embedding: False
   decoder_self_attn: False
 

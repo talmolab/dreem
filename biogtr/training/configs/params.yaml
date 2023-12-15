@@ -1,11 +1,18 @@
 model:
+  feature_encoder_cfg:
+    flow_encoder_cfg:
+      model_name: "resnet50"
+      pretrained: False
+    lsd_encoder_cfg:
+      unet_cfg: null
   num_encoder_layers: 2
   num_decoder_layers: 2
   embedding_meta:
-    embedding_type: 'learned_pos'
-    kwargs:
-      learn_pos_emb_num: 16
-      over_boxes: True
+    rel:
+      cutoff_spatial: 256
+      cutoff_temporal: 32
+      n_spatial: 32
+      n_temporal: 16
 
 dataset:
   train_dataset:

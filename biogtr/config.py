@@ -4,7 +4,7 @@ from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
-from biogtr.models.gtr_runner import GTRRunner
+from biogtr.gtr_runner import GTRRunner
 from biogtr.models.model_utils import init_optimizer, init_scheduler, init_logger
 from biogtr.training.losses import AssoLoss
 from omegaconf import DictConfig, OmegaConf
@@ -75,7 +75,7 @@ class Config:
         Returns:
             A global tracking transformer with parameters indicated by cfg
         """
-        model_params = self.cfg.model
+        model_params = OmegaConf.to_container(self.cfg.model, resolve=True)
         return GlobalTrackingTransformer(**model_params)
 
     def get_tracker_cfg(self) -> dict:
@@ -108,7 +108,7 @@ class Config:
             )
 
         else:
-            model_params = self.cfg.model
+            model_params = OmegaConf.to_container(self.cfg.model, resolve=True)
             model = GTRRunner(
                 model_params,
                 tracker_params,
