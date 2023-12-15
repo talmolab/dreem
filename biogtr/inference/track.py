@@ -1,7 +1,7 @@
 """Script to run inference and get out tracks."""
 
 from biogtr.config import Config
-from biogtr.models.gtr_runner import GTRRunner
+from biogtr.gtr_runner import GTRRunner
 from biogtr.data_structures import Frame
 from omegaconf import DictConfig
 from pprint import pprint
