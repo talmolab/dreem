@@ -20,6 +20,8 @@ dependencies:
   - pip:
     - matplotlib
     - sleap-io
+    - timm
+    - lsds
     - "--editable=.[dev]"
     - imageio[ffmpeg]
     - hydra-core
