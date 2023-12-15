@@ -37,8 +37,14 @@ def test_tracker():
         )
 
     embedding_meta = {
-        "embedding_type": "fixed_pos",
-        "kwargs": {"temperature": num_detected, "scale": num_frames, "normalize": True},
+        "pos": {
+            "type": "fixed",
+            "temperature": num_detected,
+            "scale": num_frames,
+            "normalize": True,
+        },
+        "temp": None,
+        "rel": None,
     }
 
     tracking_transformer = GlobalTrackingTransformer(

@@ -17,7 +17,13 @@ def test_base_dataset():
         pass
 
     ds = DummyDataset(
-        files=[], padding=0, crop_size=0, chunk=False, clip_length=0, mode=""
+        files=[],
+        features=["vis"],
+        padding=0,
+        crop_size=0,
+        chunk=False,
+        clip_length=0,
+        mode="",
     )
 
     with pytest.raises(NotImplementedError):

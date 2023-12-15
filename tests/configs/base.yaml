@@ -1,25 +1,33 @@
 model:
   ckpt_path: null
-  encoder_model: "resnet18"
-  encoder_cfg: {}
-  d_model: 512
+  feature_encoder_cfg:
+    visual_encoder_cfg: 
+      model_name: "resnet50"
+      cfg: 
+        weights: "ResNet50_Weights.DEFAULT"
+    lsd_encoder_cfg: null
+    flow_encoder_cfg: null
+  d_model: 1024
   nhead: 8
   num_encoder_layers: 1
   num_decoder_layers: 1
-  dim_feedforward: 512
+  dim_feedforward: 1024
   dropout: 0.1
   activation: "relu"
   return_intermediate_dec: False
-  feature_dim_attn_head: 512
+  feature_dim_attn_head: 1024
   norm: False
   num_layers_attn_head: 2
   dropout_attn_head: 0.1
   embedding_meta: 
-    embedding_type: 'learned_pos_temp'
-    kwargs: 
-      learn_pos_emb_num: 16
-      learn_temp_emb_num: 16
+    pos:
+      type: "learned"
+      learn_emb_num: 16
       over_boxes: False
+    temp:
+      type: "learned"
+      learn_emb_num: 16
+    rel: null
   return_embedding: False
   decoder_self_attn: False
 
@@ -55,36 +63,37 @@ tracker:
   max_center_dist: null
 
 runner:
-  metrics: 
-    train: [""]
-    val: ["sw_cnt"]
-    test: ["sw_cnt"]
-
+  metrics:
+      train: ['num_switches']
+      val: ['num_switches']
+      test: ['num_switches']
+  persistent_tracking:
+      train: false
+      val: true
+      test: true
+      
 dataset:
   train_dataset:
-    slp_files: ['tests/data/sleap/two_flies.slp']
-    video_files: ['tests/data/sleap/two_flies.mp4']
-    anchor: "thorax"
+    slp_files: ["tests/data/sleap/two_flies.slp"]
+    video_files: ["tests/data/sleap//two_flies.mp4"]
     padding: 5
     crop_size: 128
     chunk: true
     clip_length: 4
 
   val_dataset:
-    slp_files: ['tests/data/sleap/two_flies.slp']
-    video_files: ['tests/data/sleap/two_flies.mp4']
-    anchor: "thorax"
+    slp_files: ["tests/data/sleap/two_flies.slp"]
+    video_files: ["tests/data/sleap/two_flies.mp4"]
     padding: 5
-    crop_size: 128
+    crop_size: 128 
     chunk: True
     clip_length: 8
 
   test_dataset:
-    slp_files: ['tests/data/sleap/two_flies.slp']
-    video_files: ['tests/data/sleap/two_flies.mp4']
-    anchor: "thorax"
+    slp_files: ["tests/data/sleap/two_flies.slp"]
+    video_files: ["tests/data/sleap/two_flies.mp4"]
     padding: 5
-    crop_size: 128
+    crop_size: 128 
     chunk: True
     clip_length: 16
 
@@ -100,9 +109,16 @@ dataloader:
     num_workers: 0
 
 logging:
-  name: "example_train"
-  save_dir: "./logs"
   logger_type: null
+  name: "example_train"
+  entity: null
+  job_type: "train"
+  notes: "Example train job"
+  dir: "./logs"
+  group: "example"
+  save_dir: './logs'
+  project: "GTR"
+  log_model: "all"
 
 early_stopping:
   monitor: "val_loss"
@@ -114,7 +130,7 @@ early_stopping:
   divergence_threshold: 30
 
 checkpointing:
-  monitor: ["val_loss","val_sw_cnt"]
+  monitor: ["val_loss","val_num_switches"]
   verbose: true
   save_last: true
   dirpath: null
@@ -134,5 +150,5 @@ trainer:
 
 view_batch:
   enable: False
-  num_frames: 1
+  num_frames: 0
   no_train: False

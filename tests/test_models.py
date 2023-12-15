@@ -4,14 +4,23 @@ import torch
 import numpy as np
 from biogtr.data_structures import Frame, Instance
 from biogtr.models.attention_head import MLP, ATTWeightHead
-from biogtr.models.embedding import Embedding
+from biogtr.models.embeddings.spatial_embedding import SpatialEmbedding
+from biogtr.models.embeddings.temporal_embedding import TemporalEmbedding
+from biogtr.models.embeddings.relative_positional_embedding import (
+    RelativePositionalMask,
+)
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.models.transformer import (
     Transformer,
     TransformerEncoderLayer,
     TransformerDecoderLayer,
 )
-from biogtr.models.visual_encoder import VisualEncoder
+
+from biogtr.models.feature_encoders.visual_encoder import VisualEncoder
+from biogtr.models.feature_encoders.flow_encoder import FlowEncoder
+from biogtr.models.feature_encoders.lsd_encoder import LSDEncoder
+from biogtr.models.feature_encoders.feature_encoder import FeatureEncoder
+from biogtr.models.feature_encoders import fusion_layers
 
 
 # todo: add named tensor tests
@@ -41,8 +50,8 @@ def test_att_weight_head():
     assert attn_weights.shape == (b, n, n)
 
 
-def test_encoder():
-    """Test feature extractor logic."""
+def test_visual_encoder():
+    """Test visual feature extractor logic."""
     b, c, h, w = 1, 1, 100, 100  # batch size, channels, height, width
 
     features = 512
@@ -61,81 +70,207 @@ def test_encoder():
         assert output.shape == (b, features)
 
 
+def test_flow_encoder():
+    b, c, h, w = 1, 2, 100, 100
+
+    features = 512
+    input_tensor = torch.rand(b, c, h, w)
+    encoder = FlowEncoder(
+        {"model_name": "resnet50", "pretrained": False}, d_model=features
+    )
+
+    output = encoder(input_tensor)
+    assert output.shape == (b, features)
+
+
+def test_lsd_encoder():
+    b, c, d, h, w = 1, 3, 6, 100, 100
+
+    features = 512
+    input_tensor = torch.rand(b, d, h, w)
+    encoder = LSDEncoder(unet_cfg=None, d_model=features)
+
+    output = encoder(input_tensor)
+    assert output.shape == (b, features)
+
+    input_tensor = torch.rand(b, c, h, w)
+    with pytest.raises(ValueError):
+        encoder(input_tensor)
+
+    input_tensor = torch.rand(b, c, h, w)
+    encoder = LSDEncoder(unet_cfg={}, d_model=features)
+
+    output = encoder(input_tensor)
+    assert output.shape == (b, features)
+
+    input_tensor = torch.rand(b, d, h, w)
+    with pytest.raises(ValueError):
+        encoder(input_tensor)
+
+
+def test_fusion_layers():
+    b, d = 1, 512
+    vis_feats, flow_feats, lsd_feats = torch.randn(3, b, d)
+    fusion_layer = fusion_layers.Cat(d)
+    fused_feats = fusion_layer([vis_feats, flow_feats, lsd_feats])
+    assert fused_feats.shape == (b, d)
+
+    fusion_layer = fusion_layers.Sum(d)
+    fused_feats = fusion_layer([vis_feats, flow_feats, lsd_feats])
+    assert fused_feats.shape == (b, d)
+
+
+def test_feature_encoder():
+    b, c, h, w, d = 1, 1, 100, 100, 512
+
+    crop = torch.randn(b, c, h, w)
+    flow = torch.randn(b, 2, h, w)
+    lsd = torch.randn(b, 6, h, w)
+
+    encoder = FeatureEncoder(
+        visual_encoder_cfg={
+            "model_name": "resnet50",
+            "cfg": {"weights": "ResNet50_Weights.DEFAULT"},
+        },
+        flow_encoder_cfg={"model_name": "resnet50", "pretrained": False},
+        lsd_encoder_cfg={"unet_cfg": None},
+        out_dim=d,
+        fusion_layer="cat",
+    )
+    assert isinstance(encoder.out_layer, fusion_layers.Cat)
+
+    feats = encoder(
+        crops=crop, flows=flow, lsds=lsd, feats_to_return=("visual", "flow", "lsd")
+    )
+    assert "visual" in feats and "flow" in feats and "lsd" in feats
+    assert feats["combined"].shape == (b, d)
+
+    encoder = FeatureEncoder(
+        visual_encoder_cfg=None,
+        flow_encoder_cfg={"model_name": "resnet50", "pretrained": False},
+        lsd_encoder_cfg={"unet_cfg": None},
+        out_dim=d,
+        fusion_layer="cat",
+    )
+    feats = encoder(
+        crops=crop, flows=flow, lsds=lsd, feats_to_return=("visual", "flow", "lsd")
+    )
+    assert "visual" not in feats and "flow" in feats and "lsd" in feats
+    assert feats["combined"].shape == (b, d)
+
+    feats = encoder(crops=crop, flows=flow, lsds=lsd, feats_to_return=("flow", "lsd"))
+    assert "visual" not in feats and "flow" in feats and "lsd" in feats
+    assert feats["combined"].shape == (b, d)
+
+    feats = encoder(crops=crop, flows=flow, lsds=lsd, feats_to_return=("lsd"))
+    assert "visual" not in feats and "flow" not in feats and "lsd" in feats
+    assert feats["combined"].shape == (b, d)
+
+    feats = encoder(crops=crop, flows=flow, lsds=lsd, feats_to_return=())
+    assert "visual" not in feats and "flow" not in feats and "lsd" not in feats
+    assert feats["combined"].shape == (b, d)
+
+    feats = encoder(
+        crops=None, flows=flow, lsds=lsd, feats_to_return=("visual", "flow", "lsd")
+    )
+    assert "visual" not in feats and "flow" in feats and "lsd" in feats
+    assert feats["combined"].shape == (b, d)
+
+    encoder = FeatureEncoder(
+        visual_encoder_cfg=None,
+        flow_encoder_cfg=None,
+        lsd_encoder_cfg={"unet_cfg": None},
+        out_dim=d,
+        fusion_layer="cat",
+    )
+    feats = encoder(
+        crops=crop, flows=flow, lsds=lsd, feats_to_return=("visual", "flow", "lsd")
+    )
+    assert "visual" not in feats and "flow" not in feats and "lsd" in feats
+    assert feats["combined"].shape == (b, d)
+
+    feats = encoder(
+        crops=None, flows=None, lsds=lsd, feats_to_return=("visual", "flow", "lsd")
+    )
+    assert "visual" not in feats and "flow" not in feats and "lsd" in feats
+    assert feats["combined"].shape == (b, d)
+
+    encoder = FeatureEncoder(
+        visual_encoder_cfg=None,
+        flow_encoder_cfg=None,
+        lsd_encoder_cfg=None,
+        out_dim=d,
+        fusion_layer="cat",
+    )
+    feats = encoder(
+        crops=crop, flows=flow, lsds=lsd, feats_to_return=("visual", "flow", "lsd")
+    )
+
+    assert "visual" not in feats and "flow" not in feats and "lsd" not in feats
+    assert feats["combined"].shape == (b, d)
+
+
 def test_embedding():
     """Test embedding logic."""
-    emb = Embedding()
-
     frames = 32
     objects = 10
     d_model = 256
+    nhead = 8
+    cutoff_spatial = 256
+    cutoff_temporal = 32
+
+    pos_emb = SpatialEmbedding(
+        features=d_model // 4,
+        temperature=objects,
+        normalize=True,
+        scale=10,
+        learn_emb_num=100,
+    )
+    temp_emb = TemporalEmbedding(features=d_model, learn_emb_num=16)
+    rel_pos_mask = RelativePositionalMask(nhead, cutoff_spatial, cutoff_temporal)
 
     N = frames * objects
 
     boxes = torch.rand(size=(N, 4))
+    coords = torch.stack(
+        [
+            (boxes[:, -2] + boxes[:, 2]) / 2,
+            (boxes[:, -1] - boxes[:, 1]) / 2,
+        ],
+        dim=-1,
+    )
+    pred_coords = torch.randn(N, 3)
     times = torch.rand(size=(N,))
 
-    sine_emb = emb._sine_box_embedding(
-        boxes, features=d_model // 4, temperature=objects, normalize=True, scale=10
+    sine_emb = pos_emb(boxes, emb_type="fixed")
+
+    pos_emb = SpatialEmbedding(
+        features=d_model,
+        temperature=objects,
+        normalize=True,
+        scale=10,
+        learn_emb_num=100,
     )
 
-    learned_pos_emb = emb._learned_pos_embedding(
-        boxes, features=d_model, learn_pos_emb_num=100
-    )
+    learned_pos_emb = pos_emb(boxes, emb_type="learned")
 
-    learned_temp_emb = emb._learned_temp_embedding(
-        times, features=d_model, learn_temp_emb_num=16
-    )
+    learned_temp_emb = temp_emb(times, emb_type="learned")
 
     assert sine_emb.size() == (N, d_model)
     assert learned_pos_emb.size() == (N, d_model)
     assert learned_temp_emb.size() == (N, d_model)
+    with pytest.raises(NotImplementedError):
+        learned_temp_emb = temp_emb(times, emb_type="fixed")
 
+    mask = rel_pos_mask(coords)
+    assert mask.shape == (nhead, N, N)
 
-def test_embedding_kwargs():
-    """Test embedding config logic."""
-    emb = Embedding()
+    query_inds = np.arange(objects)
+    mask = rel_pos_mask(coords, query_inds=query_inds)
+    assert mask.shape == (nhead, objects, objects)
 
-    frames = 32
-    objects = 10
-
-    N = frames * objects
-
-    boxes = torch.rand(size=(N, 4))
-    times = torch.rand(size=(N,))
-
-    # sine embedding
-
-    sine_no_args = emb._sine_box_embedding(boxes)
-
-    sine_args = {
-        "temperature": objects,
-        "scale": frames,
-        "normalize": True,
-    }
-
-    sine_with_args = emb._sine_box_embedding(boxes, **sine_args)
-
-    assert not torch.equal(sine_no_args, sine_with_args)
-
-    # learned pos embedding
-
-    lp_no_args = emb._learned_pos_embedding(boxes)
-
-    lp_args = {"learn_pos_emb_num": 100, "over_boxes": False}
-
-    lp_with_args = emb._learned_pos_embedding(boxes, **lp_args)
-
-    assert not torch.equal(lp_no_args, lp_with_args)
-
-    # learned temp embedding
-
-    lt_no_args = emb._learned_temp_embedding(times)
-
-    lt_args = {"learn_temp_emb_num": 100}
-
-    lt_with_args = emb._learned_temp_embedding(times, **lt_args)
-
-    assert not torch.equal(lt_no_args, lt_with_args)
+    mask = rel_pos_mask(coords, query_inds=query_inds, mode="cross")
+    assert mask.shape == (nhead, objects, N)
 
 
 def test_transformer_encoder():
@@ -156,9 +291,23 @@ def test_transformer_encoder():
     assert out.size() == src.size()
 
     # with position
-    pos = torch.ones_like(src)
+    emb = torch.ones_like(src)
 
-    out = transformer_encoder(src, pos=pos)
+    out = transformer_encoder(src, emb=emb)
+
+    assert out.size() == src.size()
+
+    transformer_encoder = TransformerEncoderLayer(
+        d_model=feats,
+        nhead=1,
+        dim_feedforward=feats,
+        norm=True,
+        rel_mask={"cutoff_spatial": 256, "cutoff_temporal": 32},
+    )
+
+    coords = torch.randn(N, 3)
+
+    out = transformer_encoder(src, emb=emb, coords=coords)
 
     assert out.size() == src.size()
 
@@ -186,11 +335,31 @@ def test_transformer_decoder():
     assert out.size() == tgt.size()
 
     # with position
-    pos = tgt_pos = torch.ones_like(memory)
+    emb = tgt_emb = torch.ones_like(memory)
 
-    out = transformer_decoder(tgt, memory, pos=pos, tgt_pos=tgt_pos)
+    out = transformer_decoder(tgt, memory, src_emb=emb, tgt_emb=tgt_emb)
 
-    assert out.size() == pos.size()
+    assert out.size() == tgt.size()
+
+    # with relative positions
+
+    transformer_decoder = TransformerDecoderLayer(
+        d_model=feats,
+        nhead=2,
+        dim_feedforward=feats,
+        dropout=0.2,
+        norm=False,
+        decoder_self_attn=True,
+        rel_mask={"cutoff_spatial": 256, "cutoff_temporal": 32},
+    )
+
+    emb = tgt_emb = torch.ones_like(memory)
+
+    coords = torch.randn(N, 3)
+
+    out = transformer_decoder(tgt, memory, src_emb=emb, tgt_emb=tgt_emb, coords=coords)
+
+    assert out.size() == tgt.size()
 
 
 def test_transformer_basic():
@@ -225,44 +394,6 @@ def test_transformer_basic():
     assert asso_preds[0].size() == (num_detected * num_frames,) * 2
 
 
-def test_transformer_embedding_validity():
-    """Test embedding usage."""
-    # use lower feats and single layer for efficiency
-    feats = 256
-
-    # this would throw assertion since no "embedding_type" key
-    with pytest.raises(Exception):
-        _ = Transformer(
-            d_model=feats,
-            num_encoder_layers=1,
-            num_decoder_layers=1,
-            dim_feedforward=feats,
-            feature_dim_attn_head=feats,
-            embedding_meta={"type": "learned_pos"},
-        )
-
-    # this would throw assertion since "embedding_type" value invalid
-    with pytest.raises(Exception):
-        _ = Transformer(
-            d_model=feats,
-            num_encoder_layers=1,
-            num_decoder_layers=1,
-            dim_feedforward=feats,
-            feature_dim_attn_head=feats,
-            embedding_meta={"embedding_type": "foo"},
-        )
-
-    # this would succeed
-    _ = Transformer(
-        d_model=feats,
-        num_encoder_layers=1,
-        num_decoder_layers=1,
-        dim_feedforward=feats,
-        feature_dim_attn_head=feats,
-        embedding_meta={"embedding_type": "learned_pos"},
-    )
-
-
 def test_transformer_embedding():
     """Test transformer using embedding."""
     feats = 256
@@ -281,14 +412,10 @@ def test_transformer_embedding():
                 )
             )
         frames.append(Frame(video_id=0, frame_id=i, instances=instances))
-
     embedding_meta = {
-        "embedding_type": "learned_pos_temp",
-        "kwargs": {
-            "learn_pos_emb_num": 16,
-            "learn_temp_emb_num": 16,
-            "normalize": True,
-        },
+        "pos": {"type": "learned"},
+        "temp": {"type": "learned"},
+        "rel": None,
     }
 
     transformer = Transformer(
@@ -321,7 +448,10 @@ def test_tracking_transformer():
         for j in range(num_detected):
             instances.append(
                 Instance(
-                    bbox=torch.rand(size=(1, 4)), crop=torch.rand(size=(1, 1, 64, 64))
+                    bbox=torch.rand(size=(1, 4)),
+                    crop=torch.rand(size=(1, 1, 64, 64)),
+                    flow=torch.rand(size=(1, 2, 64, 64)),
+                    lsd=torch.rand(size=(1, 6, 64, 64)),
                 )
             )
         frames.append(
@@ -329,15 +459,23 @@ def test_tracking_transformer():
         )
 
     embedding_meta = {
-        "embedding_type": "fixed_pos",
-        "kwargs": {"temperature": num_detected, "scale": num_frames, "normalize": True},
+        "pos": {"type": "learned"},
+        "temp": {"type": "learned"},
+        "rel": None,
     }
 
-    cfg = {"resnet18", "ResNet18_Weights.DEFAULT"}
+    encoder_cfg = {
+        "visual_encoder_cfg": {
+            "model_name": "resnet50",
+            "cfg": {"weights": "ResNet50_Weights.DEFAULT"},
+        },
+        "flow_encoder_cfg": {"model_name": "resnet50", "pretrained": False},
+        "lsd_encoder_cfg": {"unet_cfg": None},
+        "fusion_layer": "cat",
+    }
 
     tracking_transformer = GlobalTrackingTransformer(
-        encoder_model="resnet18",
-        encoder_cfg={"weights": "ResNet18_Weights.DEFAULT"},
+        feature_encoder_cfg=encoder_cfg,
         d_model=feats,
         num_encoder_layers=1,
         num_decoder_layers=1,

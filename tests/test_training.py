@@ -4,7 +4,7 @@ import pytest
 import torch
 from biogtr.data_structures import Frame, Instance
 from biogtr.training.losses import AssoLoss
-from biogtr.models.gtr_runner import GTRRunner
+from biogtr.gtr_runner import GTRRunner
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from omegaconf import OmegaConf, DictConfig
 from biogtr.config import Config

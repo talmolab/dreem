@@ -3,7 +3,7 @@
 from omegaconf import OmegaConf
 from biogtr.config import Config
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
-from biogtr.models.gtr_runner import GTRRunner
+from biogtr.gtr_runner import GTRRunner
 
 import torch
 
@@ -65,7 +65,7 @@ def test_getters(base_config):
 
     model = cfg.get_model()
     assert isinstance(model, GlobalTrackingTransformer)
-    assert model.transformer.d_model == 512
+    assert model.transformer.d_model == 1024
 
     tracker_cfg = cfg.get_tracker_cfg()
     assert set(
@@ -83,7 +83,12 @@ def test_getters(base_config):
 
     gtr_runner = cfg.get_gtr_runner()
     assert isinstance(gtr_runner, GTRRunner)
-    assert gtr_runner.model.transformer.d_model == 512
+
+    assert gtr_runner.model.transformer.d_model == 1024
+
+    assert gtr_runner.model.feature_encoder.visual_encoder is not None
+    assert gtr_runner.model.feature_encoder.flow_encoder is None
+    assert gtr_runner.model.feature_encoder.lsd_encoder is None
 
     ds = cfg.get_dataset("train")
     assert ds.clip_length == 4
