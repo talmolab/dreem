@@ -110,7 +110,7 @@ class SpatialEmbedding(torch.nn.Module):
                 dim=1,
             )
 
-        l, r, lw, rw = self._compute_weights(xywh, self.learn_emb_num)
+        l, r, lw, rw = self._compute_weights(xywh)
 
         f = pos_lookup.weight.shape[1]
 

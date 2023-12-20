@@ -79,7 +79,7 @@ class TemporalEmbedding(torch.nn.Module):
 
         N = times.shape[0]
 
-        l, r, lw, rw = self._compute_weights(times, self.learn_emb_num)
+        l, r, lw, rw = self._compute_weights(times)
 
         le = temp_lookup.weight[l.to(temp_lookup.weight.device)]  # T x D --> N x D
         re = temp_lookup.weight[r.to(temp_lookup.weight.device)]
