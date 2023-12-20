@@ -22,6 +22,11 @@ dependencies = [
     "torch >= 2.0.0",
     "lightning",
     "imageio",
+    "motmetrics",
+    "seaborn",
+    "wandb",
+    "timm",
+    "lsds"
 ]
 dynamic = ["version"]
 
