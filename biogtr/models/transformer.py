@@ -162,10 +162,15 @@ class Transformer(torch.nn.Module):
                 n_query: number of instances in current query/frame
                 total_instances: number of instances in window
         """
-        reid_features = torch.cat(
-            [frame.get_features() for frame in frames], dim=0
-        ).unsqueeze(0)
-
+        try:
+            reid_features = torch.cat(
+                [frame.get_features() for frame in frames], dim=0 #temp device fix need to come back
+            ).unsqueeze(0)
+        except Exception as e:
+            print([frame.get_crops().shape for frame in frames])
+            print([frame.get_features().device for frame in frames])
+            raise(e)
+        
         window_length = len(frames)
         instances_per_frame = [frame.num_detected for frame in frames]
         total_instances = sum(instances_per_frame)
@@ -200,14 +205,14 @@ class Transformer(torch.nn.Module):
 
         if self.pos_emb is None and self.temp_emb is None:
             emb = None
-
+        
         if self.embedding_meta["rel"] is not None:
             frame_inds = torch.tensor(
                 [
                     t_i
                     for t_i, frame in enumerate(frames)
                     for n_i in range(frame.num_detected)
-                ]
+                ], device = pred_coords.device
             )
             pred_coords = torch.concat([frame_inds.unsqueeze(-1), pred_coords], dim=-1)
 
@@ -227,7 +232,8 @@ class Transformer(torch.nn.Module):
         reid_features = reid_features.permute(
             1, 0, 2
         )  # (total_instances x batch_size x embed_dim)
-
+        
+        #print(reid_features.device)
         memory = self.encoder(
             reid_features,
             emb=emb,
@@ -454,6 +460,7 @@ class TransformerEncoderLayer(nn.Module):
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
+        
         src = src if emb is None else src + emb
 
         q = k = src

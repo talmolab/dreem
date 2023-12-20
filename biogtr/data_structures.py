@@ -177,7 +177,7 @@ class Instance:
         if track is not None:
             self._gt_track_id = torch.tensor([track])
         else:
-            self._gt_track_id = torch.tensor([])
+            self._gt_track_id = torch.tensor([], device=self.device)
 
     def has_gt_track_id(self) -> bool:
         """Determine if instance has a gt track assignment.
@@ -209,7 +209,7 @@ class Instance:
         if track is not None:
             self._pred_track_id = torch.tensor([track])
         else:
-            self._pred_track_id = torch.tensor([])
+            self._pred_track_id = torch.tensor([], device=self.device)
 
     def has_pred_track_id(self) -> bool:
         """Determine whether instance has predicted track id.
@@ -239,10 +239,10 @@ class Instance:
             bbox: an arraylike object containing the bounding box coordinates.
         """
         if bbox is None or len(bbox) == 0:
-            self._bbox = torch.empty((0, 4))
+            self._bbox = torch.empty((0, 4), device=self.device)
         else:
             if not isinstance(bbox, torch.Tensor):
-                self._bbox = torch.tensor(bbox)
+                self._bbox = torch.tensor(bbox, device=self.device)
             else:
                 self._bbox = bbox
 
@@ -309,10 +309,10 @@ class Instance:
             crop: an arraylike object containing the cropped image of the centered instance.
         """
         if crop is None or len(crop) == 0:
-            self._crop = torch.tensor([])
+            self._crop = torch.tensor([], device=self.device)
         else:
             if not isinstance(crop, torch.Tensor):
-                self._crop = torch.tensor(crop)
+                self._crop = torch.tensor(crop, device=self.device)
             else:
                 self._crop = crop
         if self._crop.shape[-1] <= 3:
@@ -350,10 +350,10 @@ class Instance:
             mask: an ArrayLike object of shape (h, w) containing the mask rastered around the instance
         """
         if mask is None or len(mask) == 0:
-            self._mask = torch.tensor([])
+            self._mask = torch.tensor([], device=self.device)
         else:
             if not isinstance(mask, torch.Tensor):
-                self._mask = torch.tensor(mask)
+                self._mask = torch.tensor(mask, device=self.device)
             else:
                 self._mask = mask
         if self._mask.shape[-1] <= 3:
@@ -391,10 +391,10 @@ class Instance:
             lsd: an arraylike object containing the lsd embedding over the crop.
         """
         if lsd is None or len(lsd) == 0:
-            self._lsd = torch.tensor([])
+            self._lsd = torch.tensor([], device=self.device)
         else:
             if not isinstance(lsd, torch.Tensor):
-                self._lsd = torch.tensor(lsd)
+                self._lsd = torch.tensor(lsd, device=self.device)
             else:
                 self._lsd = lsd
 
@@ -429,10 +429,10 @@ class Instance:
             flow: an arraylike object containing the optical flow of a crop between previous and current frame.
         """
         if flow is None or len(flow) == 0:
-            self._flow = torch.tensor([])
+            self._flow = torch.tensor([], device=self.device)
         else:
             if not isinstance(flow, torch.Tensor):
-                self._flow = torch.tensor(flow)
+                self._flow = torch.tensor(flow, device=self.device)
             else:
                 self._flow = flow
 
@@ -467,10 +467,10 @@ class Instance:
             features: a (1,d) array like object containing the reid features for the instance.
         """
         if features is None or len(features) == 0:
-            self._features = torch.tensor([])
+            self._features = torch.tensor([], device=self.device)
 
         elif not isinstance(features, torch.Tensor):
-            self._features = torch.tensor(features)
+            self._features = torch.tensor(features, device=self.device)
         else:
             self._features = features
 
@@ -824,7 +824,7 @@ class Frame:
             an (N,) shaped tensor with the gt track ids of each instance in the frame.
         """
         if not self.has_instances():
-            return torch.tensor([])
+            return torch.tensor([], device=self.device)
         return torch.cat([instance.gt_track_id for instance in self.instances])
 
     def has_pred_track_ids(self) -> bool:
@@ -844,7 +844,7 @@ class Frame:
             an (N,) shaped tensor with the pred track ids of each instance in the frame.
         """
         if not self.has_instances():
-            return torch.tensor([])
+            return torch.tensor([], device=self.device)
         return torch.cat([instance.pred_track_id for instance in self.instances])
 
     def has_bboxes(self) -> bool:
@@ -864,7 +864,7 @@ class Frame:
             an (N,4) shaped tensor with bounding boxes of each instance in the frame.
         """
         if not self.has_instances():
-            return torch.empty(0, 4)
+            return torch.empty(0, 4, device=self.device)
         return torch.cat([instance.bbox for instance in self.instances], dim=0)
 
     def has_crops(self) -> bool:
@@ -884,8 +884,13 @@ class Frame:
             an (N, C, H, W) shaped tensor with crops of each instance in the frame.
         """
         if not self.has_instances():
-            return torch.tensor([])
-        return torch.cat([instance.crop for instance in self.instances], dim=0)
+            return torch.tensor([], device=self.device)
+        try:
+            return torch.cat([instance.crop for instance in self.instances], dim=0)
+        except Exception as e:
+            print(self.get_bboxes())
+            print([instance.crop.shape for instance in self.instances])
+            raise(e)
 
     def has_features(self) -> bool:
         """Check if any of frames instances has reid features already computed.
@@ -904,7 +909,7 @@ class Frame:
             an (N, D) shaped tensor with reid feature vectors of each instance in the frame.
         """
         if not self.has_instances():
-            return torch.tensor([])
+            return torch.tensor([], device=self.device)
         return torch.cat([instance.features for instance in self.instances], dim=0)
 
     def has_flows(self) -> bool:
@@ -924,7 +929,7 @@ class Frame:
             an (N, 2, H, W) shaped tensor with optical flow of each instance in the frame.
         """
         if not self.has_instances():
-            return torch.tensor([])
+            return torch.tensor([], device=self.device)
         return torch.cat([instance.flow for instance in self.instances], dim=0)
 
     def has_lsds(self) -> bool:
@@ -944,5 +949,5 @@ class Frame:
             an (N, 6, H, W) shaped tensor with lsd of each instance in the frame.
         """
         if not self.has_instances():
-            return torch.tensor([])
+            return torch.tensor([], device=self.device)
         return torch.cat([instance.lsd for instance in self.instances], dim=0)

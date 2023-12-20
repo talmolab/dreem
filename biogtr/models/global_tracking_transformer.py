@@ -106,6 +106,9 @@ class GlobalTrackingTransformer(nn.Module):
 
                     for i, z_i in enumerate(z):
                         frame.instances[i].features = z_i
+            else:
+                for i, instance in enumerate(frame.instances):
+                    instance.features = torch.empty(0, self.feature_encoder.d_model, device=next(self.parameters()).device)
 
         asso_preds, emb = self.transformer(frames, query_frame=query_frame)
 

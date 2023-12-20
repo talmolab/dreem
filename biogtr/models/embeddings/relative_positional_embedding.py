@@ -113,12 +113,10 @@ class RelativePositionalMask(torch.nn.Module):
             n_query = N
 
         if mode.lower() == "self":
-            print("Using self attention mask")
+            #print("Using self attention mask")
             n_nonquery = n_query
         else:
             n_nonquery = N
-
-        attn_mask = torch.zeros((self.n_head, n_query, n_nonquery))
 
         # dont add positional bias to self-attention if coords is None
         if coords is not None:
@@ -126,10 +124,12 @@ class RelativePositionalMask(torch.nn.Module):
 
         else:
             pos_bias = torch.zeros((self.n_head, n_query, n_nonquery))
+        
+        attn_mask = torch.zeros((self.n_head, n_query, n_nonquery), device=pos_bias.device)
 
         if query_inds is not None:
             if mode.lower() == "self":
-                print("Slicing both query and nonquery")
+                #print("Slicing both query and nonquery")
                 pos_bias = pos_bias[:, query_inds, :][:, :, query_inds]
             else:
                 pos_bias = pos_bias[:, query_inds, :]
