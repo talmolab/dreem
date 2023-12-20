@@ -184,7 +184,8 @@ class SleapDataset(BaseDataset):
 
             # Read frame from video
             try:
-                img = vid_reader.get_data(frame_ind)
+                img = (vid_reader.get_data(frame_ind).astype(np.float32))/255
+                
                 self.profiler.time(f"Reading frame {frame_ind}")
                 img_shape = img.shape
                 if self.compute_feats["flows"] and self.return_feats["flows"]:
@@ -301,27 +302,26 @@ class SleapDataset(BaseDataset):
                     centroid = pose[anchor]
 
                     if not np.isnan(centroid).any():
-                        bbox = data_utils.pad_bbox(
-                            data_utils.get_bbox(centroid, self.crop_size),
-                            padding=self.padding,
+                        bbox = data_utils.get_bbox(centroid, 
+                                                   self.crop_size,
+                                                   img_shape = img_shape,
+                                                   padding=self.padding,
                         )
 
                     else:
                         # print(f'{self.anchor} contains NaN: {centroid}. Using midpoint')
-                        bbox = data_utils.pad_bbox(
-                            data_utils.pose_bbox(
-                                np.array(list(pose.values())), self.crop_size
-                            ),
-                            padding=self.padding,
+                        bbox = data_utils.pose_bbox(np.array(list(pose.values())), 
+                                                    self.crop_size, 
+                                                    img_shape=img_shape,
+                                                    padding=self.padding,
                         )
                 else:
                     # print(f'{self.anchor} not an available option amongst {pose.keys()}. Using midpoint')
-                    bbox = data_utils.pad_bbox(
-                        data_utils.pose_bbox(
-                            np.array(list(pose.values())), self.crop_size
-                        ),
-                        padding=self.padding,
-                    )
+                    bbox = data_utils.pose_bbox(np.array(list(pose.values())), 
+                                                    self.crop_size, 
+                                                    img_shape=img_shape,
+                                                    padding=self.padding,
+                        )
                 self.profiler.time("Computing bbox coords")
                 #
                 ############################
@@ -333,11 +333,11 @@ class SleapDataset(BaseDataset):
                     mask = features.get_section("masks", frame_ind)
                 else:
                     mask = np.zeros_like(img)
-
+                
                 crop, pose_coords, mask = data_utils.crop_bbox(
-                    img, bbox, np.array(list(pose.values())), mask
+                    img, bbox, np.array(list(pose.values())), mask, size=(self.crop_size + 2 * self.padding)
                 )
-
+                
                 pose = {
                     key.lower(): pose_coords[i] for i, key in enumerate(pose.keys())
                 }
@@ -365,6 +365,7 @@ class SleapDataset(BaseDataset):
 
                         # print(pose)
                         # print(source_coords, sink_coords)
+                        
                         xv, yv = make_grid_vectors(crop.shape[0], crop.shape[1])
                         mask = make_edge_masks(
                             xv,
@@ -388,7 +389,7 @@ class SleapDataset(BaseDataset):
 
                 if self.compute_feats["flows"] and self.return_feats["flows"]:
                     if frame_ind > 0:
-                        prev_crop, _, _ = data_utils.crop_bbox(prev_img, bbox)
+                        prev_crop, _, _ = data_utils.crop_bbox(prev_img, bbox, size=(self.crop_size + 2 * self.padding))
                         flow = compute_optical_flow(
                             prev_crop, crop, downsample_factor=1.0
                         )
@@ -402,7 +403,7 @@ class SleapDataset(BaseDataset):
                         )
                 elif self.return_feats["flows"] and not self.compute_feats["flows"]:
                     flow, _, _ = features.get_section("flows", frame_ind)
-                    flow, _, _ = data_utils.crop_bbox(flow, bbox)
+                    flow, _, _ = data_utils.crop_bbox(flow, bbox, size=(self.crop_size + 2 * self.padding))
                 else:
                     flow = []
 
