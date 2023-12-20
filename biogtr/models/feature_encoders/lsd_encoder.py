@@ -45,13 +45,12 @@ class LSDEncoder(BaseFeatureExtractor):
                 "It appears you passed the lsds in instead of the raw image! \
                              Encoder is currently configured for auxiliary learning task."
             )
-        if isinstance(self.unet, torch.nn.Identity) and x.shape[1] <= 6:
+        if isinstance(self.unet, torch.nn.Identity) and x.shape[1] < 6:
             raise ValueError(
                 "It appears you passed the raw image in instead of lsds! \
                              Encoder is currently not configured for auxiliary learning task."
             )
         x = self.unet(x)
-        print(x.shape)
         return x.view(x.size(0), -1)
 
 

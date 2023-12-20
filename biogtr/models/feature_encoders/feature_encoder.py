@@ -38,7 +38,7 @@ class FeatureEncoder(torch.nn.Module):
         if "pre" in normalize:
             normalize_post_fusion = False
         elif "post" in normalize:
-            normalize_post_fusion = True
+            normalize_pre_fusion = False
         elif normalize == "":
             normalize_post_fusion = False
             normalize_pre_fusion = False
@@ -99,7 +99,11 @@ class FeatureEncoder(torch.nn.Module):
         out_feats = {}
 
         if self.visual_encoder is not None and crops is not None and len(crops):
-            vis_feats = self.visual_encoder(crops)
+            try:
+                vis_feats = self.visual_encoder(crops)
+            except Exception as e:
+                print(crops)
+                raise(e)
             out_feats["visual"] = vis_feats
 
         if self.flow_encoder is not None and flows is not None and len(flows):
@@ -112,10 +116,9 @@ class FeatureEncoder(torch.nn.Module):
             out_feats["lsd"] = lsd_feats
 
         if len(out_feats) == 0:
-            out_feats["combined"] = torch.zeros((crops.shape[0], self.out_dim))
+            out_feats["combined"] = torch.zeros((crops.shape[0], self.out_dim), device=next(self.parameters()).device)
         else:
             out_feats["combined"] = self.out_layer(list(out_feats.values()))
-
         return {
             feat: tensor
             for feat, tensor in out_feats.items()

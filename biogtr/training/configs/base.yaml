@@ -17,7 +17,7 @@ model:
   return_intermediate_dec: False
   feature_dim_attn_head: 1024
   norm: False
-  num_layers_attn_head: 2
+  num_layers_attn_head: 1
   dropout_attn_head: 0.1
   embedding_meta: 
     pos:
