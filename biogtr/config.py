@@ -10,6 +10,8 @@ from biogtr.training.losses import AssoLoss
 from omegaconf import DictConfig, OmegaConf
 from pprint import pprint
 from typing import Union, Iterable
+from pathlib import Path
+import os
 import pytorch_lightning as pl
 import torch
 
@@ -267,12 +269,22 @@ class Config:
 
         else:
             dirpath = checkpoint_params["dirpath"]
+        
+        dirpath = Path(dirpath).resolve()
+        if not Path(dirpath).exists():
+            try:
+                Path(dirpath).mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                print(
+                    f"Cannot create a new folder. Check the permissions to the given Checkpoint directory. \n {e}"
+                )
+        
         _ = checkpoint_params.pop("dirpath")
         checkpointers = []
         monitor = checkpoint_params.pop("monitor")
         for metric in monitor:
             checkpointer = pl.callbacks.ModelCheckpoint(
-                monitor=metric, dirpath=dirpath, **checkpoint_params
+                monitor=metric, dirpath=dirpath, filename=f"{{epoch}}-{{{metric}}}", **checkpoint_params
             )
             checkpointer.CHECKPOINT_NAME_LAST = f"{{epoch}}-best-{{{metric}}}"
             checkpointers.append(checkpointer)
