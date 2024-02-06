@@ -50,8 +50,8 @@ class BaseDataset(Dataset):
         self.n_chunks = n_chunks
         self.seed = seed
 
-        # if self.seed is not None:
-        #     np.random.seed(self.seed)
+        if self.seed is not None:
+            np.random.seed(self.seed)
 
         self.augmentations = (
             data_utils.build_augmentations(augmentations) if augmentations else None
