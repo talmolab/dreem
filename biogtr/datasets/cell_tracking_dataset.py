@@ -85,12 +85,12 @@ class CellTrackingDataset(BaseDataset):
         )
 
         if gt_list is not None:
-            self.gt_list = pd.read_csv(
-                gt_list,
+            self.gt_list = [pd.read_csv(
+                gtf,
                 delimiter=" ",
                 header=None,
                 names=["track_id", "start_frame", "end_frame", "parent_id"],
-            )
+            ) for gtf in gt_list]
         else:
             self.gt_list = None
 
@@ -121,6 +121,7 @@ class CellTrackingDataset(BaseDataset):
         """
         image = self.videos[label_idx]
         gt = self.labels[label_idx]
+        gt_list = self.gt_list[label_idx]
 
         frames = []
 
@@ -143,7 +144,7 @@ class CellTrackingDataset(BaseDataset):
             if self.gt_list is None:
                 unique_instances = np.unique(gt_sec)
             else:
-                unique_instances = self.gt_list["track_id"].unique()
+                unique_instances = gt_list["track_id"].unique()
 
             for instance in unique_instances:
                 # not all instances are in the frame, and they also label the
@@ -180,14 +181,14 @@ class CellTrackingDataset(BaseDataset):
 
             img = torch.Tensor(img).unsqueeze(0)
 
-            for i in range(len(gt_track_ids)):
-                crop = data_utils.crop_bbox(img, bboxes[i])
+            for j in range(len(gt_track_ids)):
+                crop = data_utils.crop_bbox(img, bboxes[j])
 
                 instances.append(
                     Instance(
-                        gt_track_id=gt_track_ids[i],
+                        gt_track_id=gt_track_ids[j],
                         pred_track_id=-1,
-                        bbox=bboxes[i],
+                        bbox=bboxes[j],
                         crop=crop,
                     )
                 )

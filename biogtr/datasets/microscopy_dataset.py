@@ -130,16 +130,17 @@ class MicroscopyDataset(BaseDataset):
             video = data_utils.LazyTiffStack(self.videos[label_idx])
 
         frames = []
-        for i in frame_idx:
+        for frame_id in frame_idx:
+            # print(i)
             instances, gt_track_ids, centroids = [], [], []
 
             img = (
-                video.get_section(i)
+                video.get_section(frame_id)
                 if not isinstance(video, list)
-                else np.array(Image.open(video[i]))
+                else np.array(Image.open(video[frame_id]))
             )
 
-            lf = labels[labels["FRAME"].astype(int) == i.item()]
+            lf = labels[labels["FRAME"].astype(int) == frame_id.item()]
 
             for instance in sorted(lf["TRACK_ID"].unique()):
                 gt_track_ids.append(int(instance))
@@ -170,8 +171,8 @@ class MicroscopyDataset(BaseDataset):
                 if img.shape[2] == 3:
                     img = img.T  # todo: check for edge cases
 
-            for i in range(len(gt_track_ids)):
-                c = centroids[i]
+            for gt_id in range(len(gt_track_ids)):
+                c = centroids[gt_id]
                 bbox = data_utils.pad_bbox(
                     data_utils.get_bbox([int(c[0]), int(c[1])], self.crop_size),
                     padding=self.padding,
@@ -180,17 +181,17 @@ class MicroscopyDataset(BaseDataset):
 
                 instances.append(
                     Instance(
-                        gt_track_id=gt_track_ids[i],
+                        gt_track_id=gt_track_ids[gt_id],
                         pred_track_id=-1,
                         bbox=bbox,
                         crop=crop,
                     )
                 )
-
+                
             frames.append(
                 Frame(
                     video_id=label_idx,
-                    frame_id=i,
+                    frame_id=frame_id,
                     img_shape=img.shape,
                     instances=instances,
                 )
