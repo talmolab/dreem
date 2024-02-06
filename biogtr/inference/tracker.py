@@ -10,7 +10,7 @@ from biogtr.inference import post_processing
 from biogtr.inference.boxes import Boxes
 from scipy.optimize import linear_sum_assignment
 from copy import deepcopy
-
+from math import inf
 
 class Tracker:
     """Tracker class used for assignment based on sliding inference from GTR."""
@@ -25,7 +25,8 @@ class Tracker:
         iou: str = None,
         max_center_dist: float = None,
         persistent_tracking: bool = False,
-        max_gap: int = -1,
+        max_gap: int = inf,
+        max_tracks: int = inf,
         verbose=False,
     ):
         """Initialize a tracker to run inference.
@@ -54,6 +55,7 @@ class Tracker:
         self.max_center_dist = max_center_dist
         self.persistent_tracking = persistent_tracking
         self.verbose = verbose
+        self.max_tracks = max_tracks
 
     def __call__(self, model: GlobalTrackingTransformer, frames: list[Frame]):
         """Wrap around `track` to enable `tracker()` instead of `tracker.track()`.
@@ -369,11 +371,14 @@ class Tracker:
             thresh = (
                 overlap_thresh * id_inds[:, j].sum() if mult_thresh else overlap_thresh
             )
-            if traj_score[i, j] > thresh:
+            if n_traj >= self.max_tracks or traj_score[i, j] > thresh:
                 track_ids[i] = unique_ids[j]
+                query_frame.instances[i].track_score = traj_score[i,j]
 
         for i in range(n_query):
             if track_ids[i] < 0:
+                if self.verbose:
+                    print("Creating new tracks")
                 track_ids[i] = n_traj
                 n_traj += 1
 
