@@ -140,10 +140,12 @@ class SleapDataset(BaseDataset):
         vid_reader = imageio.get_reader(video_name, "ffmpeg")
 
         img = vid_reader.get_data(0)
+        
+        skeleton = video.skeletons[-1]
 
         frames = []
         for i, frame_ind in enumerate(frame_idx):
-            instances, gt_track_ids, shown_poses = [], [], []
+            instances, gt_track_ids, poses, shown_poses, point_scores, instance_score = [], [], [], [], [], []
 
             frame_ind = int(frame_ind)
 
@@ -156,9 +158,13 @@ class SleapDataset(BaseDataset):
                 continue
 
             for instance in lf:
-                gt_track_ids.append(video.tracks.index(instance.track))
+                if instance.track is not None:
+                    gt_track_id = video.tracks.index(instance.track)
+                else:
+                    gt_track_id = -1
+                gt_track_ids.append(gt_track_id)
 
-                shown_poses.append(
+                poses.append(
                     dict(
                         zip(
                             [n.name for n in instance.skeleton.nodes],
@@ -173,8 +179,14 @@ class SleapDataset(BaseDataset):
                         for key, val in instance.items()
                         if not np.isnan(val).any()
                     }
-                    for instance in shown_poses
+                    for instance in poses
                 ]
+                
+                point_scores.append(np.array([point.score if isinstance(point, sio.PredictedPoint) else 1.0 for point in instance.points.values()]))
+                if isinstance(instance, sio.PredictedInstance):
+                    instance_score.append(instance.score)
+                else:
+                    instance_score.append(1.0)
             # augmentations
             if self.augmentations is not None:
                 for transform in self.augmentations:
@@ -212,8 +224,8 @@ class SleapDataset(BaseDataset):
 
             img = tvf.to_tensor(img)
 
-            for i in range(len(gt_track_ids)):
-                pose = shown_poses[i]
+            for j in range(len(gt_track_ids)):
+                pose = shown_poses[j]
 
                 """Check for anchor"""
                 if self.anchor in pose:
@@ -252,9 +264,16 @@ class SleapDataset(BaseDataset):
                     )
 
                 crop = data_utils.crop_bbox(img, bbox)
-
+                
                 instance = Instance(
-                    gt_track_id=gt_track_ids[i], pred_track_id=-1, crop=crop, bbox=bbox
+                    gt_track_id=gt_track_ids[j],
+                    pred_track_id=-1,
+                    crop=crop,
+                    bbox=bbox,
+                    skeleton=skeleton,
+                    pose = np.array(list(poses[j].values())),
+                    point_scores = point_scores[j],
+                    instance_score = instance_score[j]
                 )
 
                 instances.append(instance)
@@ -262,6 +281,7 @@ class SleapDataset(BaseDataset):
             frame = Frame(
                 video_id=label_idx,
                 frame_id=frame_ind,
+                vid_file = video_name,
                 img_shape=img.shape,
                 instances=instances,
             )
