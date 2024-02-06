@@ -1,5 +1,6 @@
 """Module containing training, validation and inference logic."""
 import torch
+import gc
 from biogtr.inference.tracker import Tracker
 from biogtr.inference import metrics
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
@@ -151,6 +152,7 @@ class GTRRunner(LightningModule):
             a dict containing the loss and any other metrics specified by `eval_metrics`
         """
         try:
+            instances = [frame for frame in instances if frame.has_instances()]
             eval_metrics = self.metrics[mode]
             persistent_tracking = self.persistent_tracking[mode]
 
@@ -168,11 +170,14 @@ class GTRRunner(LightningModule):
                 instances_mm = metrics.to_track_eval(instances_pred)
                 clearmot = metrics.get_pymotmetrics(instances_mm, eval_metrics)
                 return_metrics.update(clearmot.to_dict())
+            return_metrics['batch_size'] = len(instances)
         except Exception as e:
             print(
                 f"Failed on frame {instances[0].frame_id} of video {instances[0].video_id}"
             )
             raise (e)
+        gc.collect()
+        torch.cuda.empty_cache()
         return return_metrics
 
     def configure_optimizers(self) -> dict:
@@ -214,5 +219,8 @@ class GTRRunner(LightningModule):
             mode: One of {'train', 'test' or 'val'}. Used as prefix while logging.
         """
         if result:
+            batch_size = result.pop("batch_size")
             for metric, val in result.items():
-                self.log(f"{mode}_{metric}", val, on_step=True, on_epoch=True)
+                if isinstance(val, torch.TensorType):
+                    val = val.item()
+                self.log(f"{mode}_{metric}", val, batch_size=batch_size)
