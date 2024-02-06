@@ -10,9 +10,9 @@ import hydra
 import pandas as pd
 import numpy as np
 import cv2
+from matplotlib import pyplot
 
-
-palette = sns.color_palette("tab10")
+palette = sns.color_palette("tab20")
 
 
 def fill_missing(data: np.ndarray, kind: str = "linear") -> np.ndarray:
@@ -61,13 +61,14 @@ def annotate_video(
     labels: pd.DataFrame,
     key: str,
     color_palette=palette,
-    trails: bool = True,
-    boxes: int = 64,
+    trails: int = 2,
+    boxes: int = (64,64),
     names: bool = True,
-    centroids: bool = True,
+    centroids: int = 4,
     poses=False,
     save_path: str = "debug_animal",
     fps: int = 30,
+    alpha=0.2
 ) -> list:
     """Annotate video frames with labels.
 
@@ -96,9 +97,10 @@ def annotate_video(
         for i in tqdm(sorted(labels["Frame"].unique()), desc="Frame", unit="Frame"):
             frame = video.get_data(i)
             if frame.shape[0] == 1 or frame.shape[-1] == 1:
-                frame = cv2.cvtColor((frame * 255).astype(np.uint8), cv2.COLOR_GRAY2RGB)
+                frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
             else:
-                frame = (frame * 255).astype(np.uint8).copy()
+                frame = frame.copy()
+                
             lf = labels[labels["Frame"] == i]
             for idx, instance in lf.iterrows():
                 if not trails:
@@ -147,15 +149,19 @@ def annotate_video(
 
                             frame = cv2.line(frame, source, target, track_color, 1)
 
-                if (boxes is not None and boxes > 0) or centroids:
+                if (boxes) or centroids:
                     # Get coordinates for detected objects in the current frame.
+                    if isinstance(boxes, int):
+                        boxes = (boxes, boxes)
+                    
+                    box_w, box_h = boxes
                     x = instance["X"]
                     y = instance["Y"]
                     min_x, min_y, max_x, max_y = (
-                        int(x - boxes / 2),
-                        int(y - boxes / 2),
-                        int(x + boxes / 2),
-                        int(y + boxes / 2),
+                        int(x - box_w / 2),
+                        int(y - box_h / 2),
+                        int(x + box_w / 2),
+                        int(y + box_h / 2),
                     )
                     midpt = (int(x), int(y))
 
@@ -180,7 +186,7 @@ def annotate_video(
                     # print(instance[key])
 
                     # Bbox.
-                    if boxes is not None and boxes > 0:
+                    if boxes is not None:
                         frame = cv2.rectangle(
                             frame,
                             (min_x, min_y),
@@ -192,23 +198,24 @@ def annotate_video(
                     # Track trail.
                     if centroids:
                         frame = cv2.circle(
-                            frame, midpt, radius=4, color=track_color, thickness=-1
+                            frame, midpt, radius=centroids, color=track_color, thickness=-1
                         )
                         for i in range(0, len(track_trails[pred_track_id]) - 1):
-                            frame = cv2.circle(
-                                frame,
+                            frame = cv2.addWeighted(cv2.circle(
+                                frame.copy(),
                                 track_trails[pred_track_id][i],
                                 radius=4,
                                 color=track_color,
                                 thickness=-1,
-                            )
-                            frame = cv2.line(
-                                frame,
-                                track_trails[pred_track_id][i],
-                                track_trails[pred_track_id][i + 1],
-                                color=track_color,
-                                thickness=2,
-                            )
+                            ), alpha, frame, 1-alpha, 0)
+                            if trails:
+                                frame = cv2.line(
+                                    frame,
+                                    track_trails[pred_track_id][i],
+                                    track_trails[pred_track_id][i + 1],
+                                    color=track_color,
+                                    thickness=trails,
+                                )
 
                 # Track name.
                 if names:
