@@ -8,6 +8,7 @@ channels:
 
 dependencies:
   - python=3.9
+  - conda-forge::opencv <4.9.0
   - pytorch
   - cpuonly
   - torchvision
@@ -18,7 +19,6 @@ dependencies:
   - albumentations
   - pip
   - pip:
-    - opencv-python-headless
     - matplotlib
     - sleap-io
     - "--editable=.[dev]"

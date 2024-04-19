@@ -85,14 +85,9 @@ class Instance:
             self._pose = pose
 
         elif self.bbox.shape[0]:
-            self._pose = {
-                "centroid": np.array(
-                    [
-                        (self.bbox[:, -1] + self.bbox[:, 1]) / 2,
-                        (self.bbox[:, -2] + self.bbox[:, 0]) / 2,
-                    ]
-                )
-            }
+
+            y1, x1, y2, x2 = self.bbox.squeeze()
+            self._pose = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
 
         else:
             self._pose = {}
@@ -388,14 +383,8 @@ class Instance:
             self._pose = pose
 
         elif self.bbox.shape[0]:
-            self._pose = {
-                "centroid": np.array(
-                    [
-                        (self.bbox[:, -1] + self.bbox[:, 1]) / 2,
-                        (self.bbox[:, -2] + self.bbox[:, 0]) / 2,
-                    ]
-                )
-            }
+            y1, x1, y2, x2 = self.bbox.squeeze()
+            self._pose = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
 
         else:
             self._pose = {}
