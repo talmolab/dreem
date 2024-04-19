@@ -37,6 +37,7 @@ def main(cfg: DictConfig):
     Args:
         cfg: The config dict parsed by `hydra`
     """
+    torch.set_float32_matmul_precision('medium')
     train_cfg = Config(cfg)
 
     # update with parameters for batch train job
@@ -79,7 +80,7 @@ def main(cfg: DictConfig):
         if cfg.view_batch.no_train:
             return
 
-    model = train_cfg.get_gtr_runner()
+    model = train_cfg.get_gtr_runner() #TODO see if we can use torch.compile()
 
     logger = train_cfg.get_logger()
 

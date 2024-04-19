@@ -104,9 +104,9 @@ class Config:
             model = GTRRunner.load_from_checkpoint(
                 self.cfg.model.ckpt_path,
                 tracker_cfg=tracker_params,
-                train_metrics=self.cfg.runner.train_metrics,
-                val_metrics=self.cfg.runner.val_metrics,
-                test_metrics=self.cfg.runner.test_metrics,
+                train_metrics=self.cfg.runner.metrics.train,
+                val_metrics=self.cfg.runner.metrics.val,
+                test_metrics=self.cfg.runner.metrics.test
             )
 
         else:
@@ -241,7 +241,7 @@ class Config:
             A Logger with specified params
         """
         logger_params = OmegaConf.to_container(self.cfg.logging, resolve=True)
-        return init_logger(logger_params)
+        return init_logger(logger_params, OmegaConf.to_container(self.cfg ,resolve=True))
 
     def get_early_stopping(self) -> pl.callbacks.EarlyStopping:
         """Getter for lightning early stopping callback.
@@ -313,11 +313,16 @@ class Config:
             self.set_hparams({"trainer.accelerator": accelerator})
         if "devices" not in self.cfg.trainer:
             self.set_hparams({"trainer.devices": devices})
-
+        
         trainer_params = self.cfg.trainer
-
+        if "profiler" in trainer_params:
+            profiler = pl.profilers.AdvancedProfiler(filename="profile.txt")
+            trainer_params.pop("profiler")
+        else:
+            profiler = None
         return pl.Trainer(
             callbacks=callbacks,
             logger=logger,
+            profiler=profiler,
             **trainer_params,
         )
