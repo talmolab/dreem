@@ -1,4 +1,5 @@
 """Module containing training, validation and inference logic."""
+
 import torch
 import gc
 from biogtr.inference.tracker import Tracker
@@ -170,13 +171,13 @@ class GTRRunner(LightningModule):
                 instances_mm = metrics.to_track_eval(instances_pred)
                 clearmot = metrics.get_pymotmetrics(instances_mm, eval_metrics)
                 return_metrics.update(clearmot.to_dict())
-            return_metrics['batch_size'] = len(instances)
+            return_metrics["batch_size"] = len(instances)
         except Exception as e:
             print(
                 f"Failed on frame {instances[0].frame_id} of video {instances[0].video_id}"
             )
             raise (e)
-        
+
         return return_metrics
 
     def configure_optimizers(self) -> dict:
@@ -223,7 +224,11 @@ class GTRRunner(LightningModule):
                 if isinstance(val, torch.TensorType):
                     val = val.item()
                 self.log(f"{mode}_{metric}", val, batch_size=batch_size)
-                
+
     def on_validation_epoch_end(self):
+        """Execute hook for validation end.
+
+        Currently, we simply clear the gpu cache and do garbage collection.
+        """
         gc.collect()
         torch.cuda.empty_cache()

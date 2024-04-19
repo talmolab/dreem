@@ -194,7 +194,7 @@ class TrackQueue:
             vid_name = frame.video
         else:
             vid_name = frame.video.filename
-        #traj_score = frame.get_traj_score()  TODO: figure out better way to save trajectory scores.
+        # traj_score = frame.get_traj_score()  TODO: figure out better way to save trajectory scores.
         frame_meta = (vid_id, frame_id, vid_name, img_shape.cpu().tolist())
 
         pred_tracks = []
@@ -248,7 +248,11 @@ class TrackQueue:
             for video_id, frame_id, vid_name, img_shape, instance in instances:
                 if (video_id, frame_id) not in frames.keys():
                     frame = Frame(
-                        video_id, frame_id, img_shape=img_shape, instances=[instance], vid_file=vid_name
+                        video_id,
+                        frame_id,
+                        img_shape=img_shape,
+                        instances=[instance],
+                        vid_file=vid_name,
                     )
                     frames[(video_id, frame_id)] = frame
                 else:

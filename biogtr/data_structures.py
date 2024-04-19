@@ -1,4 +1,5 @@
 """Module containing data classes such as Instances and Frames."""
+
 import torch
 import sleap_io as sio
 import numpy as np
@@ -19,7 +20,7 @@ class Instance:
         features: ArrayLike = torch.tensor([]),
         track_score: float = -1.0,
         point_scores: ArrayLike = None,
-        instance_score:float = -1.0,
+        instance_score: float = -1.0,
         skeleton: sio.Skeleton = None,
         pose: ArrayLike = None,
         device: str = None,
@@ -32,6 +33,11 @@ class Instance:
             bbox: The bounding box coordinate of the instance. Defaults to an empty tensor.
             crop: The crop of the instance.
             features: The reid features extracted from the CNN backbone used in the transformer.
+            track_score: The track score output from the association matrix.
+            point_scores: The point scores from sleap.
+            instance_score: The instance scores from sleap.
+            skeleton: The sleap skeleton used for the instance.
+            pose: The pose matrix for the instance containing nodes x 2 points.
             device: String representation of the device the instance should be on.
         """
         if gt_track_id is not None:
@@ -43,7 +49,7 @@ class Instance:
             self._pred_track_id = torch.tensor([pred_track_id])
         else:
             self._pred_track_id = torch.tensor([])
-            
+
         if skeleton is None:
             self._skeleton = sio.Skeleton(["centroid"])
         else:
@@ -53,10 +59,10 @@ class Instance:
             self._bbox = torch.tensor(bbox)
         else:
             self._bbox = bbox
-            
+
         if self._bbox.shape[0] and len(self._bbox.shape) == 1:
             self._bbox = self._bbox.unsqueeze(0)
-            
+
         if not isinstance(crop, torch.Tensor):
             self._crop = torch.tensor(crop)
         else:
@@ -74,20 +80,25 @@ class Instance:
 
         if self._features.shape[0] and len(self._features.shape) == 1:
             self._features = self._features.unsqueeze(0)
-            
+
         if pose is not None:
             self._pose = pose
-            
+
         elif self.bbox.shape[0]:
-            self._pose = np.array([(self.bbox[:,-1] + self.bbox[:,1])/2,(self.bbox[:,-2] + self.bbox[:,0])/2])
-            
+            self._pose = np.array(
+                [
+                    (self.bbox[:, -1] + self.bbox[:, 1]) / 2,
+                    (self.bbox[:, -2] + self.bbox[:, 0]) / 2,
+                ]
+            )
+
         else:
-            self._pose = np.empty((0,2))
-            
+            self._pose = np.empty((0, 2))
+
         self._track_score = track_score
         self._instance_score = instance_score
-        
-        if point_scores is not None: 
+
+        if point_scores is not None:
             self._point_scores = point_scores
         else:
             self._point_scores = np.zeros_like(self.pose)
@@ -124,28 +135,39 @@ class Instance:
         self._features = self._features.to(map_location)
         self.device = map_location
         return self
-    
-    def to_slp(self, track_lookup: dict = {}) -> (sio.PredictedInstance, dict[int, sio.Track]):
-        """Convert instance to sleap_io.PredictedInstance object
-        
+
+    def to_slp(
+        self, track_lookup: dict[int, sio.Track] = {}
+    ) -> tuple[sio.PredictedInstance, dict[int, sio.Track]]:
+        """Convert instance to sleap_io.PredictedInstance object.
+
+        Args:
+            track_lookup: A track look up dictionary containing track_id:sio.Track.
         Returns: A sleap_io.PredictedInstance with necessary metadata
+        and a track_lookup dictionary to persist tracks.
         """
         try:
             track_id = self.pred_track_id.item()
             if track_id not in track_lookup:
                 track_lookup[track_id] = sio.Track(name=self.pred_track_id.item())
-            
+
             track = track_lookup[track_id]
-                
-            return sio.PredictedInstance.from_numpy(points=self.pose,
-                                                    skeleton = self.skeleton,
-                                                point_scores=self.point_scores,
-                                                instance_score = self.instance_score,
-                                                tracking_score = self.track_score,
-                                                track = track), track_lookup
+
+            return (
+                sio.PredictedInstance.from_numpy(
+                    points=self.pose,
+                    skeleton=self.skeleton,
+                    point_scores=self.point_scores,
+                    instance_score=self.instance_score,
+                    tracking_score=self.track_score,
+                    track=track,
+                ),
+                track_lookup,
+            )
         except Exception as e:
             print(self.pose.shape, self.point_scores.shape)
-            raise(e)
+            raise (e)
+
     @property
     def device(self) -> str:
         """The device the instance is on.
@@ -343,56 +365,111 @@ class Instance:
             return False
         else:
             return True
-    @property    
+
+    @property
     def pose(self) -> ArrayLike:
+        """Get the pose of the instance.
+
+        Returns:
+            A nodes x 2 array containing the pose coordinates.
+        """
         return self._pose
-    
+
     @pose.setter
     def pose(self, pose: ArrayLike) -> None:
+        """Set the pose of the instance.
+
+        Args:
+            pose: A nodes x 2 array containing the pose coordinates.
+        """
         self._pose = pose
-        
+
     def has_pose(self) -> bool:
+        """Check if the instance has a pose.
+
+        Returns True if the instance has a pose.
+        """
         if self.pose.shape[0]:
             return True
         return False
-    
+
     @property
     def shown_pose(self) -> ArrayLike:
+        """Get the pose with shown nodes only.
+
+        Returns: A shown_nodes x 2 pose containing nonnan values from `pose`.
+        """
         pose = self.pose
         return pose[~np.isnan(pose).any(axis=1)]
 
     @property
     def skeleton(self) -> sio.Skeleton:
+        """Get the skeleton associated with the instance.
+
+        Returns: The sio.Skeleton associated with the instance.
+        """
         return self._skeleton
-    
+
     @skeleton.setter
     def skeleton(self, skeleton: sio.Skeleton) -> None:
+        """Set the skeleton associated with the instance.
+
+        Args:
+            skeleton: The sio.Skeleton associated with the instance.
+        """
         self._skeleton = skeleton
-        
+
     @property
     def point_scores(self) -> ArrayLike:
+        """Get the point scores associated with the pose prediction.
+
+        Returns: a vector of shape n containing the point scores outputed from sleap associated with pose predictions.
+        """
         return self._point_scores
-    
+
     @point_scores.setter
     def point_scores(self, point_scores: ArrayLike) -> None:
+        """Set the point scores associated with the pose prediction.
+
+        Args:
+            point_scores: a vector of shape n containing the point scores
+            outputted from sleap associated with pose predictions.
+        """
         self._point_scores = point_scores
-    
+
     @property
     def instance_score(self) -> float:
+        """Get the pose prediction score associated with the instance.
+
+        Returns: a float from 0-1 representing an instance_score.
+        """
         return self._instance_score
-    
+
     @instance_score.setter
     def instance_score(self, instance_score: float) -> None:
+        """Set the pose prediction score associated with the instance.
+
+        Args:
+            instance_score: a float from 0-1 representing an instance_score.
+        """
         self._instance_score = instance_score
-        
+
     @property
     def track_score(self) -> float:
+        """Get the track_score of the instance.
+
+        Returns: A float from 0-1 representing the output used in the tracker for assignment.
+        """
         return self._track_score
-    
+
     @track_score.setter
     def track_score(self, track_score: float) -> None:
+        """Set the track_score of the instance.
+
+        Args:
+            track_score: A float from 0-1 representing the output used in the tracker for assignment.
+        """
         self._track_score = track_score
-    
 
 
 class Frame:
@@ -429,11 +506,11 @@ class Frame:
         """
         self._video_id = torch.tensor([video_id])
         self._frame_id = torch.tensor([frame_id])
-        
+
         try:
             self._video = sio.Video(vid_file)
         except ValueError as e:
-            #warnings.warn(f"{e}")
+            # warnings.warn(f"{e}")
             self._video = vid_file
 
         if isinstance(img_shape, torch.Tensor):
@@ -505,20 +582,31 @@ class Frame:
 
         self._device = map_location
         return self
-    
-    def to_slp(self, track_lookup = {}) -> (sio.LabeledFrame, dict[int, sio.Track]):
+
+    def to_slp(
+        self, track_lookup: dict[int : sio.Track] = {}
+    ) -> tuple[sio.LabeledFrame, dict[int, sio.Track]]:
         """Convert Frame to sleap_io.LabeledFrame object.
-        
-        Returns: A LabeledFrame object with necessary metadata.
+
+        Args:
+            track_lookup: A lookup dictionary containing the track_id and sio.Track for persistence
+
+        Returns: A tuple containing a LabeledFrame object with necessary metadata and
+        a lookup dictionary containing the track_id and sio.Track for persistence
         """
         slp_instances = []
         for instance in self.instances:
             slp_instance, track_lookup = instance.to_slp(track_lookup=track_lookup)
             slp_instances.append(slp_instance)
-        return sio.LabeledFrame(video = self.video,
-                               frame_idx = self.frame_id.item(),
-                               instances = slp_instances), track_lookup    
-    
+        return (
+            sio.LabeledFrame(
+                video=self.video,
+                frame_idx=self.frame_id.item(),
+                instances=slp_instances,
+            ),
+            track_lookup,
+        )
+
     @property
     def device(self) -> str:
         """The device the frame is on.
@@ -567,7 +655,7 @@ class Frame:
             A torch tensor containing the index of the frame in the video.
         """
         return self._frame_id
-    
+
     @frame_id.setter
     def frame_id(self, frame_id: int) -> None:
         """Set the frame index of the frame.
@@ -578,19 +666,33 @@ class Frame:
             frame_id: The int index of the frame in the full video.
         """
         self._frame_id = torch.tensor([frame_id])
-        
+
     @property
     def video(self) -> Union[sio.Video, str]:
+        """Get the video associated with the frame.
+
+        Returns: An sio.Video object representing the video or a placeholder string
+        if it is not possible to create the sio.Video
+        """
         return self._video
-    
+
     @video.setter
     def video(self, video_filename: str) -> None:
+        """Set the video associated with the frame.
+
+        Note: we try to store the video in an sio.Video object.
+        However, if this is not possible (e.g. incompatible format or missing filepath)
+        then we simply store the string.
+
+        Args:
+            video_filename: string path to video_file
+        """
         try:
             self._video = video_filename
         except ValueError as e:
-            #warnings.warn(f"{e}")
+            # warnings.warn(f"{e}")
             self._video = video_filename
-    
+
     @property
     def img_shape(self) -> torch.Tensor:
         """The shape of the pre-cropped frame.
@@ -829,7 +931,7 @@ class Frame:
             return torch.cat([instance.crop for instance in self.instances], dim=0)
         except Exception as e:
             print(self)
-            raise(e)
+            raise (e)
 
     def has_features(self):
         """Check if any of frames instances has reid features already computed.
@@ -850,4 +952,3 @@ class Frame:
         if not self.has_instances():
             return torch.tensor([])
         return torch.cat([instance.features for instance in self.instances], dim=0)
-
