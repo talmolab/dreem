@@ -384,7 +384,21 @@ class Instance:
         Args:
             pose: A nodes x 2 array containing the pose coordinates.
         """
-        self._pose = pose
+        if pose is not None:
+            self._pose = pose
+
+        elif self.bbox.shape[0]:
+            self._pose = {
+                "centroid": np.array(
+                    [
+                        (self.bbox[:, -1] + self.bbox[:, 1]) / 2,
+                        (self.bbox[:, -2] + self.bbox[:, 0]) / 2,
+                    ]
+                )
+            }
+
+        else:
+            self._pose = {}
 
     def has_pose(self) -> bool:
         """Check if the instance has a pose.
