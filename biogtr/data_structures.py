@@ -3,7 +3,6 @@
 import torch
 import sleap_io as sio
 import numpy as np
-import warnings
 from numpy.typing import ArrayLike
 from typing import Union, List
 
@@ -22,7 +21,7 @@ class Instance:
         point_scores: ArrayLike = None,
         instance_score: float = -1.0,
         skeleton: sio.Skeleton = None,
-        pose: dict[str, ArrayLike] = None,
+        pose: dict[str, ArrayLike] = np.array([]),
         device: str = None,
     ):
         """Initialize Instance.
@@ -162,8 +161,10 @@ class Instance:
                 track_lookup,
             )
         except Exception as e:
-            print(self.pose.shape, self.point_scores.shape)
-            raise (e)
+            print(
+                f"Pose shape: {self.pose.shape}, Pose score shape {self.point_scores.shape}"
+            )
+            raise RuntimeError(f"Failed to convert to sio.PredictedInstance: {e}")
 
     @property
     def device(self) -> str:
@@ -514,8 +515,7 @@ class Frame:
 
         try:
             self._video = sio.Video(vid_file)
-        except ValueError as e:
-            # warnings.warn(f"{e}")
+        except ValueError:
             self._video = vid_file
 
         if isinstance(img_shape, torch.Tensor):
@@ -694,8 +694,7 @@ class Frame:
         """
         try:
             self._video = video_filename
-        except ValueError as e:
-            # warnings.warn(f"{e}")
+        except ValueError:
             self._video = video_filename
 
     @property

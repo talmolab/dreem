@@ -10,7 +10,6 @@ from biogtr.inference.track_queue import TrackQueue
 from biogtr.inference import post_processing
 from biogtr.inference.boxes import Boxes
 from scipy.optimize import linear_sum_assignment
-from copy import deepcopy
 from math import inf
 
 

@@ -221,7 +221,7 @@ class GTRRunner(LightningModule):
         if result:
             batch_size = result.pop("batch_size")
             for metric, val in result.items():
-                if isinstance(val, torch.TensorType):
+                if isinstance(val, torch.Tensor):
                     val = val.item()
                 self.log(f"{mode}_{metric}", val, batch_size=batch_size)
 

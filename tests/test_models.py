@@ -2,7 +2,6 @@
 
 import pytest
 import torch
-import numpy as np
 from biogtr.data_structures import Frame, Instance
 from biogtr.models.attention_head import MLP, ATTWeightHead
 from biogtr.models.embedding import Embedding
@@ -124,6 +123,7 @@ def test_embedding_kwargs():
 
     lp_args = {"learn_pos_emb_num": 100, "over_boxes": False}
 
+    emb = Embedding()
     lp_with_args = emb._learned_pos_embedding(boxes, **lp_args)
 
     assert not torch.equal(lp_no_args, lp_with_args)
@@ -134,6 +134,7 @@ def test_embedding_kwargs():
 
     lt_args = {"learn_temp_emb_num": 100}
 
+    emb = Embedding()
     lt_with_args = emb._learned_temp_embedding(times, **lt_args)
 
     assert not torch.equal(lt_no_args, lt_with_args)
