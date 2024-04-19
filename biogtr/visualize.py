@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import cv2
 from matplotlib import pyplot
+import gc
 
 palette = sns.color_palette("tab20")
 
@@ -64,9 +65,10 @@ def annotate_video(
     trails: int = 2,
     boxes: int = (64,64),
     names: bool = True,
+    track_scores=0.5,
     centroids: int = 4,
     poses=False,
-    save_path: str = "debug_animal",
+    save_path: str = "debug_animal.mp4",
     fps: int = 30,
     alpha=0.2
 ) -> list:
@@ -98,8 +100,8 @@ def annotate_video(
             frame = video.get_data(i)
             if frame.shape[0] == 1 or frame.shape[-1] == 1:
                 frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-            else:
-                frame = frame.copy()
+            # else:
+            #     frame = frame.copy()
                 
             lf = labels[labels["Frame"] == i]
             for idx, instance in lf.iterrows():
@@ -169,6 +171,11 @@ def annotate_video(
 
                     # assert idx < len(instance[key])
                     pred_track_id = instance[key]
+        
+                    if "Track_score" in instance.index:
+                        track_score = instance['Track_score']
+                    else:
+                        track_scores = 0
 
                     # Add midpt to track trail.
                     if pred_track_id not in list(track_trails.keys()):
@@ -202,7 +209,7 @@ def annotate_video(
                         )
                         for i in range(0, len(track_trails[pred_track_id]) - 1):
                             frame = cv2.addWeighted(cv2.circle(
-                                frame.copy(),
+                                frame, #.copy(),
                                 track_trails[pred_track_id][i],
                                 radius=4,
                                 color=track_color,
@@ -218,11 +225,20 @@ def annotate_video(
                                 )
 
                 # Track name.
+                name_str = ""
+                
                 if names:
+                    name_str += f"track_{pred_track_id}"
+                if names and track_scores:
+                    name_str += " | "
+                if track_scores:
+                    name_str += f"score: {track_score:0.3f}"
+                
+                if len(name_str) > 0:
                     frame = cv2.putText(
                         frame,
                         # f"idx:{idx} | track_{pred_track_id}",
-                        f"track_{pred_track_id}",
+                        name_str,
                         org=(int(min_x), max(0, int(min_y) - 10)),
                         fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale=0.9,
@@ -230,6 +246,8 @@ def annotate_video(
                         thickness=2,
                     )
             writer.append_data(frame)
+            # if i % fps == 0:
+            #     gc.collect()
 
     except Exception as e:
         writer.close()

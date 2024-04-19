@@ -32,6 +32,7 @@ def export_trajectories(frames_pred: list[Frame], save_path: str = None):
     frame_ids = []
     X, Y = [], []
     pred_track_ids = []
+    track_scores = []
     for frame in frames_pred:
         for i, instance in enumerate(frame.instances):
             frame_ids.append(frame.frame_id.item())
@@ -40,12 +41,14 @@ def export_trajectories(frames_pred: list[Frame], save_path: str = None):
             x = (bbox[3] + bbox[1]) / 2
             X.append(x.item())
             Y.append(y.item())
+            track_scores.append(instance.track_score)
             pred_track_ids.append(instance.pred_track_id.item())
 
     save_dict["Frame"] = frame_ids
     save_dict["X"] = X
     save_dict["Y"] = Y
     save_dict["Pred_track_id"] = pred_track_ids
+    save_dict["Track_score"] = track_scores
     save_df = pd.DataFrame(save_dict)
     if save_path:
         save_df.to_csv(save_path, index=False)

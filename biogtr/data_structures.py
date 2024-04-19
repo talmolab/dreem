@@ -2,6 +2,7 @@
 import torch
 import sleap_io as sio
 import numpy as np
+import warnings
 from numpy.typing import ArrayLike
 from typing import Union, List
 
@@ -16,9 +17,9 @@ class Instance:
         bbox: ArrayLike = torch.empty((0, 4)),
         crop: ArrayLike = torch.tensor([]),
         features: ArrayLike = torch.tensor([]),
-        track_score: float = 0.0,
+        track_score: float = -1.0,
         point_scores: ArrayLike = None,
-        instance_score:float = 0.0,
+        instance_score:float = -1.0,
         skeleton: sio.Skeleton = None,
         pose: ArrayLike = None,
         device: str = None,
@@ -356,6 +357,11 @@ class Instance:
         return False
     
     @property
+    def shown_pose(self) -> ArrayLike:
+        pose = self.pose
+        return pose[~np.isnan(pose).any(axis=1)]
+
+    @property
     def skeleton(self) -> sio.Skeleton:
         return self._skeleton
     
@@ -424,7 +430,11 @@ class Frame:
         self._video_id = torch.tensor([video_id])
         self._frame_id = torch.tensor([frame_id])
         
-        self._video = sio.Video(vid_file)
+        try:
+            self._video = sio.Video(vid_file)
+        except ValueError as e:
+            #warnings.warn(f"{e}")
+            self._video = vid_file
 
         if isinstance(img_shape, torch.Tensor):
             self._img_shape = img_shape
@@ -454,7 +464,7 @@ class Frame:
         """
         return (
             "Frame("
-            f"video={self._video.filename}, "
+            f"video={self._video.filename if isinstance(self._video, sio.Video) else self._video}, "
             f"video_id={self._video_id.item()}, "
             f"frame_id={self._frame_id.item()}, "
             f"img_shape={self._img_shape}, "
@@ -570,12 +580,16 @@ class Frame:
         self._frame_id = torch.tensor([frame_id])
         
     @property
-    def video(self) -> sio.Video:
+    def video(self) -> Union[sio.Video, str]:
         return self._video
     
     @video.setter
     def video(self, video_filename: str) -> None:
-        self._video = sio.Video(video_filename)
+        try:
+            self._video = video_filename
+        except ValueError as e:
+            #warnings.warn(f"{e}")
+            self._video = video_filename
     
     @property
     def img_shape(self) -> torch.Tensor:
@@ -811,7 +825,11 @@ class Frame:
         """
         if not self.has_instances():
             return torch.tensor([])
-        return torch.cat([instance.crop for instance in self.instances], dim=0)
+        try:
+            return torch.cat([instance.crop for instance in self.instances], dim=0)
+        except Exception as e:
+            print(self)
+            raise(e)
 
     def has_features(self):
         """Check if any of frames instances has reid features already computed.

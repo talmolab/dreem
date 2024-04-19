@@ -3,6 +3,7 @@
 import warnings
 from biogtr.data_structures import Frame
 from collections import deque
+import numpy as np
 
 
 class TrackQueue:
@@ -13,7 +14,7 @@ class TrackQueue:
     and will be compared against later frames for assignment.
     """
 
-    def __init__(self, window_size: int, max_gap: int = 1, verbose: bool = False):
+    def __init__(self, window_size: int, max_gap: int = np.inf, verbose: bool = False):
         """Initialize track queue.
 
         Args:
@@ -122,7 +123,7 @@ class TrackQueue:
         Returns:
             An int representing the current number of trajectories in the queue.
         """
-        return len(self._queues)
+        return len(self._queues.keys())
 
     @property
     def tracks(self) -> list:
@@ -189,7 +190,11 @@ class TrackQueue:
         vid_id = frame.video_id.item()
         frame_id = frame.frame_id.item()
         img_shape = frame.img_shape
-        vid_name = frame.video.filename
+        if isinstance(frame.video, str):
+            vid_name = frame.video
+        else:
+            vid_name = frame.video.filename
+        #traj_score = frame.get_traj_score()  TODO: figure out better way to save trajectory scores.
         frame_meta = (vid_id, frame_id, vid_name, img_shape.cpu().tolist())
 
         pred_tracks = []
