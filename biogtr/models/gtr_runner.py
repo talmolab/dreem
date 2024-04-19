@@ -23,7 +23,7 @@ class GTRRunner(LightningModule):
         optimizer_cfg: dict = None,
         scheduler_cfg: dict = None,
         metrics: dict[str, list[str]] = {
-            "train": ["num_switches"],
+            "train": [],
             "val": ["num_switches"],
             "test": ["num_switches"],
         },
@@ -176,8 +176,7 @@ class GTRRunner(LightningModule):
                 f"Failed on frame {instances[0].frame_id} of video {instances[0].video_id}"
             )
             raise (e)
-        gc.collect()
-        torch.cuda.empty_cache()
+        
         return return_metrics
 
     def configure_optimizers(self) -> dict:
@@ -224,3 +223,7 @@ class GTRRunner(LightningModule):
                 if isinstance(val, torch.TensorType):
                     val = val.item()
                 self.log(f"{mode}_{metric}", val, batch_size=batch_size)
+                
+    def on_validation_epoch_end(self):
+        gc.collect()
+        torch.cuda.empty_cache()
