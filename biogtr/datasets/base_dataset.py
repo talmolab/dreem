@@ -89,7 +89,7 @@ class BaseDataset(Dataset):
 
             if n_chunks > 0 and n_chunks < len(self.chunked_frame_idx):
                 sample_idx = np.random.choice(
-                    np.arange(len(self.chunked_frame_idx)), n_chunks
+                    np.arange(len(self.chunked_frame_idx)), n_chunks, replace=False
                 )
 
                 self.chunked_frame_idx = [self.chunked_frame_idx[i] for i in sample_idx]
