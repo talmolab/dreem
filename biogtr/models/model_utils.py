@@ -1,4 +1,5 @@
 """Module containing model helper functions."""
+
 from copy import deepcopy
 from typing import List, Tuple, Iterable
 from pytorch_lightning import loggers
@@ -26,7 +27,7 @@ def get_boxes_times(frames: List[Frame]) -> Tuple[torch.Tensor, torch.Tensor]:
         bbox[:, [1, 3]] /= h
 
         boxes.append(bbox)
-        times.append(torch.full((bbox.shape[0],), fidx)) #- len(frames) //2
+        times.append(torch.full((bbox.shape[0],), fidx))
 
     boxes = torch.cat(boxes, dim=0)  # N x 4
     times = torch.cat(times, dim=0).to(boxes.device)  # N
@@ -133,7 +134,7 @@ def init_scheduler(optimizer: torch.optim.Optimizer, config: dict):
     return scheduler_class(optimizer, **scheduler_params)
 
 
-def init_logger(logger_params: dict, config: dict=None):
+def init_logger(logger_params: dict, config: dict = None):
     """Initialize logger based on config parameters.
 
     Allows more flexibility in choosing which logger to use.
