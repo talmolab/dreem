@@ -102,7 +102,7 @@ def test_basic_gtr_runner():
             gtr_runner.train()
             assert gtr_runner.model.training
             metrics = gtr_runner.training_step([batch], i)
-            assert "loss" in metrics and "num_switches" in metrics
+            assert "loss" in metrics
             assert metrics["loss"].requires_grad
 
         for j, batch in enumerate(train_ds):

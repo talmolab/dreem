@@ -22,7 +22,7 @@ class Instance:
         point_scores: ArrayLike = None,
         instance_score: float = -1.0,
         skeleton: sio.Skeleton = None,
-        pose: ArrayLike = None,
+        pose: dict[str, ArrayLike] = None,
         device: str = None,
     ):
         """Initialize Instance.
@@ -37,7 +37,7 @@ class Instance:
             point_scores: The point scores from sleap.
             instance_score: The instance scores from sleap.
             skeleton: The sleap skeleton used for the instance.
-            pose: The pose matrix for the instance containing nodes x 2 points.
+            pose: A dictionary containing the node name and corresponding point.
             device: String representation of the device the instance should be on.
         """
         if gt_track_id is not None:
@@ -85,15 +85,17 @@ class Instance:
             self._pose = pose
 
         elif self.bbox.shape[0]:
-            self._pose = np.array(
-                [
-                    (self.bbox[:, -1] + self.bbox[:, 1]) / 2,
-                    (self.bbox[:, -2] + self.bbox[:, 0]) / 2,
-                ]
-            )
+            self._pose = {
+                "centroid": np.array(
+                    [
+                        (self.bbox[:, -1] + self.bbox[:, 1]) / 2,
+                        (self.bbox[:, -2] + self.bbox[:, 0]) / 2,
+                    ]
+                )
+            }
 
         else:
-            self._pose = np.empty((0, 2))
+            self._pose = {}
 
         self._track_score = track_score
         self._instance_score = instance_score
@@ -367,16 +369,16 @@ class Instance:
             return True
 
     @property
-    def pose(self) -> ArrayLike:
+    def pose(self) -> dict[str, ArrayLike]:
         """Get the pose of the instance.
 
         Returns:
-            A nodes x 2 array containing the pose coordinates.
+            A dictionary containing the node and corresponding x,y points
         """
         return self._pose
 
     @pose.setter
-    def pose(self, pose: ArrayLike) -> None:
+    def pose(self, pose: dict[str, ArrayLike]) -> None:
         """Set the pose of the instance.
 
         Args:
@@ -389,18 +391,18 @@ class Instance:
 
         Returns True if the instance has a pose.
         """
-        if self.pose.shape[0]:
+        if len(self.pose):
             return True
         return False
 
     @property
-    def shown_pose(self) -> ArrayLike:
+    def shown_pose(self) -> dict[str, ArrayLike]:
         """Get the pose with shown nodes only.
 
-        Returns: A shown_nodes x 2 pose containing nonnan values from `pose`.
+        Returns: A dictionary filtered by nodes that are shown (points are not nan).
         """
         pose = self.pose
-        return pose[~np.isnan(pose).any(axis=1)]
+        return {node: point for node, point in pose.items() if not np.isna(point).any()}
 
     @property
     def skeleton(self) -> sio.Skeleton:

@@ -18,8 +18,8 @@ class CellTrackingDataset(BaseDataset):
 
     def __init__(
         self,
-        raw_images: list[str],
-        gt_images: list[str],
+        raw_images: list[list[str]],
+        gt_images: list[list[str]],
         padding: int = 5,
         crop_size: int = 20,
         chunk: bool = False,
@@ -28,7 +28,7 @@ class CellTrackingDataset(BaseDataset):
         augmentations: Optional[dict] = None,
         n_chunks: Union[int, float] = 1.0,
         seed: int = None,
-        gt_list: str = None,
+        gt_list: list[str] = None,
     ):
         """Initialize CellTrackingDataset.
 
@@ -125,7 +125,11 @@ class CellTrackingDataset(BaseDataset):
         """
         image = self.videos[label_idx]
         gt = self.labels[label_idx]
-        gt_list = self.gt_list[label_idx]
+
+        if self.gt_list is not None:
+            gt_list = self.gt_list[label_idx]
+        else:
+            gt_list = None
 
         frames = []
 
@@ -145,7 +149,7 @@ class CellTrackingDataset(BaseDataset):
                     np.uint8
                 )
 
-            if self.gt_list is None:
+            if gt_list is None:
                 unique_instances = np.unique(gt_sec)
             else:
                 unique_instances = gt_list["track_id"].unique()
