@@ -1,4 +1,5 @@
 """Module containing different loss functions to be optimized."""
+
 from biogtr.data_structures import Frame
 from biogtr.models.model_utils import get_boxes_times
 from torch import nn

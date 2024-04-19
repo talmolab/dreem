@@ -2,6 +2,7 @@
 
 Used for training a single model or deploying a batch train job on RUNAI CLI
 """
+
 from biogtr.config import Config
 from biogtr.datasets.tracking_dataset import TrackingDataset
 from biogtr.datasets.data_utils import view_training_batch
@@ -37,7 +38,7 @@ def main(cfg: DictConfig):
     Args:
         cfg: The config dict parsed by `hydra`
     """
-    torch.set_float32_matmul_precision('medium')
+    torch.set_float32_matmul_precision("medium")
     train_cfg = Config(cfg)
 
     # update with parameters for batch train job
@@ -80,7 +81,7 @@ def main(cfg: DictConfig):
         if cfg.view_batch.no_train:
             return
 
-    model = train_cfg.get_gtr_runner() #TODO see if we can use torch.compile()
+    model = train_cfg.get_gtr_runner()  # TODO see if we can use torch.compile()
 
     logger = train_cfg.get_logger()
 

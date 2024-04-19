@@ -1,4 +1,5 @@
 """Module containing wrapper for merging gt and pred datasets for evaluation."""
+
 from torch.utils.data import Dataset
 from biogtr.data_structures import Frame, Instance
 from typing import List
@@ -42,15 +43,15 @@ class EvalDataset(Dataset):
         for gt_frame, pred_frame in zip(gt_batch, pred_batch):
             eval_instances = []
             for i, gt_instance in enumerate(gt_frame.instances):
-                
+
                 gt_track_id = gt_instance.gt_track_id
-                
+
                 try:
                     pred_track_id = pred_frame.instances[i].gt_track_id
                     pred_bbox = pred_frame.instances[i].bbox
                 except IndexError:
                     pred_track_id = -1
-                    pred_bbox = [-1,-1,-1,-1]
+                    pred_bbox = [-1, -1, -1, -1]
                 eval_instances.append(
                     Instance(
                         gt_track_id=gt_track_id,

@@ -181,7 +181,7 @@ class Transformer(torch.nn.Module):
             ).unsqueeze(0)
         except Exception as e:
             print([[f.device for f in frame.get_features()] for frame in frames])
-            raise(e)
+            raise (e)
 
         window_length = len(frames)
         instances_per_frame = [frame.num_detected for frame in frames]

@@ -106,7 +106,7 @@ class Config:
                 tracker_cfg=tracker_params,
                 train_metrics=self.cfg.runner.metrics.train,
                 val_metrics=self.cfg.runner.metrics.val,
-                test_metrics=self.cfg.runner.metrics.test
+                test_metrics=self.cfg.runner.metrics.test,
             )
 
         else:
@@ -241,7 +241,9 @@ class Config:
             A Logger with specified params
         """
         logger_params = OmegaConf.to_container(self.cfg.logging, resolve=True)
-        return init_logger(logger_params, OmegaConf.to_container(self.cfg ,resolve=True))
+        return init_logger(
+            logger_params, OmegaConf.to_container(self.cfg, resolve=True)
+        )
 
     def get_early_stopping(self) -> pl.callbacks.EarlyStopping:
         """Getter for lightning early stopping callback.
@@ -269,7 +271,7 @@ class Config:
 
         else:
             dirpath = checkpoint_params["dirpath"]
-        
+
         dirpath = Path(dirpath).resolve()
         if not Path(dirpath).exists():
             try:
@@ -278,13 +280,16 @@ class Config:
                 print(
                     f"Cannot create a new folder. Check the permissions to the given Checkpoint directory. \n {e}"
                 )
-        
+
         _ = checkpoint_params.pop("dirpath")
         checkpointers = []
         monitor = checkpoint_params.pop("monitor")
         for metric in monitor:
             checkpointer = pl.callbacks.ModelCheckpoint(
-                monitor=metric, dirpath=dirpath, filename=f"{{epoch}}-{{{metric}}}", **checkpoint_params
+                monitor=metric,
+                dirpath=dirpath,
+                filename=f"{{epoch}}-{{{metric}}}",
+                **checkpoint_params,
             )
             checkpointer.CHECKPOINT_NAME_LAST = f"{{epoch}}-best-{{{metric}}}"
             checkpointers.append(checkpointer)
@@ -313,7 +318,7 @@ class Config:
             self.set_hparams({"trainer.accelerator": accelerator})
         if "devices" not in self.cfg.trainer:
             self.set_hparams({"trainer.devices": devices})
-        
+
         trainer_params = self.cfg.trainer
         if "profiler" in trainer_params:
             profiler = pl.profilers.AdvancedProfiler(filename="profile.txt")

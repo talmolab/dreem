@@ -1,4 +1,5 @@
 """Helper functions for calculating mot metrics."""
+
 import numpy as np
 import motmetrics as mm
 import torch

@@ -1,4 +1,5 @@
 """Module containing logic for loading datasets."""
+
 from biogtr.datasets import data_utils
 from biogtr.data_structures import Frame
 from torch.utils.data import Dataset

@@ -44,6 +44,8 @@ class Tracker:
             max_center_dist: distance threshold for filtering trajectory score matrix.
             persistent_tracking: whether to keep a buffer across chunks or not.
             max_gap: the max number of frames a trajectory can be missing before termination.
+            max_tracks: the maximum number of tracks that can be created while tracking.
+            We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
             verbose: Whether or not to turn on debug printing after each operation.
         """
         self.track_queue = TrackQueue(

@@ -1,4 +1,5 @@
 """Module containing cell tracking challenge dataset."""
+
 from PIL import Image
 from biogtr.datasets import data_utils
 from biogtr.datasets.base_dataset import BaseDataset
@@ -85,12 +86,15 @@ class CellTrackingDataset(BaseDataset):
         )
 
         if gt_list is not None:
-            self.gt_list = [pd.read_csv(
-                gtf,
-                delimiter=" ",
-                header=None,
-                names=["track_id", "start_frame", "end_frame", "parent_id"],
-            ) for gtf in gt_list]
+            self.gt_list = [
+                pd.read_csv(
+                    gtf,
+                    delimiter=" ",
+                    header=None,
+                    names=["track_id", "start_frame", "end_frame", "parent_id"],
+                )
+                for gtf in gt_list
+            ]
         else:
             self.gt_list = None
 

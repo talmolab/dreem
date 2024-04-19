@@ -1,4 +1,5 @@
 """Module containing GTR model used for training."""
+
 from biogtr.models.transformer import Transformer
 from biogtr.models.visual_encoder import VisualEncoder
 from biogtr.data_structures import Frame

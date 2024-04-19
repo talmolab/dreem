@@ -1,4 +1,5 @@
 """Test dataset logic."""
+
 from biogtr.datasets.base_dataset import BaseDataset
 from biogtr.datasets.data_utils import get_max_padding
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset

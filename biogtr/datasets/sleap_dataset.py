@@ -1,4 +1,5 @@
 """Module containing logic for loading sleap datasets."""
+
 import albumentations as A
 import torch
 import imageio
@@ -140,12 +141,19 @@ class SleapDataset(BaseDataset):
         vid_reader = imageio.get_reader(video_name, "ffmpeg")
 
         img = vid_reader.get_data(0)
-        
+
         skeleton = video.skeletons[-1]
 
         frames = []
         for i, frame_ind in enumerate(frame_idx):
-            instances, gt_track_ids, poses, shown_poses, point_scores, instance_score = [], [], [], [], [], []
+            (
+                instances,
+                gt_track_ids,
+                poses,
+                shown_poses,
+                point_scores,
+                instance_score,
+            ) = ([], [], [], [], [], [])
 
             frame_ind = int(frame_ind)
 
@@ -181,8 +189,19 @@ class SleapDataset(BaseDataset):
                     }
                     for instance in poses
                 ]
-                
-                point_scores.append(np.array([point.score if isinstance(point, sio.PredictedPoint) else 1.0 for point in instance.points.values()]))
+
+                point_scores.append(
+                    np.array(
+                        [
+                            (
+                                point.score
+                                if isinstance(point, sio.PredictedPoint)
+                                else 1.0
+                            )
+                            for point in instance.points.values()
+                        ]
+                    )
+                )
                 if isinstance(instance, sio.PredictedInstance):
                     instance_score.append(instance.score)
                 else:
@@ -264,16 +283,16 @@ class SleapDataset(BaseDataset):
                     )
 
                 crop = data_utils.crop_bbox(img, bbox)
-                
+
                 instance = Instance(
                     gt_track_id=gt_track_ids[j],
                     pred_track_id=-1,
                     crop=crop,
                     bbox=bbox,
                     skeleton=skeleton,
-                    pose = np.array(list(poses[j].values())),
-                    point_scores = point_scores[j],
-                    instance_score = instance_score[j]
+                    pose=np.array(list(poses[j].values())),
+                    point_scores=point_scores[j],
+                    instance_score=instance_score[j],
                 )
 
                 instances.append(instance)
@@ -281,7 +300,7 @@ class SleapDataset(BaseDataset):
             frame = Frame(
                 video_id=label_idx,
                 frame_id=frame_ind,
-                vid_file = video_name,
+                vid_file=video_name,
                 img_shape=img.shape,
                 instances=instances,
             )

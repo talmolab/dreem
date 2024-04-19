@@ -1,4 +1,5 @@
 """Module containing helper functions for datasets."""
+
 from PIL import Image
 from numpy.typing import ArrayLike
 from torchvision.transforms import functional as tvf
@@ -475,8 +476,10 @@ def view_training_batch(
                     else (axes[i] if num_crops == 1 else axes[i, j])
                 )
 
-                ax.imshow(data.T) if isinstance(cmap, None) else ax.imshow(
-                    data.T, cmap=cmap
+                (
+                    ax.imshow(data.T)
+                    if isinstance(cmap, None)
+                    else ax.imshow(data.T, cmap=cmap)
                 )
                 ax.axis("off")
 

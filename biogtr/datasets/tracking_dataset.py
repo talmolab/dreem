@@ -1,4 +1,5 @@
 """Module containing Lightning module wrapper around all other datasets."""
+
 from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
@@ -74,9 +75,11 @@ class TrackingDataset(LightningDataModule):
                 pin_memory=False,
                 collate_fn=self.train_ds.no_batching_fn,
                 num_workers=0,
-                generator=torch.Generator(device="cuda")
-                if torch.cuda.is_available()
-                else torch.Generator(),
+                generator=(
+                    torch.Generator(device="cuda")
+                    if torch.cuda.is_available()
+                    else torch.Generator()
+                ),
             )
         else:
             return self.train_dl

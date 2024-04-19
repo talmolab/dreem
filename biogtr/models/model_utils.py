@@ -1,4 +1,5 @@
 """Module containing model helper functions."""
+
 from copy import deepcopy
 from typing import List, Tuple, Iterable
 from pytorch_lightning import loggers

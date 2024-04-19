@@ -1,4 +1,5 @@
 """Helper functions for visualizing tracking."""
+
 from scipy.interpolate import interp1d
 from copy import deepcopy
 from tqdm import tqdm
@@ -63,14 +64,14 @@ def annotate_video(
     key: str,
     color_palette=palette,
     trails: int = 2,
-    boxes: int = (64,64),
+    boxes: int = (64, 64),
     names: bool = True,
     track_scores=0.5,
     centroids: int = 4,
     poses=False,
     save_path: str = "debug_animal.mp4",
     fps: int = 30,
-    alpha=0.2
+    alpha=0.2,
 ) -> list:
     """Annotate video frames with labels.
 
@@ -102,7 +103,7 @@ def annotate_video(
                 frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
             # else:
             #     frame = frame.copy()
-                
+
             lf = labels[labels["Frame"] == i]
             for idx, instance in lf.iterrows():
                 if not trails:
@@ -155,7 +156,7 @@ def annotate_video(
                     # Get coordinates for detected objects in the current frame.
                     if isinstance(boxes, int):
                         boxes = (boxes, boxes)
-                    
+
                     box_w, box_h = boxes
                     x = instance["X"]
                     y = instance["Y"]
@@ -171,9 +172,9 @@ def annotate_video(
 
                     # assert idx < len(instance[key])
                     pred_track_id = instance[key]
-        
+
                     if "Track_score" in instance.index:
-                        track_score = instance['Track_score']
+                        track_score = instance["Track_score"]
                     else:
                         track_scores = 0
 
@@ -205,16 +206,26 @@ def annotate_video(
                     # Track trail.
                     if centroids:
                         frame = cv2.circle(
-                            frame, midpt, radius=centroids, color=track_color, thickness=-1
+                            frame,
+                            midpt,
+                            radius=centroids,
+                            color=track_color,
+                            thickness=-1,
                         )
                         for i in range(0, len(track_trails[pred_track_id]) - 1):
-                            frame = cv2.addWeighted(cv2.circle(
-                                frame, #.copy(),
-                                track_trails[pred_track_id][i],
-                                radius=4,
-                                color=track_color,
-                                thickness=-1,
-                            ), alpha, frame, 1-alpha, 0)
+                            frame = cv2.addWeighted(
+                                cv2.circle(
+                                    frame,  # .copy(),
+                                    track_trails[pred_track_id][i],
+                                    radius=4,
+                                    color=track_color,
+                                    thickness=-1,
+                                ),
+                                alpha,
+                                frame,
+                                1 - alpha,
+                                0,
+                            )
                             if trails:
                                 frame = cv2.line(
                                     frame,
@@ -226,14 +237,14 @@ def annotate_video(
 
                 # Track name.
                 name_str = ""
-                
+
                 if names:
                     name_str += f"track_{pred_track_id}"
                 if names and track_scores:
                     name_str += " | "
                 if track_scores:
                     name_str += f"score: {track_score:0.3f}"
-                
+
                 if len(name_str) > 0:
                     frame = cv2.putText(
                         frame,
