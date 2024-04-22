@@ -1,4 +1,5 @@
 """Module containing logic for loading sleap datasets."""
+
 import albumentations as A
 import torch
 import imageio

@@ -1,4 +1,5 @@
 """Module containing Boxes class."""
+
 from typing import List, Tuple
 import torch
 

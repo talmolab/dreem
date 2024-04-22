@@ -1,4 +1,5 @@
 """Module containing data classes such as Instances and Frames."""
+
 import torch
 from numpy.typing import ArrayLike
 from typing import Union, List

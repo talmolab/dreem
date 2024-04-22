@@ -1,4 +1,5 @@
 """Module containing microscopy dataset."""
+
 from PIL import Image
 from biogtr.datasets import data_utils
 from biogtr.datasets.base_dataset import BaseDataset
@@ -93,9 +94,11 @@ class MicroscopyDataset(BaseDataset):
         ]
 
         self.frame_idx = [
-            torch.arange(Image.open(video).n_frames)
-            if isinstance(video, str)
-            else torch.arange(len(video))
+            (
+                torch.arange(Image.open(video).n_frames)
+                if isinstance(video, str)
+                else torch.arange(len(video))
+            )
             for video in self.videos
         ]
 

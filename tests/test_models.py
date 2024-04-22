@@ -1,4 +1,5 @@
 """Test model modules."""
+
 import pytest
 import torch
 import numpy as np

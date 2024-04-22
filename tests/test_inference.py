@@ -1,4 +1,5 @@
 """Test inference logic."""
+
 import torch
 import pytest
 import numpy as np

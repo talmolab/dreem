@@ -1,4 +1,5 @@
 """Test config paths."""
+
 import os
 import pytest
 

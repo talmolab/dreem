@@ -1,4 +1,5 @@
 """Tests for Instance, Frame, and TrackQueue Object"""
+
 from biogtr.data_structures import Instance, Frame
 from biogtr.inference.track_queue import TrackQueue
 import torch

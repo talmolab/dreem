@@ -1,4 +1,5 @@
 """Helper functions for visualizing tracking."""
+
 from scipy.interpolate import interp1d
 from copy import deepcopy
 from tqdm import tqdm

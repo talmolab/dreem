@@ -1,4 +1,5 @@
 """Module containing cell tracking challenge dataset."""
+
 from PIL import Image
 from biogtr.datasets import data_utils
 from biogtr.datasets.base_dataset import BaseDataset
