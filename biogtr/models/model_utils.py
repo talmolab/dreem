@@ -11,7 +11,7 @@ def get_boxes_times(frames: List[Frame]) -> Tuple[torch.Tensor, torch.Tensor]:
     """Extract the bounding boxes and frame indices from the input list of instances.
 
     Args:
-        instances (List[Dict]): List of instance dictionaries
+        frames (List[Frame]): List of frame objects containing metadata and instances.
 
     Returns:
         Tuple[torch.Tensor, torch.Tensor]: A tuple of two tensors containing the

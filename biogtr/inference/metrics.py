@@ -4,7 +4,6 @@ import numpy as np
 import motmetrics as mm
 import torch
 from biogtr.data_structures import Frame
-import warnings
 from typing import Union, Iterable
 
 # from biogtr.inference.post_processing import _pairwise_iou
@@ -15,7 +14,7 @@ def get_matches(frames: list[Frame]) -> tuple[dict, list, int]:
     """Get comparison between predicted and gt trajectory labels.
 
     Args:
-        instances: a list of Frames containing the video_id, frame_id,
+        frames: a list of Frames containing the video_id, frame_id,
         gt labels and predicted labels
 
     Returns:
@@ -68,9 +67,9 @@ def get_switches(matches: dict, indices: list) -> dict:
             switches[idx] = {}
 
             col = matches[:, i]
-            indices = np.where(col == 1)[0]
+            match_indices = np.where(col == 1)[0]
             match_i = [
-                (m.split(" ")[0], m.split(" ")[-1]) for m in matches_key[indices]
+                (m.split(" ")[0], m.split(" ")[-1]) for m in matches_key[match_indices]
             ]
 
             for m in match_i:
@@ -106,7 +105,7 @@ def to_track_eval(frames: list[Frame]) -> dict:
     """Reformats frames the output from `sliding_inference` to be used by `TrackEval`.
 
     Args:
-        instances: A list of Frames. `See biogtr.data_structures for more info`.
+        frames: A list of Frames. `See biogtr.data_structures for more info`.
 
     Returns:
         data: A dictionary. Example provided below.
@@ -124,7 +123,7 @@ def to_track_eval(frames: list[Frame]) -> dict:
         "gt_ids": (L, *),  # Ragged np.array
         "tracker_ids": (L, ^),  # Ragged np.array
         "similarity_scores": (L, *, ^),  # Ragged np.array
-        "num_timsteps": L,
+        "num_timesteps": L,
     }
     """
     unique_gt_ids = []
