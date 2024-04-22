@@ -12,7 +12,6 @@ import pandas as pd
 import numpy as np
 import cv2
 from matplotlib import pyplot
-import gc
 
 palette = sns.color_palette("tab20")
 

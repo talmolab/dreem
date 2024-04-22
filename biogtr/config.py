@@ -11,7 +11,6 @@ from omegaconf import DictConfig, OmegaConf
 from pprint import pprint
 from typing import Union, Iterable
 from pathlib import Path
-import os
 import pytorch_lightning as pl
 import torch
 

@@ -6,7 +6,6 @@ import imageio
 import numpy as np
 import sleap_io as sio
 import random
-import warnings
 from biogtr.data_structures import Frame, Instance
 from biogtr.datasets import data_utils
 from biogtr.datasets.base_dataset import BaseDataset
