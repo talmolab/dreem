@@ -110,14 +110,14 @@ class GlobalTrackingTransformer(nn.Module):
             An N_T x N association matrix
         """
         # Extract feature representations with pre-trained encoder.
-        for frame in frames:
-            if frame.has_instances():
-                if not frame.has_features():
-                    crops = frame.get_crops()
-                    z = self.visual_encoder(crops)
+        for frame in filter(
+            lambda f: f.has_instances() and not f.has_features(), frames
+        ):
+            crops = frame.get_crops()
+            z = self.visual_encoder(crops)
 
-                    for i, z_i in enumerate(z):
-                        frame.instances[i].features = z_i
+            for i, z_i in enumerate(z):
+                frame.instances[i].features = z_i
 
         asso_preds, emb = self.transformer(frames, query_frame=query_frame)
 

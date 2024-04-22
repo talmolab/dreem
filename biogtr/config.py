@@ -1,5 +1,6 @@
 # to implement - config class that handles getters/setters
 """Data structures for handling config parsing."""
+
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset

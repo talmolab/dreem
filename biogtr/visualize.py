@@ -11,7 +11,6 @@ import hydra
 import pandas as pd
 import numpy as np
 import cv2
-from matplotlib import pyplot
 
 palette = sns.color_palette("tab20")
 

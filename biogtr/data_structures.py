@@ -72,7 +72,7 @@ class Instance:
         elif len(self._crop.shape) == 3:
             self._crop = self._crop.unsqueeze(0)
 
-        if not isinstance(crop, torch.Tensor):
+        if not isinstance(features, torch.Tensor):
             self._features = torch.tensor(features)
         else:
             self._features = features
@@ -124,12 +124,14 @@ class Instance:
         Returns:
             self: reference to the instance moved to correct device/dtype.
         """
-        self._gt_track_id = self._gt_track_id.to(map_location)
-        self._pred_track_id = self._pred_track_id.to(map_location)
-        self._bbox = self._bbox.to(map_location)
-        self._crop = self._crop.to(map_location)
-        self._features = self._features.to(map_location)
-        self.device = map_location
+        if map_location is not None and map_location != "":
+            self._gt_track_id = self._gt_track_id.to(map_location)
+            self._pred_track_id = self._pred_track_id.to(map_location)
+            self._bbox = self._bbox.to(map_location)
+            self._crop = self._crop.to(map_location)
+            self._features = self._features.to(map_location)
+            self.device = map_location
+
         return self
 
     def to_slp(
@@ -693,7 +695,7 @@ class Frame:
             video_filename: string path to video_file
         """
         try:
-            self._video = video_filename
+            self._video = sio.Video(video_filename)
         except ValueError:
             self._video = video_filename
 
