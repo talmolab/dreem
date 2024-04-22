@@ -39,8 +39,8 @@ def get_matches(frames: list[Frame]) -> tuple[dict, list, int]:
                     matches[match] = np.full(len(frames), 0)
 
                 matches[match][idx] = 1
-    else:
-        warnings.warn("No instances detected!")
+    # else:
+    #     warnings.warn("No instances detected!")
     return matches, indices, video_id
 
 

@@ -175,9 +175,13 @@ class Transformer(torch.nn.Module):
                 n_query: number of instances in current query/frame
                 total_instances: number of instances in window
         """
-        reid_features = torch.cat(
-            [frame.get_features() for frame in frames], dim=0
-        ).unsqueeze(0)
+        try:
+            reid_features = torch.cat(
+                [frame.get_features() for frame in frames], dim=0
+            ).unsqueeze(0)
+        except Exception as e:
+            print([[f.device for f in frame.get_features()] for frame in frames])
+            raise (e)
 
         window_length = len(frames)
         instances_per_frame = [frame.num_detected for frame in frames]

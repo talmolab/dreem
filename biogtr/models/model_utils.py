@@ -134,18 +134,19 @@ def init_scheduler(optimizer: torch.optim.Optimizer, config: dict):
     return scheduler_class(optimizer, **scheduler_params)
 
 
-def init_logger(config: dict):
+def init_logger(logger_params: dict, config: dict = None):
     """Initialize logger based on config parameters.
 
     Allows more flexibility in choosing which logger to use.
 
     Args:
-        config: logger hyperparameters
+        logger_params: logger hyperparameters
+        config: rest of hyperparameters to log (mostly used for WandB)
 
     Returns:
         logger: A logger with specified params (or None).
     """
-    logger_type = config.pop("logger_type", None)
+    logger_type = logger_params.pop("logger_type", None)
 
     valid_loggers = [
         "CSVLogger",
@@ -155,10 +156,16 @@ def init_logger(config: dict):
 
     if logger_type in valid_loggers:
         logger_class = getattr(loggers, logger_type)
-        try:
-            return logger_class(**config)
-        except Exception as e:
-            print(e, logger_type)
+        if logger_class == loggers.WandbLogger:
+            try:
+                return logger_class(config=config, **logger_params)
+            except Exception as e:
+                print(e, logger_type)
+        else:
+            try:
+                return logger_class(**logger_params)
+            except Exception as e:
+                print(e, logger_type)
     else:
         print(
             f"{logger_type} not one of {valid_loggers} or set to None, skipping logging"

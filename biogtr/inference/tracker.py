@@ -10,7 +10,7 @@ from biogtr.inference.track_queue import TrackQueue
 from biogtr.inference import post_processing
 from biogtr.inference.boxes import Boxes
 from scipy.optimize import linear_sum_assignment
-from copy import deepcopy
+from math import inf
 
 
 class Tracker:
@@ -26,7 +26,8 @@ class Tracker:
         iou: str = None,
         max_center_dist: float = None,
         persistent_tracking: bool = False,
-        max_gap: int = -1,
+        max_gap: int = inf,
+        max_tracks: int = inf,
         verbose=False,
     ):
         """Initialize a tracker to run inference.
@@ -42,6 +43,8 @@ class Tracker:
             max_center_dist: distance threshold for filtering trajectory score matrix.
             persistent_tracking: whether to keep a buffer across chunks or not.
             max_gap: the max number of frames a trajectory can be missing before termination.
+            max_tracks: the maximum number of tracks that can be created while tracking.
+            We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
             verbose: Whether or not to turn on debug printing after each operation.
         """
         self.track_queue = TrackQueue(
@@ -55,6 +58,7 @@ class Tracker:
         self.max_center_dist = max_center_dist
         self.persistent_tracking = persistent_tracking
         self.verbose = verbose
+        self.max_tracks = max_tracks
 
     def __call__(self, model: GlobalTrackingTransformer, frames: list[Frame]):
         """Wrap around `track` to enable `tracker()` instead of `tracker.track()`.
@@ -160,8 +164,15 @@ class Tracker:
                             f"Initializing track on clip ind {batch_idx} frame {frame_to_track.frame_id.item()}"
                         )
 
+                    curr_track_id = 0
                     for i, instance in enumerate(frames[batch_idx].instances):
-                        instance.pred_track_id = i
+                        instance.pred_track_id = instance.gt_track_id
+                        curr_track_id = instance.pred_track_id
+
+                    for i, instance in enumerate(frames[batch_idx].instances):
+                        if instance.pred_track_id == -1:
+                            instance.pred_track_id = curr_track_id
+                            curr_track += 1
 
             else:
                 if (
@@ -219,11 +230,18 @@ class Tracker:
 
         _ = model.eval()
         query_frame = frames[query_ind]
+
+        if self.verbose:
+            print(f"Frame {query_frame.frame_id.item()}")
+
         instances_per_frame = [frame.num_detected for frame in frames]
 
         total_instances, window_size = sum(instances_per_frame), len(
             instances_per_frame
         )  # Number of instances in window; length of window.
+
+        if self.verbose:
+            print(f"total_instances: {total_instances}")
 
         overlap_thresh = self.overlap_thresh
         mult_thresh = self.mult_thresh
@@ -248,6 +266,17 @@ class Tracker:
         )  # (window_size, n_query, N_i)
         asso_output = torch.cat(asso_output, dim=1).cpu()  # (n_query, total_instances)
 
+        asso_output_df = pd.DataFrame(
+            asso_output.clone().numpy(),
+            columns=[f"Instance {i}" for i in range(asso_output.shape[-1])],
+        )
+
+        asso_output_df.index.name = "Instances"
+        asso_output_df.columns.name = "Instances"
+
+        query_frame.add_traj_score("asso_output", asso_output_df)
+        query_frame.asso_output = asso_output
+
         try:
             n_query = (
                 query_frame.num_detected
@@ -260,6 +289,9 @@ class Tracker:
             total_instances - n_query
         )  # Number of instances in the window not including the current/query frame.
 
+        if self.verbose:
+            print(f"n_nonquery: {n_nonquery}")
+            print(f"n_query: {n_query}")
         try:
             instance_ids = torch.cat(
                 [
@@ -288,18 +320,28 @@ class Tracker:
             )
         ]
         nonquery_inds = [i for i in range(total_instances) if i not in query_inds]
+
         asso_nonquery = asso_output[:, nonquery_inds]  # (n_query, n_nonquery)
+
+        asso_nonquery_df = pd.DataFrame(
+            asso_nonquery.clone().numpy(), columns=nonquery_inds
+        )
+
+        asso_nonquery_df.index.name = "Current Frame Instances"
+        asso_nonquery_df.columns.name = "Nonquery Instances"
+
+        query_frame.add_traj_score("asso_nonquery", asso_nonquery_df)
 
         pred_boxes, _ = model_utils.get_boxes_times(frames)
         query_boxes = pred_boxes[query_inds]  # n_k x 4
         nonquery_boxes = pred_boxes[nonquery_inds]  # n_nonquery x 4
         # TODO: Insert postprocessing.
 
-        unique_ids = torch.tensor(
-            [self.track_queue.tracks], device=instance_ids.device
-        ).view(
-            n_traj
-        )  # (n_nonquery,)
+        unique_ids = torch.unique(instance_ids)  # (n_nonquery,)
+
+        if self.verbose:
+            print(f"Instance IDs: {instance_ids}")
+            print(f"unique ids: {unique_ids}")
 
         id_inds = (
             unique_ids[None, :] == instance_ids[:, None]
@@ -309,21 +351,32 @@ class Tracker:
 
         # reweighting hyper-parameters for association -> they use 0.9
 
-        # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_k x n_traj
         traj_score = post_processing.weight_decay_time(
             asso_nonquery, self.decay_time, reid_features, window_size, query_ind
         )
 
+        if self.decay_time is not None and self.decay_time > 0:
+            decay_time_traj_score = pd.DataFrame(
+                traj_score.clone().numpy(), columns=nonquery_inds
+            )
+
+            decay_time_traj_score.index.name = "Query Instances"
+            decay_time_traj_score.columns.name = "Nonquery Instances"
+
+            query_frame.add_traj_score("decay_time", decay_time_traj_score)
+        ################################################################################
+
+        # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_k x n_traj
         traj_score = torch.mm(traj_score, id_inds.cpu())  # (n_query, n_traj)
 
-        decay_time_traj_score = pd.DataFrame(
-            deepcopy((traj_score).numpy()), columns=unique_ids.cpu().numpy()
+        traj_score_df = pd.DataFrame(
+            traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
         )
 
-        decay_time_traj_score.index.name = "Current Frame Instances"
-        decay_time_traj_score.columns.name = "Unique IDs"
+        traj_score_df.index.name = "Current Frame Instances"
+        traj_score_df.columns.name = "Unique IDs"
 
-        query_frame.add_traj_score("decay_time", decay_time_traj_score)
+        query_frame.add_traj_score("traj_score", traj_score_df)
         ################################################################################
 
         # with iou -> combining with location in tracker, they set to True
@@ -347,6 +400,16 @@ class Tracker:
         else:
             last_ious = traj_score.new_zeros(traj_score.shape)
         traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious.cpu())
+
+        if self.iou is not None and self.iou != "":
+            iou_traj_score = pd.DataFrame(
+                traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+            )
+
+            iou_traj_score.index.name = "Current Frame Instances"
+            iou_traj_score.columns.name = "Unique IDs"
+
+            query_frame.add_traj_score("weight_iou", iou_traj_score)
         ################################################################################
 
         # threshold for continuing a tracking or starting a new track -> they use 1.0
@@ -355,6 +418,25 @@ class Tracker:
             traj_score, self.max_center_dist, query_boxes, nonquery_boxes, id_inds
         )
 
+        if self.max_center_dist is not None and self.max_center_dist > 0:
+            max_center_dist_traj_score = pd.DataFrame(
+                traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+            )
+
+            max_center_dist_traj_score.index.name = "Current Frame Instances"
+            max_center_dist_traj_score.columns.name = "Unique IDs"
+
+            query_frame.add_traj_score("max_center_dist", max_center_dist_traj_score)
+
+        ################################################################################
+        scaled_traj_score = torch.softmax(traj_score, dim=1)
+        scaled_traj_score_df = pd.DataFrame(
+            scaled_traj_score.numpy(), columns=unique_ids.cpu().numpy()
+        )
+        scaled_traj_score_df.index.name = "Current Frame Instances"
+        scaled_traj_score_df.columns.name = "Unique IDs"
+
+        query_frame.add_traj_score("scaled", scaled_traj_score_df)
         ################################################################################
 
         match_i, match_j = linear_sum_assignment((-traj_score))
@@ -370,11 +452,19 @@ class Tracker:
             thresh = (
                 overlap_thresh * id_inds[:, j].sum() if mult_thresh else overlap_thresh
             )
-            if traj_score[i, j] > thresh:
+            if n_traj >= self.max_tracks or traj_score[i, j] > thresh:
+                if self.verbose:
+                    print(
+                        f"Assigning instance {i} to track {j} with id {unique_ids[j]}"
+                    )
                 track_ids[i] = unique_ids[j]
-
+                query_frame.instances[i].track_score = scaled_traj_score[i, j].item()
+        if self.verbose:
+            print(f"track_ids: {track_ids}")
         for i in range(n_query):
             if track_ids[i] < 0:
+                if self.verbose:
+                    print(f"Creating new track {n_traj}")
                 track_ids[i] = n_traj
                 n_traj += 1
 
@@ -384,7 +474,7 @@ class Tracker:
             instance.pred_track_id = track_id
 
         final_traj_score = pd.DataFrame(
-            deepcopy((traj_score).numpy()), columns=unique_ids.cpu().numpy()
+            traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
         )
         final_traj_score.index.name = "Current Frame Instances"
         final_traj_score.columns.name = "Unique IDs"

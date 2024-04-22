@@ -51,8 +51,8 @@ class BaseDataset(Dataset):
         self.n_chunks = n_chunks
         self.seed = seed
 
-        # if self.seed is not None:
-        #     np.random.seed(self.seed)
+        if self.seed is not None:
+            np.random.seed(self.seed)
 
         self.augmentations = (
             data_utils.build_augmentations(augmentations) if augmentations else None
@@ -90,7 +90,7 @@ class BaseDataset(Dataset):
 
             if n_chunks > 0 and n_chunks < len(self.chunked_frame_idx):
                 sample_idx = np.random.choice(
-                    np.arange(len(self.chunked_frame_idx)), n_chunks
+                    np.arange(len(self.chunked_frame_idx)), n_chunks, replace=False
                 )
 
                 self.chunked_frame_idx = [self.chunked_frame_idx[i] for i in sample_idx]

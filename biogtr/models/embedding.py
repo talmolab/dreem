@@ -17,7 +17,8 @@ class Embedding(torch.nn.Module):
         """Initialize embeddings."""
         super().__init__()
         # empty init for flexibility
-        pass
+        self.pos_lookup = None
+        self.temp_lookup = None
 
     def _torch_int_div(
         self, tensor1: torch.Tensor, tensor2: torch.Tensor
@@ -126,7 +127,11 @@ class Embedding(torch.nn.Module):
         self.learn_pos_emb_num = params["learn_pos_emb_num"]
         self.over_boxes = params["over_boxes"]
 
-        pos_lookup = torch.nn.Embedding(self.learn_pos_emb_num * 4, self.features // 4)
+        if self.pos_lookup is None:
+            self.pos_lookup = torch.nn.Embedding(
+                self.learn_pos_emb_num * 4, self.features // 4
+            )
+        pos_lookup = self.pos_lookup
 
         N = boxes.shape[0]
         boxes = boxes.view(N, 4)
@@ -187,8 +192,12 @@ class Embedding(torch.nn.Module):
         self.features = params["features"]
         self.learn_temp_emb_num = params["learn_temp_emb_num"]
 
-        temp_lookup = torch.nn.Embedding(self.learn_temp_emb_num, self.features)
+        if self.temp_lookup is None:
+            self.temp_lookup = torch.nn.Embedding(
+                self.learn_temp_emb_num, self.features
+            )
 
+        temp_lookup = self.temp_lookup
         N = times.shape[0]
 
         l, r, lw, rw = self._compute_weights(times, self.learn_temp_emb_num)

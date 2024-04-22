@@ -42,20 +42,28 @@ class EvalDataset(Dataset):
         eval_frames = []
         for gt_frame, pred_frame in zip(gt_batch, pred_batch):
             eval_instances = []
-            for gt_instance, pred_instance in zip(
-                gt_frame.instances, pred_frame.instances
-            ):
+            for i, gt_instance in enumerate(gt_frame.instances):
+
+                gt_track_id = gt_instance.gt_track_id
+
+                try:
+                    pred_track_id = pred_frame.instances[i].gt_track_id
+                    pred_bbox = pred_frame.instances[i].bbox
+                except IndexError:
+                    pred_track_id = -1
+                    pred_bbox = [-1, -1, -1, -1]
                 eval_instances.append(
                     Instance(
-                        gt_track_id=gt_instance.gt_track_id,
-                        pred_track_id=pred_instance.gt_track_id,
-                        bbox=pred_instance.bbox,
+                        gt_track_id=gt_track_id,
+                        pred_track_id=pred_track_id,
+                        bbox=pred_bbox,
                     )
                 )
             eval_frames.append(
                 Frame(
                     video_id=gt_frame.video_id,
                     frame_id=gt_frame.frame_id,
+                    vid_file=gt_frame.video.filename,
                     img_shape=gt_frame.img_shape,
                     instances=eval_instances,
                 )

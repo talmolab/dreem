@@ -67,9 +67,11 @@ def get_bbox(center: ArrayLike, size: Union[int, tuple[int]]) -> torch.Tensor:
         size = (size, size)
     cx, cy = center[0], center[1]
 
-    bbox = torch.Tensor(
-        [-size[-1] // 2 + cy, -size[0] // 2 + cx, size[-1] // 2 + cy, size[0] // 2 + cx]
-    )
+    y1 = max(0, -size[-1] // 2 + cy)
+    x1 = max(0, -size[0] // 2 + cx)
+    y2 = size[-1] // 2 + cy if y1 != 0 else size[1]
+    x2 = size[0] // 2 + cx if x1 != 0 else size[0]
+    bbox = torch.Tensor([y1, x1, y2, x2])
 
     return bbox
 
@@ -476,11 +478,7 @@ def view_training_batch(
                     else (axes[i] if num_crops == 1 else axes[i, j])
                 )
 
-                (
-                    ax.imshow(data.T)
-                    if isinstance(cmap, None)
-                    else ax.imshow(data.T, cmap=cmap)
-                )
+                (ax.imshow(data.T) if cmap is None else ax.imshow(data.T, cmap=cmap))
                 ax.axis("off")
 
             except Exception as e:
