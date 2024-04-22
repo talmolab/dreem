@@ -260,7 +260,7 @@ def test_tracking_dataset(two_flies):
         shuffle=False,
         num_workers=num_workers,
         collate_fn=train_sleap_ds.no_batching_fn,
-        pin_memory=pin_memory
+        pin_memory=pin_memory,
     )
 
     val_sleap_ds = SleapDataset(
