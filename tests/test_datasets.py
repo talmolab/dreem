@@ -1,4 +1,5 @@
 """Test dataset logic."""
+
 from biogtr.datasets.base_dataset import BaseDataset
 from biogtr.datasets.data_utils import get_max_padding
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
@@ -49,11 +50,62 @@ def test_sleap_dataset(two_flies):
         clip_length=clip_length,
     )
 
+    ds_length = len(train_ds)
+
     instances = next(iter(train_ds))
 
     assert len(instances) == clip_length
-    assert len(instances[0]["gt_track_ids"]) == 2
-    assert len(instances[0]["gt_track_ids"]) == instances[0]["num_detected"].item()
+    assert len(instances[0].get_gt_track_ids()) == 2
+    assert len(instances[0].get_gt_track_ids()) == instances[0].num_detected
+
+    chunk_frac = 0.5
+
+    train_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        crop_size=128,
+        chunk=True,
+        clip_length=clip_length,
+        n_chunks=chunk_frac,
+    )
+
+    assert len(train_ds) == int(ds_length * chunk_frac)
+
+    n_chunks = 2
+
+    train_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        crop_size=128,
+        chunk=True,
+        clip_length=clip_length,
+        n_chunks=n_chunks,
+    )
+
+    assert len(train_ds) == n_chunks
+    assert len(train_ds) == len(train_ds.label_idx)
+
+    train_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        crop_size=128,
+        chunk=True,
+        clip_length=clip_length,
+        n_chunks=0,
+    )
+
+    assert len(train_ds) == ds_length
+
+    train_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        crop_size=128,
+        chunk=True,
+        clip_length=clip_length,
+        n_chunks=ds_length + 10000,
+    )
+
+    assert len(train_ds) == ds_length
 
 
 def test_icy_dataset(ten_icy_particles):
@@ -76,8 +128,8 @@ def test_icy_dataset(ten_icy_particles):
     instances = next(iter(train_ds))
 
     assert len(instances) == clip_length
-    assert len(instances[0]["gt_track_ids"]) == 10
-    assert len(instances[0]["gt_track_ids"]) == instances[0]["num_detected"].item()
+    assert len(instances[0].get_gt_track_ids()) == 10
+    assert len(instances[0].get_gt_track_ids()) == instances[0].num_detected
 
 
 def test_trackmate_dataset(trackmate_lysosomes):
@@ -100,8 +152,8 @@ def test_trackmate_dataset(trackmate_lysosomes):
     instances = next(iter(train_ds))
 
     assert len(instances) == clip_length
-    assert len(instances[0]["gt_track_ids"]) == 26
-    assert len(instances[0]["gt_track_ids"]) == instances[0]["num_detected"].item()
+    assert len(instances[0].get_gt_track_ids()) == 26
+    assert len(instances[0].get_gt_track_ids()) == instances[0].num_detected
 
 
 def test_isbi_dataset(isbi_microtubules, isbi_receptors):
@@ -129,8 +181,8 @@ def test_isbi_dataset(isbi_microtubules, isbi_receptors):
         instances = next(iter(train_ds))
 
         assert len(instances) == clip_length
-        assert len(instances[0]["gt_track_ids"]) == num_objects
-        assert len(instances[0]["gt_track_ids"]) == instances[0]["num_detected"].item()
+        assert len(instances[0].get_gt_track_ids()) == num_objects
+        assert len(instances[0].get_gt_track_ids()) == instances[0].num_detected
 
 
 def test_cell_tracking_dataset(cell_tracking):
@@ -142,22 +194,26 @@ def test_cell_tracking_dataset(cell_tracking):
 
     clip_length = 8
 
+    #     print(cell_tracking[0])
+    #     print(cell_tracking[1])
+    #     print(cell_tracking[2])
+
     train_ds = CellTrackingDataset(
         raw_images=[cell_tracking[0]],
         gt_images=[cell_tracking[1]],
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
-        gt_list=cell_tracking[2],
+        gt_list=[cell_tracking[2]],
     )
 
     instances = next(iter(train_ds))
 
-    gt_track_ids_1 = instances[0]["gt_track_ids"]
+    gt_track_ids_1 = instances[0].get_gt_track_ids()
 
     assert len(instances) == clip_length
     assert len(gt_track_ids_1) == 30
-    assert len(gt_track_ids_1) == instances[0]["num_detected"].item()
+    assert len(gt_track_ids_1) == instances[0].num_detected
 
     # fall back to using np.unique when gt_list not available
     train_ds = CellTrackingDataset(
@@ -170,11 +226,11 @@ def test_cell_tracking_dataset(cell_tracking):
 
     instances = next(iter(train_ds))
 
-    gt_track_ids_2 = instances[0]["gt_track_ids"]
+    gt_track_ids_2 = instances[0].get_gt_track_ids()
 
     assert len(instances) == clip_length
     assert len(gt_track_ids_2) == 30
-    assert len(gt_track_ids_2) == instances[0]["num_detected"].item()
+    assert len(gt_track_ids_2) == instances[0].num_detected
     assert gt_track_ids_1.all() == gt_track_ids_2.all()
 
 
@@ -188,7 +244,6 @@ def test_tracking_dataset(two_flies):
     clip_length = 16
     num_workers = 0
     pin_memory = num_workers > 0
-    generator = torch.Generator(device="cuda") if torch.cuda.is_available() else None
 
     train_sleap_ds = SleapDataset(
         [two_flies[0]],
@@ -205,7 +260,6 @@ def test_tracking_dataset(two_flies):
         num_workers=num_workers,
         collate_fn=train_sleap_ds.no_batching_fn,
         pin_memory=pin_memory,
-        generator=generator,
     )
 
     val_sleap_ds = SleapDataset(
@@ -223,7 +277,6 @@ def test_tracking_dataset(two_flies):
         num_workers=num_workers,
         collate_fn=train_sleap_ds.no_batching_fn,
         pin_memory=pin_memory,
-        generator=generator,
     )
 
     test_sleap_ds = SleapDataset(
@@ -241,7 +294,6 @@ def test_tracking_dataset(two_flies):
         num_workers=num_workers,
         collate_fn=train_sleap_ds.no_batching_fn,
         pin_memory=pin_memory,
-        generator=generator,
     )
 
     # test default if dls are None
@@ -337,8 +389,8 @@ def test_augmentations(two_flies, ten_icy_particles):
 
     augs_instances = next(iter(augs_ds))
 
-    a = no_augs_instances[0]["crops"]
-    b = augs_instances[0]["crops"]
+    a = no_augs_instances[0].get_crops()
+    b = augs_instances[0].get_crops()
 
     assert not torch.all(a.eq(b))
 
@@ -384,7 +436,7 @@ def test_augmentations(two_flies, ten_icy_particles):
 
     augs_instances = next(iter(augs_ds))
 
-    a = no_augs_instances[0]["crops"]
-    b = augs_instances[0]["crops"]
+    a = no_augs_instances[0].get_crops()
+    b = augs_instances[0].get_crops()
 
     assert not torch.all(a.eq(b))

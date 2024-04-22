@@ -1,9 +1,10 @@
 """Module containing microscopy dataset."""
+
 from PIL import Image
 from biogtr.datasets import data_utils
 from biogtr.datasets.base_dataset import BaseDataset
-from torch.utils.data import Dataset
-from torchvision.transforms import functional as tvf
+from biogtr.data_structures import Frame, Instance
+from typing import Union
 import albumentations as A
 import numpy as np
 import random
@@ -24,6 +25,8 @@ class MicroscopyDataset(BaseDataset):
         clip_length: int = 10,
         mode: str = "Train",
         augmentations: dict = None,
+        n_chunks: Union[int, float] = 1.0,
+        seed: int = None,
     ):
         """Initialize MicroscopyDataset.
 
@@ -44,9 +47,20 @@ class MicroscopyDataset(BaseDataset):
                         'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0},
                         'RandomContrast': {'limit': 0.2}
                     }
+            n_chunks: Number of chunks to subsample from.
+                Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
+            seed: set a seed for reproducibility
         """
         super().__init__(
-            videos + tracks, padding, crop_size, chunk, clip_length, mode, augmentations
+            videos + tracks,
+            padding,
+            crop_size,
+            chunk,
+            clip_length,
+            mode,
+            augmentations,
+            n_chunks,
+            seed,
         )
 
         self.videos = videos
@@ -56,6 +70,11 @@ class MicroscopyDataset(BaseDataset):
         self.crop_size = crop_size
         self.padding = padding
         self.mode = mode
+        self.n_chunks = n_chunks
+        self.seed = seed
+
+        # if self.seed is not None:
+        #     np.random.seed(self.seed)
 
         self.augmentations = (
             data_utils.build_augmentations(augmentations) if augmentations else None
@@ -75,9 +94,11 @@ class MicroscopyDataset(BaseDataset):
         ]
 
         self.frame_idx = [
-            torch.arange(Image.open(video).n_frames)
-            if type(video) == str
-            else torch.arange(len(video))
+            (
+                torch.arange(Image.open(video).n_frames)
+                if isinstance(video, str)
+                else torch.arange(len(video))
+            )
             for video in self.videos
         ]
 
@@ -86,14 +107,14 @@ class MicroscopyDataset(BaseDataset):
         self.create_chunks()
 
     def get_indices(self, idx):
-        """Retrieves label and frame indices given batch index.
+        """Retrieve label and frame indices given batch index.
 
         Args:
             idx: the index of the batch.
         """
         return self.label_idx[idx], self.chunked_frame_idx[idx]
 
-    def get_instances(self, label_idx: list[int], frame_idx: list[int]) -> list[dict]:
+    def get_instances(self, label_idx: list[int], frame_idx: list[int]) -> list[Frame]:
         """Get an element of the dataset.
 
         Args:
@@ -101,47 +122,28 @@ class MicroscopyDataset(BaseDataset):
             frame_idx: index of the frames
 
         Returns:
-            a list of dicts where each dict corresponds a frame in the chunk
-            and each value is a `torch.Tensor`.
-
-            Dict Elements:
-                {
-                    "video_id": The video being passed through the transformer,
-                    "img_shape": the shape of each frame,
-                    "frame_id": the specific frame in the entire video being used,
-                    "num_detected": The number of objects in the frame,
-                    "gt_track_ids": The ground truth labels,
-                    "bboxes": The bounding boxes of each object,
-                    "crops": The raw pixel crops,
-                    "features": The feature vectors for each crop outputed by the
-                        CNN encoder,
-                    "pred_track_ids": The predicted trajectory labels from the
-                        tracker,
-                    "asso_output": the association matrix preprocessing,
-                    "matches": the true positives from the model,
-                    "traj_score": the association matrix post processing,
-                }
+            A list of Frames containing Instances to be tracked (See `biogtr.data_structures for more info`)
         """
         labels = self.labels[label_idx]
         labels = labels.dropna(how="all")
 
         video = self.videos[label_idx]
 
-        if type(video) != list:
+        if not isinstance(video, list):
             video = data_utils.LazyTiffStack(self.videos[label_idx])
 
-        instances = []
-
-        for i in frame_idx:
-            gt_track_ids, centroids, bboxes, crops = [], [], [], []
+        frames = []
+        for frame_id in frame_idx:
+            # print(i)
+            instances, gt_track_ids, centroids = [], [], []
 
             img = (
-                video.get_section(i)
-                if type(video) != list
-                else np.array(Image.open(video[i]))
+                video.get_section(frame_id)
+                if not isinstance(video, list)
+                else np.array(Image.open(video[frame_id]))
             )
 
-            lf = labels[labels["FRAME"].astype(int) == i.item()]
+            lf = labels[labels["FRAME"].astype(int) == frame_id.item()]
 
             for instance in sorted(lf["TRACK_ID"].unique()):
                 gt_track_ids.append(int(instance))
@@ -172,31 +174,30 @@ class MicroscopyDataset(BaseDataset):
                 if img.shape[2] == 3:
                     img = img.T  # todo: check for edge cases
 
-            for c in centroids:
+            for gt_id in range(len(gt_track_ids)):
+                c = centroids[gt_id]
                 bbox = data_utils.pad_bbox(
                     data_utils.get_bbox([int(c[0]), int(c[1])], self.crop_size),
                     padding=self.padding,
                 )
                 crop = data_utils.crop_bbox(img, bbox)
 
-                bboxes.append(bbox)
-                crops.append(crop)
+                instances.append(
+                    Instance(
+                        gt_track_id=gt_track_ids[gt_id],
+                        pred_track_id=-1,
+                        bbox=bbox,
+                        crop=crop,
+                    )
+                )
 
-            instances.append(
-                {
-                    "video_id": torch.tensor([label_idx]),
-                    "img_shape": torch.tensor([img.shape]),
-                    "frame_id": torch.tensor([i]),
-                    "num_detected": torch.tensor([len(bboxes)]),
-                    "gt_track_ids": torch.tensor(gt_track_ids).type(torch.int64),
-                    "bboxes": torch.stack(bboxes),
-                    "crops": torch.stack(crops),
-                    "features": torch.tensor([]),
-                    "pred_track_ids": torch.tensor([-1 for _ in range(len(bboxes))]),
-                    "asso_output": torch.tensor([]),
-                    "matches": torch.tensor([]),
-                    "traj_score": torch.tensor([]),
-                }
+            frames.append(
+                Frame(
+                    video_id=label_idx,
+                    frame_id=frame_id,
+                    img_shape=img.shape,
+                    instances=instances,
+                )
             )
 
-        return instances
+        return frames
