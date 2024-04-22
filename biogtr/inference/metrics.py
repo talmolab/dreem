@@ -231,7 +231,7 @@ def get_track_evals(data: dict, metrics: dict) -> dict:
     results = {}
     for metric_name, metric in metrics.items():
         result = metric.eval_sequence(data)
-        results.merge(result)
+        results.update(result)
     return results
 
 

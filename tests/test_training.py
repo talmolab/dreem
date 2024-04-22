@@ -37,7 +37,7 @@ def test_asso_loss():
     loss = asso_loss(asso_preds, frames)
 
     assert len(loss.size()) == 0
-    assert type(loss.item()) == float
+    assert isinstance(loss.item(), float)
 
 
 def test_basic_gtr_runner():

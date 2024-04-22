@@ -1,7 +1,5 @@
 """Module containing Lightning module wrapper around all other datasets."""
 
-from biogtr.datasets.microscopy_dataset import MicroscopyDataset
-from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
