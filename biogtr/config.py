@@ -1,5 +1,6 @@
 # to implement - config class that handles getters/setters
 """Data structures for handling config parsing."""
+
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset
@@ -10,6 +11,7 @@ from biogtr.training.losses import AssoLoss
 from omegaconf import DictConfig, OmegaConf
 from pprint import pprint
 from typing import Union, Iterable
+from pathlib import Path
 import pytorch_lightning as pl
 import torch
 
@@ -43,7 +45,7 @@ class Config:
         return f"Config({self.cfg})"
 
     def __str__(self):
-        """String representation of config class."""
+        """Return a string representation of config class."""
         return f"Config({self.cfg})"
 
     def set_hparams(self, hparams: dict) -> bool:
@@ -92,20 +94,33 @@ class Config:
 
     def get_gtr_runner(self):
         """Get lightning module for training, validation, and inference."""
-        model_params = self.cfg.model
         tracker_params = self.cfg.tracker
         optimizer_params = self.cfg.optimizer
         scheduler_params = self.cfg.scheduler
         loss_params = self.cfg.loss
         gtr_runner_params = self.cfg.runner
-        return GTRRunner(
-            model_params,
-            tracker_params,
-            loss_params,
-            optimizer_params,
-            scheduler_params,
-            **gtr_runner_params,
-        )
+
+        if self.cfg.model.ckpt_path is not None and self.cfg.model.ckpt_path != "":
+            model = GTRRunner.load_from_checkpoint(
+                self.cfg.model.ckpt_path,
+                tracker_cfg=tracker_params,
+                train_metrics=self.cfg.runner.metrics.train,
+                val_metrics=self.cfg.runner.metrics.val,
+                test_metrics=self.cfg.runner.metrics.test,
+            )
+
+        else:
+            model_params = self.cfg.model
+            model = GTRRunner(
+                model_params,
+                tracker_params,
+                loss_params,
+                optimizer_params,
+                scheduler_params,
+                **gtr_runner_params,
+            )
+
+        return model
 
     def get_dataset(
         self, mode: str
@@ -174,13 +189,13 @@ class Config:
             torch.multiprocessing.set_sharing_strategy("file_system")
         else:
             pin_memory = False
-        
+
         return torch.utils.data.DataLoader(
             dataset=dataset,
             batch_size=1,
             pin_memory=pin_memory,
             collate_fn=dataset.no_batching_fn,
-            **dataloader_params
+            **dataloader_params,
         )
 
     def get_optimizer(self, params: Iterable) -> torch.optim.Optimizer:
@@ -225,8 +240,10 @@ class Config:
         Returns:
             A Logger with specified params
         """
-        logger_params = self.cfg.logging
-        return init_logger(logger_params)
+        logger_params = OmegaConf.to_container(self.cfg.logging, resolve=True)
+        return init_logger(
+            logger_params, OmegaConf.to_container(self.cfg, resolve=True)
+        )
 
     def get_early_stopping(self) -> pl.callbacks.EarlyStopping:
         """Getter for lightning early stopping callback.
@@ -254,12 +271,25 @@ class Config:
 
         else:
             dirpath = checkpoint_params["dirpath"]
+
+        dirpath = Path(dirpath).resolve()
+        if not Path(dirpath).exists():
+            try:
+                Path(dirpath).mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                print(
+                    f"Cannot create a new folder. Check the permissions to the given Checkpoint directory. \n {e}"
+                )
+
         _ = checkpoint_params.pop("dirpath")
         checkpointers = []
         monitor = checkpoint_params.pop("monitor")
         for metric in monitor:
             checkpointer = pl.callbacks.ModelCheckpoint(
-                monitor=metric, dirpath=dirpath, **checkpoint_params
+                monitor=metric,
+                dirpath=dirpath,
+                filename=f"{{epoch}}-{{{metric}}}",
+                **checkpoint_params,
             )
             checkpointer.CHECKPOINT_NAME_LAST = f"{{epoch}}-best-{{{metric}}}"
             checkpointers.append(checkpointer)
@@ -269,8 +299,8 @@ class Config:
         self,
         callbacks: list[pl.callbacks.Callback],
         logger: pl.loggers.WandbLogger,
-        accelerator: str,
-        devices: int,
+        devices: int = 1,
+        accelerator: str = None,
     ) -> pl.Trainer:
         """Getter for the lightning trainer.
 
@@ -278,21 +308,26 @@ class Config:
             callbacks: a list of lightning callbacks preconfigured to be used
                 for training
             logger: the Wandb logger used for logging during training
-            accelerator: either "gpu" or "cpu" specifies which device to use
             devices: The number of gpus to be used. 0 means cpu
+            accelerator: either "gpu" or "cpu" specifies which device to use
 
         Returns:
             A lightning Trainer with specified params
         """
+        if "accelerator" not in self.cfg.trainer:
+            self.set_hparams({"trainer.accelerator": accelerator})
+        if "devices" not in self.cfg.trainer:
+            self.set_hparams({"trainer.devices": devices})
+
         trainer_params = self.cfg.trainer
+        if "profiler" in trainer_params:
+            profiler = pl.profilers.AdvancedProfiler(filename="profile.txt")
+            trainer_params.pop("profiler")
+        else:
+            profiler = None
         return pl.Trainer(
             callbacks=callbacks,
             logger=logger,
-            accelerator=accelerator,
-            devices=devices,
+            profiler=profiler,
             **trainer_params,
         )
-
-    def get_ckpt_path(self):
-        """Get model ckpt path for loading."""
-        return self.cfg.model.ckpt_path
