@@ -3,10 +3,10 @@
 
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
+from biogtr.models import model_utils
 from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.models.gtr_runner import GTRRunner
-from biogtr.models.model_utils import init_optimizer, init_scheduler, init_logger
 from biogtr.training.losses import AssoLoss
 from omegaconf import DictConfig, OmegaConf
 from pprint import pprint
@@ -209,7 +209,7 @@ class Config:
             A torch Optimizer with specified params
         """
         optimizer_params = self.cfg.optimizer
-        return init_optimizer(params, optimizer_params)
+        return model_utils.init_optimizer(params, optimizer_params)
 
     def get_scheduler(
         self, optimizer: torch.optim.Optimizer
@@ -223,7 +223,7 @@ class Config:
             A torch learning rate scheduler with specified params
         """
         lr_scheduler_params = self.cfg.scheduler
-        return init_scheduler(optimizer, lr_scheduler_params)
+        return model_utils.init_scheduler(optimizer, lr_scheduler_params)
 
     def get_loss(self) -> AssoLoss:
         """Getter for loss functions.

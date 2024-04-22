@@ -5,6 +5,7 @@ from biogtr.datasets.data_utils import get_max_padding
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.tracking_dataset import TrackingDataset
+from biogtr.models.model_utils import get_device
 from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset
 from torch.utils.data import DataLoader
 import pytest
@@ -259,7 +260,7 @@ def test_tracking_dataset(two_flies):
         shuffle=False,
         num_workers=num_workers,
         collate_fn=train_sleap_ds.no_batching_fn,
-        pin_memory=pin_memory,
+        pin_memory=pin_memory
     )
 
     val_sleap_ds = SleapDataset(

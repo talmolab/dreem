@@ -371,7 +371,8 @@ class Tracker:
 
         traj_score_df = pd.DataFrame(
             traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
-        )
+
+        traj_score = torch.mm(traj_score, id_inds.cpu())  # (N_t, M)
 
         traj_score_df.index.name = "Current Frame Instances"
         traj_score_df.columns.name = "Unique IDs"
@@ -399,6 +400,7 @@ class Tracker:
             )  # n_k x M
         else:
             last_ious = traj_score.new_zeros(traj_score.shape)
+
         traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious.cpu())
 
         if self.iou is not None and self.iou != "":

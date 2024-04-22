@@ -4,18 +4,14 @@ from biogtr.config import Config
 from biogtr.models.gtr_runner import GTRRunner
 from biogtr.data_structures import Frame
 from omegaconf import DictConfig
-from pprint import pprint
 from pathlib import Path
+from pprint import pprint
 
-import os
 import hydra
+import os
 import pandas as pd
 import pytorch_lightning as pl
 import torch
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-
-torch.set_default_device(device)
 
 
 def export_trajectories(frames_pred: list[Frame], save_path: str = None):
