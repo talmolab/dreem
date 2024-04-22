@@ -1,7 +1,7 @@
 """Helper functions for post-processing association matrix pre-tracking."""
+
 import torch
 from biogtr.inference.boxes import Boxes
-from copy import deepcopy
 
 
 def weight_decay_time(
@@ -156,7 +156,7 @@ def filter_max_center_dist(
             .long()
             .bool()
         )  # n_k x M
-        asso_output_filtered = deepcopy(asso_output)
+        asso_output_filtered = asso_output.clone()
         asso_output_filtered[~valid_assn] = 0  # n_k x M
         return asso_output_filtered
     else:

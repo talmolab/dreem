@@ -1,4 +1,5 @@
 """Module containing helper functions for datasets."""
+
 from PIL import Image
 from numpy.typing import ArrayLike
 from torchvision.transforms import functional as tvf
@@ -62,7 +63,7 @@ def get_bbox(center: ArrayLike, size: Union[int, tuple[int]]) -> torch.Tensor:
     Returns:
         A torch tensor in form y1, x1, y2, x2
     """
-    if type(size) == int:
+    if isinstance(size, int):
         size = (size, size)
     cx, cy = center[0], center[1]
 
@@ -116,7 +117,7 @@ def pose_bbox(points: np.ndarray, bbox_size: Union[tuple[int], int]) -> torch.Te
     Returns:
         Bounding box in [y1, x1, y2, x2] format.
     """
-    if type(bbox_size) == int:
+    if isinstance(bbox_size, int):
         bbox_size = (bbox_size, bbox_size)
     # print(points)
     minx = np.nanmin(points[:, 0], axis=-1)
@@ -475,8 +476,10 @@ def view_training_batch(
                     else (axes[i] if num_crops == 1 else axes[i, j])
                 )
 
-                ax.imshow(data.T) if isinstance(cmap, None) else ax.imshow(
-                    data.T, cmap=cmap
+                (
+                    ax.imshow(data.T)
+                    if isinstance(cmap, None)
+                    else ax.imshow(data.T, cmap=cmap)
                 )
                 ax.axis("off")
 
