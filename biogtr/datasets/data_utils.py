@@ -1,4 +1,5 @@
 """Module containing helper functions for datasets."""
+
 from PIL import Image
 from numpy.typing import ArrayLike
 from torchvision.transforms import functional as tvf
@@ -62,14 +63,15 @@ def get_bbox(center: ArrayLike, size: Union[int, tuple[int]]) -> torch.Tensor:
     Returns:
         A torch tensor in form y1, x1, y2, x2
     """
-    if type(size) == int:
+    if isinstance(size, int):
         size = (size, size)
     cx, cy = center[0], center[1]
 
-    bbox = torch.Tensor(
-        [-size[-1] // 2 + cy, -size[0] // 2 + cx,
-         size[-1] // 2 + cy, size[0] // 2 + cx]
-    )
+    y1 = max(0, -size[-1] // 2 + cy)
+    x1 = max(0, -size[0] // 2 + cx)
+    y2 = size[-1] // 2 + cy if y1 != 0 else size[1]
+    x2 = size[0] // 2 + cx if x1 != 0 else size[0]
+    bbox = torch.Tensor([y1, x1, y2, x2])
 
     return bbox
 
@@ -107,9 +109,7 @@ def centroid_bbox(points: ArrayLike, anchors: list, crop_size: int) -> torch.Ten
     return bbox
 
 
-def pose_bbox(
-    points: np.ndarray, bbox_size: Union[tuple[int], int]
-) -> torch.Tensor:
+def pose_bbox(points: np.ndarray, bbox_size: Union[tuple[int], int]) -> torch.Tensor:
     """Calculate bbox around instance pose.
 
     Args:
@@ -119,21 +119,27 @@ def pose_bbox(
     Returns:
         Bounding box in [y1, x1, y2, x2] format.
     """
-    if type(bbox_size) == int:
+    if isinstance(bbox_size, int):
         bbox_size = (bbox_size, bbox_size)
     # print(points)
-    minx = np.nanmin(points[:,0], axis=-1)
-    miny = np.nanmin(points[:,-1], axis=-1)
+    minx = np.nanmin(points[:, 0], axis=-1)
+    miny = np.nanmin(points[:, -1], axis=-1)
     minpoints = np.array([minx, miny]).T
-    
-    maxx = np.nanmax(points[:,0], axis=-1)
-    maxy = np.nanmax(points[:,-1], axis=-1)
+
+    maxx = np.nanmax(points[:, 0], axis=-1)
+    maxy = np.nanmax(points[:, -1], axis=-1)
     maxpoints = np.array([maxx, maxy]).T
-    
-    c = ((minpoints + maxpoints)/2)
-    
-    bbox = torch.Tensor([c[-1]-bbox_size[-1]/2, c[0] - bbox_size[0]/2,
-                         c[-1] + bbox_size[-1]/2, c[0] + bbox_size[0]/2])
+
+    c = (minpoints + maxpoints) / 2
+
+    bbox = torch.Tensor(
+        [
+            c[-1] - bbox_size[-1] / 2,
+            c[0] - bbox_size[0] / 2,
+            c[-1] + bbox_size[-1] / 2,
+            c[0] + bbox_size[0] / 2,
+        ]
+    )
     return bbox
 
 
@@ -210,7 +216,7 @@ def parse_trackmate(data_path: str) -> pd.DataFrame:
         and centroid x,y coordinates in pixels
     """
     if data_path.endswith(".xml"):
-        root = et.fromstring(open(xml_path).read())
+        root = et.fromstring(open(data_path).read())
 
         objects = []
         features = root.find("Model").find("FeatureDeclarations").find("SpotFeatures")
@@ -444,7 +450,7 @@ def get_max_padding(height: int, width: int) -> tuple:
 def view_training_batch(
     instances: List[Dict[str, List[np.ndarray]]], num_frames: int = 1, cmap=None
 ) -> None:
-    """Displays a grid of images from a batch of training instances.
+    """Display a grid of images from a batch of training instances.
 
     Args:
         instances: A list of training instances, where each instance is a
@@ -472,7 +478,7 @@ def view_training_batch(
                     else (axes[i] if num_crops == 1 else axes[i, j])
                 )
 
-                ax.imshow(data.T) if cmap is None else ax.imshow(data.T, cmap=cmap)
+                (ax.imshow(data.T) if cmap is None else ax.imshow(data.T, cmap=cmap))
                 ax.axis("off")
 
             except Exception as e:

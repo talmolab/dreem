@@ -1,15 +1,17 @@
 """Module containing model helper functions."""
+
 from copy import deepcopy
-from typing import Dict, List, Tuple, Iterable
+from typing import List, Tuple, Iterable
 from pytorch_lightning import loggers
+from biogtr.data_structures import Frame
 import torch
 
 
-def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Extracts the bounding boxes and frame indices from the input list of instances.
+def get_boxes_times(frames: List[Frame]) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Extract the bounding boxes and frame indices from the input list of instances.
 
     Args:
-        instances (List[Dict]): List of instance dictionaries
+        frames (List[Frame]): List of frame objects containing metadata and instances.
 
     Returns:
         Tuple[torch.Tensor, torch.Tensor]: A tuple of two tensors containing the
@@ -17,10 +19,10 @@ def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
                                             indices, respectively.
     """
     boxes, times = [], []
-    _, h, w = instances[0]["img_shape"].flatten()
+    _, h, w = frames[0].img_shape.flatten()
 
-    for fidx, instance in enumerate(instances):
-        bbox = deepcopy(instance["bboxes"])
+    for fidx, frame in enumerate(frames):
+        bbox = deepcopy(frame.get_bboxes())
         bbox[:, [0, 2]] /= w
         bbox[:, [1, 3]] /= h
 
@@ -33,7 +35,7 @@ def get_boxes_times(instances: List[Dict]) -> Tuple[torch.Tensor, torch.Tensor]:
 
 
 def softmax_asso(asso_output: list[torch.Tensor]) -> list[torch.Tensor]:
-    """Applies the softmax activation function on asso_output.
+    """Apply the softmax activation function on asso_output.
 
     Args:
         asso_output: Raw logits output of the tracking transformer. A list of
@@ -132,18 +134,19 @@ def init_scheduler(optimizer: torch.optim.Optimizer, config: dict):
     return scheduler_class(optimizer, **scheduler_params)
 
 
-def init_logger(config: dict):
+def init_logger(logger_params: dict, config: dict = None):
     """Initialize logger based on config parameters.
 
     Allows more flexibility in choosing which logger to use.
 
     Args:
-        config: logger hyperparameters
+        logger_params: logger hyperparameters
+        config: rest of hyperparameters to log (mostly used for WandB)
 
     Returns:
         logger: A logger with specified params (or None).
     """
-    logger_type = config.pop("logger_type", None)
+    logger_type = logger_params.pop("logger_type", None)
 
     valid_loggers = [
         "CSVLogger",
@@ -153,10 +156,16 @@ def init_logger(config: dict):
 
     if logger_type in valid_loggers:
         logger_class = getattr(loggers, logger_type)
-        try:
-            return logger_class(**config)
-        except Exception as e:
-            print(e, logger_type)
+        if logger_class == loggers.WandbLogger:
+            try:
+                return logger_class(config=config, **logger_params)
+            except Exception as e:
+                print(e, logger_type)
+        else:
+            try:
+                return logger_class(**logger_params)
+            except Exception as e:
+                print(e, logger_type)
     else:
         print(
             f"{logger_type} not one of {valid_loggers} or set to None, skipping logging"
