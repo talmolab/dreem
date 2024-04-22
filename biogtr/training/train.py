@@ -2,10 +2,10 @@
 
 Used for training a single model or deploying a batch train job on RUNAI CLI
 """
+
 from biogtr.config import Config
 from biogtr.datasets.tracking_dataset import TrackingDataset
 from biogtr.datasets.data_utils import view_training_batch
-from biogtr.models.model_utils import get_device
 from multiprocessing import cpu_count
 from omegaconf import DictConfig
 from pprint import pprint
@@ -16,18 +16,10 @@ import pytorch_lightning as pl
 import torch
 import torch.multiprocessing
 
-# useful for longer training runs, but not for single iteration debugging
-# finds optimal hardware algs which has upfront time increase for first
-# iteration, quicker subsequent iterations
-
-# torch.backends.cudnn.benchmark = True
-
-device = get_device()
-
 
 @hydra.main(config_path="configs", config_name=None, version_base=None)
 def main(cfg: DictConfig):
-    """Main function for training.
+    """Train model based on config.
 
     Handles all config parsing and initialization then calls `trainer.train()`.
     If `batch_config` is included then run will be assumed to be a batch job.
@@ -35,17 +27,17 @@ def main(cfg: DictConfig):
     Args:
         cfg: The config dict parsed by `hydra`
     """
+    torch.set_float32_matmul_precision("medium")
     train_cfg = Config(cfg)
 
     # update with parameters for batch train job
     if "batch_config" in cfg.keys():
         try:
             index = int(os.environ["POD_INDEX"])
-        # For testing without deploying a job on runai
-        except KeyError:
-            print("Pod Index Not found! Setting index to 0")
-            index = 0
-        print(f"Pod Index: {index}")
+        except KeyError as e:
+            index = int(
+                input(f"{e}. Assuming single run!\nPlease input task index to run:")
+            )
 
         hparams_df = pd.read_csv(cfg.batch_config)
         hparams = hparams_df.iloc[index].to_dict()
@@ -78,7 +70,7 @@ def main(cfg: DictConfig):
         if cfg.view_batch.no_train:
             return
 
-    model = train_cfg.get_gtr_runner()
+    model = train_cfg.get_gtr_runner()  # TODO see if we can use torch.compile()
 
     logger = train_cfg.get_logger()
 
@@ -87,15 +79,8 @@ def main(cfg: DictConfig):
     _ = callbacks.append(pl.callbacks.LearningRateMonitor())
     _ = callbacks.append(train_cfg.get_early_stopping())
 
-    if device == "cuda":
-        accelerator = "gpu"
-        devices = torch.cuda.device_count()
-    elif device == "mps":
-        accelerator = "mps"
-        devices = 1
-    else:
-        accelerator = "cpu"
-        devices = cpu_count()
+    accelerator = "gpu" if torch.cuda.is_available() else "cpu"
+    devices = torch.cuda.device_count() if torch.cuda.is_available() else cpu_count()
 
     trainer = train_cfg.get_trainer(
         callbacks,
@@ -104,8 +89,7 @@ def main(cfg: DictConfig):
         devices=devices,
     )
 
-    ckpt_path = train_cfg.get_ckpt_path()
-    trainer.fit(model, dataset, ckpt_path=ckpt_path)
+    trainer.fit(model, dataset)
 
 
 if __name__ == "__main__":

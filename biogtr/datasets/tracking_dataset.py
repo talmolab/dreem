@@ -1,7 +1,7 @@
 """Module containing Lightning module wrapper around all other datasets."""
+
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
-from biogtr.models.model_utils import get_device
 from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
@@ -56,26 +56,20 @@ class TrackingDataset(LightningDataModule):
         self.test_dl = test_dl
 
     def setup(self, stage=None):
-        """Setup function needed for lightning dataset.
+        """Set up lightning dataset.
 
         UNUSED.
         """
         pass
 
     def train_dataloader(self) -> DataLoader:
-        """Getter for train_dataloader.
+        """Get train_dataloader.
 
         Returns: The Training Dataloader.
         """
         if self.train_dl is None and self.train_ds is None:
             return None
         elif self.train_dl is None:
-            device = get_device()
-
-            # generator fails on mps device, relevant issue:
-            # https://github.com/pytorch/pytorch/issues/77764
-            generator = torch.Generator(device=device) if device != "mps" else None
-
             return DataLoader(
                 self.train_ds,
                 batch_size=1,
@@ -83,13 +77,17 @@ class TrackingDataset(LightningDataModule):
                 pin_memory=False,
                 collate_fn=self.train_ds.no_batching_fn,
                 num_workers=0,
-                generator=generator,
+                generator=(
+                    torch.Generator(device="cuda")
+                    if torch.cuda.is_available()
+                    else torch.Generator()
+                ),
             )
         else:
             return self.train_dl
 
     def val_dataloader(self) -> DataLoader:
-        """Getter for val dataloader.
+        """Get val dataloader.
 
         Returns: The validation dataloader.
         """
@@ -109,7 +107,7 @@ class TrackingDataset(LightningDataModule):
             return self.val_dl
 
     def test_dataloader(self) -> DataLoader:
-        """Getter for test dataloader.
+        """Get.
 
         Returns: The test dataloader
         """
