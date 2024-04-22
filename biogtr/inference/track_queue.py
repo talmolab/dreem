@@ -171,8 +171,8 @@ class TrackQueue:
             try:
                 self._queues.pop(track_id)
                 self._curr_gap.pop(track_id)
-            except Exception as e:
-                print(f"Unable to end track due to {e}")
+            except KeyError:
+                print(f"Track ID {track_id} not found in queue!")
                 return False
         return True
 

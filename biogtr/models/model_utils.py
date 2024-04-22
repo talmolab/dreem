@@ -1,6 +1,5 @@
 """Module containing model helper functions."""
 
-from copy import deepcopy
 from typing import List, Tuple, Iterable
 from pytorch_lightning import loggers
 from biogtr.data_structures import Frame
@@ -22,7 +21,7 @@ def get_boxes_times(frames: List[Frame]) -> Tuple[torch.Tensor, torch.Tensor]:
     _, h, w = frames[0].img_shape.flatten()
 
     for fidx, frame in enumerate(frames):
-        bbox = deepcopy(frame.get_bboxes())
+        bbox = frame.get_bboxes().clone()
         bbox[:, [0, 2]] /= w
         bbox[:, [1, 3]] /= h
 
