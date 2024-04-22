@@ -1,4 +1,5 @@
 """Module containing training, validation and inference logic."""
+
 import torch
 from biogtr.inference.tracker import Tracker
 from biogtr.inference import metrics
@@ -85,7 +86,7 @@ class GTRRunner(LightningModule):
             A dict containing the train loss plus any other metrics specified
         """
         result = self._shared_eval_step(train_batch[0], mode="train")
-        self.log_metrics(result, "train")
+        self.log_metrics(result, len(train_batch[0]), "train")
 
         return result
 
@@ -103,7 +104,7 @@ class GTRRunner(LightningModule):
             A dict containing the val loss plus any other metrics specified
         """
         result = self._shared_eval_step(val_batch[0], mode="val")
-        self.log_metrics(result, "val")
+        self.log_metrics(result, len(val_batch[0]), "val")
 
         return result
 
@@ -119,7 +120,7 @@ class GTRRunner(LightningModule):
             A dict containing the val loss plus any other metrics specified
         """
         result = self._shared_eval_step(test_batch[0], mode="test")
-        self.log_metrics(result, "test")
+        self.log_metrics(result, len(test_batch[0]), "test")
 
         return result
 
@@ -206,13 +207,20 @@ class GTRRunner(LightningModule):
             },
         }
 
-    def log_metrics(self, result: dict, mode: str) -> None:
+    def log_metrics(self, result: dict, batch_size: int, mode: str) -> None:
         """Log metrics computed during evaluation.
 
         Args:
             result: A dict containing metrics to be logged.
+            batch_size: the size of the batch used to compute the metrics
             mode: One of {'train', 'test' or 'val'}. Used as prefix while logging.
         """
         if result:
             for metric, val in result.items():
-                self.log(f"{mode}_{metric}", val, on_step=True, on_epoch=True)
+                self.log(
+                    f"{mode}_{metric}",
+                    val,
+                    batch_size=batch_size,
+                    on_step=True,
+                    on_epoch=True,
+                )
