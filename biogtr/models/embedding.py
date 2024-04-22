@@ -17,12 +17,13 @@ class Embedding(torch.nn.Module):
         """Initialize embeddings."""
         super().__init__()
         # empty init for flexibility
-        pass
+        self.pos_lookup = None
+        self.temp_lookup = None
 
     def _torch_int_div(
         self, tensor1: torch.Tensor, tensor2: torch.Tensor
     ) -> torch.Tensor:
-        """Performs integer division of two tensors.
+        """Perform integer division of two tensors.
 
         Args:
             tensor1: dividend tensor.
@@ -42,7 +43,7 @@ class Embedding(torch.nn.Module):
         normalize: bool = False,
         **kwargs,
     ) -> torch.Tensor:
-        """Computes sine positional embeddings for boxes using given parameters.
+        """Compute sine positional embeddings for boxes using given parameters.
 
         Args:
             boxes: the input boxes.
@@ -104,7 +105,7 @@ class Embedding(torch.nn.Module):
         over_boxes: bool = True,
         **kwargs,
     ) -> torch.Tensor:
-        """Computes learned positional embeddings for boxes using given parameters.
+        """Compute learned positional embeddings for boxes using given parameters.
 
         Args:
             boxes: the input boxes.
@@ -126,7 +127,11 @@ class Embedding(torch.nn.Module):
         self.learn_pos_emb_num = params["learn_pos_emb_num"]
         self.over_boxes = params["over_boxes"]
 
-        pos_lookup = torch.nn.Embedding(self.learn_pos_emb_num * 4, self.features // 4)
+        if self.pos_lookup is None:
+            self.pos_lookup = torch.nn.Embedding(
+                self.learn_pos_emb_num * 4, self.features // 4
+            )
+        pos_lookup = self.pos_lookup
 
         N = boxes.shape[0]
         boxes = boxes.view(N, 4)
@@ -147,9 +152,15 @@ class Embedding(torch.nn.Module):
             self.learn_pos_emb_num, 4, f
         )  # T x 4 x (D * 4)
 
-        pos_le = pos_emb_table.gather(0, l[:, :, None].to(pos_emb_table.device).expand(N, 4, f))  # N x 4 x d
-        pos_re = pos_emb_table.gather(0, r[:, :, None].to(pos_emb_table.device).expand(N, 4, f))  # N x 4 x d
-        pos_emb = lw[:, :, None] * pos_re.to(lw.device) + rw[:, :, None] * pos_le.to(rw.device)
+        pos_le = pos_emb_table.gather(
+            0, l[:, :, None].to(pos_emb_table.device).expand(N, 4, f)
+        )  # N x 4 x d
+        pos_re = pos_emb_table.gather(
+            0, r[:, :, None].to(pos_emb_table.device).expand(N, 4, f)
+        )  # N x 4 x d
+        pos_emb = lw[:, :, None] * pos_re.to(lw.device) + rw[:, :, None] * pos_le.to(
+            rw.device
+        )
 
         pos_emb = pos_emb.view(N, 4 * f)
 
@@ -162,7 +173,7 @@ class Embedding(torch.nn.Module):
         learn_temp_emb_num: int = 16,
         **kwargs,
     ) -> torch.Tensor:
-        """Computes learned temporal embeddings for times using given parameters.
+        """Compute learned temporal embeddings for times using given parameters.
 
         Args:
             times: the input times.
@@ -181,8 +192,12 @@ class Embedding(torch.nn.Module):
         self.features = params["features"]
         self.learn_temp_emb_num = params["learn_temp_emb_num"]
 
-        temp_lookup = torch.nn.Embedding(self.learn_temp_emb_num, self.features)
+        if self.temp_lookup is None:
+            self.temp_lookup = torch.nn.Embedding(
+                self.learn_temp_emb_num, self.features
+            )
 
+        temp_lookup = self.temp_lookup
         N = times.shape[0]
 
         l, r, lw, rw = self._compute_weights(times, self.learn_temp_emb_num)
@@ -197,7 +212,7 @@ class Embedding(torch.nn.Module):
     def _compute_weights(
         self, data: torch.Tensor, learn_emb_num: int = 16
     ) -> Tuple[torch.Tensor, ...]:
-        """Computes left and right learned embedding weights.
+        """Compute left and right learned embedding weights.
 
         Args:
             data: the input data (e.g boxes or times).
