@@ -139,7 +139,7 @@ class Embedding(torch.nn.Module):
         """
         return torch.div(tensor1, tensor2, rounding_mode="floor")
 
-    def _sine_box_embedding(self, boxes) -> torch.Tensor:
+    def _sine_box_embedding(self, boxes: torch.Tensor) -> torch.Tensor:
         """Compute sine positional embeddings for boxes using given parameters.
 
         Args:
@@ -199,21 +199,21 @@ class Embedding(torch.nn.Module):
                 dim=1,
             )
 
-        l, r, lw, rw = self._compute_weights(xywh, self.emb_num)
+        left_ind, right_ind, left_weight, right_weight = self._compute_weights(xywh)
 
         f = pos_lookup.weight.shape[1]
 
         pos_emb_table = pos_lookup.weight.view(self.emb_num, 4, f)  # T x 4 x (D * 4)
 
-        pos_le = pos_emb_table.gather(
-            0, l[:, :, None].to(pos_emb_table.device).expand(N, 4, f)
+        left_emb = pos_emb_table.gather(
+            0, left_ind[:, :, None].to(pos_emb_table.device).expand(N, 4, f)
         )  # N x 4 x d
-        pos_re = pos_emb_table.gather(
-            0, r[:, :, None].to(pos_emb_table.device).expand(N, 4, f)
+        right_emb = pos_emb_table.gather(
+            0, right_ind[:, :, None].to(pos_emb_table.device).expand(N, 4, f)
         )  # N x 4 x d
-        pos_emb = lw[:, :, None] * pos_re.to(lw.device) + rw[:, :, None] * pos_le.to(
-            rw.device
-        )
+        pos_emb = left_weight[:, :, None] * left_emb.to(
+            left_weight.device
+        ) + right_weight[:, :, None] * right_emb.to(right_weight.device)
 
         pos_emb = pos_emb.view(N, 4 * f)
 
@@ -231,36 +231,35 @@ class Embedding(torch.nn.Module):
         temp_lookup = self.lookup
         N = times.shape[0]
 
-        l, r, lw, rw = self._compute_weights(times, self.emb_num)
+        left_ind, right_ind, left_weight, right_weight = self._compute_weights(times)
 
-        le = temp_lookup.weight[l.to(temp_lookup.weight.device)]  # T x D --> N x D
-        re = temp_lookup.weight[r.to(temp_lookup.weight.device)]
+        left_emb = temp_lookup.weight[
+            left_ind.to(temp_lookup.weight.device)
+        ]  # T x D --> N x D
+        right_emb = temp_lookup.weight[right_ind.to(temp_lookup.weight.device)]
 
-        temp_emb = lw[:, None] * re.to(lw.device) + rw[:, None] * le.to(rw.device)
+        temp_emb = left_weight[:, None] * right_emb.to(
+            left_weight.device
+        ) + right_weight[:, None] * left_emb.to(right_weight.device)
 
         return temp_emb.view(N, self.features)
 
-    def _compute_weights(
-        self, data: torch.Tensor, learn_emb_num: int = 16
-    ) -> Tuple[torch.Tensor, ...]:
+    def _compute_weights(self, data: torch.Tensor) -> Tuple[torch.Tensor, ...]:
         """Compute left and right learned embedding weights.
 
         Args:
             data: the input data (e.g boxes or times).
-            learn_temp_emb_num: Size of the dictionary of embeddings.
 
         Returns:
             A torch.Tensor for each of the left/right indices and weights, respectively
         """
-        data = data * learn_emb_num
+        data = data * self.emb_num
 
-        left_index = data.clamp(min=0, max=learn_emb_num - 1).long()  # N x 4
-        right_index = (
-            (left_index + 1).clamp(min=0, max=learn_emb_num - 1).long()
-        )  # N x 4
+        left_ind = data.clamp(min=0, max=self.emb_num - 1).long()  # N x 4
+        right_ind = (left_ind + 1).clamp(min=0, max=self.emb_num - 1).long()  # N x 4
 
-        left_weight = data - left_index.float()  # N x 4
+        left_weight = data - left_ind.float()  # N x 4
 
         right_weight = 1.0 - left_weight
 
-        return left_index, right_index, left_weight, right_weight
+        return left_ind, right_ind, left_weight, right_weight
