@@ -33,12 +33,10 @@ class Transformer(torch.nn.Module):
         nhead: int = 8,
         num_encoder_layers: int = 6,
         num_decoder_layers: int = 6,
-        dim_feedforward: int = 1024,
         dropout: float = 0.1,
         activation: str = "relu",
         return_intermediate_dec: bool = False,
         norm: bool = False,
-        feature_dim_attn_head: int = 1024,
         num_layers_attn_head: int = 2,
         dropout_attn_head: float = 0.1,
         embedding_meta: dict = None,
@@ -52,12 +50,10 @@ class Transformer(torch.nn.Module):
             nhead: The number of heads in the transfomer encoder/decoder.
             num_encoder_layers: The number of encoder-layers in the encoder.
             num_decoder_layers: The number of decoder-layers in the decoder.
-            dim_feedforward: The dimension of the feedforward layers of the transformer.
             dropout: Dropout value applied to the output of transformer layers.
             activation: Activation function to use.
             return_intermediate_dec: Return intermediate layers from decoder.
             norm: If True, normalize output of encoder and decoder.
-            feature_dim_attn_head: The number of features in the attention head.
             num_layers_attn_head: The number of layers in the attention head.
             dropout_attn_head: Dropout value for the attention_head.
             embedding_meta: Metadata for positional embeddings. See below.
@@ -91,33 +87,27 @@ class Transformer(torch.nn.Module):
         """
         super().__init__()
 
-        self.d_model = d_model
+        self.d_model = dim_feedforward = feature_dim_attn_head = d_model
 
         self.embedding_meta = embedding_meta
         self.return_embedding = return_embedding
 
+        self.pos_emb = Embedding(type="", features=self.d_model)
+        self.temp_emb = Embedding(type="", features=self.d_model)
+
         if self.embedding_meta:
-            key = "embedding_type"
-
-            embedding_types = [
-                "learned_pos",
-                "learned_temp",
-                "learned_pos_temp",
-                "fixed_pos",
-                "fixed_pos_temp",
-            ]
-
-            assert (
-                key in self.embedding_meta
-            ), f"Please provide an embedding type, valid options are {embedding_types}"
-
-            provided_type = self.embedding_meta[key]
-
-            assert (
-                provided_type in embedding_types
-            ), f"{provided_type} is invalid. Please choose a valid type from {embedding_types}"
-
-            self.embedding = Embedding()
+            if "pos" in self.embedding_meta:
+                pos_emb_cfg = self.embedding_meta["pos"]
+                if pos_emb_cfg:
+                    self.pos_emb = Embedding(
+                        type="pos", features=self.d_model, **pos_emb_cfg
+                    )
+            if "temp" in self.embedding_meta:
+                temp_emb_cfg = self.embedding_meta["temp"]
+                if temp_emb_cfg:
+                    self.temp_emb = Embedding(
+                        type="temp", features=self.d_model, **temp_emb_cfg
+                    )
 
         # Transformer Encoder
         encoder_layer = TransformerEncoderLayer(
@@ -189,40 +179,22 @@ class Transformer(torch.nn.Module):
         embed_dim = reid_features.shape[-1]
 
         # print(f'T: {window_length}; N: {total_instances}; N_t: {instances_per_frame} n_reid: {reid_features.shape}')
-        if self.embedding_meta:
-            kwargs = self.embedding_meta.get("kwargs", {})
+        pred_box, pred_time = get_boxes_times(frames)  # total_instances x 4
 
-            pred_box, pred_time = get_boxes_times(frames)  # total_instances x 4
+        temp_emb = self.temp_emb(pred_time / window_length)
 
-            embedding_type = self.embedding_meta["embedding_type"]
+        pos_emb = self.pos_emb(pred_box)
 
-            if "temp" in embedding_type:
-                temp_emb = self.embedding._learned_temp_embedding(
-                    pred_time / window_length, features=self.d_model, **kwargs
-                )
+        try:
+            emb = (pos_emb + temp_emb) / 2.0
+        except RuntimeError as e:
+            print(self.pos_emb.features, self.temp_emb.features)
+            print(pos_emb.shape, temp_emb.shape)
+            raise (e)
 
-                pos_emb = temp_emb
+        emb = emb.view(1, total_instances, embed_dim)
 
-            if "learned" in embedding_type:
-                if "pos" in embedding_type:
-                    pos_emb = self.embedding._learned_pos_embedding(
-                        pred_box, features=self.d_model, **kwargs
-                    )
-
-            else:
-                pos_emb = self.embedding._sine_box_embedding(
-                    pred_box, features=self.d_model // 4, **kwargs
-                )
-
-            if "temp" in embedding_type and embedding_type != "learned_temp":
-                pos_emb = (pos_emb + temp_emb) / 2.0
-
-            pos_emb = pos_emb.view(1, total_instances, embed_dim)
-            pos_emb = pos_emb.permute(
-                1, 0, 2
-            )  # (total_instances, batch_size, embed_dim)
-        else:
-            pos_emb = None
+        emb = emb.permute(1, 0, 2)  # (total_instances, batch_size, embed_dim)
 
         query_inds = None
         n_query = total_instances
@@ -242,23 +214,18 @@ class Transformer(torch.nn.Module):
         )  # (total_instances x batch_size x embed_dim)
 
         memory = self.encoder(
-            reid_features, pos_emb=pos_emb
+            reid_features, pos_emb=emb
         )  # (total_instances, batch_size, embed_dim)
 
-        if query_inds is not None:
-            tgt = reid_features[query_inds]
-            if pos_emb is not None:
-                tgt_pos_emb = pos_emb[query_inds]
-            else:
-                tgt_pos_emb = pos_emb
-        else:
-            tgt = reid_features
-            tgt_pos_emb = pos_emb
+        tgt = reid_features
+        tgt_emb = emb
 
-        # tgt: (n_query, batch_size, embed_dim)
+        if query_inds is not None:
+            tgt = tgt[query_inds]  # tgt: (n_query, batch_size, embed_dim)
+            tgt_emb = tgt_emb[query_inds]
 
         hs = self.decoder(
-            tgt, memory, pos_emb=pos_emb, tgt_pos_emb=tgt_pos_emb
+            tgt, memory, pos_emb=emb, tgt_pos_emb=tgt_emb
         )  # (L, n_query, batch_size, embed_dim)
 
         feats = hs.transpose(1, 2)  # # (L, batch_size, n_query, embed_dim)
@@ -273,7 +240,7 @@ class Transformer(torch.nn.Module):
             asso_output.append(self.attn_head(x, memory).view(n_query, total_instances))
 
         # (L=1, n_query, total_instances)
-        return (asso_output, pos_emb) if self.return_embedding else (asso_output, None)
+        return (asso_output, emb) if self.return_embedding else (asso_output, None)
 
 
 class TransformerEncoder(nn.Module):
