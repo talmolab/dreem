@@ -106,7 +106,7 @@ class Embedding(torch.nn.Module):
 
         if mode.lower() not in self.EMB_MODES:
             raise ValueError(
-                f"Embedding `mode` must be one of {self.EMB_MODE} not {mode}"
+                f"Embedding `mode` must be one of {self.EMB_MODES} not {mode}"
             )
 
         if mode == "fixed" and type == "temp":
