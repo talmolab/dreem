@@ -211,9 +211,9 @@ class Embedding(torch.nn.Module):
         right_emb = pos_emb_table.gather(
             0, right_ind[:, :, None].to(pos_emb_table.device).expand(N, 4, f)
         )  # N x 4 x d
-        pos_emb = left_weight[:, :, None] * left_emb.to(
+        pos_emb = left_weight[:, :, None] * right_emb.to(
             left_weight.device
-        ) + right_weight[:, :, None] * right_emb.to(right_weight.device)
+        ) + right_weight[:, :, None] * left_emb.to(right_weight.device)
 
         pos_emb = pos_emb.view(N, 4 * f)
 
