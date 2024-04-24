@@ -2,10 +2,12 @@ model:
   num_encoder_layers: 2
   num_decoder_layers: 2
   embedding_meta:
-      embedding_type: 'learned_pos'
-      kwargs:
-        learn_pos_num: 16,
-        over_boxes: True
+      embedding_type: 
+        pos: 
+          mode: 'learned'
+          emb_num: 16
+          over_boxes: True
+        temp: null
 
 dataset:
   train_dataset:
