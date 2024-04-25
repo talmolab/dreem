@@ -16,19 +16,20 @@ class Embedding(torch.nn.Module):
     EMB_TYPES = {
         "temp": {},
         "pos": {"over_boxes"},
-        "": {},
+        "off": {},
         None: {},
     }  # dict of valid args:keyword params
     EMB_MODES = {
         "fixed": {"temperature", "scale", "normalize"},
         "learned": {"emb_num"},
+        "off": {},
     }  # dict of valid args:keyword params
 
     def __init__(
         self,
-        type: str,
-        mode: Optional[str] = "fixed",
-        features: Optional[int] = 128,
+        emb_type: str,
+        mode: str,
+        features: int,
         emb_num: Optional[int] = 16,
         over_boxes: Optional[bool] = True,
         temperature: Optional[int] = 10000,
@@ -38,22 +39,22 @@ class Embedding(torch.nn.Module):
         """Initialize embeddings.
 
         Args:
-            type: The type of embedding to compute. Must be one of `{"temp", "pos", ""}`
+            emb_type: The type of embedding to compute. Must be one of `{"temp", "pos", "off"}`
             mode: The mode or function used to map positions to vector embeddings.
-            Must be one of `{"fixed", "learned"}`
-            features: The embedding dimensions.
-            Must match the dimension of the input vectors for the transformer model.
+                  Must be one of `{"fixed", "learned", "off"}`
+            features: The embedding dimensions. Must match the dimension of the
+                      input vectors for the transformer model.
             emb_num: the number of embeddings in the `self.lookup` table (Only used in learned embeddings).
             over_boxes: Whether to compute the position embedding for each bbox coordinate (y1x1y2x2) or the centroid + bbox size (yxwh).
             temperature: the temperature constant to be used when computing the sinusoidal position embedding
             normalize: whether or not to normalize the positions (Only used in fixed embeddings).
             scale: factor by which to scale the positions after normalizing (Only used in fixed embeddings).
         """
-        self._check_init_args(type, mode)
+        self._check_init_args(emb_type, mode)
 
         super().__init__()
 
-        self.type = type
+        self.emb_type = emb_type
         self.mode = mode
         self.features = features
         self.emb_num = emb_num
@@ -66,42 +67,40 @@ class Embedding(torch.nn.Module):
 
         self._emb_func = lambda tensor: torch.zeros(
             (tensor.shape[0], self.features), dtype=tensor.dtype, device=tensor.device
-        )
+        )  # turn off embedding by returning zeros
+
+        self.lookup = None
 
         if self.mode == "learned":
-            if self.type == "pos":
+            if self.emb_type == "pos":
                 self.lookup = torch.nn.Embedding(self.emb_num * 4, self.features // 4)
-            else:
-                self.lookup = torch.nn.Embedding(self.emb_num, self.features)
-
-            if self.type == "pos":
                 self._emb_func = self._learned_pos_embedding
-            elif self.type == "temp":
+            elif self.emb_type == "temp":
+                self.lookup = torch.nn.Embedding(self.emb_num, self.features)
                 self._emb_func = self._learned_temp_embedding
 
         elif self.mode == "fixed":
-            if self.type == "pos":
+            if self.emb_type == "pos":
                 self._emb_func = self._sine_box_embedding
-            elif self.type == "temp":
+            elif self.emb_type == "temp":
                 pass  # TODO Implement fixed sine temporal embedding
 
-    def _check_init_args(self, type: str, mode: str):
+    def _check_init_args(self, emb_type: str, mode: str):
         """Check whether the correct arguments were passed to initialization.
 
         Args:
-            type: The type of embedding to compute. Must be one of `{"temp", "pos", ""}`
+            emb_type: The type of embedding to compute. Must be one of `{"temp", "pos", ""}`
             mode: The mode or function used to map positions to vector embeddings.
-            Must be one of `{"fixed", "learned"}`
+                Must be one of `{"fixed", "learned"}`
 
         Raises:
             ValueError:
-              * if the incorrect `type` or `mode` string are passed
-              * One of the kwargs needed for the `type`/`mode` embedding to be computed (See kwargs)
-            NotImplementedError: if `type` is `temp` and `mode` is `fixed`.
+              * if the incorrect `emb_type` or `mode` string are passed
+            NotImplementedError: if `emb_type` is `temp` and `mode` is `fixed`.
         """
-        if type.lower() not in self.EMB_TYPES:
+        if emb_type.lower() not in self.EMB_TYPES:
             raise ValueError(
-                f"Embedding `type` must be one of {self.EMB_TYPES} not {type}"
+                f"Embedding `emb_type` must be one of {self.EMB_TYPES} not {emb_type}"
             )
 
         if mode.lower() not in self.EMB_MODES:
@@ -109,7 +108,7 @@ class Embedding(torch.nn.Module):
                 f"Embedding `mode` must be one of {self.EMB_MODES} not {mode}"
             )
 
-        if mode == "fixed" and type == "temp":
+        if mode == "fixed" and emb_type == "temp":
             raise NotImplementedError("TODO: Implement Fixed Sinusoidal Temp Embedding")
 
     def forward(self, seq_positions: torch.Tensor) -> torch.Tensor:
@@ -143,15 +142,15 @@ class Embedding(torch.nn.Module):
         """Compute sine positional embeddings for boxes using given parameters.
 
         Args:
-            boxes: the input boxes.
+            boxes: the input boxes of shape N x 4 or B x N x 4
+                   where the last dimension is the bbox coords in [y1, x1, y2, x2].
+                   (Note currently `B=batch_size=1`).
 
         Returns:
             torch.Tensor, the sine positional embeddings.
         """
         if self.scale is not None and self.normalize is False:
             raise ValueError("normalize should be True if scale is passed")
-        if self.scale is None:
-            self.scale = 2 * math.pi
 
         if len(boxes.size()) == 2:
             boxes = boxes.unsqueeze(0)
@@ -162,7 +161,7 @@ class Embedding(torch.nn.Module):
         dim_t = torch.arange(self.features // 4, dtype=torch.float32)
 
         dim_t = self.temperature ** (
-            2 * self._torch_int_div(dim_t, 2) / self.features // 4
+            2 * self._torch_int_div(dim_t, 2) / (self.features // 4)
         )
 
         # (b, n_t, 4, D//4)
@@ -181,7 +180,9 @@ class Embedding(torch.nn.Module):
         """Compute learned positional embeddings for boxes using given parameters.
 
         Args:
-            boxes: the input boxes.
+            boxes: the input boxes of shape N x 4 or B x N x 4
+                   where the last dimension is the bbox coords in [y1, x1, y2, x2].
+                   (Note currently `B=batch_size=1`).
 
         Returns:
             torch.Tensor, the learned positional embeddings.
@@ -201,7 +202,7 @@ class Embedding(torch.nn.Module):
 
         left_ind, right_ind, left_weight, right_weight = self._compute_weights(xywh)
 
-        f = pos_lookup.weight.shape[1]
+        f = pos_lookup.weight.shape[1]  # self.features // 4
 
         pos_emb_table = pos_lookup.weight.view(self.emb_num, 4, f)  # T x 4 x (D * 4)
 
@@ -215,7 +216,7 @@ class Embedding(torch.nn.Module):
             left_weight.device
         ) + right_weight[:, :, None] * left_emb.to(right_weight.device)
 
-        pos_emb = pos_emb.view(N, 4 * f)
+        pos_emb = pos_emb.view(N, self.features)
 
         return pos_emb
 
@@ -223,7 +224,10 @@ class Embedding(torch.nn.Module):
         """Compute learned temporal embeddings for times using given parameters.
 
         Args:
-            times: the input times.
+            times: the input times of shape (N,) or (N,1) where N = (sum(instances_per_frame))
+            which is the frame index of the instance relative
+            to the batch size
+            (e.g. `torch.tensor([0, 0, ..., 0, 1, 1, ..., 1, 2, 2, ..., 2,..., B, B, ...B])`).
 
         Returns:
             torch.Tensor, the learned temporal embeddings.
