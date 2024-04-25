@@ -60,30 +60,13 @@ class Transformer(torch.nn.Module):
             return_embedding: Whether to return the positional embeddings
             decoder_self_attn: If True, use decoder self attention.
 
-            embedding_meta: By default this will be an empty dict and indicate
-                that no positional embeddings should be used. To use positional
-                embeddings, a dict should be passed with the type of embedding to
-                use. Valid options are:
-                    * learned_pos: only learned position embeddings
-                    * learned_temp: only learned temporal embeddings
-                    * learned_pos_temp: learned position and temporal embeddings
-                    * fixed_pos: fixed sine position embeddings
-                    * fixed_pos_temp: fixed sine position and learned temporal embeddings
-                You can additionally pass kwargs to override the default
-                embedding values (see embedding.py function methods for relevant
-                embedding parameters). Example:
-
-                    embedding_meta = {
-                        'embedding_type': 'learned_pos_temp',
-                        'kwargs': {
-                            'learn_pos_emb_num': 16,
-                            'learn_temp_emb_num': 16,
-                            'over_boxes': False
-                        }
-                    }
-                Note: Embedding features are handled directly in the forward
-                pass for each case. Overriding the features through kwargs will
-                likely throw errors due to incorrect tensor shapes.
+            More details on `embedding_meta`: 
+                By default this will be an empty dict and indicate
+                that no positional embeddings should be used. To use the positional embeddings
+                pass in a dictionary containing a "pos" and "temp" key with subdictionaries for correct parameters ie:
+                {"pos": {'mode': 'learned', 'emb_num': 16, 'over_boxes: 'True'},
+                "temp": {'mode': 'learned', 'emb_num': 16}}. (see `biogtr.models.embeddings.Embedding.EMB_TYPES` 
+                and `biogtr.models.embeddings.Embedding.EMB_MODES` for embedding parameters). 
         """
         super().__init__()
 
@@ -92,21 +75,21 @@ class Transformer(torch.nn.Module):
         self.embedding_meta = embedding_meta
         self.return_embedding = return_embedding
 
-        self.pos_emb = Embedding(type="", features=self.d_model)
-        self.temp_emb = Embedding(type="", features=self.d_model)
+        self.pos_emb = Embedding(emb_type="off", mode="off", features=self.d_model)
+        self.temp_emb = Embedding(emb_type="off", mode="off", features=self.d_model)
 
         if self.embedding_meta:
             if "pos" in self.embedding_meta:
                 pos_emb_cfg = self.embedding_meta["pos"]
                 if pos_emb_cfg:
                     self.pos_emb = Embedding(
-                        type="pos", features=self.d_model, **pos_emb_cfg
+                        emb_type="pos", features=self.d_model, **pos_emb_cfg
                     )
             if "temp" in self.embedding_meta:
                 temp_emb_cfg = self.embedding_meta["temp"]
                 if temp_emb_cfg:
                     self.temp_emb = Embedding(
-                        type="temp", features=self.d_model, **temp_emb_cfg
+                        emb_type="temp", features=self.d_model, **temp_emb_cfg
                     )
 
         # Transformer Encoder
