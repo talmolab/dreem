@@ -7,7 +7,8 @@ model:
           mode: 'learned'
           emb_num: 16
           over_boxes: True
-        temp: null
+        temp: 
+          mode: "off"
 
 dataset:
   train_dataset:
@@ -29,3 +30,4 @@ trainer:
   limit_test_batches: 1
   limit_val_batches: 1
   max_epochs: 1
+  enable_checkpointing: true 

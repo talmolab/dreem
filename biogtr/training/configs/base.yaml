@@ -14,11 +14,11 @@ model:
   dropout_attn_head: 0.1
   embedding_meta: 
     pos:
-      type: "learned"
+      mode: "learned"
       emb_num: 16
       over_boxes: false
     temp:
-      type: "learned"
+      mode: "learned"
       emb_num: 16
   return_embedding: False
   decoder_self_attn: False
