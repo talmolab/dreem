@@ -25,7 +25,7 @@ class GlobalTrackingTransformer(nn.Module):
         norm: bool = False,
         num_layers_attn_head: int = 2,
         dropout_attn_head: int = 0.1,
-        embedding_meta: dict = {"pos": None, "temp": None},
+        embedding_meta: dict = None,
         return_embedding: bool = False,
         decoder_self_attn: bool = False,
         **kwargs,
@@ -49,12 +49,14 @@ class GlobalTrackingTransformer(nn.Module):
             embedding_meta: Metadata for positional embeddings. See below.
             return_embedding: Whether to return the positional embeddings
             decoder_self_attn: If True, use decoder self attention.
-            embedding_meta: By default this will be an empty dict and indicate
+
+            More details on `embedding_meta`:
+                By default this will be an empty dict and indicate
                 that no positional embeddings should be used. To use the positional embeddings
                 pass in a dictionary containing a "pos" and "temp" key with subdictionaries for correct parameters ie:
                 {"pos": {'mode': 'learned', 'emb_num': 16, 'over_boxes: 'True'},
-                "temp": {'mode': 'learned', 'emb_num': 16}
-                }. See `embedding.py` for more information on correct arguments for initialization.
+                "temp": {'mode': 'learned', 'emb_num': 16}}. (see `biogtr.models.embeddings.Embedding.EMB_TYPES`
+                and `biogtr.models.embeddings.Embedding.EMB_MODES` for embedding parameters).
         """
         super().__init__()
 
