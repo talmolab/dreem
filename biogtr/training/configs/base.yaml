@@ -6,20 +6,20 @@ model:
   nhead: 8
   num_encoder_layers: 1
   num_decoder_layers: 1
-  dim_feedforward: 1024
   dropout: 0.1
   activation: "relu"
   return_intermediate_dec: False
-  feature_dim_attn_head: 1024
   norm: False
   num_layers_attn_head: 2
   dropout_attn_head: 0.1
   embedding_meta: 
-    embedding_type: 'learned_pos_temp'
-    kwargs: 
-      learn_pos_emb_num: 16
-      learn_temp_emb_num: 16
-      over_boxes: False
+    pos:
+      mode: "learned"
+      emb_num: 16
+      over_boxes: false
+    temp:
+      mode: "learned"
+      emb_num: 16
   return_embedding: False
   decoder_self_attn: False
 

@@ -19,11 +19,9 @@ class GlobalTrackingTransformer(nn.Module):
         nhead: int = 8,
         num_encoder_layers: int = 6,
         num_decoder_layers: int = 6,
-        dim_feedforward: int = 1024,
         dropout: int = 0.1,
         activation: str = "relu",
         return_intermediate_dec: bool = False,
-        feature_dim_attn_head: int = 1024,
         norm: bool = False,
         num_layers_attn_head: int = 2,
         dropout_attn_head: int = 0.1,
@@ -42,40 +40,23 @@ class GlobalTrackingTransformer(nn.Module):
             nhead: The number of heads in the transfomer encoder/decoder.
             num_encoder_layers: The number of encoder-layers in the encoder.
             num_decoder_layers: The number of decoder-layers in the decoder.
-            dim_feedforward: The dimension of the feedforward layers of the transformer.
             dropout: Dropout value applied to the output of transformer layers.
             activation: Activation function to use.
             return_intermediate_dec: Return intermediate layers from decoder.
             norm: If True, normalize output of encoder and decoder.
-            feature_dim_attn_head: The number of features in the attention head.
             num_layers_attn_head: The number of layers in the attention head.
             dropout_attn_head: Dropout value for the attention_head.
             embedding_meta: Metadata for positional embeddings. See below.
             return_embedding: Whether to return the positional embeddings
             decoder_self_attn: If True, use decoder self attention.
-            embedding_meta: By default this will be an empty dict and indicate
-                that no positional embeddings should be used. To use positional
-                embeddings, a dict should be passed with the type of embedding to
-                use. Valid options are:
-                    * learned_pos: only learned position embeddings
-                    * learned_temp: only learned temporal embeddings
-                    * learned_pos_temp: learned position and temporal embeddings
-                    * fixed_pos: fixed sine position embeddings
-                    * fixed_pos_temp: fixed sine position and learned temporal embeddings
-                You can additionally pass kwargs to override the default
-                embedding values (see embedding.py function methods for relevant
-                embedding parameters). Example:
-                    embedding_meta = {
-                        'embedding_type': 'learned_pos_temp',
-                        'kwargs': {
-                            'learn_pos_emb_num': 16,
-                            'learn_temp_emb_num': 16,
-                            'over_boxes': False
-                        }
-                    }
-                Note: Embedding features are handled directly in the forward
-                pass for each case. Overriding the features through kwargs will
-                likely throw errors due to incorrect tensor shapes.
+
+            More details on `embedding_meta`:
+                By default this will be an empty dict and indicate
+                that no positional embeddings should be used. To use the positional embeddings
+                pass in a dictionary containing a "pos" and "temp" key with subdictionaries for correct parameters ie:
+                {"pos": {'mode': 'learned', 'emb_num': 16, 'over_boxes: 'True'},
+                "temp": {'mode': 'learned', 'emb_num': 16}}. (see `biogtr.models.embeddings.Embedding.EMB_TYPES`
+                and `biogtr.models.embeddings.Embedding.EMB_MODES` for embedding parameters).
         """
         super().__init__()
 
@@ -86,11 +67,9 @@ class GlobalTrackingTransformer(nn.Module):
             nhead=nhead,
             num_encoder_layers=num_encoder_layers,
             num_decoder_layers=num_decoder_layers,
-            dim_feedforward=dim_feedforward,
             dropout=dropout,
             activation=activation,
             return_intermediate_dec=return_intermediate_dec,
-            feature_dim_attn_head=feature_dim_attn_head,
             norm=norm,
             num_layers_attn_head=num_layers_attn_head,
             dropout_attn_head=dropout_attn_head,

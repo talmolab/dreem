@@ -11,7 +11,8 @@ from omegaconf import OmegaConf, DictConfig
 from biogtr.config import Config
 from biogtr.training.train import main
 
-# todo: add named tensor tests
+# TODO: add named tensor tests
+# TODO: use temp dir and cleanup after tests (https://docs.pytest.org/en/7.1.x/how-to/tmp_path.html)
 
 
 def test_asso_loss():

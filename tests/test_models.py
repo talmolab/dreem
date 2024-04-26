@@ -61,9 +61,50 @@ def test_encoder():
         assert output.shape == (b, features)
 
 
+def test_embedding_validity():
+    """Test embedding usage."""
+
+    # this would throw assertion since embedding should be "pos"
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="position", mode="learned", features=128)
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="position", mode="fixed", features=128)
+
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="temporal", mode="learned", features=128)
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="position", mode="fixed", features=128)
+
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="pos", mode="learn", features=128)
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="temp", mode="learn", features=128)
+
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="pos", mode="fix", features=128)
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="temp", mode="fix", features=128)
+
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="position", mode="learn", features=128)
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="temporal", mode="learn", features=128)
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="position", mode="fix", features=128)
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="temporal", mode="learn", features=128)
+
+    with pytest.raises(Exception):
+        _ = Embedding(emb_type="temp", mode="fixed", features=128)
+
+    _ = Embedding(emb_type="temp", mode="learned", features=128)
+    _ = Embedding(emb_type="pos", mode="learned", features=128)
+
+    _ = Embedding(emb_type="pos", mode="learned", features=128)
+
+
 def test_embedding():
     """Test embedding logic."""
-    emb = Embedding()
 
     frames = 32
     objects = 10
@@ -74,26 +115,70 @@ def test_embedding():
     boxes = torch.rand(size=(N, 4))
     times = torch.rand(size=(N,))
 
-    sine_emb = emb._sine_box_embedding(
-        boxes, features=d_model // 4, temperature=objects, normalize=True, scale=10
+    pos_emb = Embedding(
+        emb_type="pos",
+        mode="fixed",
+        features=d_model,
+        temperature=objects,
+        normalize=True,
+        scale=10,
     )
 
-    learned_pos_emb = emb._learned_pos_embedding(
-        boxes, features=d_model, learn_pos_emb_num=100
-    )
+    sine_pos_emb = pos_emb(boxes)
 
-    learned_temp_emb = emb._learned_temp_embedding(
-        times, features=d_model, learn_temp_emb_num=16
-    )
+    pos_emb = Embedding(emb_type="pos", mode="learned", features=d_model, emb_num=100)
+    learned_pos_emb = pos_emb(boxes)
 
-    assert sine_emb.size() == (N, d_model)
+    temp_emb = Embedding(emb_type="temp", mode="learned", features=d_model, emb_num=16)
+    learned_temp_emb = temp_emb(times)
+
+    pos_emb_off = Embedding(emb_type="pos", mode="off", features=d_model)
+    off_pos_emb = pos_emb_off(boxes)
+
+    temp_emb_off = Embedding(emb_type="temp", mode="off", features=d_model)
+    off_temp_emb = temp_emb_off(times)
+
+    learned_emb_off = Embedding(emb_type="off", mode="learned", features=d_model)
+    off_learned_emb_boxes = learned_emb_off(boxes)
+    off_learned_emb_times = learned_emb_off(times)
+
+    fixed_emb_off = Embedding(emb_type="off", mode="fixed", features=d_model)
+    off_fixed_emb_boxes = fixed_emb_off(boxes)
+    off_fixed_emb_times = fixed_emb_off(times)
+
+    off_emb = Embedding(emb_type="off", mode="off", features=d_model)
+    off_emb_boxes = off_emb(boxes)
+    off_emb_times = off_emb(times)
+
+    assert sine_pos_emb.size() == (N, d_model)
     assert learned_pos_emb.size() == (N, d_model)
     assert learned_temp_emb.size() == (N, d_model)
+
+    assert not torch.equal(sine_pos_emb, learned_pos_emb)
+    assert not torch.equal(sine_pos_emb, learned_temp_emb)
+    assert not torch.equal(learned_pos_emb, learned_temp_emb)
+
+    assert off_pos_emb.size() == (N, d_model)
+    assert off_temp_emb.size() == (N, d_model)
+    assert off_learned_emb_boxes.size() == (N, d_model)
+    assert off_learned_emb_times.size() == (N, d_model)
+    assert off_fixed_emb_boxes.size() == (N, d_model)
+    assert off_fixed_emb_times.size() == (N, d_model)
+    assert off_emb_boxes.size() == (N, d_model)
+    assert off_emb_times.size() == (N, d_model)
+
+    assert not off_pos_emb.any()
+    assert not off_temp_emb.any()
+    assert not off_learned_emb_boxes.any()
+    assert not off_learned_emb_times.any()
+    assert not off_fixed_emb_boxes.any()
+    assert not off_fixed_emb_times.any()
+    assert not off_emb_boxes.any()
+    assert not off_emb_times.any()
 
 
 def test_embedding_kwargs():
     """Test embedding config logic."""
-    emb = Embedding()
 
     frames = 32
     objects = 10
@@ -105,7 +190,7 @@ def test_embedding_kwargs():
 
     # sine embedding
 
-    sine_no_args = emb._sine_box_embedding(boxes)
+    sine_no_args = Embedding("pos", "fixed", 128)(boxes)
 
     sine_args = {
         "temperature": objects,
@@ -113,31 +198,27 @@ def test_embedding_kwargs():
         "normalize": True,
     }
 
-    sine_with_args = emb._sine_box_embedding(boxes, **sine_args)
+    sine_with_args = Embedding("pos", "fixed", 128, **sine_args)(boxes)
 
     assert not torch.equal(sine_no_args, sine_with_args)
 
     # learned pos embedding
 
-    lp_no_args = emb._learned_pos_embedding(boxes)
+    lp_no_args = Embedding("pos", "learned", 128)
 
-    lp_args = {"learn_pos_emb_num": 100, "over_boxes": False}
+    lp_args = {"emb_num": 100, "over_boxes": False}
 
-    emb = Embedding()
-    lp_with_args = emb._learned_pos_embedding(boxes, **lp_args)
-
-    assert not torch.equal(lp_no_args, lp_with_args)
+    lp_with_args = Embedding("pos", "learned", 128, **lp_args)
+    assert lp_no_args.lookup.weight.shape != lp_with_args.lookup.weight.shape
 
     # learned temp embedding
 
-    lt_no_args = emb._learned_temp_embedding(times)
+    lt_no_args = Embedding("temp", "learned", 128)
 
-    lt_args = {"learn_temp_emb_num": 100}
+    lt_args = {"emb_num": 100}
 
-    emb = Embedding()
-    lt_with_args = emb._learned_temp_embedding(times, **lt_args)
-
-    assert not torch.equal(lt_no_args, lt_with_args)
+    lt_with_args = Embedding("temp", "learned", 128, **lt_args)
+    assert lt_no_args.lookup.weight.shape != lt_with_args.lookup.weight.shape
 
 
 def test_transformer_encoder():
@@ -202,13 +283,7 @@ def test_transformer_basic():
     num_detected = 10
     img_shape = (1, 100, 100)
 
-    transformer = Transformer(
-        d_model=feats,
-        num_encoder_layers=1,
-        num_decoder_layers=1,
-        dim_feedforward=feats,
-        feature_dim_attn_head=feats,
-    )
+    transformer = Transformer(d_model=feats, num_encoder_layers=1, num_decoder_layers=1)
 
     frames = []
 
@@ -220,49 +295,13 @@ def test_transformer_basic():
                     bbox=torch.rand(size=(1, 4)), features=torch.rand(size=(1, feats))
                 )
             )
-        frames.append(Frame(video_id=0, frame_id=i, instances=instances))
+        frames.append(
+            Frame(video_id=0, frame_id=i, img_shape=img_shape, instances=instances)
+        )
 
     asso_preds, _ = transformer(frames)
 
     assert asso_preds[0].size() == (num_detected * num_frames,) * 2
-
-
-def test_transformer_embedding_validity():
-    """Test embedding usage."""
-    # use lower feats and single layer for efficiency
-    feats = 256
-
-    # this would throw assertion since no "embedding_type" key
-    with pytest.raises(Exception):
-        _ = Transformer(
-            d_model=feats,
-            num_encoder_layers=1,
-            num_decoder_layers=1,
-            dim_feedforward=feats,
-            feature_dim_attn_head=feats,
-            embedding_meta={"type": "learned_pos"},
-        )
-
-    # this would throw assertion since "embedding_type" value invalid
-    with pytest.raises(Exception):
-        _ = Transformer(
-            d_model=feats,
-            num_encoder_layers=1,
-            num_decoder_layers=1,
-            dim_feedforward=feats,
-            feature_dim_attn_head=feats,
-            embedding_meta={"embedding_type": "foo"},
-        )
-
-    # this would succeed
-    _ = Transformer(
-        d_model=feats,
-        num_encoder_layers=1,
-        num_decoder_layers=1,
-        dim_feedforward=feats,
-        feature_dim_attn_head=feats,
-        embedding_meta={"embedding_type": "learned_pos"},
-    )
 
 
 def test_transformer_embedding():
@@ -285,20 +324,14 @@ def test_transformer_embedding():
         frames.append(Frame(video_id=0, frame_id=i, instances=instances))
 
     embedding_meta = {
-        "embedding_type": "learned_pos_temp",
-        "kwargs": {
-            "learn_pos_emb_num": 16,
-            "learn_temp_emb_num": 16,
-            "normalize": True,
-        },
+        "pos": {"mode": "learned", "emb_num": 16, "normalize": True},
+        "temp": {"mode": "learned", "emb_num": 16, "normalize": True},
     }
 
     transformer = Transformer(
         d_model=feats,
         num_encoder_layers=1,
         num_decoder_layers=1,
-        dim_feedforward=feats,
-        feature_dim_attn_head=feats,
         embedding_meta=embedding_meta,
         return_embedding=True,
     )
@@ -331,8 +364,13 @@ def test_tracking_transformer():
         )
 
     embedding_meta = {
-        "embedding_type": "fixed_pos",
-        "kwargs": {"temperature": num_detected, "scale": num_frames, "normalize": True},
+        "pos": {
+            "mode": "fixed",
+            "temperature": num_detected,
+            "scale": num_frames,
+            "normalize": True,
+        },
+        "temp": None,
     }
 
     cfg = {"resnet18", "ResNet18_Weights.DEFAULT"}
@@ -343,8 +381,6 @@ def test_tracking_transformer():
         d_model=feats,
         num_encoder_layers=1,
         num_decoder_layers=1,
-        dim_feedforward=feats,
-        feature_dim_attn_head=feats,
         embedding_meta=embedding_meta,
         return_embedding=True,
     )
