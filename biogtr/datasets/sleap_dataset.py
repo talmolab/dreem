@@ -290,7 +290,7 @@ class SleapDataset(BaseDataset):
                     crop=crop,
                     bbox=bbox,
                     skeleton=skeleton,
-                    pose=np.array(list(poses[j].values())),
+                    pose=poses[j],
                     point_scores=point_scores[j],
                     instance_score=instance_score[j],
                 )
