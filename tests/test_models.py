@@ -194,8 +194,8 @@ def test_embedding_kwargs():
         "scale": frames,
         "normalize": True,
     }
-    sine_no_args = Embedding("pos", "fixed", 128, temperature=10000)
-    sine_with_args = Embedding("pos", "fixed", 128, temperature=10)
+    sine_no_args = Embedding("pos", "fixed", 128)
+    sine_with_args = Embedding("pos", "fixed", 128, **sine_args)
 
     assert sine_no_args.temperature != sine_with_args.temperature
 
