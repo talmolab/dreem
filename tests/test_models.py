@@ -94,9 +94,6 @@ def test_embedding_validity():
     with pytest.raises(Exception):
         _ = Embedding(emb_type="temporal", mode="learn", features=128)
 
-    with pytest.raises(Exception):
-        _ = Embedding(emb_type="temp", mode="fixed", features=128)
-
     _ = Embedding(emb_type="temp", mode="learned", features=128)
     _ = Embedding(emb_type="pos", mode="learned", features=128)
 
@@ -185,21 +182,28 @@ def test_embedding_kwargs():
 
     N = frames * objects
 
-    boxes = torch.rand(size=(N, 4))
-    times = torch.rand(size=(N,))
+    boxes = torch.rand(N, 2) * (1024 - 128)
+    boxes = torch.concat([boxes, boxes + 128], axis=-1)
+    print(boxes)
+    # times = torch.rand(size=(N,))
 
     # sine embedding
-
-    sine_no_args = Embedding("pos", "fixed", 128)(boxes)
 
     sine_args = {
         "temperature": objects,
         "scale": frames,
         "normalize": True,
     }
+    sine_no_args = Embedding("pos", "fixed", 128, temperature=10000)
+    sine_with_args = Embedding("pos", "fixed", 128, temperature=10)
 
-    sine_with_args = Embedding("pos", "fixed", 128, **sine_args)(boxes)
+    assert sine_no_args.temperature != sine_with_args.temperature
 
+    sine_no_args = sine_no_args(boxes)
+    sine_with_args = sine_with_args(boxes)
+
+    print(sine_with_args)
+    print(sine_no_args)
     assert not torch.equal(sine_no_args, sine_with_args)
 
     # learned pos embedding
@@ -335,6 +339,9 @@ def test_transformer_embedding():
         embedding_meta=embedding_meta,
         return_embedding=True,
     )
+
+    assert transformer.pos_emb.mode == "learned"
+    assert transformer.temp_emb.mode == "learned"
 
     asso_preds, embedding = transformer(frames)
 

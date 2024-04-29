@@ -83,7 +83,7 @@ class Embedding(torch.nn.Module):
             if self.emb_type == "pos":
                 self._emb_func = self._sine_box_embedding
             elif self.emb_type == "temp":
-                pass  # TODO Implement fixed sine temporal embedding
+                self._emb_func = self._sine_temp_embedding
 
     def _check_init_args(self, emb_type: str, mode: str):
         """Check whether the correct arguments were passed to initialization.
@@ -108,8 +108,8 @@ class Embedding(torch.nn.Module):
                 f"Embedding `mode` must be one of {self.EMB_MODES} not {mode}"
             )
 
-        if mode == "fixed" and emb_type == "temp":
-            raise NotImplementedError("TODO: Implement Fixed Sinusoidal Temp Embedding")
+        # if mode == "fixed" and emb_type == "temp":
+        #     raise NotImplementedError("TODO: Implement Fixed Sinusoidal Temp Embedding")
 
     def forward(self, seq_positions: torch.Tensor) -> torch.Tensor:
         """Get the sequence positional embeddings.
@@ -141,13 +141,17 @@ class Embedding(torch.nn.Module):
     def _sine_box_embedding(self, boxes: torch.Tensor) -> torch.Tensor:
         """Compute sine positional embeddings for boxes using given parameters.
 
-        Args:
-            boxes: the input boxes of shape N x 4 or B x N x 4
-                   where the last dimension is the bbox coords in [y1, x1, y2, x2].
-                   (Note currently `B=batch_size=1`).
+         Args:
+             boxes: the input boxes of shape N x 4 or B x N x 4
+                    where the last dimension is the bbox coords in [y1, x1, y2, x2].
+                    (Note currently `B=batch_size=1`).
 
         Returns:
-            torch.Tensor, the sine positional embeddings.
+             torch.Tensor, the sine positional embeddings
+             (embedding[:, 4i] = sin(x)
+              embedding[:, 4i+1] = cos(x)
+              embedding[4i+2] = sin(y)
+              embedding[4i+3) = cos(y)
         """
         if self.scale is not None and self.normalize is False:
             raise ValueError("normalize should be True if scale is passed")
@@ -175,6 +179,38 @@ class Embedding(torch.nn.Module):
         pos_emb = pos_emb.squeeze(0).flatten(1)
 
         return pos_emb
+
+    def _sine_temp_embedding(self, times: torch.Tensor) -> torch.Tensor:
+        """Compute fixed sine temporal embeddings.
+
+        Args:
+            times: the input times of shape (N,) or (N,1) where N = (sum(instances_per_frame))
+            which is the frame index of the instance relative
+            to the batch size
+            (e.g. `torch.tensor([0, 0, ..., 0, 1, 1, ..., 1, 2, 2, ..., 2,..., B, B, ...B])`).
+
+        Returns:
+            an n_instances x D embedding representing the temporal embedding.
+        """
+        T = times.int().max().item() + 1
+        d = self.features
+        n = self.temperature
+
+        positions = torch.arange(0, T).unsqueeze(1)
+        temp_lookup = torch.zeros(T, d, device=times.device)
+
+        denominators = torch.pow(
+            n, 2 * torch.arange(0, d // 2) / d
+        )  # 10000^(2i/d_model), i is the index of embedding
+        temp_lookup[:, 0::2] = torch.sin(
+            positions / denominators
+        )  # sin(pos/10000^(2i/d_model))
+        temp_lookup[:, 1::2] = torch.cos(
+            positions / denominators
+        )  # cos(pos/10000^(2i/d_model))
+
+        temp_emb = temp_lookup[times.int()]
+        return temp_emb  # .view(len(times), self.features)
 
     def _learned_pos_embedding(self, boxes: torch.Tensor) -> torch.Tensor:
         """Compute learned positional embeddings for boxes using given parameters.
