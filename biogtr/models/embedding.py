@@ -147,8 +147,9 @@ class Embedding(torch.nn.Module):
              torch.Tensor, the sine positional embeddings
              (embedding[:, 4i] = sin(x)
               embedding[:, 4i+1] = cos(x)
-              embedding[4i+2] = sin(y)
-              embedding[4i+3) = cos(y)
+              embedding[:, 4i+2] = sin(y)
+              embedding[:, 4i+3] = cos(y)
+              )
         """
         if self.scale is not None and self.normalize is False:
             raise ValueError("normalize should be True if scale is passed")
