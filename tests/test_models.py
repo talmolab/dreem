@@ -183,9 +183,7 @@ def test_embedding_kwargs():
     N = frames * objects
 
     boxes = torch.rand(N, 2) * (1024 - 128)
-    boxes = torch.concat([boxes, boxes + 128], axis=-1)
-    print(boxes)
-    # times = torch.rand(size=(N,))
+    boxes = torch.concat([boxes / 1024, (boxes + 128) / 1024], axis=-1)
 
     # sine embedding
 
@@ -202,8 +200,6 @@ def test_embedding_kwargs():
     sine_no_args = sine_no_args(boxes)
     sine_with_args = sine_with_args(boxes)
 
-    print(sine_with_args)
-    print(sine_no_args)
     assert not torch.equal(sine_no_args, sine_with_args)
 
     # learned pos embedding
