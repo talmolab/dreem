@@ -21,7 +21,7 @@ class Instance:
         point_scores: ArrayLike = None,
         instance_score: float = -1.0,
         skeleton: sio.Skeleton = None,
-        pose: dict[str, ArrayLike] = np.array([]),
+        pose: dict[str, ArrayLike] = None,
         device: str = None,
     ):
         """Initialize Instance.

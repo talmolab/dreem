@@ -14,8 +14,8 @@ def get_boxes_times(frames: List[Frame]) -> Tuple[torch.Tensor, torch.Tensor]:
 
     Returns:
         Tuple[torch.Tensor, torch.Tensor]: A tuple of two tensors containing the
-                                            bounding boxes and corresponding frame
-                                            indices, respectively.
+                                            bounding boxes normalized by the height and width of the image
+                                            and corresponding frame indices, respectively.
     """
     boxes, times = [], []
     _, h, w = frames[0].img_shape.flatten()
