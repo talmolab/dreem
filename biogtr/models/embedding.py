@@ -108,9 +108,6 @@ class Embedding(torch.nn.Module):
                 f"Embedding `mode` must be one of {self.EMB_MODES} not {mode}"
             )
 
-        # if mode == "fixed" and emb_type == "temp":
-        #     raise NotImplementedError("TODO: Implement Fixed Sinusoidal Temp Embedding")
-
     def forward(self, seq_positions: torch.Tensor) -> torch.Tensor:
         """Get the sequence positional embeddings.
 
