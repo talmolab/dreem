@@ -232,18 +232,18 @@ def test_transformer_encoder():
     N, B, D = 10, 1, feats
 
     # no position
-    src = torch.rand(size=(N, B, D))
+    queries = torch.rand(size=(N, B, D))
 
-    out = transformer_encoder(src)
+    encoder_logits = transformer_encoder(queries)
 
-    assert out.size() == src.size()
+    assert encoder_logits.size() == queries.size()
 
     # with position
-    pos = torch.ones_like(src)
+    pos_emb = torch.ones_like(queries)
 
-    out = transformer_encoder(src, pos=pos)
+    encoder_logits = transformer_encoder(queries, pos_emb=pos_emb)
 
-    assert out.size() == src.size()
+    assert encoder_logits.size() == encoder_logits.size()
 
 
 def test_transformer_decoder():
@@ -262,18 +262,20 @@ def test_transformer_decoder():
     N, B, D = 10, 1, feats
 
     # no position
-    tgt = memory = torch.rand(size=(N, B, D))
+    decoder_queries = encoder_logits = torch.rand(size=(N, B, D))
 
-    out = transformer_decoder(tgt, memory)
+    decoder_logits = transformer_decoder(decoder_queries, encoder_logits)
 
-    assert out.size() == tgt.size()
+    assert decoder_logits.size() == decoder_queries.size()
 
     # with position
-    pos = tgt_pos = torch.ones_like(memory)
+    pos_emb = query_pos_emb = torch.ones_like(encoder_logits)
 
-    out = transformer_decoder(tgt, memory, pos=pos, tgt_pos=tgt_pos)
+    decoder_logits = transformer_decoder(
+        decoder_queries, encoder_logits, pos_emb=pos_emb, query_pos_emb=query_pos_emb
+    )
 
-    assert out.size() == pos.size()
+    assert decoder_logits.size() == decoder_queries.size()
 
 
 def test_transformer_basic():
@@ -339,10 +341,15 @@ def test_transformer_embedding():
     assert transformer.pos_emb.mode == "learned"
     assert transformer.temp_emb.mode == "learned"
 
-    asso_preds, embedding = transformer(frames)
+    asso_preds, embeddings = transformer(frames)
 
     assert asso_preds[0].size() == (num_detected * num_frames,) * 2
-    assert embedding.size() == (num_detected * num_frames, 1, feats)
+
+    for emb_type, embedding in embeddings.items():
+        assert embedding.size() == (
+            num_detected * num_frames,
+            feats,
+        ), f"{emb_type}, {embedding.size()}"
 
 
 def test_tracking_transformer():
@@ -388,7 +395,12 @@ def test_tracking_transformer():
         return_embedding=True,
     )
 
-    asso_preds, embedding = tracking_transformer(frames)
+    asso_preds, embeddings = tracking_transformer(frames)
 
     assert asso_preds[0].size() == (num_detected * num_frames,) * 2
-    assert embedding.size() == (num_detected * num_frames, 1, feats)
+
+    for emb_type, embedding in embeddings.items():
+        assert embedding.size() == (
+            num_detected * num_frames,
+            feats,
+        ), embeddings
