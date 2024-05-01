@@ -442,7 +442,7 @@ class TransformerEncoder(nn.Module):
 
         self.layers = _get_clones(encoder_layer, num_layers)
         self.num_layers = num_layers
-        self.norm = norm
+        self.norm = norm if norm is not None else nn.Identity()
 
     def forward(
         self, queries: torch.Tensor, pos_emb: torch.Tensor = None
@@ -459,11 +459,7 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             queries = layer(queries, pos_emb=pos_emb)
 
-        if self.norm is not None:
-            encoder_logits = self.norm(queries)
-        else:
-            encoder_logits = queries
-
+        encoder_logits = self.norm(queries)
         return encoder_logits
 
 
@@ -524,13 +520,11 @@ class TransformerDecoder(nn.Module):
             if self.return_intermediate:
                 intermediate.append(self.norm(decoder_logits))
 
-        if self.norm is not None:
-            decoder_logits = self.norm(decoder_logits)
-            if self.return_intermediate:
-                intermediate.pop()
-                intermediate.append(decoder_logits)
-
+        decoder_logits = self.norm(decoder_logits)
         if self.return_intermediate:
+            intermediate.pop()
+            intermediate.append(decoder_logits)
+
             return torch.stack(intermediate)
 
         return decoder_logits.unsqueeze(0)
