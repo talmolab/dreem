@@ -113,7 +113,7 @@ def pose_bbox(points: np.ndarray, bbox_size: Union[tuple[int], int]) -> torch.Te
     """Calculate bbox around instance pose.
 
     Args:
-        instance: a labeled instance in a frame,
+        points: an np array of shape nodes x 2,
         bbox_size: size of bbox either an int indicating square bbox or in (x,y)
 
     Returns:
@@ -122,16 +122,8 @@ def pose_bbox(points: np.ndarray, bbox_size: Union[tuple[int], int]) -> torch.Te
     if isinstance(bbox_size, int):
         bbox_size = (bbox_size, bbox_size)
     # print(points)
-    minx = np.nanmin(points[:, 0], axis=-1)
-    miny = np.nanmin(points[:, -1], axis=-1)
-    minpoints = np.array([minx, miny]).T
 
-    maxx = np.nanmax(points[:, 0], axis=-1)
-    maxy = np.nanmax(points[:, -1], axis=-1)
-    maxpoints = np.array([maxx, maxy]).T
-
-    c = (minpoints + maxpoints) / 2
-
+    c = np.nanmean(points, axis=0)
     bbox = torch.Tensor(
         [
             c[-1] - bbox_size[-1] / 2,
