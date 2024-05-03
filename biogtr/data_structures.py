@@ -16,6 +16,7 @@ class Instance:
         pred_track_id: int = -1,
         bbox: ArrayLike = torch.empty((0, 4)),
         crop: ArrayLike = torch.tensor([]),
+        centroid: dict[str, ArrayLike] = None,
         features: ArrayLike = torch.tensor([]),
         track_score: float = -1.0,
         point_scores: ArrayLike = None,
@@ -31,6 +32,7 @@ class Instance:
             pred_track_id: Predicted track id. Untracked instance is represented by -1.
             bbox: The bounding box coordinate of the instance. Defaults to an empty tensor.
             crop: The crop of the instance.
+            centroid: the centroid around which the bbox was cropped.
             features: The reid features extracted from the CNN backbone used in the transformer.
             track_score: The track score output from the association matrix.
             point_scores: The point scores from sleap.
@@ -58,6 +60,14 @@ class Instance:
             self._bbox = torch.tensor(bbox)
         else:
             self._bbox = bbox
+
+        if centroid is not None:
+            self._centroid = centroid
+        elif self.bbox.shape[0]:
+            y1, x1, y2, x2 = self.bbox.squeeze()
+            self._centroid = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
+        else:
+            self._centroid = {}
 
         if self._bbox.shape[0] and len(self._bbox.shape) == 1:
             self._bbox = self._bbox.unsqueeze(0)
@@ -109,6 +119,7 @@ class Instance:
             f"gt_track_id={self._gt_track_id.item()}, "
             f"pred_track_id={self._pred_track_id.item()}, "
             f"bbox={self._bbox}, "
+            f"centroid={self._centroid}, "
             f"crop={self._crop.shape}, "
             f"features={self._features.shape}, "
             f"device={self._device}"
@@ -287,6 +298,35 @@ class Instance:
             return False
         else:
             return True
+
+    @property
+    def centroid(self) -> dict[str, ArrayLike]:
+        """The centroid around which the crop was formed.
+
+        Returns:
+            A dict containing the anchor name and the x, y bbox midpoint.
+        """
+        return self._centroid
+
+    @centroid.setter
+    def centroid(self, centroid: dict[str, ArrayLike]) -> None:
+        """Set the centroid of the instance.
+
+        Args:
+            centroid: A dict containing the anchor name and points.
+        """
+        self._centroid = centroid
+
+    @property
+    def anchor(self) -> str:
+        """The anchor node name around which the crop was formed.
+
+        Returns:
+            the node name of the anchor around which the crop was formed
+        """
+        if self.centroid:
+            return list(self.centroid.keys())[0]
+        return ""
 
     @property
     def crop(self) -> torch.Tensor:
@@ -958,3 +998,32 @@ class Frame:
         if not self.has_instances():
             return torch.tensor([])
         return torch.cat([instance.features for instance in self.instances], dim=0)
+
+    def get_anchors(self) -> list[str]:
+        """Get the anchor names of instances in the frame.
+
+        Returns:
+            A list of anchor names used by the instances to get the crop.
+        """
+        return [instance.anchor for instance in self.instances]
+
+    def get_centroids(self) -> tuple[list[str], ArrayLike]:
+        """Get the centroids around which each instance's crop was formed.
+
+        Returns:
+            anchors: the node names for the corresponding point
+            points: an n_instances x 2 array containing the centroids
+        """
+        anchors = [
+            anchor for instance in self.instances for anchor in instance.centroid.keys()
+        ]
+
+        points = np.array(
+            [
+                point
+                for instance in self.instances
+                for point in instance.centroid.values()
+            ]
+        )
+
+        return (anchors, points)
