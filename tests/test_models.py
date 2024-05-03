@@ -234,16 +234,16 @@ def test_transformer_encoder():
     # no position
     queries = torch.rand(size=(N, B, D))
 
-    encoder_logits = transformer_encoder(queries)
+    encoder_features = transformer_encoder(queries)
 
-    assert encoder_logits.size() == queries.size()
+    assert encoder_features.size() == queries.size()
 
     # with position
     pos_emb = torch.ones_like(queries)
 
-    encoder_logits = transformer_encoder(queries, pos_emb=pos_emb)
+    encoder_features = transformer_encoder(queries, pos_emb=pos_emb)
 
-    assert encoder_logits.size() == encoder_logits.size()
+    assert encoder_features.size() == encoder_features.size()
 
 
 def test_transformer_decoder():
@@ -262,20 +262,20 @@ def test_transformer_decoder():
     N, B, D = 10, 1, feats
 
     # no position
-    decoder_queries = encoder_logits = torch.rand(size=(N, B, D))
+    decoder_queries = encoder_features = torch.rand(size=(N, B, D))
 
-    decoder_logits = transformer_decoder(decoder_queries, encoder_logits)
+    decoder_features = transformer_decoder(decoder_queries, encoder_features)
 
-    assert decoder_logits.size() == decoder_queries.size()
+    assert decoder_features.size() == decoder_queries.size()
 
     # with position
-    pos_emb = query_pos_emb = torch.ones_like(encoder_logits)
+    pos_emb = query_pos_emb = torch.ones_like(encoder_features)
 
-    decoder_logits = transformer_decoder(
-        decoder_queries, encoder_logits, pos_emb=pos_emb, query_pos_emb=query_pos_emb
+    decoder_features = transformer_decoder(
+        decoder_queries, encoder_features, pos_emb=pos_emb, query_pos_emb=query_pos_emb
     )
 
-    assert decoder_logits.size() == decoder_queries.size()
+    assert decoder_features.size() == decoder_queries.size()
 
 
 def test_transformer_basic():

@@ -166,15 +166,15 @@ class Transformer(torch.nn.Module):
         embed_dim = reid_features.shape[-1]
         embeddings_dict = {"pos": None, "temp": None}
         # print(f'T: {window_length}; N: {total_instances}; N_t: {instances_per_frame} n_reid: {reid_features.shape}')
-        pred_box, pred_time = get_boxes_times(frames)  # total_instances x 4
+        pred_box, pred_time = get_boxes_times(frames)  # total_instances, 4
 
         temp_emb = self.temp_emb(pred_time / window_length)
         if self.return_embedding:
-            embeddings_dict["temp"] = temp_emb  # .detach().cpu()
+            embeddings_dict["temp"] = temp_emb
 
         pos_emb = self.pos_emb(pred_box)
         if self.return_embedding:
-            embeddings_dict["pos"] = pos_emb  # .detach().cpu()
+            embeddings_dict["pos"] = pos_emb
 
         try:
             emb = (pos_emb + temp_emb) / 2.0
@@ -191,11 +191,11 @@ class Transformer(torch.nn.Module):
 
         reid_features = reid_features.permute(
             1, 0, 2
-        )  # (total_instances x batch_size x embed_dim)
+        )  # (total_instances, batch_size, embed_dim)
 
         encoder_queries = reid_features
 
-        encoder_logits = self.encoder(
+        encoder_features = self.encoder(
             encoder_queries, pos_emb=emb
         )  # (total_instances, batch_size, embed_dim)
 
@@ -219,26 +219,26 @@ class Transformer(torch.nn.Module):
             ]  # decoder_queries: (n_query, batch_size, embed_dim)
             decoder_query_emb = decoder_query_emb[query_inds]
 
-        decoder_logits = self.decoder(
+        decoder_features = self.decoder(
             decoder_queries,
-            encoder_logits,
+            encoder_features,
             pos_emb=emb,
             query_pos_emb=decoder_query_emb,
         )  # (L, n_query, batch_size, embed_dim)
 
-        decoder_logits = decoder_logits.transpose(
+        decoder_features = decoder_features.transpose(
             1, 2
         )  # # (L, batch_size, n_query, embed_dim)
-        encoder_logits = encoder_logits.permute(1, 0, 2).view(
+        encoder_features = encoder_features.permute(1, 0, 2).view(
             batch_size, total_instances, embed_dim
         )  # (batch_size, total_instances, embed_dim)
 
         asso_output = []
-        for frame_logits in decoder_logits:
+        for frame_features in decoder_features:
             # x: (batch_size=1, n_query, embed_dim=512)
 
             asso_output.append(
-                self.attn_head(frame_logits, encoder_logits).view(
+                self.attn_head(frame_features, encoder_features).view(
                     n_query, total_instances
                 )
             )
@@ -302,19 +302,19 @@ class TransformerEncoderLayer(nn.Module):
 
         # q = k = src
 
-        attn_logits = self.self_attn(
+        attn_features = self.self_attn(
             query=queries,
             key=queries,
             value=queries,
         )[0]
 
-        queries = queries + self.dropout1(attn_logits)
+        queries = queries + self.dropout1(attn_features)
         queries = self.norm1(queries)
         projection = self.linear2(self.dropout(self.activation(self.linear1(queries))))
         queries = queries + self.dropout2(projection)
-        encoder_logits = self.norm2(queries)
+        encoder_features = self.norm2(queries)
 
-        return encoder_logits
+        return encoder_features
 
 
 class TransformerDecoderLayer(nn.Module):
@@ -366,7 +366,7 @@ class TransformerDecoderLayer(nn.Module):
     def forward(
         self,
         decoder_queries: torch.Tensor,
-        encoder_logits: torch.Tensor,
+        encoder_features: torch.Tensor,
         pos_emb: torch.Tensor = None,
         query_pos_emb: torch.Tensor = None,
     ) -> torch.Tensor:
@@ -374,7 +374,7 @@ class TransformerDecoderLayer(nn.Module):
 
         Args:
             decoder_queries: Target sequence for decoder to generate (n_query, batch_size, embed_dim).
-            encoder_logits: Output from encoder, that decoder uses to attend to relevant
+            encoder_features: Output from encoder, that decoder uses to attend to relevant
                 parts of input sequence (total_instances, batch_size, embed_dim)
             pos_emb: The input positional embedding tensor of shape (n_query, embed_dim).
             query_pos_emb: The target positional embedding of shape (n_query, embed_dim)
@@ -385,28 +385,28 @@ class TransformerDecoderLayer(nn.Module):
         if query_pos_emb is None:
             query_pos_emb = torch.zeros_like(decoder_queries)
         if pos_emb is None:
-            pos_emb = torch.zeros_like(encoder_logits)
+            pos_emb = torch.zeros_like(encoder_features)
 
         decoder_queries = decoder_queries + query_pos_emb
-        encoder_logits = encoder_logits + pos_emb
+        encoder_features = encoder_features + pos_emb
 
         if self.decoder_self_attn:
-            self_attn_logits = self.self_attn(
+            self_attn_features = self.self_attn(
                 query=decoder_queries, key=decoder_queries, value=decoder_queries
             )[0]
-            decoder_queries = decoder_queries + self.dropout1(self_attn_logits)
+            decoder_queries = decoder_queries + self.dropout1(self_attn_features)
             decoder_queries = self.norm1(decoder_queries)
 
-        x_attn_logits = self.multihead_attn(
+        x_attn_features = self.multihead_attn(
             query=decoder_queries,  # (n_query, batch_size, embed_dim)
-            key=encoder_logits,  # (total_instances, batch_size, embed_dim)
-            value=encoder_logits,  # (total_instances, batch_size, embed_dim)
+            key=encoder_features,  # (total_instances, batch_size, embed_dim)
+            value=encoder_features,  # (total_instances, batch_size, embed_dim)
         )[
             0
         ]  # (n_query, batch_size, embed_dim)
 
         decoder_queries = decoder_queries + self.dropout2(
-            x_attn_logits
+            x_attn_features
         )  # (n_query, batch_size, embed_dim)
         decoder_queries = self.norm2(
             decoder_queries
@@ -417,9 +417,9 @@ class TransformerDecoderLayer(nn.Module):
         decoder_queries = decoder_queries + self.dropout3(
             projection
         )  # (n_query, batch_size, embed_dim)
-        decoder_logits = self.norm3(decoder_queries)
+        decoder_features = self.norm3(decoder_queries)
 
-        return decoder_logits  # (n_query, batch_size, embed_dim)
+        return decoder_features  # (n_query, batch_size, embed_dim)
 
 
 class TransformerEncoder(nn.Module):
@@ -459,8 +459,8 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             queries = layer(queries, pos_emb=pos_emb)
 
-        encoder_logits = self.norm(queries)
-        return encoder_logits
+        encoder_features = self.norm(queries)
+        return encoder_features
 
 
 class TransformerDecoder(nn.Module):
@@ -490,7 +490,7 @@ class TransformerDecoder(nn.Module):
     def forward(
         self,
         decoder_queries: torch.Tensor,
-        encoder_logits: torch.Tensor,
+        encoder_features: torch.Tensor,
         pos_emb: torch.Tensor = None,
         query_pos_emb: torch.Tensor = None,
     ) -> torch.Tensor:
@@ -498,7 +498,7 @@ class TransformerDecoder(nn.Module):
 
         Args:
             decoder_queries: Query sequence for decoder to generate (n_query, batch_size, embed_dim).
-            encoder_logits: Output from encoder, that decoder uses to attend to relevant
+            encoder_features: Output from encoder, that decoder uses to attend to relevant
                 parts of input sequence (total_instances, batch_size, embed_dim)
             pos_emb: The input positional embedding tensor of shape (total_instances, batch_size, embed_dim).
             query_pos_emb: The query positional embedding of shape (n_query, batch_size, embed_dim)
@@ -506,28 +506,28 @@ class TransformerDecoder(nn.Module):
         Returns:
             The output tensor of shape (L, n_query, batch_size, embed_dim).
         """
-        decoder_logits = decoder_queries
+        decoder_features = decoder_queries
 
         intermediate = []
 
         for layer in self.layers:
-            decoder_logits = layer(
-                decoder_logits,
-                encoder_logits,
+            decoder_features = layer(
+                decoder_features,
+                encoder_features,
                 pos_emb=pos_emb,
                 query_pos_emb=query_pos_emb,
             )
             if self.return_intermediate:
-                intermediate.append(self.norm(decoder_logits))
+                intermediate.append(self.norm(decoder_features))
 
-        decoder_logits = self.norm(decoder_logits)
+        decoder_features = self.norm(decoder_features)
         if self.return_intermediate:
             intermediate.pop()
-            intermediate.append(decoder_logits)
+            intermediate.append(decoder_features)
 
             return torch.stack(intermediate)
 
-        return decoder_logits.unsqueeze(0)
+        return decoder_features.unsqueeze(0)
 
 
 def _get_clones(module: nn.Module, N: int) -> nn.ModuleList:
