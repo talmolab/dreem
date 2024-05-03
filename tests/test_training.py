@@ -138,5 +138,5 @@ def test_config_gtr_runner(base_config, params_config, two_flies):
     }
 
     cfg.set_hparams(hparams)
-
-    main(cfg.cfg)
+    with torch.autograd.set_detect_anomaly(True):
+        main(cfg.cfg)
