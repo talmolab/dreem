@@ -22,7 +22,7 @@ def test_mlp():
     """Test MLP logic."""
     b, n, f = 1, 10, 1024  # batch size, num instances, features
 
-    mlp = MLP(input_dim=f, hidden_dim=f, output_dim=f, num_layers=2, dropout=0.1)
+    mlp = MLP(hidden_dim=f, output_dim=f, num_layers=2, dropout=0.1)
 
     output_tensor = mlp(torch.rand(size=(b, n, f)))
 
@@ -241,7 +241,6 @@ def test_embedding_basic():
     assert not off_emb_boxes.any()
     assert not off_emb_times.any()
 
-
 def test_embedding_kwargs():
     """Test embedding config logic."""
 
@@ -288,6 +287,36 @@ def test_embedding_kwargs():
     lt_with_args = Embedding("temp", "learned", 128, **lt_args)
     assert lt_no_args.lookup.weight.shape != lt_with_args.lookup.weight.shape
 
+def test_multianchor_embedding():
+    frames = 32
+    objects = 10
+    d_model = 256
+    n_anchors = 10
+    features = 256
+
+    N = frames * objects
+
+    boxes = torch.rand(size=(N, n_anchors, 4))
+    times = torch.rand(size=(N,))
+
+    fixed_emb = Embedding("pos", "fixed", features=features, n_mlp_layers=3)
+    learned_emb = Embedding("pos", "learned", features=features, n_mlp_layers=3, n_points=n_anchors)
+    assert not isinstance(fixed_emb.mlp, torch.nn.Identity)
+    assert not isinstance(learned_emb.mlp, torch.nn.Identity)
+
+    emb = fixed_emb(boxes)
+    assert emb.size() == (N, features)
+
+    emb = learned_emb(boxes)
+    assert emb.size() == (N, features)
+
+    fixed_emb = Embedding("pos", "fixed", features=features, n_mlp_layers=0)
+    learned_emb = Embedding("pos", "learned", features=features, n_mlp_layers=0)
+    with pytest.raises(RuntimeError):
+        _ = fixed_emb(boxes)
+    with pytest.raises(RuntimeError):
+        _ = learned_emb(boxes)
+    
 
 def test_multianchor_embedding():
     frames = 32
