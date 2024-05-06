@@ -61,41 +61,42 @@ class Instance:
         else:
             self._bbox = bbox
 
+        if self._bbox.shape[0] and len(self._bbox.shape) == 1:
+            self._bbox = self._bbox.unsqueeze(0)  # (n_anchors, 4)
+        if self._bbox.shape[1] and len(self._bbox.shape) == 2:
+            self._bbox = self._bbox.unsqueeze(0)  # (1, n_anchors, 4)
+
         if centroid is not None:
             self._centroid = centroid
-        elif self.bbox.shape[0]:
-            y1, x1, y2, x2 = self.bbox.squeeze()
+        elif self.bbox.shape[1]:
+            y1, x1, y2, x2 = self.bbox.squeeze(dim=0).nanmean(dim=0)
             self._centroid = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
         else:
             self._centroid = {}
-
-        if self._bbox.shape[0] and len(self._bbox.shape) == 1:
-            self._bbox = self._bbox.unsqueeze(0)
 
         if not isinstance(crop, torch.Tensor):
             self._crop = torch.tensor(crop)
         else:
             self._crop = crop
 
-        if len(self._crop.shape) == 2:
-            self._crop = self._crop.unsqueeze(0).unsqueeze(0)
-        elif len(self._crop.shape) == 3:
-            self._crop = self._crop.unsqueeze(0)
+        if len(self._crop.shape) == 2:  # (h, w)
+            self._crop = self._crop.unsqueeze(0)  # (c, h, w)
+        if len(self._crop.shape) == 3:
+            self._crop = self._crop.unsqueeze(0)  # (1, c, h, w)
 
         if not isinstance(features, torch.Tensor):
             self._features = torch.tensor(features)
         else:
             self._features = features
 
-        if self._features.shape[0] and len(self._features.shape) == 1:
-            self._features = self._features.unsqueeze(0)
+        if self._features.shape[0] and len(self._features.shape) == 1:  # (d,)
+            self._features = self._features.unsqueeze(0)  # (1, d)
 
         if pose is not None:
             self._pose = pose
 
-        elif self.bbox.shape[0]:
-
-            y1, x1, y2, x2 = self.bbox.squeeze()
+        elif self.bbox.shape[1]:
+            y1, x1, y2, x2 = self.bbox.squeeze(dim=0).mean(dim=0)
             self._pose = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
 
         else:
@@ -287,6 +288,8 @@ class Instance:
 
         if self._bbox.shape[0] and len(self._bbox.shape) == 1:
             self._bbox = self._bbox.unsqueeze(0)
+        if self._bbox.shape[1] and len(self._bbox.shape) == 2:
+            self._bbox = self._bbox.unsqueeze(0)
 
     def has_bbox(self) -> bool:
         """Determine if the instance has a bbox.
@@ -294,7 +297,7 @@ class Instance:
         Returns:
             True if the instance has a bounding box, false otherwise.
         """
-        if self._bbox.shape[0] == 0:
+        if self._bbox.shape[1] == 0:
             return False
         else:
             return True
@@ -318,14 +321,14 @@ class Instance:
         self._centroid = centroid
 
     @property
-    def anchor(self) -> str:
+    def anchor(self) -> list[str]:
         """The anchor node name around which the crop was formed.
 
         Returns:
-            the node name of the anchor around which the crop was formed
+            the list of anchors around which each crop was formed
         """
         if self.centroid:
-            return list(self.centroid.keys())[0]
+            return list(self.centroid.keys())
         return ""
 
     @property
@@ -353,8 +356,8 @@ class Instance:
                 self._crop = crop
 
         if len(self._crop.shape) == 2:
-            self._crop = self._crop.unsqueeze(0).unsqueeze(0)
-        elif len(self._crop.shape) == 3:
+            self._crop = self._crop.unsqueeze(0)
+        if len(self._crop.shape) == 3:
             self._crop = self._crop.unsqueeze(0)
 
     def has_crop(self) -> bool:
