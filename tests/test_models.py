@@ -3,7 +3,8 @@
 import pytest
 import torch
 from biogtr.data_structures import Frame, Instance
-from biogtr.models.attention_head import MLP, ATTWeightHead
+from biogtr.models.mlp import MLP
+from biogtr.models.attention_head import ATTWeightHead
 from biogtr.models.embedding import Embedding
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.models.transformer import (
@@ -21,7 +22,7 @@ def test_mlp():
     """Test MLP logic."""
     b, n, f = 1, 10, 1024  # batch size, num instances, features
 
-    mlp = MLP(input_dim=f, hidden_dim=f, output_dim=f, num_layers=2, dropout=0.1)
+    mlp = MLP(hidden_dim=f, output_dim=f, num_layers=2, dropout=0.1)
 
     output_tensor = mlp(torch.rand(size=(b, n, f)))
 
@@ -100,16 +101,17 @@ def test_embedding_validity():
     _ = Embedding(emb_type="pos", mode="learned", features=128)
 
 
-def test_embedding():
+def test_embedding_basic():
     """Test embedding logic."""
 
     frames = 32
     objects = 10
     d_model = 256
+    n_anchors = 1
 
     N = frames * objects
 
-    boxes = torch.rand(size=(N, 4))
+    boxes = torch.rand(size=(N, n_anchors, 4))
     times = torch.rand(size=(N,))
 
     pos_emb = Embedding(
@@ -173,7 +175,6 @@ def test_embedding():
     assert not off_emb_boxes.any()
     assert not off_emb_times.any()
 
-
 def test_embedding_kwargs():
     """Test embedding config logic."""
 
@@ -181,9 +182,9 @@ def test_embedding_kwargs():
     objects = 10
 
     N = frames * objects
+    n_anchors = 1
 
-    boxes = torch.rand(N, 2) * (1024 - 128)
-    boxes = torch.concat([boxes / 1024, (boxes + 128) / 1024], axis=-1)
+    boxes = torch.rand(N, n_anchors, 4)
 
     # sine embedding
 
@@ -220,6 +221,36 @@ def test_embedding_kwargs():
     lt_with_args = Embedding("temp", "learned", 128, **lt_args)
     assert lt_no_args.lookup.weight.shape != lt_with_args.lookup.weight.shape
 
+def test_multianchor_embedding():
+    frames = 32
+    objects = 10
+    d_model = 256
+    n_anchors = 10
+    features = 256
+
+    N = frames * objects
+
+    boxes = torch.rand(size=(N, n_anchors, 4))
+    times = torch.rand(size=(N,))
+
+    fixed_emb = Embedding("pos", "fixed", features=features, n_mlp_layers=3)
+    learned_emb = Embedding("pos", "learned", features=features, n_mlp_layers=3, n_points=n_anchors)
+    assert not isinstance(fixed_emb.mlp, torch.nn.Identity)
+    assert not isinstance(learned_emb.mlp, torch.nn.Identity)
+
+    emb = fixed_emb(boxes)
+    assert emb.size() == (N, features)
+
+    emb = learned_emb(boxes)
+    assert emb.size() == (N, features)
+
+    fixed_emb = Embedding("pos", "fixed", features=features, n_mlp_layers=0)
+    learned_emb = Embedding("pos", "learned", features=features, n_mlp_layers=0)
+    with pytest.raises(RuntimeError):
+        _ = fixed_emb(boxes)
+    with pytest.raises(RuntimeError):
+        _ = learned_emb(boxes)
+    
 
 def test_transformer_encoder():
     """Test transformer encoder layer logic."""
