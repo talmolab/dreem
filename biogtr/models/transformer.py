@@ -132,8 +132,12 @@ class Transformer(torch.nn.Module):
     def _reset_parameters(self):
         """Initialize model weights from xavier distribution."""
         for p in self.parameters():
-            if p.dim() > 1:
-                nn.init.xavier_uniform_(p)
+            if not torch.nn.parameter.is_lazy(p) and p.dim() > 1:
+                try:
+                    nn.init.xavier_uniform_(p)
+                except ValueError as e:
+                    print(f"Failed Trying to initialize {p}")
+                    raise (e)
 
     def forward(
         self, frames: list[Frame], query_frame: int = None

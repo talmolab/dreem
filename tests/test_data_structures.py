@@ -10,7 +10,7 @@ def test_instance():
 
     gt_track_id = 0
     pred_track_id = 0
-    bbox = torch.randn((1, 4))
+    bbox = torch.randn((1, 1, 4))
     crop = torch.randn((1, 3, 128, 128))
     features = torch.randn((1, 64))
 
