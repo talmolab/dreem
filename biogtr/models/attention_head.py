@@ -24,8 +24,8 @@ class ATTWeightHead(torch.nn.Module):
         """
         super().__init__()
 
-        self.q_proj = MLP(feature_dim, feature_dim, feature_dim, num_layers, dropout)
-        self.k_proj = MLP(feature_dim, feature_dim, feature_dim, num_layers, dropout)
+        self.q_proj = MLP(feature_dim, feature_dim, num_layers, dropout)
+        self.k_proj = MLP(feature_dim, feature_dim, num_layers, dropout)
 
     def forward(
         self,
