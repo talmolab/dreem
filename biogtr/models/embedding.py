@@ -192,7 +192,7 @@ class Embedding(torch.nn.Module):
 
         if len(boxes.size()) == 3:
             boxes = boxes.unsqueeze(0)
-
+       
         if self.normalize:
             boxes = boxes / (boxes[:, :, -1:] + 1e-6) * self.scale
 
