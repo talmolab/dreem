@@ -175,6 +175,7 @@ def test_embedding_basic():
     assert not off_emb_boxes.any()
     assert not off_emb_times.any()
 
+
 def test_embedding_kwargs():
     """Test embedding config logic."""
 
@@ -221,6 +222,7 @@ def test_embedding_kwargs():
     lt_with_args = Embedding("temp", "learned", 128, **lt_args)
     assert lt_no_args.lookup.weight.shape != lt_with_args.lookup.weight.shape
 
+
 def test_multianchor_embedding():
     frames = 32
     objects = 10
@@ -234,7 +236,9 @@ def test_multianchor_embedding():
     times = torch.rand(size=(N,))
 
     fixed_emb = Embedding("pos", "fixed", features=features, n_mlp_layers=3)
-    learned_emb = Embedding("pos", "learned", features=features, n_mlp_layers=3, n_points=n_anchors)
+    learned_emb = Embedding(
+        "pos", "learned", features=features, n_mlp_layers=3, n_points=n_anchors
+    )
     assert not isinstance(fixed_emb.mlp, torch.nn.Identity)
     assert not isinstance(learned_emb.mlp, torch.nn.Identity)
 
@@ -250,7 +254,7 @@ def test_multianchor_embedding():
         _ = fixed_emb(boxes)
     with pytest.raises(RuntimeError):
         _ = learned_emb(boxes)
-    
+
 
 def test_transformer_encoder():
     """Test transformer encoder layer logic."""

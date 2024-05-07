@@ -49,6 +49,7 @@ def test_sleap_dataset(two_flies):
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
+        anchors="thorax",
     )
 
     ds_length = len(train_ds)
@@ -58,6 +59,52 @@ def test_sleap_dataset(two_flies):
     assert len(instances) == clip_length
     assert len(instances[0].get_gt_track_ids()) == 2
     assert len(instances[0].get_gt_track_ids()) == instances[0].num_detected
+    assert instances[0].get_crops().shape[1] == 3
+
+    train_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        crop_size=128,
+        chunk=True,
+        clip_length=clip_length,
+        anchors=["thorax", "head"],
+    )
+
+    ds_length = len(train_ds)
+
+    instances = next(iter(train_ds))
+
+    assert instances[0].get_crops().shape[1] == 6
+
+    train_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        crop_size=128,
+        chunk=True,
+        clip_length=clip_length,
+        anchors=1,
+    )
+
+    ds_length = len(train_ds)
+
+    instances = next(iter(train_ds))
+
+    assert instances[0].get_crops().shape[1] == 3
+
+    train_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        crop_size=128,
+        chunk=True,
+        clip_length=clip_length,
+        anchors=2,
+    )
+
+    ds_length = len(train_ds)
+
+    instances = next(iter(train_ds))
+
+    assert instances[0].get_crops().shape[1] == 6
 
     chunk_frac = 0.5
 
