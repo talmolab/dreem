@@ -272,6 +272,7 @@ class SleapDataset(BaseDataset):
                 if isinstance(self.anchors, int):
                     anchors_to_choose = list(pose.keys()) + ["midpoint"]
                     anchors = np.random.choice(anchors_to_choose, self.anchors)
+
                 else:
                     anchors = self.anchors
 
@@ -282,7 +283,7 @@ class SleapDataset(BaseDataset):
                     elif anchor in pose:
                         centroid = np.array(pose[anchor])
                         if np.isnan(centroid).any():
-                            centroid = np.array([None, None])
+                            centroid = np.array([np.nan, np.nan])
 
                     elif anchor not in pose and len(anchors) == 1:
                         anchor = "midpoint"
