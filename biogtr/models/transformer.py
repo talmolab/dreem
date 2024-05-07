@@ -171,6 +171,7 @@ class Transformer(torch.nn.Module):
         embeddings_dict = {"pos": None, "temp": None}
         # print(f'T: {window_length}; N: {total_instances}; N_t: {instances_per_frame} n_reid: {reid_features.shape}')
         pred_box, pred_time = get_boxes_times(frames)  # total_instances, 4
+        pred_box = torch.nan_to_num(pred_box, -1.0)
 
         temp_emb = self.temp_emb(pred_time / window_length)
         if self.return_embedding:

@@ -33,7 +33,7 @@ class Boxes:
             # Use reshape, so we don't end up creating a new tensor that does not depend on
             # the inputs (and consequently confuses jit)
             tensor = tensor.reshape((-1, 4)).to(dtype=torch.float32)
-        assert tensor.dim() == 2 and tensor.size(-1) == 4, tensor.size()
+        assert tensor.dim() == 3 and tensor.size(-1) == 4, tensor.size()
 
         self.tensor = tensor
 
@@ -63,7 +63,7 @@ class Boxes:
             torch.Tensor: a vector with areas of each box.
         """
         box = self.tensor
-        area = (box[:, 2] - box[:, 0]) * (box[:, 3] - box[:, 1])
+        area = (box[:, :, 2] - box[:, :, 0]) * (box[:, :, 3] - box[:, :, 1])
         return area
 
     def clip(self, box_size: Tuple[int, int]) -> None:
@@ -77,10 +77,10 @@ class Boxes:
         """
         assert torch.isfinite(self.tensor).all(), "Box tensor contains infinite or NaN!"
         h, w = box_size
-        x1 = self.tensor[:, 0].clamp(min=0, max=w)
-        y1 = self.tensor[:, 1].clamp(min=0, max=h)
-        x2 = self.tensor[:, 2].clamp(min=0, max=w)
-        y2 = self.tensor[:, 3].clamp(min=0, max=h)
+        x1 = self.tensor[:, :, 0].clamp(min=0, max=w)
+        y1 = self.tensor[:, :, 1].clamp(min=0, max=h)
+        x2 = self.tensor[:, :, 2].clamp(min=0, max=w)
+        y2 = self.tensor[:, :, 3].clamp(min=0, max=h)
         self.tensor = torch.stack((x1, y1, x2, y2), dim=-1)
 
     def nonempty(self, threshold: float = 0.0) -> torch.Tensor:
@@ -97,8 +97,8 @@ class Boxes:
                 (False) or non-empty (True).
         """
         box = self.tensor
-        widths = box[:, 2] - box[:, 0]
-        heights = box[:, 3] - box[:, 1]
+        widths = box[:, :, 2] - box[:, :, 0]
+        heights = box[:, :, 3] - box[:, :, 1]
         keep = (widths > threshold) & (heights > threshold)
         return keep
 
@@ -122,10 +122,10 @@ class Boxes:
         subject to Pytorch's indexing semantics.
         """
         if isinstance(item, int):
-            return Boxes(self.tensor[item].view(1, -1))
+            return Boxes(self.tensor[item])
         b = self.tensor[item]
         assert (
-            b.dim() == 2
+            b.dim() == 3
         ), "Indexing on Boxes with {} failed to return a matrix!".format(item)
         return Boxes(b)
 
@@ -173,12 +173,12 @@ class Boxes:
         Returns:
             The box centers in a Nx2 array of (x, y).
         """
-        return (self.tensor[:, :2] + self.tensor[:, 2:]) / 2
+        return (self.tensor[:, :, :2] + self.tensor[:, :, 2:]) / 2
 
     def scale(self, scale_x: float, scale_y: float) -> None:
         """Scale the box with horizontal and vertical scaling factors."""
-        self.tensor[:, 0::2] *= scale_x
-        self.tensor[:, 1::2] *= scale_y
+        self.tensor[:, :, 0::2] *= scale_x
+        self.tensor[:, :, 1::2] *= scale_y
 
     @classmethod
     def cat(cls, boxes_list: List["Boxes"]) -> "Boxes":
