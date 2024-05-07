@@ -635,7 +635,7 @@ class Frame:
         return self
 
     def to_slp(
-        self, track_lookup: dict[int : sio.Track] = {}
+        self, track_lookup: dict[int, sio.Track] = {}
     ) -> tuple[sio.LabeledFrame, dict[int, sio.Track]]:
         """Convert Frame to sleap_io.LabeledFrame object.
 
