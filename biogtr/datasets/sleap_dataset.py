@@ -24,6 +24,7 @@ class SleapDataset(BaseDataset):
         padding: int = 5,
         crop_size: int = 128,
         anchors: Union[int, list[str], str] = "",
+        anchors: Union[int, list[str], str] = "",
         chunk: bool = True,
         clip_length: int = 500,
         mode: str = "train",
@@ -39,6 +40,10 @@ class SleapDataset(BaseDataset):
             video_files: a list of paths to video files
             padding: amount of padding around object crops
             crop_size: the size of the object crops
+            anchors: One of:
+                        * a string indicating a single node to center crops around
+                        * a list of skeleton node names to be used as the center of crops
+                        * an int indicating the number of anchors to randomly select
             anchors: One of:
                         * a string indicating a single node to center crops around
                         * a list of skeleton node names to be used as the center of crops
@@ -81,6 +86,19 @@ class SleapDataset(BaseDataset):
         self.mode = mode.lower()
         self.n_chunks = n_chunks
         self.seed = seed
+
+        if isinstance(anchors, int):
+            self.anchors = anchors
+        elif isinstance(anchors, str):
+            self.anchors = [anchors.lower()]
+        else:
+            self.anchors = [anchor.lower() for anchor in anchors]
+
+        if (
+            isinstance(self.anchors, list) and len(self.anchors) == 0
+        ) or self.anchors == 0:
+            raise ValueError(f"Must provide at least one anchor but got {self.anchors}")
+
 
         if isinstance(anchors, int):
             self.anchors = anchors
@@ -176,6 +194,9 @@ class SleapDataset(BaseDataset):
 
             try:
                 img = vid_reader.get_data(frame_ind)
+                if len(img.shape) == 2:
+                    img = img.expand_dims(0)
+                h, w, c = img.shape
                 if len(img.shape) == 2:
                     img = img.expand_dims(0)
                 h, w, c = img.shape
@@ -278,15 +299,31 @@ class SleapDataset(BaseDataset):
                 for anchor in anchors:
                     if anchor == "midpoint" or anchor == "centroid":
                         centroid = np.nanmean(np.array(list(pose.values())), axis=0)
+                    anchors = self.anchors
+
+                for anchor in anchors:
+                    if anchor == "midpoint" or anchor == "centroid":
+                        centroid = np.nanmean(np.array(list(pose.values())), axis=0)
 
                     elif anchor in pose:
                         centroid = np.array(pose[anchor])
                         if np.isnan(centroid).any():
-                            centroid = np.array([None, None])
+                            centroid = np.array([np.nan, np.nan])
 
                     elif anchor not in pose and len(anchors) == 1:
                         anchor = "midpoint"
                         centroid = np.nanmean(np.array(list(pose.values())), axis=0)
+                    elif anchor in pose:
+                        centroid = np.array(pose[anchor])
+                        if np.isnan(centroid).any():
+                            centroid = np.array([np.nan, np.nan])
+
+                    elif anchor not in pose and len(anchors) == 1:
+                        anchor = "midpoint"
+                        centroid = np.nanmean(np.array(list(pose.values())), axis=0)
+
+                    else:
+                        centroid = np.array([np.nan, np.nan])
 
                     else:
                         centroid = np.array([np.nan, np.nan])
@@ -298,7 +335,23 @@ class SleapDataset(BaseDataset):
                             data_utils.get_bbox(centroid, self.crop_size),
                             padding=self.padding,
                         )
+                    if np.isnan(centroid).all():
+                        bbox = torch.tensor([np.nan, np.nan, np.nan, np.nan])
+                    else:
+                        bbox = data_utils.pad_bbox(
+                            data_utils.get_bbox(centroid, self.crop_size),
+                            padding=self.padding,
+                        )
 
+                    if bbox.isnan().all():
+                        crop = torch.zeros(
+                            c,
+                            self.crop_size + 2 * self.padding,
+                            self.crop_size + 2 * self.padding,
+                            dtype=img.dtype,
+                        )
+                    else:
+                        crop = data_utils.crop_bbox(img, bbox)
                     if bbox.isnan().all():
                         crop = torch.zeros(
                             c,
@@ -319,9 +372,22 @@ class SleapDataset(BaseDataset):
                 if len(boxes) > 0:
                     boxes = torch.stack(boxes, dim=0)
 
+                    crops.append(crop)
+                    centroids[anchor] = centroid
+                    boxes.append(bbox)
+
+                if len(crops) > 0:
+                    crops = torch.concat(crops, dim=0)
+
+                if len(boxes) > 0:
+                    boxes = torch.stack(boxes, dim=0)
+
                 instance = Instance(
                     gt_track_id=gt_track_ids[j],
                     pred_track_id=-1,
+                    crop=crops,
+                    centroid=centroids,
+                    bbox=boxes,
                     crop=crops,
                     centroid=centroids,
                     bbox=boxes,

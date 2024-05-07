@@ -326,6 +326,7 @@ class Instance:
 
         Returns:
             the list of anchors around which each crop was formed
+            the list of anchors around which each crop was formed
         """
         if self.centroid:
             return list(self.centroid.keys())
