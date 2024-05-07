@@ -176,6 +176,9 @@ class SleapDataset(BaseDataset):
 
             try:
                 img = vid_reader.get_data(frame_ind)
+                if len(img.shape) == 2:
+                    img = img.expand_dims(0)
+                h, w, c = img.shape
             except IndexError as e:
                 print(f"Could not read frame {frame_ind} from {video_name} due to {e}")
                 continue
