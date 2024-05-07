@@ -13,13 +13,11 @@ model:
   num_layers_attn_head: 2
   dropout_attn_head: 0.1
   embedding_meta: 
-    pos: 
-      mode: 'learned'
-      emb_num: 16
-      over_boxes: False
+    pos:
+        mode: "fixed"
+        normalize: true
     temp:
-      mode: 'learned'
-      emb_num: 16
+        mode: "fixed"
 
   return_embedding: False
   decoder_self_attn: False
@@ -65,7 +63,7 @@ dataset:
   train_dataset:
     slp_files: ['tests/data/sleap/two_flies.slp']
     video_files: ['tests/data/sleap/two_flies.mp4']
-    anchor: "thorax"
+    anchors: "thorax"
     padding: 5
     crop_size: 128
     chunk: true
@@ -74,7 +72,7 @@ dataset:
   val_dataset:
     slp_files: ['tests/data/sleap/two_flies.slp']
     video_files: ['tests/data/sleap/two_flies.mp4']
-    anchor: "thorax"
+    anchors: "thorax"
     padding: 5
     crop_size: 128
     chunk: True
@@ -83,7 +81,7 @@ dataset:
   test_dataset:
     slp_files: ['tests/data/sleap/two_flies.slp']
     video_files: ['tests/data/sleap/two_flies.mp4']
-    anchor: "thorax"
+    anchors: "thorax"
     padding: 5
     crop_size: 128
     chunk: True

@@ -86,7 +86,9 @@ class Embedding(torch.nn.Module):
 
         if self.mode == "learned":
             if self.emb_type == "pos":
-                self.lookup = torch.nn.Embedding(self.emb_num * 4 * self.n_points, self.features // (4*n_points))
+                self.lookup = torch.nn.Embedding(
+                    self.emb_num * 4 * self.n_points, self.features // (4 * n_points)
+                )
                 self._emb_func = self._learned_pos_embedding
             elif self.emb_type == "temp":
                 self.lookup = torch.nn.Embedding(self.emb_num, self.features)
@@ -135,9 +137,12 @@ class Embedding(torch.nn.Module):
         emb = self._emb_func(seq_positions)
 
         if emb.shape[-1] != self.features:
-            raise RuntimeError((f"Output embedding dimension is {emb.shape[-1]} but requested {self.features} dimensions! \n" 
-                                f"hint: Try setting `n_layers` > 0 to project to the correct embedding dimensions."
-                               ))
+            raise RuntimeError(
+                (
+                    f"Output embedding dimension is {emb.shape[-1]} but requested {self.features} dimensions! \n"
+                    f"hint: Try setting `n_layers` > 0 to project to the correct embedding dimensions."
+                )
+            )
         return emb
 
     def _torch_int_div(
@@ -175,7 +180,7 @@ class Embedding(torch.nn.Module):
 
         if len(boxes.size()) == 3:
             boxes = boxes.unsqueeze(0)
-       
+
         if self.normalize:
             boxes = boxes / (boxes[:, :, -1:] + 1e-6) * self.scale
 
@@ -191,12 +196,12 @@ class Embedding(torch.nn.Module):
         pos_emb = torch.stack(
             (pos_emb[:, :, :, :, 0::2].sin(), pos_emb[:, :, :, :, 1::2].cos()), dim=4
         )
-        pos_emb = pos_emb.flatten(2).squeeze(0) #(N_t, n_anchors * D)
+        pos_emb = pos_emb.flatten(2).squeeze(0)  # (N_t, n_anchors * D)
 
         pos_emb = self.mlp(pos_emb)
 
         pos_emb = pos_emb.view(boxes.shape[1], self.features)
-        
+
         return pos_emb
 
     def _sine_temp_embedding(self, times: torch.Tensor) -> torch.Tensor:
@@ -252,7 +257,7 @@ class Embedding(torch.nn.Module):
         else:
             xywh = torch.cat(
                 [
-                    (boxes[:, :, 2:] + boxes[:, :2]) / 2,
+                    (boxes[:, :, 2:] + boxes[:, :, :2]) / 2,
                     (boxes[:, :, 2:] - boxes[:, :, :2]),
                 ],
                 dim=1,
@@ -260,14 +265,14 @@ class Embedding(torch.nn.Module):
 
         left_ind, right_ind, left_weight, right_weight = self._compute_weights(xywh)
         f = pos_lookup.weight.shape[1]  # self.features // 4
-        
+
         try:
             pos_emb_table = pos_lookup.weight.view(
                 self.emb_num, n_anchors, 4, f
             )  # T x 4 x (D * 4)
         except RuntimeError as e:
-           print(f"Hint: `n_points` ({self.n_points}) may be set incorrectly!")
-           raise(e)
+            print(f"Hint: `n_points` ({self.n_points}) may be set incorrectly!")
+            raise (e)
 
         left_emb = pos_emb_table.gather(
             0,
