@@ -69,16 +69,16 @@ class MicroscopyDataset(BaseDataset):
         self.clip_length = clip_length
         self.crop_size = crop_size
         self.padding = padding
-        self.mode = mode
+        self.mode = mode.lower()
         self.n_chunks = n_chunks
         self.seed = seed
 
         # if self.seed is not None:
         #     np.random.seed(self.seed)
-
-        self.augmentations = (
-            data_utils.build_augmentations(augmentations) if augmentations else None
-        )
+        if augmentations and self.mode == "train":
+            self.augmentations = data_utils.build_augmentations(augmentations)
+        else:
+            self.augmentations = None
 
         if source.lower() == "trackmate":
             parser = data_utils.parse_trackmate
@@ -190,6 +190,9 @@ class MicroscopyDataset(BaseDataset):
                         crop=crop,
                     )
                 )
+
+            if self.mode == "train":
+                np.random.shuffle(instances)
 
             frames.append(
                 Frame(

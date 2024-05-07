@@ -75,7 +75,7 @@ class SleapDataset(BaseDataset):
         self.crop_size = crop_size
         self.chunk = chunk
         self.clip_length = clip_length
-        self.mode = mode
+        self.mode = mode.lower()
         self.n_chunks = n_chunks
         self.seed = seed
         self.anchor = anchor.lower()
@@ -83,10 +83,10 @@ class SleapDataset(BaseDataset):
 
         # if self.seed is not None:
         #     np.random.seed(self.seed)
-
-        self.augmentations = (
-            data_utils.build_augmentations(augmentations) if augmentations else None
-        )
+        if augmentations and self.mode == "train":
+            self.augmentations = data_utils.build_augmentations(augmentations)
+        else:
+            self.augmentations = None
 
         self.labels = [sio.load_slp(slp_file) for slp_file in self.slp_files]
 
@@ -247,7 +247,10 @@ class SleapDataset(BaseDataset):
                 pose = shown_poses[j]
 
                 """Check for anchor"""
-                if self.anchor in pose:
+                if self.anchor == "random":
+                    anchors = list(pose.keys()) + ["midpoint"]
+                    anchor = np.random.choice(anchors)
+                elif self.anchor in pose:
                     anchor = self.anchor
                 else:
                     if self.verbose:
@@ -259,28 +262,17 @@ class SleapDataset(BaseDataset):
                 if anchor != "midpoint":
                     centroid = pose[anchor]
 
-                    if not np.isnan(centroid).any():
-                        bbox = data_utils.pad_bbox(
-                            data_utils.get_bbox(centroid, self.crop_size),
-                            padding=self.padding,
-                        )
-
-                    else:
-                        # print(f'{self.anchor} contains NaN: {centroid}. Using midpoint')
-                        bbox = data_utils.pad_bbox(
-                            data_utils.pose_bbox(
-                                np.array(list(pose.values())), self.crop_size
-                            ),
-                            padding=self.padding,
-                        )
+                    if np.isnan(centroid).any():
+                        anchor = "midpoint"
+                        centroid = np.nanmean(np.array(list(pose.values())), axis=0)
                 else:
                     # print(f'{self.anchor} not an available option amongst {pose.keys()}. Using midpoint')
-                    bbox = data_utils.pad_bbox(
-                        data_utils.pose_bbox(
-                            np.array(list(pose.values())), self.crop_size
-                        ),
-                        padding=self.padding,
-                    )
+                    centroid = np.nanmean(np.array(list(pose.values())), axis=0)
+
+                bbox = data_utils.pad_bbox(
+                    data_utils.get_bbox(centroid, self.crop_size),
+                    padding=self.padding,
+                )
 
                 crop = data_utils.crop_bbox(img, bbox)
 
@@ -288,6 +280,7 @@ class SleapDataset(BaseDataset):
                     gt_track_id=gt_track_ids[j],
                     pred_track_id=-1,
                     crop=crop,
+                    centroid={anchor: centroid},
                     bbox=bbox,
                     skeleton=skeleton,
                     pose=poses[j],
@@ -296,6 +289,9 @@ class SleapDataset(BaseDataset):
                 )
 
                 instances.append(instance)
+
+            if self.mode == "train":
+                np.random.shuffle(instances)
 
             frame = Frame(
                 video_id=label_idx,
