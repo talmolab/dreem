@@ -23,7 +23,7 @@ class SleapDataset(BaseDataset):
         video_files: list[str],
         padding: int = 5,
         crop_size: int = 128,
-        anchor: str = "",
+        anchors: Union[int, list[str], str] = "",
         chunk: bool = True,
         clip_length: int = 500,
         mode: str = "train",
@@ -39,7 +39,10 @@ class SleapDataset(BaseDataset):
             video_files: a list of paths to video files
             padding: amount of padding around object crops
             crop_size: the size of the object crops
-            anchor: the name of the anchor keypoint to be used as centroid for cropping.
+            anchors: One of:
+                        * a string indicating a single node to center crops around
+                        * a list of skeleton node names to be used as the center of crops
+                        * an int indicating the number of anchors to randomly select
             If unavailable then crop around the midpoint between all visible anchors.
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
@@ -78,7 +81,19 @@ class SleapDataset(BaseDataset):
         self.mode = mode.lower()
         self.n_chunks = n_chunks
         self.seed = seed
-        self.anchor = anchor.lower()
+
+        if isinstance(anchors, int):
+            self.anchors = anchors
+        elif isinstance(anchors, str):
+            self.anchors = [anchors.lower()]
+        else:
+            self.anchors = [anchor.lower() for anchor in anchors]
+
+        if (
+            isinstance(self.anchors, list) and len(self.anchors) == 0
+        ) or self.anchors == 0:
+            raise ValueError(f"Must provide at least one anchor but got {self.anchors}")
+
         self.verbose = verbose
 
         # if self.seed is not None:
@@ -161,6 +176,9 @@ class SleapDataset(BaseDataset):
 
             try:
                 img = vid_reader.get_data(frame_ind)
+                if len(img.shape) == 2:
+                    img = img.expand_dims(0)
+                h, w, c = img.shape
             except IndexError as e:
                 print(f"Could not read frame {frame_ind} from {video_name} due to {e}")
                 continue
@@ -247,41 +265,66 @@ class SleapDataset(BaseDataset):
                 pose = shown_poses[j]
 
                 """Check for anchor"""
-                if self.anchor == "random":
-                    anchors = list(pose.keys()) + ["midpoint"]
-                    anchor = np.random.choice(anchors)
-                elif self.anchor in pose:
-                    anchor = self.anchor
+                crops = []
+                boxes = []
+                centroids = {}
+
+                if isinstance(self.anchors, int):
+                    anchors_to_choose = list(pose.keys()) + ["midpoint"]
+                    anchors = np.random.choice(anchors_to_choose, self.anchors)
                 else:
-                    if self.verbose:
-                        warnings.warn(
-                            f"{self.anchor} not in {[key for key in pose.keys()]}! Defaulting to midpoint"
-                        )
-                    anchor = "midpoint"
+                    anchors = self.anchors
 
-                if anchor != "midpoint":
-                    centroid = pose[anchor]
+                for anchor in anchors:
+                    if anchor == "midpoint" or anchor == "centroid":
+                        centroid = np.nanmean(np.array(list(pose.values())), axis=0)
 
-                    if np.isnan(centroid).any():
+                    elif anchor in pose:
+                        centroid = np.array(pose[anchor])
+                        if np.isnan(centroid).any():
+                            centroid = np.array([None, None])
+
+                    elif anchor not in pose and len(anchors) == 1:
                         anchor = "midpoint"
                         centroid = np.nanmean(np.array(list(pose.values())), axis=0)
-                else:
-                    # print(f'{self.anchor} not an available option amongst {pose.keys()}. Using midpoint')
-                    centroid = np.nanmean(np.array(list(pose.values())), axis=0)
 
-                bbox = data_utils.pad_bbox(
-                    data_utils.get_bbox(centroid, self.crop_size),
-                    padding=self.padding,
-                )
+                    else:
+                        centroid = np.array([np.nan, np.nan])
 
-                crop = data_utils.crop_bbox(img, bbox)
+                    if np.isnan(centroid).all():
+                        bbox = torch.tensor([np.nan, np.nan, np.nan, np.nan])
+                    else:
+                        bbox = data_utils.pad_bbox(
+                            data_utils.get_bbox(centroid, self.crop_size),
+                            padding=self.padding,
+                        )
+
+                    if bbox.isnan().all():
+                        crop = torch.zeros(
+                            c,
+                            self.crop_size + 2 * self.padding,
+                            self.crop_size + 2 * self.padding,
+                            dtype=img.dtype,
+                        )
+                    else:
+                        crop = data_utils.crop_bbox(img, bbox)
+
+                    crops.append(crop)
+                    centroids[anchor] = centroid
+                    boxes.append(bbox)
+
+                if len(crops) > 0:
+                    crops = torch.concat(crops, dim=0)
+
+                if len(boxes) > 0:
+                    boxes = torch.stack(boxes, dim=0)
 
                 instance = Instance(
                     gt_track_id=gt_track_ids[j],
                     pred_track_id=-1,
-                    crop=crop,
-                    centroid={anchor: centroid},
-                    bbox=bbox,
+                    crop=crops,
+                    centroid=centroids,
+                    bbox=boxes,
                     skeleton=skeleton,
                     pose=poses[j],
                     point_scores=point_scores[j],
