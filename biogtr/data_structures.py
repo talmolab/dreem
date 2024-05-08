@@ -14,10 +14,10 @@ class Instance:
         self,
         gt_track_id: int = -1,
         pred_track_id: int = -1,
-        bbox: ArrayLike = torch.empty((0, 4)),
-        crop: ArrayLike = torch.tensor([]),
+        bbox: ArrayLike = None,
+        crop: ArrayLike = None,
         centroid: dict[str, ArrayLike] = None,
-        features: ArrayLike = torch.tensor([]),
+        features: ArrayLike = None,
         track_score: float = -1.0,
         point_scores: ArrayLike = None,
         instance_score: float = -1.0,
@@ -56,25 +56,34 @@ class Instance:
         else:
             self._skeleton = skeleton
 
-        if not isinstance(bbox, torch.Tensor):
+        if bbox is None:
+            self._bbox = torch.empty(1, 0, 4)
+
+        elif not isinstance(bbox, torch.Tensor):
             self._bbox = torch.tensor(bbox)
+
         else:
             self._bbox = bbox
 
         if self._bbox.shape[0] and len(self._bbox.shape) == 1:
             self._bbox = self._bbox.unsqueeze(0)  # (n_anchors, 4)
+
         if self._bbox.shape[1] and len(self._bbox.shape) == 2:
             self._bbox = self._bbox.unsqueeze(0)  # (1, n_anchors, 4)
 
         if centroid is not None:
             self._centroid = centroid
+
         elif self.bbox.shape[1]:
             y1, x1, y2, x2 = self.bbox.squeeze(dim=0).nanmean(dim=0)
             self._centroid = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
+
         else:
             self._centroid = {}
 
-        if not isinstance(crop, torch.Tensor):
+        if crop is None:
+            self._crop = torch.tensor([])
+        elif not isinstance(crop, torch.Tensor):
             self._crop = torch.tensor(crop)
         else:
             self._crop = crop
@@ -84,7 +93,9 @@ class Instance:
         if len(self._crop.shape) == 3:
             self._crop = self._crop.unsqueeze(0)  # (1, c, h, w)
 
-        if not isinstance(features, torch.Tensor):
+        if features is None:
+            self._features = torch.tensor([])
+        elif not isinstance(features, torch.Tensor):
             self._features = torch.tensor(features)
         else:
             self._features = features
@@ -532,8 +543,8 @@ class Frame:
         video_id: int,
         frame_id: int,
         vid_file: str = "",
-        img_shape: ArrayLike = [0, 0, 0],
-        instances: List[Instance] = [],
+        img_shape: ArrayLike = None,
+        instances: List[Instance] = None,
         asso_output: ArrayLike = None,
         matches: tuple = None,
         traj_score: Union[ArrayLike, dict] = None,
@@ -563,13 +574,16 @@ class Frame:
             self._video = sio.Video(vid_file)
         except ValueError:
             self._video = vid_file
-
-        if isinstance(img_shape, torch.Tensor):
+        if img_shape is None:
+            self._img_shape=torch.tensor([0,0,0])
+        elif isinstance(img_shape, torch.Tensor):
             self._img_shape = img_shape
         else:
             self._img_shape = torch.tensor([img_shape])
-
-        self._instances = instances
+        if instances is None:
+            self.instances = []
+        else:
+            self._instances = instances
 
         self._asso_output = asso_output
         self._matches = matches
