@@ -1,7 +1,9 @@
 model:
   ckpt_path: null
-  encoder_model: "resnet18"
-  encoder_cfg: {}
+  encoder_cfg:
+    model_name: "resnet18"
+    in_chans: 3
+    pretrained: False
   d_model: 512
   nhead: 8
   num_encoder_layers: 1

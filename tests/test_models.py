@@ -49,17 +49,31 @@ def test_encoder():
     features = 512
     input_tensor = torch.rand(b, c, h, w)
 
-    for model_name, weights_name in [
-        ("resnet18", "ResNet18_Weights.DEFAULT"),
-        ("resnet50", "ResNet50_Weights.DEFAULT"),
-    ]:
-        cfg = {"weights": weights_name}
+    encoder = VisualEncoder(model_name="resnet18", in_chans=c, d_model=features)
 
-        encoder = VisualEncoder(model_name, cfg, features)
+    output = encoder(input_tensor)
 
-        output = encoder(input_tensor)
+    assert output.shape == (b, features)
 
-        assert output.shape == (b, features)
+    c = 3
+    input_tensor = torch.rand(b, c, h, w)
+
+    features = 128
+
+    encoder = VisualEncoder(model_name="resnet18", in_chans=c, d_model=features)
+
+    output = encoder(input_tensor)
+
+    assert output.shape == (b, features)
+
+    c = 9
+    input_tensor = torch.rand(b, c, h, w)
+
+    encoder = VisualEncoder(model_name="resnet18", in_chans=c, d_model=features)
+
+    output = encoder(input_tensor)
+
+    assert output.shape == (b, features)
 
 
 def test_embedding_validity():

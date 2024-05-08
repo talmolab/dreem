@@ -60,7 +60,7 @@ def test_basic_gtr_runner():
                     Instance(
                         gt_track_id=k,
                         pred_track_id=-1,
-                        bbox=torch.rand(size=(1, 4)),
+                        bbox=torch.rand(size=(1, 1, 4)),
                         crop=torch.randn(size=img_shape),
                     ),
                 )
@@ -75,7 +75,6 @@ def test_basic_gtr_runner():
             )
             frame_ind += 1
         train_ds.append(frames)
-
     gtr_runner = GTRRunner()
 
     optim_scheduler = gtr_runner.configure_optimizers()

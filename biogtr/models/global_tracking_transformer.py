@@ -13,8 +13,7 @@ class GlobalTrackingTransformer(nn.Module):
 
     def __init__(
         self,
-        encoder_model: str = "resnet18",
-        encoder_cfg: dict = {},
+        encoder_cfg: dict = None,
         d_model: int = 1024,
         nhead: int = 8,
         num_encoder_layers: int = 6,
@@ -33,9 +32,8 @@ class GlobalTrackingTransformer(nn.Module):
         """Initialize GTR.
 
         Args:
-            encoder_model: Name of the CNN architecture to use (e.g. "resnet18", "resnet50").
             encoder_cfg: Dictionary of arguments to pass to the CNN constructor,
-                e.g: `cfg = {"weights": "ResNet18_Weights.DEFAULT"}`
+                e.g: `cfg = {model_name: "resnet18", pretrained: False, "in_chans": 3}`
             d_model: The number of features in the encoder/decoder inputs.
             nhead: The number of heads in the transfomer encoder/decoder.
             num_encoder_layers: The number of encoder-layers in the encoder.
@@ -60,7 +58,10 @@ class GlobalTrackingTransformer(nn.Module):
         """
         super().__init__()
 
-        self.visual_encoder = VisualEncoder(encoder_model, encoder_cfg, d_model)
+        if encoder_cfg is not None:
+            self.visual_encoder = VisualEncoder(d_model=d_model, **encoder_cfg)
+        else:
+            self.visual_encoder = VisualEncoder(d_model=d_model)
 
         self.transformer = Transformer(
             d_model=d_model,

@@ -2,7 +2,7 @@
 
 from typing import Tuple
 import torch
-import torchvision
+import timm
 import torch.nn.functional as F
 
 # import timm
@@ -17,51 +17,40 @@ class VisualEncoder(torch.nn.Module):
     Currently CNN only.
     """
 
-    def __init__(self, model_name: str, cfg: dict, d_model: int = 512):
+    def __init__(
+        self,
+        model_name: str = "resnet18",
+        d_model: int = 512,
+        in_chans: int = 3,
+        pretrained: bool = False,
+        **kwargs,
+    ):
         """Initialize Visual Encoder.
 
         Args:
             model_name (str): Name of the CNN architecture to use (e.g. "resnet18", "resnet50").
-            cfg (dict): Dictionary of arguments to pass to the CNN constructor,
-                e.g: `cfg = {"weights": "ResNet18_Weights.DEFAULT"}`
             d_model (int): Output embedding dimension.
+            in_chans: the number of input channels of the image.
+            pretrained: whether or not to use pretrained weights from hugging_face
+            kwargs: see `timm.create_model` for kwargs.
         """
         super().__init__()
 
-        self.model_name = model_name
+        self.model_name = model_name.lower()
         self.d_model = d_model
+        if in_chans == 1:
+            self.in_chans = 3
+        else:
+            self.in_chans = in_chans
 
-        self.feature_extractor, out_dim = self.select_feature_extractor(model_name, cfg)
-
-        self.feature_extractor = torch.nn.Sequential(
-            *list(self.feature_extractor.children())[:-1]
+        self.feature_extractor = timm.create_model(
+            model_name=self.model_name,
+            pretrained=pretrained,
+            in_chans=self.in_chans,
+            num_classes=0,
         )
 
-        self.out_layer = torch.nn.Linear(out_dim, d_model)
-
-    def select_feature_extractor(
-        self, model_name: str, cfg: dict
-    ) -> Tuple[torch.nn.Module, int]:
-        """Get feature extractor based on name and config.
-
-        Args:
-            model_name (str): Name of the CNN architecture to use (e.g. "resnet18", "resnet50").
-            cfg (dict): Dictionary of arguments to pass to the CNN constructor,
-                e.g: `cfg = {"weights": "ResNet18_Weights.DEFAULT"}`
-
-        Returns:
-            The CNN feature extractor and output dimension for the given CNN architecture.
-        """
-        if model_name == "resnet18":
-            model = torchvision.models.resnet18(**cfg)
-            out_dim = 512
-        elif model_name == "resnet50":
-            model = torchvision.models.resnet50(**cfg)
-            out_dim = 2048
-        else:
-            raise ValueError(f"{model_name} model not found.")
-
-        return model, out_dim
+        self.out_layer = torch.nn.LazyLinear(d_model)
 
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector.
@@ -75,7 +64,6 @@ class VisualEncoder(torch.nn.Module):
         # If grayscale, tile the image to 3 channels.
         if img.shape[1] == 1:
             img = img.repeat([1, 3, 1, 1])  # (B, nc=3, H, W)
-
         # Extract image features
         feats = self.feature_extractor(
             img
