@@ -54,12 +54,12 @@ def _pairwise_intersection(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
         Tensor: intersection, sized [N,M].
     """
     boxes1, boxes2 = boxes1.tensor, boxes2.tensor
-    width_height = torch.min(boxes1[:, None, 2:], boxes2[:, 2:]) - torch.max(
-        boxes1[:, None, :2], boxes2[:, :2]
-    )  # [N,M,2]
+    width_height = torch.min(boxes1[:, None, :, 2:], boxes2[:, :, 2:]) - torch.max(
+        boxes1[:, None, :, :2], boxes2[:, :, :2]
+    )  # [N,M,n_anchors,     2]
+    width_height.clamp_(min=0)  # [N,M, n_anchors, 2]
 
-    width_height.clamp_(min=0)  # [N,M,2]
-    intersection = width_height.prod(dim=2)  # [N,M]
+    intersection = width_height.prod(dim=3)  # [N,M, n_anchors]
 
     return intersection
 
@@ -77,15 +77,16 @@ def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     """
     area1 = boxes1.area()  # [N]
     area2 = boxes2.area()  # [M]
+
     inter = _pairwise_intersection(boxes1, boxes2)
 
     # handle empty boxes
     iou = torch.where(
-        inter > 0,
-        inter / (area1[:, None] + area2 - inter),
-        torch.zeros(1, dtype=inter.dtype, device=inter.device),
+        inter >= 0,
+        inter / (area1[:, None, :] + area2 - inter),
+        torch.nan,
     )
-    return iou
+    return iou.nanmean(dim=-1)
 
 
 def weight_iou(
