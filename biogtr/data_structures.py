@@ -575,7 +575,7 @@ class Frame:
         except ValueError:
             self._video = vid_file
         if img_shape is None:
-            self._img_shape=torch.tensor([0,0,0])
+            self._img_shape = torch.tensor([0, 0, 0])
         elif isinstance(img_shape, torch.Tensor):
             self._img_shape = img_shape
         else:
