@@ -192,15 +192,21 @@ class SleapDataset(BaseDataset):
 
             try:
                 img = vid_reader.get_data(frame_ind)
-                if len(img.shape) == 2:
-                    img = img.expand_dims(0)
-                h, w, c = img.shape
-                if len(img.shape) == 2:
-                    img = img.expand_dims(0)
-                h, w, c = img.shape
             except IndexError as e:
                 print(f"Could not read frame {frame_ind} from {video_name} due to {e}")
                 continue
+
+            if len(img.shape) == 2:
+                img = img.expand_dims(-1)
+            h, w, c = img.shape
+
+            if c == 1:
+                img = np.concatenate(
+                    [img, img, img], axis=-1
+                )  # convert to grayscale to rgb
+
+            if np.issubdtype(img.dtype, np.integer):  # convert int to float
+                img = img.astype(np.float32) / 255
 
             for instance in lf:
                 if instance.track is not None:
