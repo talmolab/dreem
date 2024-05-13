@@ -43,15 +43,11 @@ class SleapDataset(BaseDataset):
                         * a string indicating a single node to center crops around
                         * a list of skeleton node names to be used as the center of crops
                         * an int indicating the number of anchors to randomly select
-            anchors: One of:
-                        * a string indicating a single node to center crops around
-                        * a list of skeleton node names to be used as the center of crops
-                        * an int indicating the number of anchors to randomly select
-            If unavailable then crop around the midpoint between all visible anchors.
+                    If unavailable then crop around the midpoint between all visible anchors.
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
             mode: `train` or `val`. Determines whether this dataset is used for
-                training or validation. Currently doesn't affect dataset logic
+                training or validation.
             augmentations: An optional dict mapping augmentations to parameters. The keys
                 should map directly to augmentation classes in albumentations. Example:
                     augmentations = {
@@ -85,18 +81,6 @@ class SleapDataset(BaseDataset):
         self.mode = mode.lower()
         self.n_chunks = n_chunks
         self.seed = seed
-
-        if isinstance(anchors, int):
-            self.anchors = anchors
-        elif isinstance(anchors, str):
-            self.anchors = [anchors.lower()]
-        else:
-            self.anchors = [anchor.lower() for anchor in anchors]
-
-        if (
-            isinstance(self.anchors, list) and len(self.anchors) == 0
-        ) or self.anchors == 0:
-            raise ValueError(f"Must provide at least one anchor but got {self.anchors}")
 
         if isinstance(anchors, int):
             self.anchors = anchors
