@@ -108,7 +108,9 @@ def weight_iou(
         assert last_ious is not None, "Need `last_ious` to weight traj_score by `IOU`"
         if method.lower() == "mult":
             weights = torch.abs(last_ious - asso_output)
-            asso_output = asso_output + (weights * last_ious)
+            weighted_iou = weights * last_ious
+            weighted_iou = torch.nan_to_num(weighted_iou, 0)
+            asso_output = asso_output + weighted_iou
         elif method.lower() == "max":
             asso_output = torch.max(asso_output, last_ious)
         else:
