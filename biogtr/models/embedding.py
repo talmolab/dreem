@@ -37,7 +37,7 @@ class Embedding(torch.nn.Module):
         temperature: Optional[int] = 10000,
         normalize: Optional[bool] = False,
         scale: Optional[float] = None,
-        n_mlp_layers: int = 0,
+        mlp_cfg: dict = None,
     ):
         """Initialize embeddings.
 
@@ -53,8 +53,8 @@ class Embedding(torch.nn.Module):
             temperature: the temperature constant to be used when computing the sinusoidal position embedding
             normalize: whether or not to normalize the positions (Only used in fixed embeddings).
             scale: factor by which to scale the positions after normalizing (Only used in fixed embeddings).
-            n_mlp_layers: number of mlp layers used to project positional embedding back to correct dimension.
-                          Should normally only be set > 0 if number of anchors used is > 1
+            mlp_cfg: A dictionary of mlp hyperparameters for projecting embedding to correct space.
+                    Example: {"hidden_dims": 256, "num_layers":3, "dropout": 0.3}
         """
         self._check_init_args(emb_type, mode)
 
@@ -73,8 +73,20 @@ class Embedding(torch.nn.Module):
         if self.normalize and self.scale is None:
             self.scale = 2 * math.pi
 
-        if self.emb_type == "pos" and n_mlp_layers:
-            self.mlp = MLP(self.features * 2, self.features, n_mlp_layers)
+        if self.emb_type == "pos" and mlp_cfg is not None:
+            if self.mode == "fixed":
+                self.mlp = MLP(
+                    input_dim=n_points * self.features,
+                    output_dim=self.features,
+                    **mlp_cfg,
+                )
+            else:
+                in_dim = (self.features // (4 * n_points)) * (4 * n_points)
+                self.mlp = MLP(
+                    input_dim=in_dim,
+                    output_dim=self.features,
+                    **mlp_cfg,
+                )
         else:
             self.mlp = torch.nn.Identity()
 
@@ -140,7 +152,7 @@ class Embedding(torch.nn.Module):
             raise RuntimeError(
                 (
                     f"Output embedding dimension is {emb.shape[-1]} but requested {self.features} dimensions! \n"
-                    f"hint: Try setting `n_layers` > 0 to project to the correct embedding dimensions."
+                    f"hint: Try turning the MLP on by passing `mlp_cfg` to the constructor to project to the correct embedding dimensions."
                 )
             )
         return emb

@@ -1,13 +1,15 @@
 """Multi-Layer Perceptron (MLP) module."""
 
 import torch
+import torch.nn.functional as F
 
 
 class MLP(torch.nn.Module):
-    """Multi-layer perceptron class."""
+    """Multi-Layer Perceptron (MLP) module."""
 
     def __init__(
         self,
+        input_dim: int,
         hidden_dim: int,
         output_dim: int,
         num_layers: int,
@@ -26,22 +28,21 @@ class MLP(torch.nn.Module):
 
         self.num_layers = num_layers
         self.dropout = dropout
-        self.hidden_dim = hidden_dim
-        self.output_dim = output_dim
 
         if self.num_layers > 0:
-            self.layers = [torch.nn.LazyLinear(hidden_dim)]
-            self.dropouts = [torch.nn.Dropout(dropout)]
-            for i in range(num_layers):
-                self.layers.append(torch.nn.Linear(hidden_dim, hidden_dim))
-                self.dropouts.append(torch.nn.Dropout(dropout))
-            self.layers.append(torch.nn.Linear(hidden_dim, output_dim))
-            self.dropouts.append(torch.nn.Dropout(0.0))
-
-            self.layers = torch.nn.ModuleList(self.layers)
-            self.dropouts = torch.nn.ModuleList(self.dropouts)
+            h = [hidden_dim] * (num_layers - 1)
+            self.layers = torch.nn.ModuleList(
+                [
+                    torch.nn.Linear(n, k)
+                    for n, k in zip([input_dim] + h, h + [output_dim])
+                ]
+            )
+            if self.dropout > 0.0:
+                self.dropouts = torch.nn.ModuleList(
+                    [torch.nn.Dropout(dropout) for _ in range(self.num_layers - 1)]
+                )
         else:
-            self.layers = torch.nn.ModuleList([])
+            self.layers = []
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass of the MLP.
@@ -52,9 +53,9 @@ class MLP(torch.nn.Module):
         Returns:
             Output tensor of shape (batch_size, num_instances, output_dim).
         """
-        for i in range(len(self.layers) - 1):
-            x = torch.nn.functional.relu(self.layers[i](x))
-            x = self.dropouts[i](x)
-        x = self.layers[-1](x)
+        for i, layer in enumerate(self.layers):
+            x = F.relu(layer(x)) if i < self.num_layers - 1 else layer(x)
+            if i < self.num_layers - 1 and self.dropout > 0.0:
+                x = self.dropouts[i](x)
 
         return x
