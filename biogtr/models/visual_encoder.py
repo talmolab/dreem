@@ -45,12 +45,29 @@ class VisualEncoder(torch.nn.Module):
 
         self.feature_extractor = timm.create_model(
             model_name=self.model_name,
-            pretrained=pretrained,
             in_chans=self.in_chans,
+            pretrained=pretrained,
             num_classes=0,
+            **kwargs,
         )
 
-        self.out_layer = torch.nn.LazyLinear(d_model)
+        self.out_layer = torch.nn.Linear(
+            self.encoder_dim(self.feature_extractor), self.d_model
+        )
+
+    def encoder_dim(self, model: torch.nn.Module) -> int:
+        """Compute dummy forward pass of encoder model and get embedding dimension.
+
+        Args:
+            model: a vision encoder model.
+
+        Returns:
+            The embedding dimension size.
+        """
+        _ = model.eval()
+        dummy_output = model(torch.randn(1, self.in_chans, 224, 224))
+        _ = model.train()  # to be safe
+        return dummy_output.shape[-1]
 
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector.
