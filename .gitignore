@@ -133,7 +133,7 @@ dmypy.json
 lightning_logs
 outputs
 logs
-models
+*.ckpt
 
 # vscode
 .vscode

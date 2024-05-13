@@ -33,7 +33,7 @@ class GlobalTrackingTransformer(nn.Module):
 
         Args:
             encoder_cfg: Dictionary of arguments to pass to the CNN constructor,
-                e.g: `cfg = {model_name: "resnet18", pretrained: False, "in_chans": 3}`
+                e.g: `cfg = {"model_name": "resnet18", "pretrained": False, "in_chans": 3}`
             d_model: The number of features in the encoder/decoder inputs.
             nhead: The number of heads in the transfomer encoder/decoder.
             num_encoder_layers: The number of encoder-layers in the encoder.
