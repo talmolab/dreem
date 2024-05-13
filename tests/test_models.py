@@ -22,7 +22,7 @@ def test_mlp():
     """Test MLP logic."""
     b, n, f = 1, 10, 1024  # batch size, num instances, features
 
-    mlp = MLP(hidden_dim=f, output_dim=f, num_layers=2, dropout=0.1)
+    mlp = MLP(input_dim=f, hidden_dim=f, output_dim=f, num_layers=2, dropout=0.1)
 
     output_tensor = mlp(torch.rand(size=(b, n, f)))
 
@@ -249,9 +249,19 @@ def test_multianchor_embedding():
     boxes = torch.rand(size=(N, n_anchors, 4))
     times = torch.rand(size=(N,))
 
-    fixed_emb = Embedding("pos", "fixed", features=features, n_mlp_layers=3)
+    fixed_emb = Embedding(
+        "pos",
+        "fixed",
+        features=features,
+        n_points=n_anchors,
+        mlp_cfg={"num_layers": 3, "hidden_dim": 2 * d_model},
+    )
     learned_emb = Embedding(
-        "pos", "learned", features=features, n_mlp_layers=3, n_points=n_anchors
+        "pos",
+        "learned",
+        features=features,
+        n_points=n_anchors,
+        mlp_cfg={"num_layers": 3, "hidden_dim": 2 * d_model},
     )
     assert not isinstance(fixed_emb.mlp, torch.nn.Identity)
     assert not isinstance(learned_emb.mlp, torch.nn.Identity)
@@ -262,8 +272,8 @@ def test_multianchor_embedding():
     emb = learned_emb(boxes)
     assert emb.size() == (N, features)
 
-    fixed_emb = Embedding("pos", "fixed", features=features, n_mlp_layers=0)
-    learned_emb = Embedding("pos", "learned", features=features, n_mlp_layers=0)
+    fixed_emb = Embedding("pos", "fixed", features=features)
+    learned_emb = Embedding("pos", "learned", features=features)
     with pytest.raises(RuntimeError):
         _ = fixed_emb(boxes)
     with pytest.raises(RuntimeError):
@@ -432,11 +442,10 @@ def test_tracking_transformer():
         "temp": None,
     }
 
-    cfg = {"resnet18", "ResNet18_Weights.DEFAULT"}
+    encoder_cfg = {"model_name": "resnet18", "pretrained": False, "in_chans": 3}
 
     tracking_transformer = GlobalTrackingTransformer(
-        encoder_model="resnet18",
-        encoder_cfg={"weights": "ResNet18_Weights.DEFAULT"},
+        encoder_cfg=encoder_cfg,
         d_model=feats,
         num_encoder_layers=1,
         num_decoder_layers=1,
