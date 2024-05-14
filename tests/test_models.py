@@ -42,14 +42,19 @@ def test_att_weight_head():
     assert attn_weights.shape == (b, n, n)
 
 
-def test_encoder():
-    """Test feature extractor logic."""
+def test_encoder_timm():
+    """Test feature extractor logic using timm backend."""
     b, c, h, w = 1, 1, 100, 100  # batch size, channels, height, width
 
     features = 512
     input_tensor = torch.rand(b, c, h, w)
+    backend = "timm"
 
-    encoder = VisualEncoder(model_name="resnet18", in_chans=c, d_model=features)
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
+
+    assert not isinstance(encoder.feature_extractor, torch.nn.Sequential)
 
     output = encoder(input_tensor)
 
@@ -60,7 +65,9 @@ def test_encoder():
 
     features = 128
 
-    encoder = VisualEncoder(model_name="resnet18", in_chans=c, d_model=features)
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
 
     output = encoder(input_tensor)
 
@@ -69,7 +76,52 @@ def test_encoder():
     c = 9
     input_tensor = torch.rand(b, c, h, w)
 
-    encoder = VisualEncoder(model_name="resnet18", in_chans=c, d_model=features)
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
+
+    output = encoder(input_tensor)
+
+    assert output.shape == (b, features)
+
+
+def test_encoder_torch():
+    """Test feature extractor logic using torchvision backend."""
+    b, c, h, w = 1, 1, 100, 100  # batch size, channels, height, width
+
+    features = 512
+    input_tensor = torch.rand(b, c, h, w)
+    backend = "torch"
+
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
+
+    assert isinstance(encoder.feature_extractor, torch.nn.Sequential)
+
+    output = encoder(input_tensor)
+
+    assert output.shape == (b, features)
+
+    c = 3
+    input_tensor = torch.rand(b, c, h, w)
+
+    features = 128
+
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
+
+    output = encoder(input_tensor)
+
+    assert output.shape == (b, features)
+
+    c = 9
+    input_tensor = torch.rand(b, c, h, w)
+
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
 
     output = encoder(input_tensor)
 
