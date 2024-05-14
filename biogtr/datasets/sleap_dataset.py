@@ -98,11 +98,6 @@ class SleapDataset(BaseDataset):
 
         # if self.seed is not None:
         #     np.random.seed(self.seed)
-        if augmentations and self.mode == "train":
-            self.augmentations = data_utils.build_augmentations(augmentations)
-        else:
-            self.augmentations = None
-
         self.labels = [sio.load_slp(slp_file) for slp_file in self.slp_files]
 
         # do we need this? would need to update with sleap-io
@@ -195,7 +190,20 @@ class SleapDataset(BaseDataset):
             if np.issubdtype(img.dtype, np.integer):  # convert int to float
                 img = img.astype(np.float32) / 255
 
-            for instance in lf:
+            n_instances_dropped = 0
+
+            gt_instances = lf.instances
+            if self.mode == "train":
+                np.random.shuffle(gt_instances)
+
+            for instance in gt_instances:
+                if (
+                    np.random.uniform() < self.instance_dropout["p"]
+                    and n_instances_dropped < self.instance_dropout["n"]
+                ):
+                    n_instances_dropped += 1
+                    continue
+
                 if instance.track is not None:
                     gt_track_id = video.tracks.index(instance.track)
                 else:
@@ -287,8 +295,23 @@ class SleapDataset(BaseDataset):
                 else:
                     anchors = self.anchors
 
+                anchors_to_drop = np.random.permutation(anchors)
+                anchor_dropout_p = np.random.uniform(size=len(anchors_to_drop))
+                dropped_anchor_inds = np.where(
+                    anchor_dropout_p < self.node_dropout["p"]
+                )
+                anchor_dropout_p = anchor_dropout_p[dropped_anchor_inds]
+                n_anchors_to_drop = min(self.node_dropout["n"], len(anchor_dropout_p))
+                dropped_anchor_inds = np.argpartition(
+                    anchor_dropout_p, -n_anchors_to_drop
+                )[-n_anchors_to_drop:]
+                dropped_anchors = anchors_to_drop[dropped_anchor_inds]
+
                 for anchor in anchors:
-                    if anchor == "midpoint" or anchor == "centroid":
+                    if anchor in dropped_anchors:
+                        centroid = np.array([np.nan, np.nan])
+
+                    elif anchor == "midpoint" or anchor == "centroid":
                         centroid = np.nanmean(np.array(list(pose.values())), axis=0)
 
                     elif anchor in pose:
@@ -354,9 +377,6 @@ class SleapDataset(BaseDataset):
                 )
 
                 instances.append(instance)
-
-            if self.mode == "train":
-                np.random.shuffle(instances)
 
             frame = Frame(
                 video_id=label_idx,
