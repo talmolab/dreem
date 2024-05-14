@@ -3,6 +3,7 @@
 from typing import Tuple, Optional
 import math
 import torch
+from biogtr.models.mlp import MLP
 
 # todo: add named tensors, clean variable names
 
@@ -30,11 +31,13 @@ class Embedding(torch.nn.Module):
         emb_type: str,
         mode: str,
         features: int,
+        n_points: Optional[int] = 1,
         emb_num: Optional[int] = 16,
         over_boxes: Optional[bool] = True,
         temperature: Optional[int] = 10000,
         normalize: Optional[bool] = False,
         scale: Optional[float] = None,
+        mlp_cfg: dict = None,
     ):
         """Initialize embeddings.
 
@@ -44,11 +47,14 @@ class Embedding(torch.nn.Module):
                   Must be one of `{"fixed", "learned", "off"}`
             features: The embedding dimensions. Must match the dimension of the
                       input vectors for the transformer model.
+            n_points: the number of points that will be embedded.
             emb_num: the number of embeddings in the `self.lookup` table (Only used in learned embeddings).
             over_boxes: Whether to compute the position embedding for each bbox coordinate (y1x1y2x2) or the centroid + bbox size (yxwh).
             temperature: the temperature constant to be used when computing the sinusoidal position embedding
             normalize: whether or not to normalize the positions (Only used in fixed embeddings).
             scale: factor by which to scale the positions after normalizing (Only used in fixed embeddings).
+            mlp_cfg: A dictionary of mlp hyperparameters for projecting embedding to correct space.
+                    Example: {"hidden_dims": 256, "num_layers":3, "dropout": 0.3}
         """
         self._check_init_args(emb_type, mode)
 
@@ -62,8 +68,27 @@ class Embedding(torch.nn.Module):
         self.temperature = temperature
         self.normalize = normalize
         self.scale = scale
+        self.n_points = n_points
+
         if self.normalize and self.scale is None:
             self.scale = 2 * math.pi
+
+        if self.emb_type == "pos" and mlp_cfg is not None and mlp_cfg["num_layers"] > 0:
+            if self.mode == "fixed":
+                self.mlp = MLP(
+                    input_dim=n_points * self.features,
+                    output_dim=self.features,
+                    **mlp_cfg,
+                )
+            else:
+                in_dim = (self.features // (4 * n_points)) * (4 * n_points)
+                self.mlp = MLP(
+                    input_dim=in_dim,
+                    output_dim=self.features,
+                    **mlp_cfg,
+                )
+        else:
+            self.mlp = torch.nn.Identity()
 
         self._emb_func = lambda tensor: torch.zeros(
             (tensor.shape[0], self.features), dtype=tensor.dtype, device=tensor.device
@@ -73,7 +98,9 @@ class Embedding(torch.nn.Module):
 
         if self.mode == "learned":
             if self.emb_type == "pos":
-                self.lookup = torch.nn.Embedding(self.emb_num * 4, self.features // 4)
+                self.lookup = torch.nn.Embedding(
+                    self.emb_num * 4 * self.n_points, self.features // (4 * n_points)
+                )
                 self._emb_func = self._learned_pos_embedding
             elif self.emb_type == "temp":
                 self.lookup = torch.nn.Embedding(self.emb_num, self.features)
@@ -113,13 +140,22 @@ class Embedding(torch.nn.Module):
 
         Args:
             seq_positions:
-                * An `N` x 1 tensor where seq_positions[i] represents the temporal position of instance_i in the sequence.
-                * An `N` x 4 tensor where seq_positions[i] represents the [y1, x1, y2, x2] spatial locations of instance_i in the sequence.
+                * An (`N`, 1) tensor where seq_positions[i] represents the temporal position of instance_i in the sequence.
+                * An (`N`, n_anchors x 4) tensor where seq_positions[i, j, :] represents the [y1, x1, y2, x2] spatial locations of jth point of instance_i in the sequence.
 
         Returns:
             An `N` x `self.features` tensor representing the corresponding spatial or temporal embedding.
         """
-        return self._emb_func(seq_positions)
+        emb = self._emb_func(seq_positions)
+
+        if emb.shape[-1] != self.features:
+            raise RuntimeError(
+                (
+                    f"Output embedding dimension is {emb.shape[-1]} but requested {self.features} dimensions! \n"
+                    f"hint: Try turning the MLP on by passing `mlp_cfg` to the constructor to project to the correct embedding dimensions."
+                )
+            )
+        return emb
 
     def _torch_int_div(
         self, tensor1: torch.Tensor, tensor2: torch.Tensor
@@ -139,7 +175,7 @@ class Embedding(torch.nn.Module):
         """Compute sine positional embeddings for boxes using given parameters.
 
          Args:
-             boxes: the input boxes of shape N x 4 or B x N x 4
+             boxes: the input boxes of shape N, n_anchors, 4 or B, N, n_anchors, 4
                     where the last dimension is the bbox coords in [y1, x1, y2, x2].
                     (Note currently `B=batch_size=1`).
 
@@ -154,11 +190,11 @@ class Embedding(torch.nn.Module):
         if self.scale is not None and self.normalize is False:
             raise ValueError("normalize should be True if scale is passed")
 
-        if len(boxes.size()) == 2:
+        if len(boxes.size()) == 3:
             boxes = boxes.unsqueeze(0)
 
         if self.normalize:
-            boxes = boxes / (boxes[:, -1:] + 1e-6) * self.scale
+            boxes = boxes / (boxes[:, :, -1:] + 1e-6) * self.scale
 
         dim_t = torch.arange(self.features // 4, dtype=torch.float32)
 
@@ -166,15 +202,17 @@ class Embedding(torch.nn.Module):
             2 * self._torch_int_div(dim_t, 2) / (self.features // 4)
         )
 
-        # (b, n_t, 4, D//4)
-        pos_emb = boxes[:, :, :, None] / dim_t.to(boxes.device)
+        # (b, n_t, n_anchors, 4, D//4)
+        pos_emb = boxes[:, :, :, :, None] / dim_t.to(boxes.device)
 
         pos_emb = torch.stack(
-            (pos_emb[:, :, :, 0::2].sin(), pos_emb[:, :, :, 1::2].cos()), dim=4
-        ).flatten(3)
+            (pos_emb[:, :, :, :, 0::2].sin(), pos_emb[:, :, :, :, 1::2].cos()), dim=4
+        )
+        pos_emb = pos_emb.flatten(2).squeeze(0)  # (N_t, n_anchors * D)
 
-        # (n_t, D)
-        pos_emb = pos_emb.squeeze(0).flatten(1)
+        pos_emb = self.mlp(pos_emb)
+
+        pos_emb = pos_emb.view(boxes.shape[1], self.features)
 
         return pos_emb
 
@@ -223,36 +261,49 @@ class Embedding(torch.nn.Module):
         """
         pos_lookup = self.lookup
 
-        N = boxes.shape[0]
-        boxes = boxes.view(N, 4)
+        N, n_anchors, _ = boxes.shape
+        boxes = boxes.view(N, n_anchors, 4)
 
         if self.over_boxes:
             xywh = boxes
         else:
             xywh = torch.cat(
-                [(boxes[:, 2:] + boxes[:, :2]) / 2, (boxes[:, 2:] - boxes[:, :2])],
+                [
+                    (boxes[:, :, 2:] + boxes[:, :, :2]) / 2,
+                    (boxes[:, :, 2:] - boxes[:, :, :2]),
+                ],
                 dim=1,
             )
 
         left_ind, right_ind, left_weight, right_weight = self._compute_weights(xywh)
-
         f = pos_lookup.weight.shape[1]  # self.features // 4
 
-        pos_emb_table = pos_lookup.weight.view(self.emb_num, 4, f)  # T x 4 x (D * 4)
+        try:
+            pos_emb_table = pos_lookup.weight.view(
+                self.emb_num, n_anchors, 4, f
+            )  # T x 4 x (D * 4)
+        except RuntimeError as e:
+            print(f"Hint: `n_points` ({self.n_points}) may be set incorrectly!")
+            raise (e)
 
         left_emb = pos_emb_table.gather(
-            0, left_ind[:, :, None].to(pos_emb_table.device).expand(N, 4, f)
+            0,
+            left_ind[:, :, :, None].to(pos_emb_table.device).expand(N, n_anchors, 4, f),
         )  # N x 4 x d
         right_emb = pos_emb_table.gather(
-            0, right_ind[:, :, None].to(pos_emb_table.device).expand(N, 4, f)
+            0,
+            right_ind[:, :, :, None]
+            .to(pos_emb_table.device)
+            .expand(N, n_anchors, 4, f),
         )  # N x 4 x d
-        pos_emb = left_weight[:, :, None] * right_emb.to(
+        pos_emb = left_weight[:, :, :, None] * right_emb.to(
             left_weight.device
-        ) + right_weight[:, :, None] * left_emb.to(right_weight.device)
+        ) + right_weight[:, :, :, None] * left_emb.to(right_weight.device)
 
-        pos_emb = pos_emb.view(N, self.features)
+        pos_emb = pos_emb.flatten(1)
+        pos_emb = self.mlp(pos_emb)
 
-        return pos_emb
+        return pos_emb.view(N, self.features)
 
     def _learned_temp_embedding(self, times: torch.Tensor) -> torch.Tensor:
         """Compute learned temporal embeddings for times using given parameters.

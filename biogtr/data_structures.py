@@ -14,10 +14,10 @@ class Instance:
         self,
         gt_track_id: int = -1,
         pred_track_id: int = -1,
-        bbox: ArrayLike = torch.empty((0, 4)),
-        crop: ArrayLike = torch.tensor([]),
+        bbox: ArrayLike = None,
+        crop: ArrayLike = None,
         centroid: dict[str, ArrayLike] = None,
-        features: ArrayLike = torch.tensor([]),
+        features: ArrayLike = None,
         track_score: float = -1.0,
         point_scores: ArrayLike = None,
         instance_score: float = -1.0,
@@ -56,46 +56,58 @@ class Instance:
         else:
             self._skeleton = skeleton
 
-        if not isinstance(bbox, torch.Tensor):
+        if bbox is None:
+            self._bbox = torch.empty(1, 0, 4)
+
+        elif not isinstance(bbox, torch.Tensor):
             self._bbox = torch.tensor(bbox)
+
         else:
             self._bbox = bbox
 
+        if self._bbox.shape[0] and len(self._bbox.shape) == 1:
+            self._bbox = self._bbox.unsqueeze(0)  # (n_anchors, 4)
+
+        if self._bbox.shape[1] and len(self._bbox.shape) == 2:
+            self._bbox = self._bbox.unsqueeze(0)  # (1, n_anchors, 4)
+
         if centroid is not None:
             self._centroid = centroid
-        elif self.bbox.shape[0]:
-            y1, x1, y2, x2 = self.bbox.squeeze()
+
+        elif self.bbox.shape[1]:
+            y1, x1, y2, x2 = self.bbox.squeeze(dim=0).nanmean(dim=0)
             self._centroid = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
+
         else:
             self._centroid = {}
 
-        if self._bbox.shape[0] and len(self._bbox.shape) == 1:
-            self._bbox = self._bbox.unsqueeze(0)
-
-        if not isinstance(crop, torch.Tensor):
+        if crop is None:
+            self._crop = torch.tensor([])
+        elif not isinstance(crop, torch.Tensor):
             self._crop = torch.tensor(crop)
         else:
             self._crop = crop
 
-        if len(self._crop.shape) == 2:
-            self._crop = self._crop.unsqueeze(0).unsqueeze(0)
-        elif len(self._crop.shape) == 3:
-            self._crop = self._crop.unsqueeze(0)
+        if len(self._crop.shape) == 2:  # (h, w)
+            self._crop = self._crop.unsqueeze(0)  # (c, h, w)
+        if len(self._crop.shape) == 3:
+            self._crop = self._crop.unsqueeze(0)  # (1, c, h, w)
 
-        if not isinstance(features, torch.Tensor):
+        if features is None:
+            self._features = torch.tensor([])
+        elif not isinstance(features, torch.Tensor):
             self._features = torch.tensor(features)
         else:
             self._features = features
 
-        if self._features.shape[0] and len(self._features.shape) == 1:
-            self._features = self._features.unsqueeze(0)
+        if self._features.shape[0] and len(self._features.shape) == 1:  # (d,)
+            self._features = self._features.unsqueeze(0)  # (1, d)
 
         if pose is not None:
             self._pose = pose
 
-        elif self.bbox.shape[0]:
-
-            y1, x1, y2, x2 = self.bbox.squeeze()
+        elif self.bbox.shape[1]:
+            y1, x1, y2, x2 = self.bbox.squeeze(dim=0).mean(dim=0)
             self._pose = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
 
         else:
@@ -287,6 +299,8 @@ class Instance:
 
         if self._bbox.shape[0] and len(self._bbox.shape) == 1:
             self._bbox = self._bbox.unsqueeze(0)
+        if self._bbox.shape[1] and len(self._bbox.shape) == 2:
+            self._bbox = self._bbox.unsqueeze(0)
 
     def has_bbox(self) -> bool:
         """Determine if the instance has a bbox.
@@ -294,7 +308,7 @@ class Instance:
         Returns:
             True if the instance has a bounding box, false otherwise.
         """
-        if self._bbox.shape[0] == 0:
+        if self._bbox.shape[1] == 0:
             return False
         else:
             return True
@@ -318,14 +332,15 @@ class Instance:
         self._centroid = centroid
 
     @property
-    def anchor(self) -> str:
+    def anchor(self) -> list[str]:
         """The anchor node name around which the crop was formed.
 
         Returns:
-            the node name of the anchor around which the crop was formed
+            the list of anchors around which each crop was formed
+            the list of anchors around which each crop was formed
         """
         if self.centroid:
-            return list(self.centroid.keys())[0]
+            return list(self.centroid.keys())
         return ""
 
     @property
@@ -353,8 +368,8 @@ class Instance:
                 self._crop = crop
 
         if len(self._crop.shape) == 2:
-            self._crop = self._crop.unsqueeze(0).unsqueeze(0)
-        elif len(self._crop.shape) == 3:
+            self._crop = self._crop.unsqueeze(0)
+        if len(self._crop.shape) == 3:
             self._crop = self._crop.unsqueeze(0)
 
     def has_crop(self) -> bool:
@@ -528,8 +543,8 @@ class Frame:
         video_id: int,
         frame_id: int,
         vid_file: str = "",
-        img_shape: ArrayLike = [0, 0, 0],
-        instances: List[Instance] = [],
+        img_shape: ArrayLike = None,
+        instances: List[Instance] = None,
         asso_output: ArrayLike = None,
         matches: tuple = None,
         traj_score: Union[ArrayLike, dict] = None,
@@ -559,13 +574,16 @@ class Frame:
             self._video = sio.Video(vid_file)
         except ValueError:
             self._video = vid_file
-
-        if isinstance(img_shape, torch.Tensor):
+        if img_shape is None:
+            self._img_shape = torch.tensor([0, 0, 0])
+        elif isinstance(img_shape, torch.Tensor):
             self._img_shape = img_shape
         else:
             self._img_shape = torch.tensor([img_shape])
-
-        self._instances = instances
+        if instances is None:
+            self.instances = []
+        else:
+            self._instances = instances
 
         self._asso_output = asso_output
         self._matches = matches
@@ -631,7 +649,7 @@ class Frame:
         return self
 
     def to_slp(
-        self, track_lookup: dict[int : sio.Track] = {}
+        self, track_lookup: dict[int, sio.Track] = {}
     ) -> tuple[sio.LabeledFrame, dict[int, sio.Track]]:
         """Convert Frame to sleap_io.LabeledFrame object.
 

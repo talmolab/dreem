@@ -43,13 +43,10 @@ def test_tracker():
     }
 
     tracking_transformer = GlobalTrackingTransformer(
-        encoder_model="resnet18",
-        encoder_cfg={"weights": "ResNet18_Weights.DEFAULT"},
+        encoder_cfg={"model_name": "resnet18", "pretrained": False, "in_chans": 3},
         d_model=feats,
         num_encoder_layers=1,
         num_decoder_layers=1,
-        dim_feedforward=feats,
-        feature_dim_attn_head=feats,
         embedding_meta=embedding_meta,
         return_embedding=False,
     )

@@ -22,13 +22,13 @@ def get_boxes_times(frames: List[Frame]) -> Tuple[torch.Tensor, torch.Tensor]:
 
     for fidx, frame in enumerate(frames):
         bbox = frame.get_bboxes().clone()
-        bbox[:, [0, 2]] /= w
-        bbox[:, [1, 3]] /= h
+        bbox[:, :, [0, 2]] /= w
+        bbox[:, :, [1, 3]] /= h
 
         boxes.append(bbox)
         times.append(torch.full((bbox.shape[0],), fidx))
 
-    boxes = torch.cat(boxes, dim=0)  # N x 4
+    boxes = torch.cat(boxes, dim=0)  # N, n_anchors, 4
     times = torch.cat(times, dim=0).to(boxes.device)  # N
     return boxes, times
 

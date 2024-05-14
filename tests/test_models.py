@@ -3,7 +3,8 @@
 import pytest
 import torch
 from biogtr.data_structures import Frame, Instance
-from biogtr.models.attention_head import MLP, ATTWeightHead
+from biogtr.models.mlp import MLP
+from biogtr.models.attention_head import ATTWeightHead
 from biogtr.models.embedding import Embedding
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.models.transformer import (
@@ -41,24 +42,90 @@ def test_att_weight_head():
     assert attn_weights.shape == (b, n, n)
 
 
-def test_encoder():
-    """Test feature extractor logic."""
+def test_encoder_timm():
+    """Test feature extractor logic using timm backend."""
     b, c, h, w = 1, 1, 100, 100  # batch size, channels, height, width
 
     features = 512
     input_tensor = torch.rand(b, c, h, w)
+    backend = "timm"
 
-    for model_name, weights_name in [
-        ("resnet18", "ResNet18_Weights.DEFAULT"),
-        ("resnet50", "ResNet50_Weights.DEFAULT"),
-    ]:
-        cfg = {"weights": weights_name}
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
 
-        encoder = VisualEncoder(model_name, cfg, features)
+    assert not isinstance(encoder.feature_extractor, torch.nn.Sequential)
 
-        output = encoder(input_tensor)
+    output = encoder(input_tensor)
 
-        assert output.shape == (b, features)
+    assert output.shape == (b, features)
+
+    c = 3
+    input_tensor = torch.rand(b, c, h, w)
+
+    features = 128
+
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
+
+    output = encoder(input_tensor)
+
+    assert output.shape == (b, features)
+
+    c = 9
+    input_tensor = torch.rand(b, c, h, w)
+
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
+
+    output = encoder(input_tensor)
+
+    assert output.shape == (b, features)
+
+
+def test_encoder_torch():
+    """Test feature extractor logic using torchvision backend."""
+    b, c, h, w = 1, 1, 100, 100  # batch size, channels, height, width
+
+    features = 512
+    input_tensor = torch.rand(b, c, h, w)
+    backend = "torch"
+
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
+
+    assert isinstance(encoder.feature_extractor, torch.nn.Sequential)
+
+    output = encoder(input_tensor)
+
+    assert output.shape == (b, features)
+
+    c = 3
+    input_tensor = torch.rand(b, c, h, w)
+
+    features = 128
+
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
+
+    output = encoder(input_tensor)
+
+    assert output.shape == (b, features)
+
+    c = 9
+    input_tensor = torch.rand(b, c, h, w)
+
+    encoder = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=features, backend=backend
+    )
+
+    output = encoder(input_tensor)
+
+    assert output.shape == (b, features)
 
 
 def test_embedding_validity():
@@ -100,16 +167,17 @@ def test_embedding_validity():
     _ = Embedding(emb_type="pos", mode="learned", features=128)
 
 
-def test_embedding():
+def test_embedding_basic():
     """Test embedding logic."""
 
     frames = 32
     objects = 10
     d_model = 256
+    n_anchors = 1
 
     N = frames * objects
 
-    boxes = torch.rand(size=(N, 4))
+    boxes = torch.rand(size=(N, n_anchors, 4))
     times = torch.rand(size=(N,))
 
     pos_emb = Embedding(
@@ -181,9 +249,9 @@ def test_embedding_kwargs():
     objects = 10
 
     N = frames * objects
+    n_anchors = 1
 
-    boxes = torch.rand(N, 2) * (1024 - 128)
-    boxes = torch.concat([boxes / 1024, (boxes + 128) / 1024], axis=-1)
+    boxes = torch.rand(N, n_anchors, 4)
 
     # sine embedding
 
@@ -219,6 +287,49 @@ def test_embedding_kwargs():
 
     lt_with_args = Embedding("temp", "learned", 128, **lt_args)
     assert lt_no_args.lookup.weight.shape != lt_with_args.lookup.weight.shape
+
+
+def test_multianchor_embedding():
+    frames = 32
+    objects = 10
+    d_model = 256
+    n_anchors = 10
+    features = 256
+
+    N = frames * objects
+
+    boxes = torch.rand(size=(N, n_anchors, 4))
+    times = torch.rand(size=(N,))
+
+    fixed_emb = Embedding(
+        "pos",
+        "fixed",
+        features=features,
+        n_points=n_anchors,
+        mlp_cfg={"num_layers": 3, "hidden_dim": 2 * d_model},
+    )
+    learned_emb = Embedding(
+        "pos",
+        "learned",
+        features=features,
+        n_points=n_anchors,
+        mlp_cfg={"num_layers": 3, "hidden_dim": 2 * d_model},
+    )
+    assert not isinstance(fixed_emb.mlp, torch.nn.Identity)
+    assert not isinstance(learned_emb.mlp, torch.nn.Identity)
+
+    emb = fixed_emb(boxes)
+    assert emb.size() == (N, features)
+
+    emb = learned_emb(boxes)
+    assert emb.size() == (N, features)
+
+    fixed_emb = Embedding("pos", "fixed", features=features)
+    learned_emb = Embedding("pos", "learned", features=features)
+    with pytest.raises(RuntimeError):
+        _ = fixed_emb(boxes)
+    with pytest.raises(RuntimeError):
+        _ = learned_emb(boxes)
 
 
 def test_transformer_encoder():
@@ -383,11 +494,10 @@ def test_tracking_transformer():
         "temp": None,
     }
 
-    cfg = {"resnet18", "ResNet18_Weights.DEFAULT"}
+    encoder_cfg = {"model_name": "resnet18", "pretrained": False, "in_chans": 3}
 
     tracking_transformer = GlobalTrackingTransformer(
-        encoder_model="resnet18",
-        encoder_cfg={"weights": "ResNet18_Weights.DEFAULT"},
+        encoder_cfg=encoder_cfg,
         d_model=feats,
         num_encoder_layers=1,
         num_decoder_layers=1,

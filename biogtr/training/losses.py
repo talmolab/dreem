@@ -52,6 +52,7 @@ class AssoLoss(nn.Module):
 
         # for now set equal since detections are fixed
         pred_box, pred_time = get_boxes_times(frames)
+        pred_box = torch.nanmean(pred_box, axis=1)
         target_box, target_time = pred_box, pred_time
 
         # todo: we should maybe reconsider how we label gt instances. The second
