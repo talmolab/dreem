@@ -73,7 +73,7 @@ class Embedding(torch.nn.Module):
         if self.normalize and self.scale is None:
             self.scale = 2 * math.pi
 
-        if self.emb_type == "pos" and mlp_cfg is not None:
+        if self.emb_type == "pos" and mlp_cfg is not None and mlp_cfg["num_layers"] > 0:
             if self.mode == "fixed":
                 self.mlp = MLP(
                     input_dim=n_points * self.features,
