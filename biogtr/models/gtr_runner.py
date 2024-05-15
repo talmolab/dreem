@@ -8,6 +8,7 @@ from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
 from biogtr.models.model_utils import init_optimizer, init_scheduler
 from pytorch_lightning import LightningModule
+from biogtr.data_structures import Frame, Instance
 
 
 class GTRRunner(LightningModule):
@@ -59,7 +60,9 @@ class GTRRunner(LightningModule):
         self.metrics = metrics
         self.persistent_tracking = persistent_tracking
 
-    def forward(self, instances) -> torch.Tensor:
+    def forward(
+        self, ref_instances: list[Instance], query_instances: list[Instance] = None
+    ) -> torch.Tensor:
         """Execute forward pass of the lightning module.
 
         Args:
@@ -68,13 +71,11 @@ class GTRRunner(LightningModule):
         Returns:
             An association matrix between objects
         """
-        if sum([frame.num_detected for frame in instances]) > 0:
-            asso_preds, _ = self.model(instances)
-            return asso_preds
-        return None
+        asso_preds, _ = self.model(ref_instances, query_instances)
+        return asso_preds
 
     def training_step(
-        self, train_batch: list[dict], batch_idx: int
+        self, train_batch: list[list[Frame]], batch_idx: int
     ) -> dict[str, float]:
         """Execute single training step for model.
 
@@ -92,7 +93,7 @@ class GTRRunner(LightningModule):
         return result
 
     def validation_step(
-        self, val_batch: list[dict], batch_idx: int
+        self, val_batch: list[list[Frame]], batch_idx: int
     ) -> dict[str, float]:
         """Execute single val step for model.
 
@@ -109,7 +110,9 @@ class GTRRunner(LightningModule):
 
         return result
 
-    def test_step(self, test_batch: list[dict], batch_idx: int) -> dict[str, float]:
+    def test_step(
+        self, test_batch: list[list[Frame]], batch_idx: int
+    ) -> dict[str, float]:
         """Execute single test step for model.
 
         Args:
@@ -125,7 +128,7 @@ class GTRRunner(LightningModule):
 
         return result
 
-    def predict_step(self, batch: list[dict], batch_idx: int) -> dict:
+    def predict_step(self, batch: list[list[Frame]], batch_idx: int) -> list[Frame]:
         """Run inference for model.
 
         Computes association + assignment.
@@ -139,43 +142,45 @@ class GTRRunner(LightningModule):
             A list of dicts where each dict is a frame containing the predicted track ids
         """
         self.tracker.persistent_tracking = True
-        instances_pred = self.tracker(self.model, batch[0])
-        return instances_pred
+        frames_pred = self.tracker(self.model, batch[0])
+        return frames_pred
 
-    def _shared_eval_step(self, instances, mode):
+    def _shared_eval_step(self, frames: list[Frame], mode: str) -> dict[str, float]:
         """Run evaluation used by train, test, and val steps.
 
         Args:
-            instances: A list of dicts where each dict is a frame containing gt data
+            frames: A list of dicts where each dict is a frame containing gt data
             mode: which metrics to compute and whether to use persistent tracking or not
 
         Returns:
             a dict containing the loss and any other metrics specified by `eval_metrics`
         """
         try:
-            instances = [frame for frame in instances if frame.has_instances()]
+            frames = [frame for frame in frames if frame.has_instances()]
+            if len(frames) == 0:
+                return None
+
+            instances = [instance for frame in frames for instance in frame.instances]
+
             eval_metrics = self.metrics[mode]
             persistent_tracking = self.persistent_tracking[mode]
 
             logits = self(instances)
-
-            if not logits:
-                return None
-
-            loss = self.loss(logits, instances)
+            loss = self.loss(logits, frames)
 
             return_metrics = {"loss": loss}
             if eval_metrics is not None and len(eval_metrics) > 0:
                 self.tracker.persistent_tracking = persistent_tracking
-                instances_pred = self.tracker(self.model, instances)
-                instances_mm = metrics.to_track_eval(instances_pred)
-                clearmot = metrics.get_pymotmetrics(instances_mm, eval_metrics)
+
+                frames_pred = self.tracker(self.model, frames)
+
+                frames_mm = metrics.to_track_eval(frames_pred)
+                clearmot = metrics.get_pymotmetrics(frames_mm, eval_metrics)
+
                 return_metrics.update(clearmot.to_dict())
-            return_metrics["batch_size"] = len(instances)
+            return_metrics["batch_size"] = len(frames)
         except Exception as e:
-            print(
-                f"Failed on frame {instances[0].frame_id} of video {instances[0].video_id}"
-            )
+            print(f"Failed on frame {frames[0].frame_id} of video {frames[0].video_id}")
             raise (e)
 
         return return_metrics

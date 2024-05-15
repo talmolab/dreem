@@ -11,10 +11,10 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
     * added fixed embeddings over boxes
 """
 
-from biogtr.data_structures import Frame
+from biogtr.data_structures import Instance
 from biogtr.models.attention_head import ATTWeightHead
 from biogtr.models.embedding import Embedding
-from biogtr.models.model_utils import get_boxes_times
+from biogtr.models.model_utils import get_boxes, get_times
 from torch import nn
 import copy
 import torch
@@ -140,13 +140,13 @@ class Transformer(torch.nn.Module):
                     raise (e)
 
     def forward(
-        self, frames: list[Frame], query_frame: int = None
+        self, ref_instances: list[Instance], query_instances: list[Instance] = None
     ) -> tuple[list[torch.Tensor], dict[str, torch.Tensor]]:
         """Execute a forward pass through the transformer and attention head.
 
         Args:
-            frames: A list of Frames (See `biogtr.data_structures.Frame for more info.)
-            query_frame: An integer (k) specifying the frame within the window to be queried.
+            ref instances: A list of instance objects (See `biogtr.data_structures.Instance` for more info.)
+            query_instances: An set of instances to be used as decoder queries.
 
         Returns:
             asso_output: A list of torch.Tensors of shape (L, n_query, total_instances) where:
@@ -156,79 +156,91 @@ class Transformer(torch.nn.Module):
             embedding_dict: A dictionary containing the "pos" and "temp" embeddings
                             if `self.return_embeddings` is False then they are None.
         """
-        try:
-            reid_features = torch.cat(
-                [frame.get_features() for frame in frames], dim=0
-            ).unsqueeze(0)
-        except Exception as e:
-            print([[f.device for f in frame.get_features()] for frame in frames])
-            raise (e)
 
-        window_length = len(frames)
-        instances_per_frame = [frame.num_detected for frame in frames]
-        total_instances = sum(instances_per_frame)
-        embed_dim = reid_features.shape[-1]
-        embeddings_dict = {"pos": None, "temp": None}
+        ref_features = torch.cat(
+            [instance.features for instance in ref_instances], dim=0
+        ).unsqueeze(0)
+
+        # window_length = len(frames)
+        # instances_per_frame = [frame.num_detected for frame in frames]
+        total_instances = len(ref_instances)
+        embed_dim = ref_features.shape[-1]
+        embeddings_dict = {
+            "ref": {"pos": None, "temp": None},
+            "query": {"pos": None, "temp": None},
+        }
         # print(f'T: {window_length}; N: {total_instances}; N_t: {instances_per_frame} n_reid: {reid_features.shape}')
-        pred_box, pred_time = get_boxes_times(frames)  # total_instances, 4
-        pred_box = torch.nan_to_num(pred_box, -1.0)
+        ref_boxes = get_boxes(ref_instances)  # total_instances, 4
+        ref_boxes = torch.nan_to_num(ref_boxes, -1.0)
+        ref_times, query_times = get_times(ref_instances, query_instances)
 
-        temp_emb = self.temp_emb(pred_time / window_length)
+        window_length = len(ref_times.unique())
+
+        ref_temp_emb = self.temp_emb(ref_times / window_length)
         if self.return_embedding:
-            embeddings_dict["temp"] = temp_emb
+            embeddings_dict["ref"]["temp"] = ref_temp_emb
 
-        pos_emb = self.pos_emb(pred_box)
+        ref_pos_emb = self.pos_emb(ref_boxes)
         if self.return_embedding:
-            embeddings_dict["pos"] = pos_emb
+            embeddings_dict["ref"]["pos"] = ref_pos_emb
 
-        try:
-            emb = (pos_emb + temp_emb) / 2.0
-        except RuntimeError as e:
-            print(self.pos_emb.features, self.temp_emb.features)
-            print(pos_emb.shape, temp_emb.shape)
-            raise (e)
+        ref_emb = (ref_pos_emb + ref_temp_emb) / 2.0
 
-        emb = emb.view(1, total_instances, embed_dim)
+        ref_emb = ref_emb.view(1, total_instances, embed_dim)
 
-        emb = emb.permute(1, 0, 2)  # (total_instances, batch_size, embed_dim)
+        ref_emb = ref_emb.permute(1, 0, 2)  # (total_instances, batch_size, embed_dim)
 
-        batch_size, total_instances, embed_dim = reid_features.shape
+        batch_size, total_instances, embed_dim = ref_features.shape
 
-        reid_features = reid_features.permute(
+        ref_features = ref_features.permute(
             1, 0, 2
         )  # (total_instances, batch_size, embed_dim)
 
-        encoder_queries = reid_features
+        encoder_queries = ref_features
 
         encoder_features = self.encoder(
-            encoder_queries, pos_emb=emb
+            encoder_queries, pos_emb=ref_emb
         )  # (total_instances, batch_size, embed_dim)
 
         n_query = total_instances
 
-        decoder_queries = reid_features
-        decoder_query_emb = emb
+        query_features = ref_features
+        query_pos_emb = ref_pos_emb
+        query_temp_emb = ref_temp_emb
+        query_emb = ref_emb
 
-        if query_frame is not None:
-            query_inds = [
-                x
-                for x in range(
-                    sum(instances_per_frame[:query_frame]),
-                    sum(instances_per_frame[: query_frame + 1]),
-                )
-            ]
-            n_query = len(query_inds)
+        if query_instances is not None:
+            n_query = len(query_instances)
 
-            decoder_queries = decoder_queries[
-                query_inds
-            ]  # decoder_queries: (n_query, batch_size, embed_dim)
-            decoder_query_emb = decoder_query_emb[query_inds]
+            query_features = torch.cat(
+                [instance.features for instance in query_instances], dim=0
+            ).unsqueeze(0)
+
+            query_features = query_features.permute(
+                1, 0, 2
+            )  # (n_query, batch_size, embed_dim)
+
+            query_boxes = get_boxes(query_instances)
+
+            query_temp_emb = self.temp_emb(query_times / window_length)
+            if self.return_embedding:
+                embeddings_dict["query"]["temp"] = query_temp_emb
+
+            query_pos_emb = self.pos_emb(query_boxes)
+            if self.return_embedding:
+                embeddings_dict["query"]["pos"] = query_pos_emb
+
+            query_emb = (query_pos_emb + query_temp_emb) / 2.0
+
+            query_emb = query_emb.view(1, n_query, embed_dim)
+
+            query_emb = query_emb.permute(1, 0, 2)  # (n_query, batch_size, embed_dim)
 
         decoder_features = self.decoder(
-            decoder_queries,
+            query_features,
             encoder_features,
-            pos_emb=emb,
-            query_pos_emb=decoder_query_emb,
+            ref_pos_emb=ref_emb,
+            query_pos_emb=query_emb,
         )  # (L, n_query, batch_size, embed_dim)
 
         decoder_features = decoder_features.transpose(
@@ -372,7 +384,7 @@ class TransformerDecoderLayer(nn.Module):
         self,
         decoder_queries: torch.Tensor,
         encoder_features: torch.Tensor,
-        pos_emb: torch.Tensor = None,
+        ref_pos_emb: torch.Tensor = None,
         query_pos_emb: torch.Tensor = None,
     ) -> torch.Tensor:
         """Execute forward pass of decoder layer.
@@ -381,7 +393,7 @@ class TransformerDecoderLayer(nn.Module):
             decoder_queries: Target sequence for decoder to generate (n_query, batch_size, embed_dim).
             encoder_features: Output from encoder, that decoder uses to attend to relevant
                 parts of input sequence (total_instances, batch_size, embed_dim)
-            pos_emb: The input positional embedding tensor of shape (n_query, embed_dim).
+            ref_pos_emb: The input positional embedding tensor of shape (n_query, embed_dim).
             query_pos_emb: The target positional embedding of shape (n_query, embed_dim)
 
         Returns:
@@ -389,11 +401,11 @@ class TransformerDecoderLayer(nn.Module):
         """
         if query_pos_emb is None:
             query_pos_emb = torch.zeros_like(decoder_queries)
-        if pos_emb is None:
-            pos_emb = torch.zeros_like(encoder_features)
+        if ref_pos_emb is None:
+            ref_pos_emb = torch.zeros_like(encoder_features)
 
         decoder_queries = decoder_queries + query_pos_emb
-        encoder_features = encoder_features + pos_emb
+        encoder_features = encoder_features + ref_pos_emb
 
         if self.decoder_self_attn:
             self_attn_features = self.self_attn(
@@ -496,7 +508,7 @@ class TransformerDecoder(nn.Module):
         self,
         decoder_queries: torch.Tensor,
         encoder_features: torch.Tensor,
-        pos_emb: torch.Tensor = None,
+        ref_pos_emb: torch.Tensor = None,
         query_pos_emb: torch.Tensor = None,
     ) -> torch.Tensor:
         """Execute a forward pass of the decoder block.
@@ -505,7 +517,7 @@ class TransformerDecoder(nn.Module):
             decoder_queries: Query sequence for decoder to generate (n_query, batch_size, embed_dim).
             encoder_features: Output from encoder, that decoder uses to attend to relevant
                 parts of input sequence (total_instances, batch_size, embed_dim)
-            pos_emb: The input positional embedding tensor of shape (total_instances, batch_size, embed_dim).
+            ref_pos_emb: The input positional embedding tensor of shape (total_instances, batch_size, embed_dim).
             query_pos_emb: The query positional embedding of shape (n_query, batch_size, embed_dim)
 
         Returns:
@@ -519,7 +531,7 @@ class TransformerDecoder(nn.Module):
             decoder_features = layer(
                 decoder_features,
                 encoder_features,
-                pos_emb=pos_emb,
+                ref_pos_emb=ref_pos_emb,
                 query_pos_emb=query_pos_emb,
             )
             if self.return_intermediate:

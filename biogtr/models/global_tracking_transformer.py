@@ -2,13 +2,13 @@
 
 from biogtr.models.transformer import Transformer
 from biogtr.models.visual_encoder import VisualEncoder
-from biogtr.data_structures import Frame
-from torch import nn
+from biogtr.data_structures import Instance
+import torch
 
 # todo: do we want to handle params with configs already here?
 
 
-class GlobalTrackingTransformer(nn.Module):
+class GlobalTrackingTransformer(torch.nn.Module):
     """Modular GTR model composed of visual encoder + transformer used for tracking."""
 
     def __init__(
@@ -79,7 +79,9 @@ class GlobalTrackingTransformer(nn.Module):
             decoder_self_attn=decoder_self_attn,
         )
 
-    def forward(self, frames: list[Frame], query_frame: int = None):
+    def forward(
+        self, ref_instances: list[Instance], query_instances: list[Instance] = None
+    ):
         """Execute forward pass of GTR Model to get asso matrix.
 
         Args:
@@ -90,15 +92,33 @@ class GlobalTrackingTransformer(nn.Module):
             An N_T x N association matrix
         """
         # Extract feature representations with pre-trained encoder.
-        for frame in filter(
-            lambda f: f.has_instances() and not f.has_features(), frames
+        if any(
+            [
+                (not instance.has_features()) and instance.has_crop()
+                for instance in ref_instances
+            ]
         ):
-            crops = frame.get_crops()
-            z = self.visual_encoder(crops)
+            ref_crops = torch.concat(
+                [instance.crop for instance in ref_instances], axis=0
+            )
+            ref_z = self.visual_encoder(ref_crops)
+            for i, z_i in enumerate(ref_z):
+                ref_instances[i].features = z_i
 
-            for i, z_i in enumerate(z):
-                frame.instances[i].features = z_i
+        if query_instances:
+            if any(
+                [
+                    (not instance.has_features()) and instance.has_crop()
+                    for instance in query_instances
+                ]
+            ):
+                query_crops = torch.concat(
+                    [instance.crop for instance in query_instances], axis=0
+                )
+                query_z = self.visual_encoder(query_crops)
+                for i, z_i in enumerate(query_z):
+                    query_instances[i].features = z_i
 
-        asso_preds, emb = self.transformer(frames, query_frame=query_frame)
+        asso_preds, emb = self.transformer(ref_instances, query_instances)
 
         return asso_preds, emb

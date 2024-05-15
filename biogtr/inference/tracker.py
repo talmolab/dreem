@@ -141,7 +141,9 @@ class Tracker:
         # W: width.
 
         for batch_idx, frame_to_track in enumerate(frames):
-            tracked_frames = self.track_queue.collate_tracks()
+            tracked_frames = self.track_queue.collate_tracks(
+                device=frame_to_track.frame_id.device
+            )
             if self.verbose:
                 warnings.warn(
                     f"Current number of tracks is {self.track_queue.n_tracks}"
@@ -229,7 +231,11 @@ class Tracker:
         # E.g.: instances_per_frame: [4, 5, 6, 7]; window of length 4 with 4 detected instances in the first frame of the window.
 
         _ = model.eval()
+
         query_frame = frames[query_ind]
+
+        query_instances = query_frame.instances
+        all_instances = [instance for frame in frames for instance in frame.instances]
 
         if self.verbose:
             print(f"Frame {query_frame.frame_id.item()}")
@@ -253,7 +259,7 @@ class Tracker:
 
         # (L=1, n_query, total_instances)
         with torch.no_grad():
-            asso_output, embed = model(frames, query_frame=query_ind)
+            asso_output, embed = model(all_instances, query_instances)
             # if model.transformer.return_embedding:
             # query_frame.embeddings = embed TODO add embedding to Instance Object
         # if query_frame == 1:
@@ -321,6 +327,7 @@ class Tracker:
         ]
         nonquery_inds = [i for i in range(total_instances) if i not in query_inds]
 
+        # instead should we do model(nonquery_instances, query_instances)?
         asso_nonquery = asso_output[:, nonquery_inds]  # (n_query, n_nonquery)
 
         asso_nonquery_df = pd.DataFrame(
@@ -332,10 +339,9 @@ class Tracker:
 
         query_frame.add_traj_score("asso_nonquery", asso_nonquery_df)
 
-        pred_boxes, _ = model_utils.get_boxes_times(frames)
+        pred_boxes = model_utils.get_boxes(all_instances)
         query_boxes = pred_boxes[query_inds]  # n_k x 4
         nonquery_boxes = pred_boxes[nonquery_inds]  # n_nonquery x 4
-        # TODO: Insert postprocessing.
 
         unique_ids = torch.unique(instance_ids)  # (n_nonquery,)
 
