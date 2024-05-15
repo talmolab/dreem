@@ -91,9 +91,9 @@ class SleapDataset(BaseDataset):
         if isinstance(anchors, int):
             self.anchors = anchors
         elif isinstance(anchors, str):
-            self.anchors = [anchors.lower()]
+            self.anchors = [anchors]
         else:
-            self.anchors = [anchor.lower() for anchor in anchors]
+            self.anchors = anchors
 
         if (
             isinstance(self.anchors, list) and len(self.anchors) == 0
@@ -219,7 +219,7 @@ class SleapDataset(BaseDataset):
                 poses.append(
                     dict(
                         zip(
-                            [n.name.lower() for n in instance.skeleton.nodes],
+                            [n.name for n in instance.skeleton.nodes],
                             [[p.x, p.y] for p in instance.points.values()],
                         )
                     )
@@ -227,7 +227,7 @@ class SleapDataset(BaseDataset):
 
                 shown_poses = [
                     {
-                        key.lower(): val
+                        key: val
                         for key, val in instance.items()
                         if not np.isnan(val).any()
                     }
