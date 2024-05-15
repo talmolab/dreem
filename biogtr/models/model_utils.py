@@ -2,35 +2,69 @@
 
 from typing import List, Tuple, Iterable
 from pytorch_lightning import loggers
-from biogtr.data_structures import Frame
+from biogtr.data_structures import Instance
 import torch
 
 
-def get_boxes_times(frames: List[Frame]) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Extract the bounding boxes and frame indices from the input list of instances.
+def get_boxes(instances: List[Instance]) -> torch.tensor:
+    """Extract the bounding boxes from the input list of instances.
 
     Args:
-        frames (List[Frame]): List of frame objects containing metadata and instances.
+        instances: List of Instance objects.
 
     Returns:
-        Tuple[torch.Tensor, torch.Tensor]: A tuple of two tensors containing the
-                                            bounding boxes normalized by the height and width of the image
-                                            and corresponding frame indices, respectively.
+        The bounding boxes normalized by the height and width of the image
     """
-    boxes, times = [], []
-    _, h, w = frames[0].img_shape.flatten()
-
-    for fidx, frame in enumerate(frames):
-        bbox = frame.get_bboxes().clone()
+    boxes = []
+    for i, instance in enumerate(instances):
+        _, h, w = instance.frame.img_shape.flatten()
+        bbox = instance.bbox.clone()
         bbox[:, :, [0, 2]] /= w
         bbox[:, :, [1, 3]] /= h
-
         boxes.append(bbox)
-        times.append(torch.full((bbox.shape[0],), fidx))
 
     boxes = torch.cat(boxes, dim=0)  # N, n_anchors, 4
-    times = torch.cat(times, dim=0).to(boxes.device)  # N
-    return boxes, times
+
+    return boxes
+
+
+def get_times(
+    ref_instances: list[Instance], query_instances: list[Instance] = None
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Extract the time indices of each instance relative to the window length.
+
+    Args:
+        ref_instances: Set of instances to query against
+        query_instances: Set of query instances to look up using decoder.
+
+    Returns:
+        Tuple of Corresponding frame indices eg [0, 0, 1, 1, ..., T, T] for ref and query instances.
+    """
+    try:
+        ref_inds = torch.concat([instance.frame.frame_id for instance in ref_instances])
+    except RuntimeError as e:
+        print([instance.frame.frame_id.device for instance in ref_instances])
+        raise (e)
+    if query_instances is not None:
+        query_inds = torch.concat(
+            [instance.frame.frame_id for instance in query_instances]
+        )
+    else:
+        query_inds = torch.tensor([], device=ref_inds.device)
+
+    frame_inds = torch.concat([ref_inds, query_inds])
+    window_length = len(frame_inds.unique())
+
+    frame_idx_mapping = {frame_inds.unique()[i].item(): i for i in range(window_length)}
+    ref_t = torch.tensor(
+        [frame_idx_mapping[ind.item()] for ind in ref_inds], device=ref_inds.device
+    )
+
+    query_t = torch.tensor(
+        [frame_idx_mapping[ind.item()] for ind in query_inds], device=ref_inds.device
+    )
+
+    return ref_t, query_t
 
 
 def softmax_asso(asso_output: list[torch.Tensor]) -> list[torch.Tensor]:
