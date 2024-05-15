@@ -81,22 +81,6 @@ class Instance:
         else:
             self._centroid = {}
 
-        if self._bbox.shape[0] and len(self._bbox.shape) == 1:
-            self._bbox = self._bbox.unsqueeze(0)  # (n_anchors, 4)
-
-        if self._bbox.shape[1] and len(self._bbox.shape) == 2:
-            self._bbox = self._bbox.unsqueeze(0)  # (1, n_anchors, 4)
-
-        if centroid is not None:
-            self._centroid = centroid
-
-        elif self.bbox.shape[1]:
-            y1, x1, y2, x2 = self.bbox.squeeze(dim=0).nanmean(dim=0)
-            self._centroid = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
-
-        else:
-            self._centroid = {}
-
         if crop is None:
             self._crop = torch.tensor([])
         elif not isinstance(crop, torch.Tensor):
