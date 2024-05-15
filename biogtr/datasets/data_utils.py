@@ -169,6 +169,62 @@ def resize_and_pad(img: torch.Tensor, output_size: int):
     return tvf.pad(img, padding, 0, "constant")
 
 
+class NodeDropout:
+    """Node dropout augmentation.
+
+    Drop up to `n` nodes with probability `p`.
+    """
+
+    def __init__(self, p: float, n: int) -> None:
+        """Initialize Node Dropout Augmentation.
+
+        Args:
+            p: the probability with which to drop the nodes
+            n: the maximum number of nodes to drop
+        """
+        self.n = n
+        self.p = p
+
+    def __call__(self, nodes: list[str]) -> list[str]:
+        """Wrap `drop_nodes` to enable class call.
+
+        Args:
+            nodes: A list of available node names to drop.
+
+        Returns:
+            dropped_nodes: A list of up to `self.n` nodes to drop.
+        """
+        return self.forward(nodes)
+
+    def forward(self, nodes: list[str]) -> list[str]:
+        """Drop up to `n` random nodes with probability p.
+
+        Args:
+            nodes: A list of available node names to drop.
+
+        Returns:
+            dropped_nodes: A list of up to `self.n` nodes to drop.
+        """
+        if self.n == 0 or self.p == 0:
+            return []
+
+        nodes_to_drop = np.random.permutation(nodes)
+        node_dropout_p = np.random.uniform(size=len(nodes_to_drop))
+
+        dropped_node_inds = np.where(node_dropout_p < self.p)
+        node_dropout_p = node_dropout_p[dropped_node_inds]
+
+        n_nodes_to_drop = min(self.n, len(node_dropout_p))
+
+        dropped_node_inds = np.argpartition(node_dropout_p, -n_nodes_to_drop)[
+            -n_nodes_to_drop:
+        ]
+
+        dropped_nodes = nodes_to_drop[dropped_node_inds]
+
+        return dropped_nodes
+
+
 def sorted_anchors(labels: sio.Labels) -> list[str]:
     """Sort anchor names from most instances with that node to least.
 

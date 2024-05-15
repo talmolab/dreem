@@ -54,9 +54,18 @@ class BaseDataset(Dataset):
         if self.seed is not None:
             np.random.seed(self.seed)
 
-        self.augmentations = (
-            data_utils.build_augmentations(augmentations) if augmentations else None
-        )
+        if augmentations and self.mode == "train":
+            self.instance_dropout = augmentations.pop(
+                "InstanceDropout", {"p": 0.0, "n": 0}
+            )
+            self.node_dropout = data_utils.NodeDropout(
+                **augmentations.pop("NodeDropout", {"p": 0.0, "n": 0})
+            )
+            self.augmentations = data_utils.build_augmentations(augmentations)
+        else:
+            self.instance_dropout = {"p": 0.0, "n": 0}
+            self.node_dropout = data_utils.NodeDropout(p=0.0, n=0)
+            self.augmentations = None
 
         # Initialize in subclasses
         self.frame_idx = None

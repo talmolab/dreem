@@ -27,6 +27,7 @@ class SleapDataset(BaseDataset):
         chunk: bool = True,
         clip_length: int = 500,
         mode: str = "train",
+        handle_missing: str = "centroid",
         augmentations: dict = None,
         n_chunks: Union[int, float] = 1.0,
         seed: int = None,
@@ -46,8 +47,12 @@ class SleapDataset(BaseDataset):
                     If unavailable then crop around the midpoint between all visible anchors.
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
-            mode: `train` or `val`. Determines whether this dataset is used for
-                training or validation.
+            mode: `train`, `val`, or `test`. Determines whether this dataset is used for
+                training, validation/testing/inference.
+            handle_missing: how to handle missing single nodes. one of `["drop", "ignore", "centroid"]`.
+                            if "drop" then we dont include instances which are missing the `anchor`.
+                            if "ignore" then we use a mask instead of a crop and nan centroids/bboxes.
+                            if "centroid" then we default to the pose centroid as the node to crop around.
             augmentations: An optional dict mapping augmentations to parameters. The keys
                 should map directly to augmentation classes in albumentations. Example:
                     augmentations = {
@@ -79,15 +84,16 @@ class SleapDataset(BaseDataset):
         self.chunk = chunk
         self.clip_length = clip_length
         self.mode = mode.lower()
+        self.handle_missing = handle_missing.lower()
         self.n_chunks = n_chunks
         self.seed = seed
 
         if isinstance(anchors, int):
             self.anchors = anchors
         elif isinstance(anchors, str):
-            self.anchors = [anchors.lower()]
+            self.anchors = [anchors]
         else:
-            self.anchors = [anchor.lower() for anchor in anchors]
+            self.anchors = anchors
 
         if (
             isinstance(self.anchors, list) and len(self.anchors) == 0
@@ -98,11 +104,6 @@ class SleapDataset(BaseDataset):
 
         # if self.seed is not None:
         #     np.random.seed(self.seed)
-        if augmentations and self.mode == "train":
-            self.augmentations = data_utils.build_augmentations(augmentations)
-        else:
-            self.augmentations = None
-
         self.labels = [sio.load_slp(slp_file) for slp_file in self.slp_files]
 
         # do we need this? would need to update with sleap-io
@@ -176,6 +177,9 @@ class SleapDataset(BaseDataset):
 
             try:
                 img = vid_reader.get_data(frame_ind)
+                if len(img.shape) == 2:
+                    img = np.expand_dims(img, 0)
+                h, w, c = img.shape
             except IndexError as e:
                 print(f"Could not read frame {frame_ind} from {video_name} due to {e}")
                 continue
@@ -192,7 +196,20 @@ class SleapDataset(BaseDataset):
             if np.issubdtype(img.dtype, np.integer):  # convert int to float
                 img = img.astype(np.float32) / 255
 
-            for instance in lf:
+            n_instances_dropped = 0
+
+            gt_instances = lf.instances
+            if self.mode == "train":
+                np.random.shuffle(gt_instances)
+
+            for instance in gt_instances:
+                if (
+                    np.random.uniform() < self.instance_dropout["p"]
+                    and n_instances_dropped < self.instance_dropout["n"]
+                ):
+                    n_instances_dropped += 1
+                    continue
+
                 if instance.track is not None:
                     gt_track_id = video.tracks.index(instance.track)
                 else:
@@ -210,7 +227,7 @@ class SleapDataset(BaseDataset):
 
                 shown_poses = [
                     {
-                        key.lower(): val
+                        key: val
                         for key, val in instance.items()
                         if not np.isnan(val).any()
                     }
@@ -284,8 +301,13 @@ class SleapDataset(BaseDataset):
                 else:
                     anchors = self.anchors
 
+                dropped_anchors = self.node_dropout(anchors)
+
                 for anchor in anchors:
-                    if anchor == "midpoint" or anchor == "centroid":
+                    if anchor in dropped_anchors:
+                        centroid = np.array([np.nan, np.nan])
+
+                    elif anchor == "midpoint" or anchor == "centroid":
                         centroid = np.nanmean(np.array(list(pose.values())), axis=0)
 
                     elif anchor in pose:
@@ -293,16 +315,11 @@ class SleapDataset(BaseDataset):
                         if np.isnan(centroid).any():
                             centroid = np.array([np.nan, np.nan])
 
-                    elif anchor not in pose and len(anchors) == 1:
-                        anchor = "midpoint"
-                        centroid = np.nanmean(np.array(list(pose.values())), axis=0)
-
-                    elif anchor in pose:
-                        centroid = np.array(pose[anchor])
-                        if np.isnan(centroid).any():
-                            centroid = np.array([np.nan, np.nan])
-
-                    elif anchor not in pose and len(anchors) == 1:
+                    elif (
+                        anchor not in pose
+                        and len(anchors) == 1
+                        and self.handle_missing == "centroid"
+                    ):
                         anchor = "midpoint"
                         centroid = np.nanmean(np.array(list(pose.values())), axis=0)
 
@@ -338,6 +355,9 @@ class SleapDataset(BaseDataset):
                 if len(boxes) > 0:
                     boxes = torch.stack(boxes, dim=0)
 
+                if self.handle_missing == "drop" and boxes.isnan().any():
+                    continue
+
                 instance = Instance(
                     gt_track_id=gt_track_ids[j],
                     pred_track_id=-1,
@@ -351,9 +371,6 @@ class SleapDataset(BaseDataset):
                 )
 
                 instances.append(instance)
-
-            if self.mode == "train":
-                np.random.shuffle(instances)
 
             frame = Frame(
                 video_id=label_idx,

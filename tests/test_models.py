@@ -299,7 +299,6 @@ def test_multianchor_embedding():
     N = frames * objects
 
     boxes = torch.rand(size=(N, n_anchors, 4))
-    times = torch.rand(size=(N,))
 
     fixed_emb = Embedding(
         "pos",
