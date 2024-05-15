@@ -170,8 +170,13 @@ def resize_and_pad(img: torch.Tensor, output_size: int):
 
 
 class NodeDropout:
+    """Node dropout augmentation.
+
+    Drop up to `n` nodes with probability `p`.
+    """
+
     def __init__(self, p: float, n: int) -> None:
-        """Initialize Node Dropout Augmentation
+        """Initialize Node Dropout Augmentation.
 
         Args:
             p: the probability with which to drop the nodes
