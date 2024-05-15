@@ -445,8 +445,8 @@ def test_augmentations(two_flies, ten_icy_particles):
     nodes = ["head", "nose", "tti", "tail"]
 
     for p in [0, 1]:
-        for n in [0, 1, len(nodes)]
-        
+        for n in [0, 1, len(nodes)]:
+
             node_dropout = NodeDropout(p=p, n=n)
             dropped_nodes = node_dropout(nodes)
 
