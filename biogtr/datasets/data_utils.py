@@ -173,7 +173,7 @@ class NodeDropout:
     def __init__(self, p: float, n: int) -> None:
         """Initialize Node Dropout Augmentation
 
-        Args
+        Args:
             p: the probability with which to drop the nodes
             n: the maximum number of nodes to drop
         """
@@ -189,7 +189,6 @@ class NodeDropout:
         Returns:
             dropped_nodes: A list of up to `self.n` nodes to drop.
         """
-
         return self.forward(nodes)
 
     def forward(self, nodes: list[str]) -> list[str]:
