@@ -453,7 +453,9 @@ def test_augmentations(two_flies, ten_icy_particles):
             if p == 0:
                 assert len(dropped_nodes) == 0
             else:
-                assert len(dropped_nodes) == n
+                assert (
+                    len(dropped_nodes) == n
+                ), f"p={node_dropout.p}, n={node_dropout.n},n_dropped={len(dropped_nodes)}"
 
     no_augs_ds = MicroscopyDataset(
         videos=[ten_icy_particles[0]],

@@ -201,6 +201,9 @@ class NodeDropout:
         Returns:
             dropped_nodes: A list of up to `self.n` nodes to drop.
         """
+        if self.n == 0 or self.p == 0:
+            return []
+
         nodes_to_drop = np.random.permutation(nodes)
         node_dropout_p = np.random.uniform(size=len(nodes_to_drop))
 
