@@ -1,7 +1,7 @@
 """Test dataset logic."""
 
 from biogtr.datasets.base_dataset import BaseDataset
-from biogtr.datasets.data_utils import get_max_padding
+from biogtr.datasets.data_utils import get_max_padding, NodeDropout
 from biogtr.datasets.microscopy_dataset import MicroscopyDataset
 from biogtr.datasets.sleap_dataset import SleapDataset
 from biogtr.datasets.tracking_dataset import TrackingDataset
@@ -441,6 +441,19 @@ def test_augmentations(two_flies, ten_icy_particles):
     b = augs_instances[0].get_crops()
 
     assert not torch.all(a.eq(b))
+
+    nodes = ["head", "nose", "tti", "tail"]
+
+    for p in [0, 1]:
+        for n in [0, 1, len(nodes)]
+        
+            node_dropout = NodeDropout(p=p, n=n)
+            dropped_nodes = node_dropout(nodes)
+
+            if p == 0:
+                assert len(dropped_nodes) == 0
+            else:
+                assert len(dropped_nodes) == n
 
     no_augs_ds = MicroscopyDataset(
         videos=[ten_icy_particles[0]],

@@ -58,11 +58,13 @@ class BaseDataset(Dataset):
             self.instance_dropout = augmentations.pop(
                 "InstanceDropout", {"p": 0.0, "n": 0}
             )
-            self.node_dropout = augmentations.pop("NodeDropout", {"p": 0.0, "n": 0})
+            self.node_dropout = data_utils.NodeDropout(
+                **augmentations.pop("NodeDropout", {"p": 0.0, "n": 0})
+            )
             self.augmentations = data_utils.build_augmentations(augmentations)
         else:
             self.instance_dropout = {"p": 0.0, "n": 0}
-            self.node_dropout = {"p": 0.0, "n": 0}
+            self.node_dropout = data_utils.NodeDropout(p=0.0, n=0)
             self.augmentations = None
 
         # Initialize in subclasses

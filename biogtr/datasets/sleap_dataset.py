@@ -178,7 +178,7 @@ class SleapDataset(BaseDataset):
             try:
                 img = vid_reader.get_data(frame_ind)
                 if len(img.shape) == 2:
-                    img = img.expand_dims(0)
+                    img = np.expand_dims(img, 0)
                 h, w, c = img.shape
             except IndexError as e:
                 print(f"Could not read frame {frame_ind} from {video_name} due to {e}")
@@ -301,17 +301,7 @@ class SleapDataset(BaseDataset):
                 else:
                     anchors = self.anchors
 
-                anchors_to_drop = np.random.permutation(anchors)
-                anchor_dropout_p = np.random.uniform(size=len(anchors_to_drop))
-                dropped_anchor_inds = np.where(
-                    anchor_dropout_p < self.node_dropout["p"]
-                )
-                anchor_dropout_p = anchor_dropout_p[dropped_anchor_inds]
-                n_anchors_to_drop = min(self.node_dropout["n"], len(anchor_dropout_p))
-                dropped_anchor_inds = np.argpartition(
-                    anchor_dropout_p, -n_anchors_to_drop
-                )[-n_anchors_to_drop:]
-                dropped_anchors = anchors_to_drop[dropped_anchor_inds]
+                dropped_anchors = self.node_dropout(anchors)
 
                 for anchor in anchors:
                     if anchor in dropped_anchors:
