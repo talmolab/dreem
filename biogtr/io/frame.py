@@ -3,72 +3,55 @@
 import torch
 import sleap_io as sio
 import numpy as np
+import attrs
 from numpy.typing import ArrayLike
 from typing import Union, List
 
 
+def _to_tensor(data) -> torch.Tensor:
+    if isinstance(data, torch.Tensor):
+        return data
+    elif np.isscalar(data):
+        return torch.tensor([data])
+    else:
+        return torch.tensor(data)
+
+
+@attrs.define(eq=False)
 class Frame:
-    """Data structure containing metadata for a single frame of a video."""
+    """Data structure containing metadata for a single frame of a video.
 
-    def __init__(
-        self,
-        video_id: int,
-        frame_id: int,
-        vid_file: str = "",
-        img_shape: ArrayLike = None,
-        instances: List["Instance"] = None,
-        asso_output: ArrayLike = None,
-        matches: tuple = None,
-        traj_score: Union[ArrayLike, dict] = None,
-        device=None,
-    ):
-        """Initialize Frame.
+    Attributes:
+        video_id: The video index in the dataset.
+        frame_id: The index of the frame in a video.
+        vid_file: The path to the video the frame is from.
+        img_shape: The shape of the original frame (not the crop).
+        instances: A list of Instance objects that appear in the frame.
+        asso_output: The association matrix between instances
+        output directly from the transformer.
+        matches: matches from LSA algorithm between the instances and
+        available trajectories during tracking.
+        traj_score: Either a dict containing the association matrix
+        between instances and trajectories along postprocessing pipeline
+        or a single association matrix.
+        device: The device the frame should be moved to.
+    """
 
-        Args:
-            video_id: The video index in the dataset.
-            frame_id: The index of the frame in a video.
-            vid_file: The path to the video the frame is from.
-            img_shape: The shape of the original frame (not the crop).
-            instances: A list of Instance objects that appear in the frame.
-            asso_output: The association matrix between instances
-            output directly from the transformer.
-            matches: matches from LSA algorithm between the instances and
-            available trajectories during tracking.
-            traj_score: Either a dict containing the association matrix
-            between instances and trajectories along postprocessing pipeline
-            or a single association matrix.
-            device: The device the frame should be moved to.
-        """
-        self._video_id = torch.tensor([video_id])
-        self._frame_id = torch.tensor([frame_id])
+    _video_id: int = attrs.field(alias="video_id", converter=_to_tensor)
+    _frame_id: int = attrs.field(alias="frame_id", converter=_to_tensor)
+    _video: str = attrs.field(alias="vid_file", default="")
+    _img_shape: ArrayLike = attrs.field(
+        alias="img_shape", converter=_to_tensor, factory=list
+    )
 
-        try:
-            self._video = sio.Video(vid_file)
-        except ValueError:
-            self._video = vid_file
-        if img_shape is None:
-            self._img_shape = torch.tensor([0, 0, 0])
-        elif isinstance(img_shape, torch.Tensor):
-            self._img_shape = img_shape
-        else:
-            self._img_shape = torch.tensor([img_shape])
-        if instances is None:
-            self.instances = []
-        else:
-            self._instances = instances
+    _instances: list["Instance"] = attrs.field(alias="instances", factory=list)
+    _asso_output: ArrayLike = attrs.field(alias="asso_output", default=None)
+    _matches: tuple = attrs.field(alias="matches", factory=tuple)
+    _traj_score: dict = attrs.field(alias="traj_score", factory=dict)
+    _device: str = attrs.field(alias="device", default=None)
 
-        self._asso_output = asso_output
-        self._matches = matches
-
-        if traj_score is None:
-            self._traj_score = {}
-        elif isinstance(traj_score, dict):
-            self._traj_score = traj_score
-        else:
-            self._traj_score = {"initial": traj_score}
-
-        self._device = device
-        self.to(device)
+    def __attrs_post_init__(self):
+        self.to(self.device)
 
     def __repr__(self) -> str:
         """Return String representation of the Frame.
@@ -247,10 +230,7 @@ class Frame:
         Args:
             img_shape: an ArrayLike object containing the shape of the frame image.
         """
-        if isinstance(img_shape, torch.Tensor):
-            self._img_shape = img_shape
-        else:
-            self._img_shape = torch.tensor([img_shape])
+        self._img_shape = _to_tensor(img_shape)
 
     @property
     def instances(self) -> List["Instance"]:
