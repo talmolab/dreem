@@ -11,7 +11,7 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
     * added fixed embeddings over boxes
 """
 
-from biogtr.data_structures import Instance
+from biogtr.io.frame import Frame
 from biogtr.models.attention_head import ATTWeightHead
 from biogtr.models.embedding import Embedding
 from biogtr.models.model_utils import get_boxes, get_times

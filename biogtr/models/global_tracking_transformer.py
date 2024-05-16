@@ -2,8 +2,8 @@
 
 from biogtr.models.transformer import Transformer
 from biogtr.models.visual_encoder import VisualEncoder
-from biogtr.data_structures import Instance
-import torch
+from biogtr.io.frame import Frame
+from torch import nn
 
 # todo: do we want to handle params with configs already here?
 
