@@ -11,7 +11,7 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
     * added fixed embeddings over boxes
 """
 
-from biogtr.data_structures import Frame
+from biogtr.io.frame import Frame
 from biogtr.models.attention_head import ATTWeightHead
 from biogtr.models.embedding import Embedding
 from biogtr.models.model_utils import get_boxes_times
@@ -145,7 +145,7 @@ class Transformer(torch.nn.Module):
         """Execute a forward pass through the transformer and attention head.
 
         Args:
-            frames: A list of Frames (See `biogtr.data_structures.Frame for more info.)
+            frames: A list of Frames (See `biogtr.io.data_structures.Frame for more info.)
             query_frame: An integer (k) specifying the frame within the window to be queried.
 
         Returns:

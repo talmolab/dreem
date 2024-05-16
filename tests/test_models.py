@@ -2,7 +2,8 @@
 
 import pytest
 import torch
-from biogtr.data_structures import Frame, Instance
+from biogtr.io.frame import Frame
+from biogtr.io.instance import Instance
 from biogtr.models.mlp import MLP
 from biogtr.models.attention_head import ATTWeightHead
 from biogtr.models.embedding import Embedding

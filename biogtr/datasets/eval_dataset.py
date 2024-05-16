@@ -1,7 +1,8 @@
 """Module containing wrapper for merging gt and pred datasets for evaluation."""
 
 from torch.utils.data import Dataset
-from biogtr.data_structures import Frame, Instance
+from biogtr.io.frame import Frame
+from biogtr.io.instance import Instance
 from typing import List
 
 

@@ -3,7 +3,8 @@
 from PIL import Image
 from biogtr.datasets import data_utils
 from biogtr.datasets.base_dataset import BaseDataset
-from biogtr.data_structures import Instance, Frame
+from biogtr.io.frame import Frame
+from biogtr.io.instance import Instance
 from scipy.ndimage import measurements
 from typing import List, Optional, Union
 import albumentations as A
@@ -122,7 +123,7 @@ class CellTrackingDataset(BaseDataset):
 
         Returns:
             a list of Frame objects containing frame metadata and Instance Objects.
-            See `biogtr.data_structures` for more info.
+            See `biogtr.io.data_structures` for more info.
         """
         image = self.videos[label_idx]
         gt = self.labels[label_idx]

@@ -3,7 +3,8 @@
 from PIL import Image
 from biogtr.datasets import data_utils
 from biogtr.datasets.base_dataset import BaseDataset
-from biogtr.data_structures import Frame, Instance
+from biogtr.io.frame import Frame
+from biogtr.io.instance import Instance
 from typing import Union
 import albumentations as A
 import numpy as np
@@ -122,7 +123,7 @@ class MicroscopyDataset(BaseDataset):
             frame_idx: index of the frames
 
         Returns:
-            A list of Frames containing Instances to be tracked (See `biogtr.data_structures for more info`)
+            A list of Frames containing Instances to be tracked (See `biogtr.io.data_structures for more info`)
         """
         labels = self.labels[label_idx]
         labels = labels.dropna(how="all")
