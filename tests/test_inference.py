@@ -3,7 +3,8 @@
 import torch
 import pytest
 import numpy as np
-from biogtr.data_structures import Frame, Instance
+from biogtr.io.frame import Frame
+from biogtr.io.instance import Instance
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.inference.tracker import Tracker
 from biogtr.inference import post_processing

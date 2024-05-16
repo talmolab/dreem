@@ -3,7 +3,7 @@
 import torch
 import pandas as pd
 import warnings
-from biogtr.data_structures import Frame
+from biogtr.io.frame import Frame
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.models import model_utils
 from biogtr.inference.track_queue import TrackQueue
@@ -128,7 +128,7 @@ class Tracker:
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
-            frame: A list of Frames (See `biogtr.data_structures.Frame` for more info).
+            frame: A list of Frames (See `biogtr.io.data_structures.Frame` for more info).
 
 
         Returns:
@@ -209,7 +209,7 @@ class Tracker:
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
-            frames: A list of Frames containing reid features. See `biogtr.data_structures` for more info.
+            frames: A list of Frames containing reid features. See `biogtr.io.data_structures` for more info.
             query_ind: An integer for the query frame within the window of instances.
 
         Returns:

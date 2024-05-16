@@ -3,7 +3,7 @@
 Used for training a single model or deploying a batch train job on RUNAI CLI
 """
 
-from biogtr.config import Config
+from biogtr.io.config import Config
 from biogtr.datasets.tracking_dataset import TrackingDataset
 from biogtr.datasets.data_utils import view_training_batch
 from multiprocessing import cpu_count
