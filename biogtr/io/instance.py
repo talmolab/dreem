@@ -3,126 +3,112 @@
 import torch
 import sleap_io as sio
 import numpy as np
-from numpy.typing import ArrayLike
-from typing import Union, List
+import attrs
+from numpy.typing import ArrayLike, scalar
+from typing import Union
 
 
+def _to_tensor(data: Union[scalar, ArrayLike]) -> torch.Tensor:
+    """Convert data to a torch.Tensor object
+
+    Args:
+        data: Either a scalar quantity or arraylike object
+    Returns:
+        A torch Tensor containing data
+    """
+    if isinstance(data, torch.Tensor):
+        return data
+    elif np.isscalar(data):
+        return torch.tensor([data])
+    else:
+        return torch.tensor(data)
+
+
+def _expand_to_rank(
+    arr: Union[np.ndarray, torch.Tensor], new_rank: int
+) -> Union[np.ndarray, torch.Tensor]:
+    """Expand n-dimensional array to appropriate dimensions by adding singleton dimensions to the front of the array.
+
+    Args:
+        arr: an n-dimensional array (either np.ndarray or torch.Tensor).
+    Returns:
+        The array expanded to the correct dimensions.
+    """
+    curr_rank = len(arr.shape)
+    while curr_rank < new_rank:
+        if isinstance(arr, np.ndarray):
+            arr = np.expand_dims(arr, axis=0)
+        elif isinstance(arr, torch.Tensor):
+            arr = arr.unsqueeze(0)
+        else:
+            raise TypeError(
+                f"`arr` must be either an np.ndarray or torch.Tensor but found {type(arr)}"
+            )
+        curr_rank = len(arr.shape)
+    return arr
+
+
+@attrs.defin(eq=False)
 class Instance:
-    """Class representing a single instance to be tracked."""
+    """Class representing a single instance to be tracked.
 
-    def __init__(
-        self,
-        gt_track_id: int = -1,
-        pred_track_id: int = -1,
-        bbox: ArrayLike = None,
-        crop: ArrayLike = None,
-        centroid: dict[str, ArrayLike] = None,
-        features: ArrayLike = None,
-        track_score: float = -1.0,
-        point_scores: ArrayLike = None,
-        instance_score: float = -1.0,
-        skeleton: sio.Skeleton = None,
-        pose: dict[str, ArrayLike] = None,
-        device: str = None,
-    ):
-        """Initialize Instance.
+    Attributes:
+        gt_track_id: Ground truth track id - only used for train/eval.
+        pred_track_id: Predicted track id. Untracked instance is represented by -1.
+        bbox: The bounding box coordinate of the instance. Defaults to an empty tensor.
+        crop: The crop of the instance.
+        centroid: the centroid around which the bbox was cropped.
+        features: The reid features extracted from the CNN backbone used in the transformer.
+        track_score: The track score output from the association matrix.
+        point_scores: The point scores from sleap.
+        instance_score: The instance scores from sleap.
+        skeleton: The sleap skeleton used for the instance.
+        pose: A dictionary containing the node name and corresponding point.
+        device: String representation of the device the instance should be on.
+    """
 
-        Args:
-            gt_track_id: Ground truth track id - only used for train/eval.
-            pred_track_id: Predicted track id. Untracked instance is represented by -1.
-            bbox: The bounding box coordinate of the instance. Defaults to an empty tensor.
-            crop: The crop of the instance.
-            centroid: the centroid around which the bbox was cropped.
-            features: The reid features extracted from the CNN backbone used in the transformer.
-            track_score: The track score output from the association matrix.
-            point_scores: The point scores from sleap.
-            instance_score: The instance scores from sleap.
-            skeleton: The sleap skeleton used for the instance.
-            pose: A dictionary containing the node name and corresponding point.
-            device: String representation of the device the instance should be on.
-        """
-        if gt_track_id is not None:
-            self._gt_track_id = torch.tensor([gt_track_id])
-        else:
-            self._gt_track_id = torch.tensor([-1])
+    _gt_track_id: int = attrs.field(
+        alias="gt_track_id", default=-1, converter=_to_tensor
+    )
+    _pred_track_id: int = attrs.field(
+        alias="pred_track_id", default=-1, converter=_to_tensor
+    )
+    _bbox: ArrayLike = attrs.field(alias="bbox", factory=list, converter=_to_tensor)
+    _crop: ArrayLike = attrs.field(alias="crop", factory=list, converter=_to_tensor)
+    _centroid: dict[str, ArrayLike] = attrs.field(alias="centroid", factory=dict)
+    _features: ArrayLike = attrs.field(
+        alias="features", factory=list, converter=_to_tensor
+    )
+    _track_score: float = attrs.field(alias="track_score", default=-1.0)
+    _instance_score: float = attrs.field(alias="instance_score", default=-1.0)
+    _point_scores: ArrayLike = attrs.field(alias="point_scores", default=None)
+    _skeleton: sio.Skeleton = attrs.field(alias="skeleton", default=None)
+    _pose: dict[str, ArrayLike] = attrs.field(alias="pose", factory=dict)
+    _device: str = attrs.field(alias="device", default=None)
+    _frame: "Frame" = None
 
-        if pred_track_id is not None:
-            self._pred_track_id = torch.tensor([pred_track_id])
-        else:
-            self._pred_track_id = torch.tensor([])
+    def __attrs_post_init__(self):
+        if self.skeleton is None:
+            self.skeleton = sio.Skeleton(["centroid"])
 
-        if skeleton is None:
-            self._skeleton = sio.Skeleton(["centroid"])
-        else:
-            self._skeleton = skeleton
+        if len(self.bbox) == 0:
+            self.bbox = torch.empty([1, 0, 4])
 
-        if bbox is None:
-            self._bbox = torch.empty(1, 0, 4)
-
-        elif not isinstance(bbox, torch.Tensor):
-            self._bbox = torch.tensor(bbox)
-
-        else:
-            self._bbox = bbox
-
-        if self._bbox.shape[0] and len(self._bbox.shape) == 1:
-            self._bbox = self._bbox.unsqueeze(0)  # (n_anchors, 4)
-
-        if self._bbox.shape[1] and len(self._bbox.shape) == 2:
-            self._bbox = self._bbox.unsqueeze(0)  # (1, n_anchors, 4)
-
-        if centroid is not None:
-            self._centroid = centroid
-
-        elif self.bbox.shape[1]:
+        if len(self.crop) == 0 and self.bbox.shape[1] != 0:
             y1, x1, y2, x2 = self.bbox.squeeze(dim=0).nanmean(dim=0)
-            self._centroid = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
+            self.centroid = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
 
-        else:
-            self._centroid = {}
-
-        if crop is None:
-            self._crop = torch.tensor([])
-        elif not isinstance(crop, torch.Tensor):
-            self._crop = torch.tensor(crop)
-        else:
-            self._crop = crop
-
-        if len(self._crop.shape) == 2:  # (h, w)
-            self._crop = self._crop.unsqueeze(0)  # (c, h, w)
-        if len(self._crop.shape) == 3:
-            self._crop = self._crop.unsqueeze(0)  # (1, c, h, w)
-
-        if features is None:
-            self._features = torch.tensor([])
-        elif not isinstance(features, torch.Tensor):
-            self._features = torch.tensor(features)
-        else:
-            self._features = features
-
-        if self._features.shape[0] and len(self._features.shape) == 1:  # (d,)
-            self._features = self._features.unsqueeze(0)  # (1, d)
-
-        if pose is not None:
-            self._pose = pose
-
-        elif self.bbox.shape[1]:
+        if len(self.pose) == 0 and self.bbox.shape[1]:
             y1, x1, y2, x2 = self.bbox.squeeze(dim=0).mean(dim=0)
             self._pose = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
 
-        else:
-            self._pose = {}
+        if self.point_scores is None and len(self.pose) != 0:
+            self._point_scores = np.zeros((len(self.pose), 2))
 
-        self._track_score = track_score
-        self._instance_score = instance_score
-
-        if point_scores is not None:
-            self._point_scores = point_scores
-        else:
-            self._point_scores = np.zeros_like(self.pose)
-
-        self._device = device
-        self.to(self._device)
+        self.bbox = _expand_to_rank(self.bbox, 3)
+        self.crop = _expand_to_rank(self.crop, 4)
+        self.features = _expand_to_rank(self.features, 2)
+        self.to(self.device)
 
     def __repr__(self) -> str:
         """Return string representation of the Instance."""
@@ -378,7 +364,7 @@ class Instance:
         Returns:
             True if the instance has an image otherwise False.
         """
-        if self._crop.shape[0] == 0:
+        if self._crop.shape[-1] == 0:
             return False
         else:
             return True
@@ -416,7 +402,7 @@ class Instance:
         Returns:
             True if the instance has reid features, False otherwise.
         """
-        if self._features.shape[0] == 0:
+        if self._features.shape[-1] == 0:
             return False
         else:
             return True
