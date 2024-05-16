@@ -1,18 +1,19 @@
-"""Module containing data class for storing detections"""
+"""Module containing data class for storing detections."""
 
 import torch
 import sleap_io as sio
 import numpy as np
 import attrs
-from numpy.typing import ArrayLike, scalar
+from numpy.typing import ArrayLike
 from typing import Union
 
 
-def _to_tensor(data: Union[scalar, ArrayLike]) -> torch.Tensor:
-    """Convert data to a torch.Tensor object
+def _to_tensor(data: Union[np.number, ArrayLike]) -> torch.Tensor:
+    """Convert data to a torch.Tensor object.
 
     Args:
         data: Either a scalar quantity or arraylike object
+
     Returns:
         A torch Tensor containing data
     """
@@ -31,6 +32,7 @@ def _expand_to_rank(
 
     Args:
         arr: an n-dimensional array (either np.ndarray or torch.Tensor).
+
     Returns:
         The array expanded to the correct dimensions.
     """
@@ -48,7 +50,7 @@ def _expand_to_rank(
     return arr
 
 
-@attrs.defin(eq=False)
+@attrs.define(eq=False)
 class Instance:
     """Class representing a single instance to be tracked.
 
@@ -87,14 +89,19 @@ class Instance:
     _device: str = attrs.field(alias="device", default=None)
     _frame: "Frame" = None
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
+        """Handle dimensionality and more intricate default initializations post-init."""
+        self.bbox = _expand_to_rank(self.bbox, 3)
+        self.crop = _expand_to_rank(self.crop, 4)
+        self.features = _expand_to_rank(self.features, 2)
+
         if self.skeleton is None:
             self.skeleton = sio.Skeleton(["centroid"])
 
-        if len(self.bbox) == 0:
+        if self.bbox.shape[-1] == 0:
             self.bbox = torch.empty([1, 0, 4])
 
-        if len(self.crop) == 0 and self.bbox.shape[1] != 0:
+        if self.crop.shape[-1] == 0 and self.bbox.shape[1] != 0:
             y1, x1, y2, x2 = self.bbox.squeeze(dim=0).nanmean(dim=0)
             self.centroid = {"centroid": np.array([(x1 + x2) / 2, (y1 + y2) / 2])}
 
@@ -105,9 +112,6 @@ class Instance:
         if self.point_scores is None and len(self.pose) != 0:
             self._point_scores = np.zeros((len(self.pose), 2))
 
-        self.bbox = _expand_to_rank(self.bbox, 3)
-        self.crop = _expand_to_rank(self.crop, 4)
-        self.features = _expand_to_rank(self.features, 2)
         self.to(self.device)
 
     def __repr__(self) -> str:

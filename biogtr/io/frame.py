@@ -50,7 +50,10 @@ class Frame:
     _traj_score: dict = attrs.field(alias="traj_score", factory=dict)
     _device: str = attrs.field(alias="device", default=None)
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
+        """Handle more intricate default initializations and moving to device."""
+        if len(self.img_shape) == 0:
+            self.img_shape = torch.tensor([0, 0, 0])
         self.to(self.device)
 
     def __repr__(self) -> str:
