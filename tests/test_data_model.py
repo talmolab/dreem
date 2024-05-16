@@ -1,9 +1,11 @@
-"""Tests for Instance, Frame, and TrackQueue Object"""
+"""Tests for Instance, Frame, and AssociationMatrix Objects"""
 
 from biogtr.io.frame import Frame
 from biogtr.io.instance import Instance
-from biogtr.inference.track_queue import TrackQueue
+from biogtr.io.association_matrix import AssociationMatrix
 import torch
+import pytest
+import numpy as np
 
 
 def test_instance():
@@ -128,79 +130,52 @@ def test_frame():
     assert frame.has_traj_score()
 
 
-def test_track_queue():
-    window_size = 8
-    max_gap = 10
-    img_shape = (3, 1024, 1024)
-    n_instances_per_frame = [2] * window_size
+def test_association_matrix():
 
-    frames = []
-    instances_per_frame = []
+    total_instances = 32
+    n_query = 2
 
-    tq = TrackQueue(window_size, max_gap)
-    for i in range(window_size):
-        instances = []
-        for j in range(n_instances_per_frame[i]):
-            instances.append(Instance(gt_track_id=j, pred_track_id=j))
-        instances_per_frame.append(instances)
-        frame = Frame(video_id=0, frame_id=i, img_shape=img_shape, instances=instances)
-        frames.append(frame)
+    instances = [Instance() for i in range(total_instances)]
 
-        tq.add_frame(frame)
+    query_instances = instances[-n_query:]
+    asso_tensor = np.random.rand(total_instances, total_instances)
+    query_tensor = np.random.rand(n_query, total_instances)
 
-    assert len(tq) == sum(n_instances_per_frame[1:])
-    assert tq.n_tracks == max(n_instances_per_frame)
-    assert tq.tracks == [i for i in range(max(n_instances_per_frame))]
-    assert len(tq.collate_tracks()) == window_size - 1
-    assert all([gap == 0 for gap in tq._curr_gap.values()])
-    assert tq.curr_track == max(n_instances_per_frame) - 1
+    with pytest.raises(ValueError):
+        _ = AssociationMatrix(asso_tensor, instances, query_instances)
+        _ = AssociationMatrix(asso_tensor, query_instances, query_instances)
 
-    tq.add_frame(
-        Frame(
-            video_id=0,
-            frame_id=window_size + 1,
-            img_shape=img_shape,
-            instances=[Instance(gt_track_id=0, pred_track_id=0)],
-        )
-    )
+    asso_matrix = AssociationMatrix(asso_tensor, instances, instances)
 
-    assert len(tq._queues[0]) == window_size - 1
-    assert tq._curr_gap[0] == 0
-    assert tq._curr_gap[max(n_instances_per_frame) - 1] == 1
+    assert isinstance(asso_matrix.numpy(), np.ndarray)
 
-    tq.add_frame(
-        Frame(
-            video_id=0,
-            frame_id=window_size + 1,
-            img_shape=img_shape,
-            instances=[
-                Instance(gt_track_id=1, pred_track_id=1),
-                Instance(
-                    gt_track_id=max(n_instances_per_frame),
-                    pred_track_id=max(n_instances_per_frame),
-                ),
-            ],
-        )
-    )
+    asso_lookup = asso_matrix[instances[0], instances[0]]
+    assert asso_lookup.item() == asso_tensor[0, 0].item()
 
-    assert len(tq._queues[max(n_instances_per_frame)]) == 1
-    assert tq._curr_gap[1] == 0
-    assert tq._curr_gap[0] == 1
+    inds = (-1, -1)
+    asso_lookup = asso_matrix[inds]
+    assert asso_lookup.item() == asso_tensor[-1, -1].item()
 
-    for i in range(max_gap):
-        tq.add_frame(
-            Frame(
-                video_id=0,
-                frame_id=window_size + i + 1,
-                img_shape=img_shape,
-                instances=[Instance(gt_track_id=0, pred_track_id=0)],
-            )
-        )
+    inds = (instances[:2], instances[:-2])
+    asso_lookup = asso_matrix[inds]
+    assert np.equal(asso_lookup, asso_tensor[:2, :-2]).all()
 
-    assert tq.n_tracks == 1
-    assert tq.curr_track == max(n_instances_per_frame)
-    assert 0 in tq._queues.keys()
+    inds = ([2, 3], [2, 3])
+    asso_lookup = asso_matrix[inds]
+    assert np.equal(asso_lookup, asso_tensor[np.array(inds[0])[:, None], inds[1]]).all()
 
-    tq.end_tracks()
+    asso_lookup = asso_matrix[instances[:2], None]
+    assert np.equal(asso_lookup, asso_tensor[:2, :]).all()
 
-    assert len(tq) == 0
+    with pytest.raises(ValueError):
+        _ = AssociationMatrix(query_tensor, instances, instances)
+        _ = AssociationMatrix(query_tensor, query_instances, instances)
+        _ = AssociationMatrix(query_tensor, query_instances, query_instances)
+
+    query_matrix = AssociationMatrix(query_tensor, instances, query_instances)
+
+    with pytest.raises(ValueError):
+        _ = query_matrix[instances[0], instances[0]]
+
+    query_lookup = query_matrix[query_instances[0], instances[0]]
+    assert query_lookup.item() == query_tensor[0, 0].item()
