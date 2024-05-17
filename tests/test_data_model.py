@@ -71,7 +71,6 @@ def test_frame():
     video_id = 0
     frame_id = 0
     img_shape = torch.tensor([3, 1024, 1024])
-    asso_output = torch.randn(n_detected, 16)
     traj_score = torch.randn(n_detected, n_traj)
     matches = ([0, 1], [0, 1])
 
@@ -104,14 +103,15 @@ def test_frame():
     assert not frame.has_asso_output()
     assert not frame.has_traj_score()
 
-    frame.asso_output = asso_output
+    asso_output = torch.randn(len(instances), len(instances))
+    frame.asso_output = AssociationMatrix(asso_output, instances, instances)
     frame.add_traj_score("initial", traj_score)
     frame.matches = matches
 
     assert frame.has_matches()
     assert frame.matches == matches
     assert frame.has_asso_output()
-    assert torch.equal(frame.asso_output, asso_output)
+    assert torch.equal(frame.asso_output.matrix, asso_output)
     assert frame.has_traj_score()
     assert torch.equal(frame.get_traj_score("initial"), traj_score)
 

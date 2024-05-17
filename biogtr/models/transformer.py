@@ -11,7 +11,8 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
     * added fixed embeddings over boxes
 """
 
-from biogtr.io.frame import Frame
+from biogtr.io.instance import Instance
+from biogtr.io.association_matrix import AssociationMatrix
 from biogtr.models.attention_head import ATTWeightHead
 from biogtr.models.embedding import Embedding
 from biogtr.models.model_utils import get_boxes, get_times
@@ -141,7 +142,7 @@ class Transformer(torch.nn.Module):
 
     def forward(
         self, ref_instances: list[Instance], query_instances: list[Instance] = None
-    ) -> tuple[list[torch.Tensor], dict[str, torch.Tensor]]:
+    ) -> tuple[list[AssociationMatrix], dict[str, torch.Tensor]]:
         """Execute a forward pass through the transformer and attention head.
 
         Args:
@@ -234,6 +235,8 @@ class Transformer(torch.nn.Module):
             query_emb = query_emb.view(1, n_query, embed_dim)
 
             query_emb = query_emb.permute(1, 0, 2)  # (n_query, batch_size, embed_dim)
+        else:
+            query_instances = ref_instances
 
         decoder_features = self.decoder(
             query_features,
@@ -251,13 +254,12 @@ class Transformer(torch.nn.Module):
 
         asso_output = []
         for frame_features in decoder_features:
-            # x: (batch_size=1, n_query, embed_dim=512)
-
-            asso_output.append(
-                self.attn_head(frame_features, encoder_features).view(
-                    n_query, total_instances
-                )
+            asso_matrix = self.attn_head(frame_features, encoder_features).view(
+                n_query, total_instances
             )
+            asso_matrix = AssociationMatrix(asso_matrix, ref_instances, query_instances)
+
+            asso_output.append(asso_matrix)
 
         # (L=1, n_query, total_instances)
         return (asso_output, embeddings_dict)

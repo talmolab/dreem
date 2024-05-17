@@ -418,7 +418,7 @@ def test_transformer_basic():
     instances = [instance for frame in frames for instance in frame.instances]
     asso_preds, _ = transformer(instances)
 
-    assert asso_preds[0].size() == (num_detected * num_frames,) * 2
+    assert asso_preds[0].matrix.size() == (num_detected * num_frames,) * 2
 
 
 def test_transformer_embedding():
@@ -460,7 +460,7 @@ def test_transformer_embedding():
 
     asso_preds, embeddings = transformer(instances)
 
-    assert asso_preds[0].size() == (num_detected * num_frames,) * 2
+    assert asso_preds[0].matrix.size() == (num_detected * num_frames,) * 2
 
     for emb_type, embedding in embeddings["ref"].items():
         assert embedding.size() == (
@@ -513,7 +513,7 @@ def test_tracking_transformer():
     instances = [instance for frame in frames for instance in frame.instances]
     asso_preds, embeddings = tracking_transformer(instances)
 
-    assert asso_preds[0].size() == (num_detected * num_frames,) * 2
+    assert asso_preds[0].matrix.size() == (num_detected * num_frames,) * 2
 
     for emb_type, embedding in embeddings["ref"].items():
         assert embedding.size() == (
