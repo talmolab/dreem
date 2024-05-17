@@ -45,7 +45,7 @@ class Frame:
     )
 
     _instances: list["Instance"] = attrs.field(alias="instances", factory=list)
-    _asso_output: ArrayLike = attrs.field(alias="asso_output", default=None)
+    _asso_output: "AssociationMatrix" = attrs.field(alias="asso_output", default=None)
     _matches: tuple = attrs.field(alias="matches", factory=tuple)
     _traj_score: dict = attrs.field(alias="traj_score", factory=dict)
     _device: str = attrs.field(alias="device", default=None)
@@ -54,6 +54,10 @@ class Frame:
         """Handle more intricate default initializations and moving to device."""
         if len(self.img_shape) == 0:
             self.img_shape = torch.tensor([0, 0, 0])
+
+        for instance in self.instances:
+            instance.frame = self
+
         self.to(self.device)
 
     def __repr__(self) -> str:
@@ -251,6 +255,8 @@ class Frame:
         Args:
             instances: A list of Instances that appear in the frame.
         """
+        for instance in instances:
+            instance.frame = self
         self._instances = instances
 
     def has_instances(self) -> bool:
@@ -273,7 +279,7 @@ class Frame:
         return len(self.instances)
 
     @property
-    def asso_output(self) -> ArrayLike:
+    def asso_output(self) -> "AssociationMatrix":
         """The association matrix between instances outputed directly by transformer.
 
         Returns:
@@ -287,12 +293,12 @@ class Frame:
         Returns:
             True if the frame has an association matrix otherwise, False.
         """
-        if self._asso_output is None or len(self._asso_output) == 0:
+        if self._asso_output is None or len(self._asso_output.matrix) == 0:
             return False
         return True
 
     @asso_output.setter
-    def asso_output(self, asso_output: ArrayLike) -> None:
+    def asso_output(self, asso_output: "AssociationMatrix") -> None:
         """Set the association matrix of a frame.
 
         Args:

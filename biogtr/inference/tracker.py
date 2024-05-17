@@ -259,12 +259,12 @@ class Tracker:
 
         # (L=1, n_query, total_instances)
         with torch.no_grad():
-            asso_output, embed = model(all_instances, query_instances)
+            asso_matrix, embed = model(all_instances, query_instances)
             # if model.transformer.return_embedding:
             # query_frame.embeddings = embed TODO add embedding to Instance Object
         # if query_frame == 1:
         #     print(asso_output)
-        asso_output = asso_output[-1].split(
+        asso_output = asso_matrix[-1].matrix.split(
             instances_per_frame, dim=1
         )  # (window_size, n_query, N_i)
         asso_output = model_utils.softmax_asso(
@@ -281,7 +281,7 @@ class Tracker:
         asso_output_df.columns.name = "Instances"
 
         query_frame.add_traj_score("asso_output", asso_output_df)
-        query_frame.asso_output = asso_output
+        query_frame.asso_output = asso_matrix
 
         try:
             n_query = (
