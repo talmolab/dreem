@@ -2,7 +2,7 @@
 
 from typing import List, Tuple, Iterable
 from pytorch_lightning import loggers
-from biogtr.io.frame import Frame
+from biogtr.io.instance import Instance
 import torch
 
 
