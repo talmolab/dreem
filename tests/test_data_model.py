@@ -3,6 +3,7 @@
 from biogtr.io.frame import Frame
 from biogtr.io.instance import Instance
 from biogtr.io.association_matrix import AssociationMatrix
+from biogtr.io.track import Track
 import torch
 import pytest
 import numpy as np
@@ -179,3 +180,17 @@ def test_association_matrix():
 
     query_lookup = query_matrix[query_instances[0], instances[0]]
     assert query_lookup.item() == query_tensor[0, 0].item()
+
+
+def test_track():
+
+    instances = [Instance(gt_track_id=0, pred_track_id=0) for i in range(32)]
+
+    track = Track(0, instances=instances)
+
+    assert track.track_id == 0
+    assert len(track) == len(instances)
+
+    instance = track[1]
+
+    assert instance is instances[1]
