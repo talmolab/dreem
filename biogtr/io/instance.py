@@ -412,6 +412,26 @@ class Instance:
             return True
 
     @property
+    def frame(self) -> "Frame":
+        """Get the frame the instance belongs to.
+
+        Returns:
+            The back reference to the `Frame` that this `Instance` belongs to.
+        """
+        return self._frame
+
+    @frame.setter
+    def frame(self, frame: "Frame") -> None:
+        """Set the back reference to the `Frame` that this `Instance` belongs to.
+
+        This field is set when instances are added to `Frame` object.
+
+        Args:
+            frame: A `Frame` object containing the metadata for the frame that the instance belongs to
+        """
+        self._frame = frame
+
+    @property
     def pose(self) -> dict[str, ArrayLike]:
         """Get the pose of the instance.
 
