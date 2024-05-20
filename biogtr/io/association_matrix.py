@@ -264,11 +264,11 @@ class AssociationMatrix:
         self, instances: list["Instance"], label: str = "pred"
     ) -> dict[int, list["Instance"]]:
         """Group instances by track.
-        
+
         Args:
             instances: The list of instances to group
             label: the track id type to group by. Either `pred` or `gt`.
-        
+
         Returns:
             A dictionary of track_id:instances
         """
