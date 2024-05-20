@@ -81,6 +81,7 @@ class Instance:
     _features: ArrayLike = attrs.field(
         alias="features", factory=list, converter=_to_tensor
     )
+    _embeddings: dict = attrs.field(alias="embeddings", factory=dict)
     _track_score: float = attrs.field(alias="track_score", default=-1.0)
     _instance_score: float = attrs.field(alias="instance_score", default=-1.0)
     _point_scores: ArrayLike = attrs.field(alias="point_scores", default=None)
@@ -410,6 +411,51 @@ class Instance:
             return False
         else:
             return True
+
+    def has_embedding(self, emb_type: str = None) -> bool:
+        """Determine if the instance has embedding type requested
+
+        Args:
+            emb_type: The key to check in the embedding dictionary.
+
+        Returns:
+            True if `emb_type` in embedding_dict else false
+        """
+        return emb_type in self._embeddings
+
+    def get_embedding(
+        self, emb_type: str = "all"
+    ) -> Union[dict[str, torch.Tensor], torch.Tensor, None]:
+        """Retrieve instance's spatial/temporal embedding.
+
+        Args:
+            emb_type: The string key of the embedding to retrieve. Should be "pos", "temp"
+
+        Returns:
+            * A torch tensor representing the spatial/temporal location of the instance.
+            * None if the embedding is not stored
+        """
+        if emb_type.lower() == "all":
+            return self._embeddings
+        else:
+            try:
+                return self._embeddings[emb_type]
+            except KeyError:
+                print(
+                    f"{emb_type} not saved! Only {list(self._embeddings.keys())} are available"
+                )
+        return None
+
+    def add_embedding(self, emb_type: str, embedding: torch.Tensor) -> None:
+        """Save embedding to instance embedding dictionary.
+
+        Args:
+            emb_type: Key/embedding type to be saved to dictionary
+            embedding: The actual torch tensor embedding.
+        """
+
+        embedding = _expand_to_rank(embedding, 2)
+        self._embeddings[emb_type] = embedding
 
     @property
     def frame(self) -> "Frame":
