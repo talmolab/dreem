@@ -413,7 +413,7 @@ class Instance:
             return True
 
     def has_embedding(self, emb_type: str = None) -> bool:
-        """Determine if the instance has embedding type requested
+        """Determine if the instance has embedding type requested.
 
         Args:
             emb_type: The key to check in the embedding dictionary.
