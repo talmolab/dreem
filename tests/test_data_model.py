@@ -134,10 +134,14 @@ def test_frame():
 
 def test_association_matrix():
 
+    n_traj = 2
     total_instances = 32
     n_query = 2
 
-    instances = [Instance() for i in range(total_instances)]
+    instances = [
+        Instance(gt_track_id=i % n_traj, pred_track_id=i % n_traj)
+        for i in range(total_instances)
+    ]
 
     query_instances = instances[-n_query:]
     asso_tensor = np.random.rand(total_instances, total_instances)
