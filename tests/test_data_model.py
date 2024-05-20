@@ -7,6 +7,7 @@ from biogtr.io.track import Track
 import torch
 import pytest
 import numpy as np
+import pandas as pd
 
 
 def test_instance():
@@ -180,6 +181,15 @@ def test_association_matrix():
 
     query_lookup = query_matrix[query_instances[0], instances[0]]
     assert query_lookup.item() == query_tensor[0, 0].item()
+
+    traj_score = pd.concat(
+        [
+            asso_matrix.to_dataframe(row_label="inst").drop(1, axis=1).sum(1),
+            asso_matrix.to_dataframe(row_label="inst").drop(0, axis=1).sum(1),
+        ],
+        axis=1,
+    )
+    assert (query_matrix.reduce() == traj_score).all().all()
 
 
 def test_track():

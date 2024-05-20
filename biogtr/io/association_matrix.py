@@ -130,6 +130,71 @@ class AssociationMatrix:
 
         return asso_df
 
+    def reduce(
+        self,
+        to: tuple[str] = ("inst", "traj"),
+        by: tuple[str] = (None, "pred"),
+        reduce_method: callable = np.sum,
+    ) -> pd.DataFrame:
+        """Reduce association matrix rows/columns to inst/traj x traj/inst
+
+        Args:
+           to:
+           by:
+           method:
+
+        Returns:
+            The association matrix reduced to an inst/traj x traj/inst association matrix as a dataframe.
+        """
+        row_to, col_to = to
+        row_by, col_by = by
+
+        if row_to not in ("inst", "traj") or col_to not in ("inst", "traj"):
+            raise ValueError(
+                f"Can only reduce to inst/traj x inst/traj but ({row_to} x {col_to}) was requested!"
+            )
+
+        if row_by not in ("pred", "gt", None) or col_by not in ("pred", "gt", None):
+            raise ValueError(
+                f"Can aggregate by [gt, pred, None] but {row_by} and {col_by} was requested!"
+            )
+
+        n_rows = len(self.query_instances)
+        n_cols = len(self.ref_instances)
+
+        col_tracks = {-1: self.ref_instances}
+        row_tracks = {-1: self.query_instances}
+
+        col_inds = [i for i in range(len(self.ref_instances))]
+        row_inds = [i for i in range(len(self.query_instances))]
+
+        if "tra" in col_to:
+            col_tracks = self.get_tracks(self.ref_instances, col_by)
+            col_inds = list(col_tracks.keys())
+            n_cols = len(col_inds)
+        if "tra" in row_to:
+            row_tracks = self.get_tracks(self.query_instances, row_by)
+            row_inds = list(row_tracks.keys())
+            n_rows = len(row_inds)
+
+        reduced_matrix = []
+        for row_track, row_instances in row_tracks.items():
+            # print(row_instances)
+
+            for col_track, col_instances in col_tracks.items():
+                asso_matrix = self[row_instances, col_instances]
+                # print(col_instances)
+                # print(asso_matrix)
+                if "tra" in col_to:
+                    asso_matrix = reduce_method(asso_matrix, axis=1)
+                if "tra" in row_to:
+                    asso_matrix = reduce_method(asso_matrix, axis=0)
+                reduced_matrix.append(asso_matrix)
+
+        reduced_matrix = np.array(reduced_matrix).reshape(n_cols, n_rows).T
+
+        return pd.DataFrame(reduced_matrix, index=row_inds, columns=col_inds)
+
     def __getitem__(self, inds) -> np.ndarray:
         """Get elements of the association matrix.
 
@@ -194,3 +259,33 @@ class AssociationMatrix:
             )
 
         return ind
+
+    def get_tracks(self, instances, label="pred"):
+        if "pred" in label.lower():
+            traj_ids = set([instance.pred_track_id.item() for instance in instances])
+            traj = {
+                track_id: [
+                    instance
+                    for instance in instances
+                    if instance.pred_track_id.item() == track_id
+                ]
+                for track_id in traj_ids
+            }
+        elif "gt" in label.lower():
+            traj_ids = set(
+                [instance.gt_track_id.item() for instance in self.ref_instances]
+            )
+            traj = {
+                track_id: [
+                    instance
+                    for instance in self.ref_instances
+                    if instance.gt_track_id.item() == track_id
+                ]
+                for track_id in traj_ids
+            }
+        else:
+            raise ValueError(
+                f"Can only group tracks by `pred` or `gt` {label.lower()} was requested!"
+            )
+
+        return traj
