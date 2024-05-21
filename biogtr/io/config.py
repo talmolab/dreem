@@ -106,8 +106,7 @@ class Config:
         gtr_runner_params = self.cfg.runner
         model_params = self.cfg.model
 
-        if "ckpt_path" in model_params:
-            ckpt_path = model_params.pop("ckpt_path")
+        ckpt_path = model_params.pop("ckpt_path", None)
 
         if ckpt_path is not None and ckpt_path != "":
             model = GTRRunner.load_from_checkpoint(
