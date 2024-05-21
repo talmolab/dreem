@@ -1,6 +1,5 @@
 """Module containing different loss functions to be optimized."""
 
-from biogtr.io.frame import Frame
 from biogtr.models.model_utils import get_boxes, get_times
 from torch import nn
 from typing import List, Tuple
@@ -35,7 +34,7 @@ class AssoLoss(nn.Module):
         self.asso_weight = asso_weight
 
     def forward(
-        self, asso_preds: List[torch.Tensor], frames: List[Frame]
+        self, asso_preds: List[torch.Tensor], frames: List["Frame"]
     ) -> torch.Tensor:
         """Calculate association loss.
 

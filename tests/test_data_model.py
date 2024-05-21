@@ -1,9 +1,6 @@
 """Tests for Instance, Frame, and AssociationMatrix Objects"""
 
-from biogtr.io.frame import Frame
-from biogtr.io.instance import Instance
-from biogtr.io.association_matrix import AssociationMatrix
-from biogtr.io.track import Track
+from biogtr.io import Frame, Instance, AssociationMatrix, Track
 import torch
 import pytest
 import numpy as np

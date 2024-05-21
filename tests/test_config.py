@@ -1,9 +1,8 @@
 """Tests for `config.py`"""
 
 from omegaconf import OmegaConf
-from biogtr.io.config import Config
-from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
-from biogtr.models.gtr_runner import GTRRunner
+from biogtr.io import Config
+from biogtr.models import GlobalTrackingTransformer, GTRRunner
 
 import torch
 

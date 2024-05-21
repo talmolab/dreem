@@ -3,14 +3,11 @@
 import os
 import pytest
 import torch
-from biogtr.io.frame import Frame
-from biogtr.io.instance import Instance
+from biogtr.io import Frame, Instance, Config
 from biogtr.training.losses import AssoLoss
-from biogtr.models.gtr_runner import GTRRunner
-from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
+from biogtr.models import GTRRunner
 from omegaconf import OmegaConf, DictConfig
-from biogtr.io.config import Config
-from biogtr.training.train import main
+from biogtr.training.train import run
 
 # TODO: add named tensor tests
 # TODO: use temp dir and cleanup after tests (https://docs.pytest.org/en/7.1.x/how-to/tmp_path.html)
@@ -139,4 +136,4 @@ def test_config_gtr_runner(base_config, params_config, two_flies):
 
     cfg.set_hparams(hparams)
     with torch.autograd.set_detect_anomaly(True):
-        main(cfg.cfg)
+        run(cfg.cfg)

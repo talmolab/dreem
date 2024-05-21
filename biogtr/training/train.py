@@ -3,8 +3,8 @@
 Used for training a single model or deploying a batch train job on RUNAI CLI
 """
 
-from biogtr.io.config import Config
-from biogtr.datasets.tracking_dataset import TrackingDataset
+from biogtr.io import Config
+from biogtr.datasets import TrackingDataset
 from biogtr.datasets.data_utils import view_training_batch
 from multiprocessing import cpu_count
 from omegaconf import DictConfig
@@ -18,7 +18,7 @@ import torch.multiprocessing
 
 
 @hydra.main(config_path="configs", config_name=None, version_base=None)
-def main(cfg: DictConfig):
+def run(cfg: DictConfig):
     """Train model based on config.
 
     Handles all config parsing and initialization then calls `trainer.train()`.
@@ -107,4 +107,4 @@ if __name__ == "__main__":
     # deploy batch train job:
     # python train.py --config-dir=./configs --config-name=base +batch_config=test_batch_train.csv
 
-    main()
+    train()

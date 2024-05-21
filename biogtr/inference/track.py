@@ -1,8 +1,7 @@
 """Script to run inference and get out tracks."""
 
-from biogtr.io.config import Config
-from biogtr.models.gtr_runner import GTRRunner
-from biogtr.io.frame import Frame
+from biogtr.io import Config
+from biogtr.models import GTRRunner
 from omegaconf import DictConfig
 from pathlib import Path
 from pprint import pprint
@@ -14,7 +13,7 @@ import pytorch_lightning as pl
 import torch
 
 
-def export_trajectories(frames_pred: list[Frame], save_path: str = None):
+def export_trajectories(frames_pred: list["biogtr.io.Frame"], save_path: str = None):
     """Convert trajectories to data frame and save as .csv.
 
     Args:

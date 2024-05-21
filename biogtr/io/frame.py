@@ -6,7 +6,6 @@ import numpy as np
 import attrs
 from numpy.typing import ArrayLike
 from typing import Union, List
-from biogtr.io.instance import Instance
 
 
 def _to_tensor(data: Union[float, ArrayLike]) -> torch.Tensor:
@@ -138,6 +137,8 @@ class Frame:
         Returns:
             A biogtr.io.Frame object
         """
+        from biogtr.io import Instance
+
         img_shape = lf.image.shape
         if len(img_shape) == 2:
             img_shape = (1, *img_shape)

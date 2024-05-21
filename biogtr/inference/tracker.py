@@ -3,9 +3,8 @@
 import torch
 import pandas as pd
 import warnings
-from biogtr.io.frame import Frame
-from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
-from biogtr.models import model_utils
+from biogtr.io import Frame
+from biogtr.models import model_utils, GlobalTrackingTransformer
 from biogtr.inference.track_queue import TrackQueue
 from biogtr.inference import post_processing
 from biogtr.inference.boxes import Boxes

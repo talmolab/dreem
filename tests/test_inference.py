@@ -3,13 +3,10 @@
 import torch
 import pytest
 import numpy as np
-from biogtr.io.frame import Frame
-from biogtr.io.instance import Instance
-from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
-from biogtr.inference.tracker import Tracker
+from biogtr.io import Frame, Instance
+from biogtr.models import GlobalTrackingTransformer
+from biogtr.inference import Tracker, post_processing, metrics
 from biogtr.inference.track_queue import TrackQueue
-from biogtr.inference import post_processing
-from biogtr.inference import metrics
 
 
 def test_track_queue():

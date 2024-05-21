@@ -2,11 +2,10 @@
 
 from typing import List, Tuple, Iterable
 from pytorch_lightning import loggers
-from biogtr.io.instance import Instance
 import torch
 
 
-def get_boxes(instances: List[Instance]) -> torch.tensor:
+def get_boxes(instances: List["biogtr.io.Instance"]) -> torch.tensor:
     """Extract the bounding boxes from the input list of instances.
 
     Args:
@@ -29,7 +28,8 @@ def get_boxes(instances: List[Instance]) -> torch.tensor:
 
 
 def get_times(
-    ref_instances: list[Instance], query_instances: list[Instance] = None
+    ref_instances: list["biogtr.io.Instance"],
+    query_instances: list["biogtr.io.Instance"] = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Extract the time indices of each instance relative to the window length.
 
