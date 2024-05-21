@@ -31,7 +31,6 @@ class Track:
         Returns:
             The integer id of the track.
         """
-
         return self._id
 
     @track_id.setter
@@ -39,9 +38,8 @@ class Track:
         """Set the id of the track.
 
         Args:
-            id: the int id of the track.
+            track_id: the int id of the track.
         """
-
         self._id = track_id
 
     @property
@@ -58,7 +56,7 @@ class Track:
         """Set the instances belonging to this track.
 
         Args:
-            A list of instances that belong to the same track.
+            instances: A list of instances that belong to the same track.
         """
         self._instances = instances
 
