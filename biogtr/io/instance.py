@@ -8,15 +8,17 @@ from numpy.typing import ArrayLike
 from typing import Union
 
 
-def _to_tensor(data: Union[np.number, ArrayLike]) -> torch.Tensor:
+def _to_tensor(data: Union[float, ArrayLike]) -> torch.Tensor:
     """Convert data to a torch.Tensor object.
 
     Args:
         data: Either a scalar quantity or arraylike object
 
     Returns:
-        A torch Tensor containing data
+        A torch Tensor containing data.
     """
+    if data is None:
+        return torch.tensor([])
     if isinstance(data, torch.Tensor):
         return data
     elif np.isscalar(data):
@@ -147,6 +149,63 @@ class Instance:
             self.device = map_location
 
         return self
+
+    @classmethod
+    def from_slp(
+        cls,
+        slp_instance: Union[sio.PredictedInstance, sio.Instance],
+        bbox_size: Union[int, tuple] = 64,
+        crop: ArrayLike = None,
+        device: str = None,
+    ) -> None:
+        """Convert a slp instance to a biogtr instance.
+
+        Args:
+            slp_instance: A `sleap_io.Instance` object representing a detection
+            bbox_size: size of the pose-centered bbox to form.
+            crop: The corresponding crop of the bbox
+            device: which device to keep the instance on
+        Returns:
+            A biogtr.Instance object with a pose-centered bbox and no crop.
+        """
+        try:
+            track_id = int(slp_instance.track.name)
+        except ValueError:
+            track_id = int(
+                "".join([str(ord(c)) for c in slp_instance.track.name])
+            )  # better way to handle this?
+        if isinstance(bbox_size, int):
+            bbox_size = (bbox_size, bbox_size)
+
+        track_score = -1.0
+        point_scores = np.full(len(slp_instance.points), -1)
+        instance_score = -1
+        if isinstance(slp_instance, sio.PredictedInstance):
+            track_score = slp_instance.tracking_score
+            point_scores = slp_instance.numpy()[:, -1]
+            instance_score = slp_instance.score
+
+        centroid = np.nanmean(slp_instance.numpy(), axis=1)
+        bbox = [
+            centroid[1] - bbox_size[1],
+            centroid[0] - bbox_size[0],
+            centroid[1] + bbox_size[1],
+            centroid[0] + bbox_size[0],
+        ]
+        return cls(
+            gt_track_id=track_id,
+            bbox=bbox,
+            crop=crop,
+            centroid={"centroid": centroid},
+            track_score=track_score,
+            point_scores=point_scores,
+            instance_score=instance_score,
+            skeleton=slp_instance.skeleton,
+            pose={
+                node.name: point.numpy() for node, point in slp_instance.points.items()
+            },
+            device=device,
+        )
 
     def to_slp(
         self, track_lookup: dict[int, sio.Track] = {}
@@ -453,7 +512,6 @@ class Instance:
             emb_type: Key/embedding type to be saved to dictionary
             embedding: The actual torch tensor embedding.
         """
-
         embedding = _expand_to_rank(embedding, 2)
         self._embeddings[emb_type] = embedding
 
