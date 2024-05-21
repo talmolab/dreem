@@ -114,8 +114,12 @@ class Frame:
         for key, val in self._traj_score.items():
             if isinstance(val, torch.Tensor):
                 self._traj_score[key] = val.to(map_location)
+        for instance in self.instances:
+            instance = instance.to(map_location)
 
-        self._device = map_location
+        if isinstance(map_location, str):
+            self._device = map_location
+
         return self
 
     @classmethod

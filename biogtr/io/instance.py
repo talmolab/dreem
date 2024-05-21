@@ -146,7 +146,8 @@ class Instance:
             self._bbox = self._bbox.to(map_location)
             self._crop = self._crop.to(map_location)
             self._features = self._features.to(map_location)
-            self.device = map_location
+            if isinstance(map_location, str):
+                self.device = map_location
 
         return self
 

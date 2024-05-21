@@ -81,7 +81,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
 
     def forward(
         self, ref_instances: list[Instance], query_instances: list[Instance] = None
-    ):
+    ) -> list["AssociationMatrix"]:
         """Execute forward pass of GTR Model to get asso matrix.
 
         Args:
@@ -119,6 +119,6 @@ class GlobalTrackingTransformer(torch.nn.Module):
                 for i, z_i in enumerate(query_z):
                     query_instances[i].features = z_i
 
-        asso_preds, emb = self.transformer(ref_instances, query_instances)
+        asso_preds = self.transformer(ref_instances, query_instances)
 
-        return asso_preds, emb
+        return asso_preds

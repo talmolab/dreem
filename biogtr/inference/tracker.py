@@ -259,7 +259,7 @@ class Tracker:
 
         # (L=1, n_query, total_instances)
         with torch.no_grad():
-            asso_matrix, embed = model(all_instances, query_instances)
+            asso_matrix = model(all_instances, query_instances)
             # if model.transformer.return_embedding:
             # query_frame.embeddings = embed TODO add embedding to Instance Object
         # if query_frame == 1:
