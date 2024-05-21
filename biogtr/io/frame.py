@@ -6,9 +6,20 @@ import numpy as np
 import attrs
 from numpy.typing import ArrayLike
 from typing import Union, List
+from biogtr.io.instance import Instance
 
 
-def _to_tensor(data) -> torch.Tensor:
+def _to_tensor(data: Union[float, ArrayLike]) -> torch.Tensor:
+    """Convert data to tensortype.
+
+    Args:
+        data: A scalar or np.ndarray to be converted to a torch tensor
+    Returns:
+        A torch tensor containing `data`.
+    """
+    if data is None:
+        return torch.tensor([])
+
     if isinstance(data, torch.Tensor):
         return data
     elif np.isscalar(data):
@@ -104,11 +115,42 @@ class Frame:
             if isinstance(val, torch.Tensor):
                 self._traj_score[key] = val.to(map_location)
 
-        for instance in self._instances:
-            instance = instance.to(map_location)
-
         self._device = map_location
         return self
+
+    @classmethod
+    def from_slp(
+        cls,
+        lf: sio.LabeledFrame,
+        video_id: int = 0,
+        device: str = None,
+        **kwargs,
+    ) -> "Frame":
+        """Convert `sio.LabeledFrame` to `biogtr.io.Frame`.
+
+        Args:
+            lf: A sio.LabeledFrame object
+
+        Returns:
+            A biogtr.io.Frame object
+        """
+        img_shape = lf.image.shape
+        if len(img_shape) == 2:
+            img_shape = (1, *img_shape)
+        elif len(img_shape) > 2 and img_shape[-1] <= 3:
+            img_shape = (lf.image.shape[-1], lf.image.shape[0], lf.image.shape[1])
+        return cls(
+            video_id=video_id,
+            frame_id=(
+                lf.frame_idx.astype(np.int32)
+                if isinstance(lf.frame_idx, np.number)
+                else lf.frame_idx
+            ),
+            vid_file=lf.video.filename,
+            img_shape=img_shape,
+            instances=[Instance.from_slp(instance, **kwargs) for instance in lf],
+            device=device,
+        )
 
     def to_slp(
         self, track_lookup: dict[int, sio.Track] = {}
@@ -215,7 +257,7 @@ class Frame:
             video_filename: string path to video_file
         """
         try:
-            self._video = sio.Video(video_filename)
+            self._video = sio.load_video(video_filename)
         except ValueError:
             self._video = video_filename
 
