@@ -18,23 +18,26 @@ class GTRRunner(LightningModule):
     Used for training, validation and inference.
     """
 
+    DEFAULT_METRICS = {
+        "train": [],
+        "val": ["num_switches"],
+        "test": ["num_switches"],
+    }
+    DEFAULT_TRACKING = {
+        "train": False,
+        "val": True,
+        "test": True,
+    }
+
     def __init__(
         self,
-        model_cfg: dict = {},
-        tracker_cfg: dict = {},
-        loss_cfg: dict = {},
+        model_cfg: dict = None,
+        tracker_cfg: dict = None,
+        loss_cfg: dict = None,
         optimizer_cfg: dict = None,
         scheduler_cfg: dict = None,
-        metrics: dict[str, list[str]] = {
-            "train": [],
-            "val": ["num_switches"],
-            "test": ["num_switches"],
-        },
-        persistent_tracking: dict[str, bool] = {
-            "train": False,
-            "val": True,
-            "test": True,
-        },
+        metrics: dict[str, list[str]] = None,
+        persistent_tracking: dict[str, bool] = None,
     ):
         """Initialize a lightning module for GTR.
 
@@ -51,6 +54,11 @@ class GTRRunner(LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
+        model_cfg = model_cfg if model_cfg else {}
+        loss_cfg = loss_cfg if loss_cfg else {}
+        tracker_cfg = tracker_cfg if tracker_cfg else {}
+
+        _ = model_cfg.pop("ckpt_path", None)
         self.model = GlobalTrackingTransformer(**model_cfg)
         self.loss = AssoLoss(**loss_cfg)
         self.tracker = Tracker(**tracker_cfg)
@@ -58,8 +66,12 @@ class GTRRunner(LightningModule):
         self.optimizer_cfg = optimizer_cfg
         self.scheduler_cfg = scheduler_cfg
 
-        self.metrics = metrics
-        self.persistent_tracking = persistent_tracking
+        self.metrics = metrics if metrics is not None else self.DEFAULT_METRICS
+        self.persistent_tracking = (
+            persistent_tracking
+            if persistent_tracking is not None
+            else self.DEFAULT_TRACKING
+        )
 
     def forward(
         self, ref_instances: list[Instance], query_instances: list[Instance] = None
