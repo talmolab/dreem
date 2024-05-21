@@ -416,7 +416,7 @@ def test_transformer_basic():
         )
 
     instances = [instance for frame in frames for instance in frame.instances]
-    asso_preds, _ = transformer(instances)
+    asso_preds = transformer(instances)
 
     assert asso_preds[0].matrix.size() == (num_detected * num_frames,) * 2
 
@@ -458,15 +458,26 @@ def test_transformer_embedding():
     assert transformer.pos_emb.mode == "learned"
     assert transformer.temp_emb.mode == "learned"
 
-    asso_preds, embeddings = transformer(instances)
+    asso_preds = transformer(instances)
 
     assert asso_preds[0].matrix.size() == (num_detected * num_frames,) * 2
 
-    for emb_type, embedding in embeddings["ref"].items():
-        assert embedding.size() == (
-            num_detected * num_frames,
-            feats,
-        ), f"{emb_type}, {embedding.size()}"
+    pos_emb = torch.concat(
+        [instance.get_embedding("pos") for instance in instances], axis=0
+    )
+    temp_emb = torch.concat(
+        [instance.get_embedding("pos") for instance in instances], axis=0
+    )
+
+    assert pos_emb.size() == (
+        len(instances),
+        feats,
+    ), pos_emb.shape
+
+    assert temp_emb.size() == (
+        len(instances),
+        feats,
+    ), temp_emb.shape
 
 
 def test_tracking_transformer():
@@ -511,12 +522,23 @@ def test_tracking_transformer():
         return_embedding=True,
     )
     instances = [instance for frame in frames for instance in frame.instances]
-    asso_preds, embeddings = tracking_transformer(instances)
+    asso_preds = tracking_transformer(instances)
 
     assert asso_preds[0].matrix.size() == (num_detected * num_frames,) * 2
 
-    for emb_type, embedding in embeddings["ref"].items():
-        assert embedding.size() == (
-            num_detected * num_frames,
-            feats,
-        ), embeddings
+    pos_emb = torch.concat(
+        [instance.get_embedding("pos") for instance in instances], axis=0
+    )
+    temp_emb = torch.concat(
+        [instance.get_embedding("pos") for instance in instances], axis=0
+    )
+
+    assert pos_emb.size() == (
+        len(instances),
+        feats,
+    ), pos_emb.shape
+
+    assert temp_emb.size() == (
+        len(instances),
+        feats,
+    ), temp_emb.shape

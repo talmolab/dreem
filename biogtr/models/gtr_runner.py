@@ -73,7 +73,7 @@ class GTRRunner(LightningModule):
         Returns:
             An association matrix between objects
         """
-        asso_preds, _ = self.model(ref_instances, query_instances)
+        asso_preds = self.model(ref_instances, query_instances)
         return asso_preds
 
     def training_step(

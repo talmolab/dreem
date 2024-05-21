@@ -81,7 +81,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
 
     def forward(
         self, ref_instances: list[Instance], query_instances: list[Instance] = None
-    ):
+    ) -> list["AssociationMatrix"]:
         """Execute forward pass of GTR Model to get asso matrix.
 
         Args:
@@ -97,36 +97,6 @@ class GlobalTrackingTransformer(torch.nn.Module):
         if query_instances:
             self.extract_features(query_instances)
 
-        asso_preds, emb = self.transformer(ref_instances, query_instances)
+        asso_preds = self.transformer(ref_instances, query_instances)
 
-        return asso_preds, emb
-
-    def extract_features(
-        self, instances: list["Instance"], force_recompute: bool = False
-    ) -> None:
-        """Extract features from instances using visual encoder backbone.
-
-        Args:
-            instances: A list of instances to compute features for
-            force_recompute: indicate whether to compute features for all instances regardless of if they have instances
-        """
-        if not force_recompute:
-            instances_to_compute = [
-                instance
-                for instance in instances
-                if instance.has_crop() and not instance.has_features()
-            ]
-        else:
-            instances_to_compute = instances
-
-        if len(instances_to_compute) == 0:
-            return
-        elif len(instances_to_compute) == 1:  # handle batch norm error when B=1
-            instances_to_compute = instances
-
-        crops = torch.concatenate([instance.crop for instance in instances_to_compute])
-
-        features = self.visual_encoder(crops)
-
-        for i, z_i in enumerate(features):
-            instances_to_compute[i].features = z_i
+        return asso_preds
