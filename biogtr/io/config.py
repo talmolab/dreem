@@ -12,7 +12,7 @@ import torch
 class Config:
     """Class handling loading components based on config params."""
 
-    def __init__(self, cfg: DictConfig):
+    def __init__(self, cfg: DictConfig, params_cfg: DictConfig = None):
         """Initialize the class with config from hydra/omega conf.
 
         First uses `base_param` file then overwrites with specific `params_config`.
@@ -25,13 +25,13 @@ class Config:
         print(f"Base Config: {cfg}")
 
         if "params_config" in cfg:
-            # merge configs
-            params_config = OmegaConf.load(cfg.params_config)
-            pprint(f"Overwriting base config with {params_config}")
-            self.cfg = OmegaConf.merge(base_cfg, params_config)
+            params_cfg = OmegaConf.load(cfg.params_config)
+
+        if params_cfg:
+            pprint(f"Overwriting base config with {params_cfg}")
+            self.cfg = OmegaConf.merge(base_cfg, params_cfg)  # merge configs
         else:
-            # just use base config
-            self.cfg = base_cfg
+            self.cfg = cfg
 
     def __repr__(self):
         """Object representation of config class."""
@@ -40,6 +40,18 @@ class Config:
     def __str__(self):
         """Return a string representation of config class."""
         return f"Config({self.cfg})"
+
+    @classmethod
+    def from_yaml(cls, base_cfg_path: str, params_cfg_path: str = None) -> None:
+        """Load config directly from yaml.
+
+        Args:
+            yaml_path: path to base config file.
+            params_cfg: path to override params.
+        """
+        base_cfg = OmegaConf.load(base_cfg_path)
+        params_cfg = OmegaConf.load(params_cfg_path) if params_cfg else None
+        return cls(base_cfg, params_cfg)
 
     def set_hparams(self, hparams: dict) -> bool:
         """Setter function for overwriting specific hparams.
@@ -127,10 +139,13 @@ class Config:
         return model
 
     def get_data_paths(self, data_cfg: dict) -> tuple[list[str], list[str]]:
-        """Get data paths from directory.
+        """Get file paths from directory.
 
         Args:
             data_cfg: Config for the dataset containing "dir" key.
+
+        Returns:
+            lists of labels file paths and video file paths respectively
         """
         dir_cfg = data_cfg.pop(data_cfg, None)
 
