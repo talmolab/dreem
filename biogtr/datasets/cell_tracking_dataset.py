@@ -55,7 +55,8 @@ class CellTrackingDataset(BaseDataset):
                 "end_frame", "parent_id"
         """
         super().__init__(
-            raw_images + gt_images,
+            gt_images,
+            raw_images,
             padding,
             crop_size,
             chunk,

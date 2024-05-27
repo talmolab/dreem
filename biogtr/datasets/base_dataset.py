@@ -13,7 +13,8 @@ class BaseDataset(Dataset):
 
     def __init__(
         self,
-        files: list[str],
+        label_files: list[str],
+        vid_files: list[str],
         padding: int,
         crop_size: int,
         chunk: bool,
@@ -27,7 +28,9 @@ class BaseDataset(Dataset):
         """Initialize Dataset.
 
         Args:
-            files: a list of files, file types are combined in subclasses
+            label_files: a list of paths to label files.
+            should at least contain detections for inference, detections + tracks for training.
+            vid_files: list of paths to video files.
             padding: amount of padding around object crops
             crop_size: the size of the object crops
             chunk: whether or not to chunk the dataset into batches
@@ -42,7 +45,8 @@ class BaseDataset(Dataset):
             gt_list: An optional path to .txt file containing ground truth for
                 cell tracking challenge datasets.
         """
-        self.files = files
+        self.vid_files = vid_files
+        self.label_files = label_files
         self.padding = padding
         self.crop_size = crop_size
         self.chunk = chunk

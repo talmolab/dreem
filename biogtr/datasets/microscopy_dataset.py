@@ -51,7 +51,8 @@ class MicroscopyDataset(BaseDataset):
             seed: set a seed for reproducibility
         """
         super().__init__(
-            videos + tracks,
+            tracks,
+            videos,
             padding,
             crop_size,
             chunk,
