@@ -89,7 +89,7 @@ def track(
 
 
 @hydra.main(config_path="configs", config_name=None, version_base=None)
-def run(cfg: DictConfig):
+def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     """Run inference based on config file.
 
     Args:
@@ -144,4 +144,14 @@ def run(cfg: DictConfig):
 
 
 if __name__ == "__main__":
+    # example calls:
+
+    # train with base config:
+    # python train.py --config-dir=./configs --config-name=inference
+
+    # override with params config:
+    # python train.py --config-dir=./configs --config-name=inference +params_config=configs/params.yaml
+
+    # override with params config, and specific params:
+    # python train.py --config-dir=./configs --config-name=inference +params_config=configs/params.yaml dataset.train_dataset.padding=10
     run()
