@@ -156,7 +156,6 @@ class GTRRunner(LightningModule):
         Returns:
             A list of dicts where each dict is a frame containing the predicted track ids
         """
-        self.tracker.persistent_tracking = True
         frames_pred = self.tracker(self.model, batch[0])
         return frames_pred
 

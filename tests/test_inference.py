@@ -3,10 +3,13 @@
 import torch
 import pytest
 import numpy as np
-from biogtr.io import Frame, Instance
-from biogtr.models import GlobalTrackingTransformer
+from pytorch_lightning import Trainer
+from omegaconf import OmegaConf, DictConfig
+from biogtr.io import Frame, Instance, Config
+from biogtr.models import GTRRunner, GlobalTrackingTransformer
 from biogtr.inference import Tracker, post_processing, metrics
 from biogtr.inference.track_queue import TrackQueue
+from biogtr.inference.track import run
 
 
 def test_track_queue():
@@ -261,3 +264,40 @@ def test_metrics():
             sw_cnt,
             clear_mot["num_switches"],
         )
+
+
+def get_ckpt(ckpt_path: str):
+    """Save GTR Runner to checkpoint file."""
+
+    class DummyDataset(torch.utils.data.Dataset):
+
+        def __len__(self):
+            return 0
+
+        def __getitem__(self, idx):
+            return None
+
+    dl = torch.utils.data.DataLoader(DummyDataset())
+    model = GTRRunner()
+    trainer = Trainer(max_steps=1, min_steps=1)
+    trainer.fit(model, dl)
+    trainer.save_checkpoint(ckpt_path)
+
+    return ckpt_path
+
+
+def test_track(tmp_path, inference_config):
+    ckpt_path = tmp_path / "model.ckpt"
+    get_ckpt(ckpt_path)
+
+    out_dir = tmp_path / "preds"
+    out_dir.mkdir()
+
+    inference_cfg = OmegaConf.load(inference_config)
+
+    cfg = Config(inference_cfg)
+
+    cfg.set_hparams({"ckpt_path": ckpt_path, "outdir": out_dir})
+
+    run(cfg.cfg)
+    assert len(list(out_dir.iterdir())) == len(cfg.cfg.dataset.test_dataset.video_files)

@@ -4,6 +4,7 @@ tracker:
   decay_time: 0.9
   iou: "mult"
   max_center_dist: 1.0
+  persistent_tracking: True
 
 dataset:
   test_dataset:
@@ -11,6 +12,7 @@ dataset:
     video_files: ["../training/190612_110405_wt_18159111_rig2.2@11730.mp4", "../training/190612_110405_wt_18159111_rig2.2@11730.mp4"]
     chunk: True
     clip_length: 32
+    anchor: "centroid"
 
 dataloader:
   test_dataloader:

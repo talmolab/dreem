@@ -1,0 +1,22 @@
+ckpt_path: null
+tracker:
+  overlap_thresh: 0.01
+  decay_time: 0.9
+  iou: "mult"
+  max_center_dist: 1.0
+  persistent_tracking: True
+
+dataset:
+  test_dataset:
+    slp_files: ['tests/data/sleap/two_flies.slp', 'tests/data/sleap/two_flies.slp']
+    video_files: ['tests/data/sleap/two_flies.mp4', 'tests/data/sleap/two_flies.mp4']
+    clip_length: 32
+    anchors: "centroid"
+    mode: "test"
+
+dataloader:
+  test_dataloader:
+    shuffle: False
+    num_workers: 0
+
+  

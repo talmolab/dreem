@@ -20,3 +20,10 @@ def base_config(config_dir):
 def params_config(config_dir):
     """Get the full path to the supplementary params config."""
     return os.path.join(config_dir, "params.yaml")
+
+
+@pytest.fixture
+def inference_config(config_dir):
+    """Get the full path to the inference params config."""
+
+    return os.path.join(config_dir, "inference.yaml")

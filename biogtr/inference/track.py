@@ -11,6 +11,7 @@ import os
 import pandas as pd
 import pytorch_lightning as pl
 import torch
+import sleap_io as sio
 
 
 def export_trajectories(frames_pred: list["biogtr.io.Frame"], save_path: str = None):
@@ -50,60 +51,45 @@ def export_trajectories(frames_pred: list["biogtr.io.Frame"], save_path: str = N
     return save_df
 
 
-def inference(
-    model: GTRRunner, dataloader: torch.utils.data.DataLoader
+def track(
+    model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader
 ) -> list[pd.DataFrame]:
     """Run Inference.
 
     Args:
-        model: model loaded from checkpoint used for inference
+        model: GTRRunner model loaded from checkpoint used for inference
+        trainer: lighting Trainer object used for handling inference log.
         dataloader: dataloader containing inference data
 
     Return:
         List of DataFrames containing prediction results for each video
     """
-    num_videos = len(dataloader.dataset.slp_files)
-    trainer = pl.Trainer(devices=1, limit_predict_batches=3)
+    num_videos = len(dataloader.dataset.vid_files)
     preds = trainer.predict(model, dataloader)
 
-    vid_trajectories = [[] for i in range(num_videos)]
+    vid_trajectories = {i: [] for i in range(num_videos)}
 
+    tracks = {}
     for batch in preds:
         for frame in batch:
-            vid_trajectories[frame.video_id].append(frame)
+            lf, tracks = frame.to_slp(tracks)
+            if frame.frame_id.item() == 0:
+                print(f"Video: {lf.video}")
+            vid_trajectories[frame.video_id.item()].append(lf)
 
-    saved = []
-
-    for video in vid_trajectories:
+    for vid_id, video in vid_trajectories.items():
         if len(video) > 0:
-            save_dict = {}
-            video_ids = []
-            frame_ids = []
-            X, Y = [], []
-            pred_track_ids = []
-            for frame in video:
-                for i, instance in frame.instances:
-                    video_ids.append(frame.video_id.item())
-                    frame_ids.append(frame.frame_id.item())
-                    bbox = instance.bbox
-                    y = (bbox[2] + bbox[0]) / 2
-                    x = (bbox[3] + bbox[1]) / 2
-                    X.append(x.item())
-                    Y.append(y.item())
-                    pred_track_ids.append(instance.pred_track_id.item())
-            save_dict["Video"] = video_ids
-            save_dict["Frame"] = frame_ids
-            save_dict["X"] = X
-            save_dict["Y"] = Y
-            save_dict["Pred_track_id"] = pred_track_ids
-            save_df = pd.DataFrame(save_dict)
-            saved.append(save_df)
+            try:
+                vid_trajectories[vid_id] = sio.Labels(video)
+            except AttributeError as e:
+                print(video[0].video)
+                raise (e)
 
-    return saved
+    return vid_trajectories
 
 
 @hydra.main(config_path="configs", config_name=None, version_base=None)
-def main(cfg: DictConfig):
+def run(cfg: DictConfig):
     """Run inference based on config file.
 
     Args:
@@ -116,14 +102,14 @@ def main(cfg: DictConfig):
             index = int(os.environ["POD_INDEX"])
         # For testing without deploying a job on runai
         except KeyError:
-            print("Pod Index Not found! Setting index to 0")
-            index = 0
+            index = input("Pod Index Not found! Please choose a pod index: ")
+
         print(f"Pod Index: {index}")
 
         checkpoints = pd.read_csv(cfg.checkpoints)
         checkpoint = checkpoints.iloc[index]
     else:
-        checkpoint = pred_cfg.get_ckpt_path()
+        checkpoint = pred_cfg.cfg.ckpt_path
 
     model = GTRRunner.load_from_checkpoint(checkpoint)
     tracker_cfg = pred_cfg.get_tracker_cfg()
@@ -131,22 +117,31 @@ def main(cfg: DictConfig):
     model.tracker_cfg = tracker_cfg
     print(f"Using the following params for tracker:")
     pprint(model.tracker_cfg)
-    dataset = pred_cfg.get_dataset(mode="test")
 
+    dataset = pred_cfg.get_dataset(mode="test")
     dataloader = pred_cfg.get_dataloader(dataset, mode="test")
-    preds = inference(model, dataloader)
-    for i, pred in enumerate(preds):
-        print(pred)
-        outdir = pred_cfg.cfg.outdir if "outdir" in pred_cfg.cfg else "./results"
-        os.makedirs(outdir, exist_ok=True)
+
+    trainer = pred_cfg.get_trainer()
+
+    preds = track(model, trainer, dataloader)
+
+    outdir = pred_cfg.cfg.outdir if "outdir" in pred_cfg.cfg else "./results"
+    os.makedirs(outdir, exist_ok=True)
+
+    run_num = 0
+    for i, pred in preds.items():
         outpath = os.path.join(
             outdir,
-            f"{Path(pred_cfg.cfg.dataset.test_dataset.slp_files[i]).stem}_tracking_results",
+            f"{Path(dataloader.dataset.label_files[i]).stem}.biogtr_inference.v{run_num}.slp",
         )
-        print(f"Saving to {outpath}")
-        # TODO: Figure out how to overwrite sleap labels instance labels w pred instance labels then save as a new slp file
-        pred.to_csv(outpath, index=False)
+        if os.path.exists(outpath):
+            run_num += 1
+            outpath = outpath.replace(f".v{run_num-1}", f".v{run_num}")
+        print(f"Saving {preds} to {outpath}")
+        pred.save(outpath)
+
+    return preds
 
 
 if __name__ == "__main__":
-    main()
+    run()
