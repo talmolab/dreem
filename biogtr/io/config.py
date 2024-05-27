@@ -310,10 +310,10 @@ class Config:
 
     def get_trainer(
         self,
-        callbacks: list[pl.callbacks.Callback],
-        logger: pl.loggers.WandbLogger,
+        callbacks: list[pl.callbacks.Callback] = None,
+        logger: pl.loggers.WandbLogger = None,
         devices: int = 1,
-        accelerator: str = None,
+        accelerator: str = "auto",
     ) -> pl.Trainer:
         """Getter for the lightning trainer.
 
@@ -327,17 +327,23 @@ class Config:
         Returns:
             A lightning Trainer with specified params
         """
-        if "accelerator" not in self.cfg.trainer:
-            self.set_hparams({"trainer.accelerator": accelerator})
-        if "devices" not in self.cfg.trainer:
-            self.set_hparams({"trainer.devices": devices})
+        if "trainer" in self.cfg:
+            trainer_params = self.cfg.trainer
 
-        trainer_params = self.cfg.trainer
-        if "profiler" in trainer_params:
+        else:
+            trainer_params = {}
+
+        profiler = trainer_params.pop("profiler", None)
+        if "profiler":
             profiler = pl.profilers.AdvancedProfiler(filename="profile.txt")
-            trainer_params.pop("profiler")
         else:
             profiler = None
+
+        if "accelerator" not in trainer_params:
+            trainer_params["accelerator"] = accelerator
+        if "devices" not in trainer_params:
+            trainer_params["devices"] = devices
+
         return pl.Trainer(
             callbacks=callbacks,
             logger=logger,
