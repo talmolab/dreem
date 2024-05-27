@@ -4,6 +4,7 @@ from omegaconf import DictConfig, OmegaConf
 from pprint import pprint
 from typing import Union, Iterable
 from pathlib import Path
+import glob
 import pytorch_lightning as pl
 import torch
 
@@ -125,6 +126,24 @@ class Config:
 
         return model
 
+    def get_data_paths(self, data_cfg: dict) -> tuple[list[str], list[str]]:
+        """Get data paths from directory.
+
+        Args:
+            data_cfg: Config for the dataset containing "dir" key.
+        """
+        dir_cfg = data_cfg.pop(data_cfg, None)
+
+        if dir_cfg:
+            labels_suff = dir_cfg.labels_suffix
+            vid_suff = dir_cfg.vid_suffix
+
+            label_files = glob.glob(f"{dir_cfg.path}/*.{labels_suff}")
+            vid_files = glob.glob(f"{dir_cfg.path}/*.{vid_suff}")
+            return label_files, vid_files
+
+        return None, None
+
     def get_dataset(
         self, mode: str
     ) -> Union["SleapDataset", "MicroscopyDataset", "CellTrackingDataset"]:
@@ -150,13 +169,29 @@ class Config:
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
 
+        label_files, vid_files = self.get_data_paths(dataset_params)
         # todo: handle this better
         if "slp_files" in dataset_params:
+            if label_files is not None:
+                dataset_params.slp_files = label_files
+            if vid_files is not None:
+                dataset_params.video_files = vid_files
             return SleapDataset(**dataset_params)
+
         elif "tracks" in dataset_params or "source" in dataset_params:
+            if label_files is not None:
+                dataset_params.tracks = label_files
+            if vid_files is not None:
+                dataset_params.video_files = vid_files
             return MicroscopyDataset(**dataset_params)
+
         elif "raw_images" in dataset_params:
+            if label_files is not None:
+                dataset_params.gt_images = label_files
+            if vid_files is not None:
+                dataset_params.raw_images = vid_files
             return CellTrackingDataset(**dataset_params)
+
         else:
             raise ValueError(
                 "Could not resolve dataset type from Config! Please include \
