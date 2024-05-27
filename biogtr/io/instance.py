@@ -227,7 +227,7 @@ class Instance:
 
             return (
                 sio.PredictedInstance.from_numpy(
-                    points=self.pose,
+                    points=np.array(list(self.pose.values())),
                     skeleton=self.skeleton,
                     point_scores=self.point_scores,
                     instance_score=self.instance_score,
@@ -238,7 +238,7 @@ class Instance:
             )
         except Exception as e:
             print(
-                f"Pose shape: {self.pose.shape}, Pose score shape {self.point_scores.shape}"
+                f"Pose: {np.array(list(self.pose.values())).shape}, Pose score shape {self.point_scores.shape}"
             )
             raise RuntimeError(f"Failed to convert to sio.PredictedInstance: {e}")
 
