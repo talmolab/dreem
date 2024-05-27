@@ -19,7 +19,8 @@ class Config:
 
         Args:
             cfg: The `DictConfig` containing all the hyperparameters needed for
-                training/evaluation
+                training/evaluation.
+            params_cfg: The `DictConfig` containing subset of hyperparameters to override.
         """
         base_cfg = cfg
         print(f"Base Config: {cfg}")
@@ -46,8 +47,8 @@ class Config:
         """Load config directly from yaml.
 
         Args:
-            yaml_path: path to base config file.
-            params_cfg: path to override params.
+            base_yaml_path: path to base config file.
+            params_cfg_path: path to override params.
         """
         base_cfg = OmegaConf.load(base_cfg_path)
         params_cfg = OmegaConf.load(params_cfg_path) if params_cfg else None
@@ -147,7 +148,7 @@ class Config:
         Returns:
             lists of labels file paths and video file paths respectively
         """
-        dir_cfg = data_cfg.pop(data_cfg, None)
+        dir_cfg = data_cfg.pop("dir", None)
 
         if dir_cfg:
             labels_suff = dir_cfg.labels_suffix
