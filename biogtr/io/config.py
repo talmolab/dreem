@@ -47,7 +47,7 @@ class Config:
         """Load config directly from yaml.
 
         Args:
-            base_yaml_path: path to base config file.
+            base_cfg_path: path to base config file.
             params_cfg_path: path to override params.
         """
         base_cfg = OmegaConf.load(base_cfg_path)
