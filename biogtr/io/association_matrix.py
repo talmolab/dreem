@@ -296,7 +296,7 @@ class AssociationMatrix:
             }
         else:
             raise ValueError(
-                f"Can only group tracks by `pred` or `gt` {label.lower()} was requested!"
+                f"Unsupported label '{label}'. Expected 'pred' or 'gt'."
             )
 
         return traj
