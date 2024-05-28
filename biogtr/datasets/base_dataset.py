@@ -36,7 +36,7 @@ class BaseDataset(Dataset):
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
             mode: `train` or `val`. Determines whether this dataset is used for
-                training or validation. Currently doesn't affect dataset logic
+                training or validation.
             augmentations: An optional dict mapping augmentations to parameters.
                 See subclasses for details.
             n_chunks: Number of chunks to subsample from.
