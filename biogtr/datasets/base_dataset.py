@@ -29,7 +29,7 @@ class BaseDataset(Dataset):
 
         Args:
             label_files: a list of paths to label files.
-            should at least contain detections for inference, detections + tracks for training.
+                should at least contain detections for inference, detections + tracks for training.
             vid_files: list of paths to video files.
             padding: amount of padding around object crops
             crop_size: the size of the object crops
