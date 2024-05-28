@@ -128,7 +128,7 @@ class Tracker:
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
-            frame: A list of Frames (See `biogtr.io.data_structures.Frame` for more info).
+            frames: A list of Frames (See `biogtr.io.data_structures.Frame` for more info).
 
 
         Returns:
