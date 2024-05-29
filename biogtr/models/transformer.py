@@ -156,7 +156,6 @@ class Transformer(torch.nn.Module):
             embedding_dict: A dictionary containing the "pos" and "temp" embeddings
                             if `self.return_embeddings` is False then they are None.
         """
-
         ref_features = torch.cat(
             [instance.features for instance in ref_instances], dim=0
         ).unsqueeze(0)
