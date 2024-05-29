@@ -382,7 +382,10 @@ def test_transformer_decoder():
     pos_emb = query_pos_emb = torch.ones_like(encoder_features)
 
     decoder_features = transformer_decoder(
-        decoder_queries, encoder_features, pos_emb=pos_emb, query_pos_emb=query_pos_emb
+        decoder_queries,
+        encoder_features,
+        ref_pos_emb=pos_emb,
+        query_pos_emb=query_pos_emb,
     )
 
     assert decoder_features.size() == decoder_queries.size()
@@ -411,7 +414,8 @@ def test_transformer_basic():
             Frame(video_id=0, frame_id=i, img_shape=img_shape, instances=instances)
         )
 
-    asso_preds, _ = transformer(frames)
+    instances = [instance for frame in frames for instance in frame.instances]
+    asso_preds, _ = transformer(instances)
 
     assert asso_preds[0].size() == (num_detected * num_frames,) * 2
 
@@ -435,6 +439,8 @@ def test_transformer_embedding():
             )
         frames.append(Frame(video_id=0, frame_id=i, instances=instances))
 
+    instances = [instance for frame in frames for instance in frame.instances]
+
     embedding_meta = {
         "pos": {"mode": "learned", "emb_num": 16, "normalize": True},
         "temp": {"mode": "learned", "emb_num": 16, "normalize": True},
@@ -451,11 +457,11 @@ def test_transformer_embedding():
     assert transformer.pos_emb.mode == "learned"
     assert transformer.temp_emb.mode == "learned"
 
-    asso_preds, embeddings = transformer(frames)
+    asso_preds, embeddings = transformer(instances)
 
     assert asso_preds[0].size() == (num_detected * num_frames,) * 2
 
-    for emb_type, embedding in embeddings.items():
+    for emb_type, embedding in embeddings["ref"].items():
         assert embedding.size() == (
             num_detected * num_frames,
             feats,
@@ -503,12 +509,12 @@ def test_tracking_transformer():
         embedding_meta=embedding_meta,
         return_embedding=True,
     )
-
-    asso_preds, embeddings = tracking_transformer(frames)
+    instances = [instance for frame in frames for instance in frame.instances]
+    asso_preds, embeddings = tracking_transformer(instances)
 
     assert asso_preds[0].size() == (num_detected * num_frames,) * 2
 
-    for emb_type, embedding in embeddings.items():
+    for emb_type, embedding in embeddings["ref"].items():
         assert embedding.size() == (
             num_detected * num_frames,
             feats,

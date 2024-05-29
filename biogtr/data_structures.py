@@ -124,6 +124,8 @@ class Instance:
         self._device = device
         self.to(self._device)
 
+        self._frame = None
+
     def __repr__(self) -> str:
         """Return string representation of the Instance."""
         return (
@@ -422,6 +424,26 @@ class Instance:
             return True
 
     @property
+    def frame(self) -> "Frame":
+        """Get the frame the instance belongs to.
+
+        Returns:
+            The back reference to the `Frame` that this `Instance` belongs to.
+        """
+        return self._frame
+
+    @frame.setter
+    def frame(self, frame: "Frame") -> None:
+        """Set the back reference to the `Frame` that this `Instance` belongs to.
+
+        This field is set when instances are added to `Frame` object.
+
+        Args:
+            frame: A `Frame` object containing the metadata for the frame that the instance belongs to
+        """
+        self._frame = frame
+
+    @property
     def pose(self) -> dict[str, ArrayLike]:
         """Get the pose of the instance.
 
@@ -580,9 +602,12 @@ class Frame:
             self._img_shape = img_shape
         else:
             self._img_shape = torch.tensor([img_shape])
+
         if instances is None:
             self.instances = []
         else:
+            for instance in instances:
+                instance.frame = self
             self._instances = instances
 
         self._asso_output = asso_output
@@ -612,7 +637,7 @@ class Frame:
             f"img_shape={self._img_shape}, "
             f"num_detected={self.num_detected}, "
             f"asso_output={self._asso_output}, "
-            f"traj_score={self._traj_score}, "
+            f"traj_score={list(self._traj_score.keys())}, "
             f"matches={self._matches}, "
             f"instances={self._instances}, "
             f"device={self._device}"
@@ -796,6 +821,9 @@ class Frame:
         Args:
             instances: A list of Instances that appear in the frame.
         """
+        for instance in instances:
+            instance.frame = self
+
         self._instances = instances
 
     def has_instances(self) -> bool:

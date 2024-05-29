@@ -2,13 +2,13 @@
 
 from biogtr.models.transformer import Transformer
 from biogtr.models.visual_encoder import VisualEncoder
-from biogtr.data_structures import Frame
-from torch import nn
+from biogtr.data_structures import Instance
+import torch
 
 # todo: do we want to handle params with configs already here?
 
 
-class GlobalTrackingTransformer(nn.Module):
+class GlobalTrackingTransformer(torch.nn.Module):
     """Modular GTR model composed of visual encoder + transformer used for tracking."""
 
     def __init__(
@@ -79,26 +79,54 @@ class GlobalTrackingTransformer(nn.Module):
             decoder_self_attn=decoder_self_attn,
         )
 
-    def forward(self, frames: list[Frame], query_frame: int = None):
+    def forward(
+        self, ref_instances: list[Instance], query_instances: list[Instance] = None
+    ):
         """Execute forward pass of GTR Model to get asso matrix.
 
         Args:
-            frames: List of Frames from chunk containing crops of objects + gt label info
-            query_frame: Frame index used as query for self attention. Only used in sliding inference where query frame is the last frame in the window.
+            ref_instances: List of instances from chunk containing crops of objects + gt label info
+            query_instances: list of instances used as query in decoder.
 
         Returns:
             An N_T x N association matrix
         """
         # Extract feature representations with pre-trained encoder.
-        for frame in filter(
-            lambda f: f.has_instances() and not f.has_features(), frames
-        ):
-            crops = frame.get_crops()
-            z = self.visual_encoder(crops)
+        self.extract_features(ref_instances)
 
-            for i, z_i in enumerate(z):
-                frame.instances[i].features = z_i
+        if query_instances:
+            self.extract_features(query_instances)
 
-        asso_preds, emb = self.transformer(frames, query_frame=query_frame)
+        asso_preds, emb = self.transformer(ref_instances, query_instances)
 
         return asso_preds, emb
+
+    def extract_features(
+        self, instances: list["Instance"], force_recompute: bool = False
+    ) -> None:
+        """Extract features from instances using visual encoder backbone.
+
+        Args:
+            instances: A list of instances to compute features for
+            force_recompute: indicate whether to compute features for all instances regardless of if they have instances
+        """
+        if not force_recompute:
+            instances_to_compute = [
+                instance
+                for instance in instances
+                if instance.has_crop() and not instance.has_features()
+            ]
+        else:
+            instances_to_compute = instances
+
+        if len(instances_to_compute) == 0:
+            return
+        elif len(instances_to_compute) == 1:  # handle batch norm error when B=1
+            instances_to_compute = instances
+
+        crops = torch.concatenate([instance.crop for instance in instances_to_compute])
+
+        features = self.visual_encoder(crops)
+
+        for i, z_i in enumerate(features):
+            instances_to_compute[i].features = z_i

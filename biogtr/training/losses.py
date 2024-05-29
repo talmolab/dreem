@@ -1,7 +1,7 @@
 """Module containing different loss functions to be optimized."""
 
 from biogtr.data_structures import Frame
-from biogtr.models.model_utils import get_boxes_times
+from biogtr.models.model_utils import get_boxes, get_times
 from torch import nn
 from typing import List, Tuple
 import torch
@@ -49,9 +49,11 @@ class AssoLoss(nn.Module):
         # get number of detected objects and ground truth ids
         n_t = [frame.num_detected for frame in frames]
         target_inst_id = torch.cat([frame.get_gt_track_ids() for frame in frames])
+        instances = [instance for frame in frames for instance in frame.instances]
 
         # for now set equal since detections are fixed
-        pred_box, pred_time = get_boxes_times(frames)
+        pred_box = get_boxes(instances)
+        pred_time, _ = get_times(instances)
         pred_box = torch.nanmean(pred_box, axis=1)
         target_box, target_time = pred_box, pred_time
 
