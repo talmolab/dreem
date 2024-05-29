@@ -174,7 +174,6 @@ class Tracker:
                         if instance.pred_track_id == -1:
                             curr_track += 1
                             instance.pred_track_id = curr_track_id
-                        
 
             else:
                 if (
@@ -475,7 +474,6 @@ class Tracker:
                     print(f"Creating new track {n_traj}")
                 curr_track += 1
                 track_ids[i] = curr_track
-                
 
         query_frame.matches = (match_i, match_j)
 
