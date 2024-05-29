@@ -18,19 +18,9 @@ class AssociationMatrix:
         query_instances: query instances that were associated against ref instances.
     """
 
-    matrix: Union[np.ndarray, torch.Tensor] = attrs.field()
+    matrix: Union[np.ndarray, torch.Tensor]
     ref_instances: list[Instance] = attrs.field()
     query_instances: list[Instance] = attrs.field()
-
-    AVAILABLE_REDUCTIONS = attrs.field(
-        init=False,
-        default={
-            "instance": ["inst", "instance"],
-            "track": ["track", "traj", "trajectory"],
-            None: ["", None],
-        },
-    )
-    AVAILABLE_GROUPINGS = attrs.field(init=False, default=["pred", "gt", None])
 
     @ref_instances.validator
     def _check_ref_instances(self, attribute, value):
@@ -99,15 +89,15 @@ class AssociationMatrix:
 
         Args:
             row_labels: How to label the rows(queries).
-                        If list, then must match # of rows/queries
-                        If `"gt"` then label by gt track id.
-                        If `"pred"` then label by pred track id.
-                        Otherwise label by the query_instance indices
+                If list, then must match # of rows/queries
+                If `"gt"` then label by gt track id.
+                If `"pred"` then label by pred track id.
+                Otherwise label by the query_instance indices
             col_labels: How to label the columns(references).
-                        If list, then must match # of columns/refs
-                        If `gt` then label by gt track id.
-                        If `pred` then label by pred track id.
-                        Otherwise label by the ref_instance indices
+                If list, then must match # of columns/refs
+                If `"gt"` then label by gt track id.
+                If `"pred"` then label by pred track id.
+                Otherwise label by the ref_instance indices
 
         Returns:
             The association matrix as a pandas dataframe.
@@ -125,12 +115,12 @@ class AssociationMatrix:
                     )
                 )
         else:
-            if row_labels.lower() == "gt":
+            if row_labels == "gt":
                 row_inds = [
                     instance.gt_track_id.item() for instance in self.query_instances
                 ]
 
-            elif row_labels.lower() == "pred":
+            elif row_labels == "pred":
                 row_inds = [
                     instance.pred_track_id.item() for instance in self.query_instances
                 ]
@@ -149,12 +139,12 @@ class AssociationMatrix:
                     )
                 )
         else:
-            if col_labels.lower() == "gt":
+            if col_labels == "gt":
                 col_inds = [
                     instance.gt_track_id.item() for instance in self.ref_instances
                 ]
 
-            elif col_labels.lower() == "pred":
+            elif col_labels == "pred":
                 col_inds = [
                     instance.pred_track_id.item() for instance in self.ref_instances
                 ]
@@ -168,8 +158,8 @@ class AssociationMatrix:
 
     def reduce(
         self,
-        row_dims: str = "inst",
-        col_dims: str = "traj",
+        row_dims: str = "instance",
+        col_dims: str = "track",
         row_grouping: str = None,
         col_grouping: str = "pred",
         reduce_method: callable = np.sum,
@@ -177,8 +167,10 @@ class AssociationMatrix:
         """Aggregate the association matrix by specified dimensions and grouping.
 
         Args:
-           row_dims: A str indicating how to what dimensions to reduce rows to. Either inst (remains unchanged), or traj (n_rows=n_traj)
-           col_dims: A str indicating how to dimensions to reduce rows to. Either inst (remains unchanged), or traj (n_cols=n_traj)
+           row_dims: A str indicating how to what dimensions to reduce rows to.
+                Either "instance" (remains unchanged), or "track" (n_rows=n_traj).
+           col_dims: A str indicating how to dimensions to reduce rows to.
+                Either "instance" (remains unchanged), or "track" (n_cols=n_traj)
            row_grouping: A str indicating how to group rows when aggregating. Either "pred" or "gt".
            col_grouping: A str indicating how to group columns when aggregating. Either "pred" or "gt".
            method: A callable function that operates on numpy matrices and can take an `axis` arg for reducing.
@@ -186,27 +178,6 @@ class AssociationMatrix:
         Returns:
             The association matrix reduced to an inst/traj x traj/inst association matrix as a dataframe.
         """
-        if (
-            row_dims is not None
-            and row_dims.lower()
-            not in [key for keys in self.AVAILABLE_REDUCTIONS.values() for key in keys]
-        ) or (
-            col_dims is not None
-            and col_dims.lower()
-            not in [key for keys in self.AVAILABLE_REDUCTIONS.values() for key in keys]
-        ):
-            raise ValueError(
-                f"Can only reduce to inst/traj x inst/traj but ({row_dims} x {col_dims}) was requested!"
-            )
-
-        if (
-            row_grouping not in self.AVAILABLE_GROUPINGS
-            or col_grouping not in self.AVAILABLE_GROUPINGS
-        ):
-            raise ValueError(
-                f"Can aggregate by [gt, pred, None] but {row_grouping} and {col_grouping} was requested!"
-            )
-
         n_rows = len(self.query_instances)
         n_cols = len(self.ref_instances)
 
@@ -216,12 +187,12 @@ class AssociationMatrix:
         col_inds = [i for i in range(len(self.ref_instances))]
         row_inds = [i for i in range(len(self.query_instances))]
 
-        if col_dims.lower() in self.AVAILABLE_REDUCTIONS["track"]:
+        if col_dims == "track":
             col_tracks = self.get_tracks(self.ref_instances, col_grouping)
             col_inds = list(col_tracks.keys())
             n_cols = len(col_inds)
 
-        if row_dims.lower() in self.AVAILABLE_REDUCTIONS["track"]:
+        if row_dims == "track":
             row_tracks = self.get_tracks(self.query_instances, row_grouping)
             row_inds = list(row_tracks.keys())
             n_rows = len(row_inds)
@@ -232,10 +203,10 @@ class AssociationMatrix:
             for col_track, col_instances in col_tracks.items():
                 asso_matrix = self[row_instances, col_instances]
 
-                if col_dims.lower() in self.AVAILABLE_REDUCTIONS["track"]:
+                if col_dims == "track":
                     asso_matrix = reduce_method(asso_matrix, axis=1)
 
-                if row_dims.lower() in self.AVAILABLE_REDUCTIONS["track"]:
+                if row_dims == "track":
                     asso_matrix = reduce_method(asso_matrix, axis=0)
 
                 reduced_matrix.append(asso_matrix)
@@ -249,7 +220,7 @@ class AssociationMatrix:
 
         Args:
             inds: A tuple of query indices and reference indices.
-                  Indices can be either:
+                Indices can be either:
                     A single instance or integer.
                     A list of instances or integers.
 
@@ -280,7 +251,7 @@ class AssociationMatrix:
 
         Args:
             instance: The instance(s) to be retrieved
-                      Can either be a single int/instance or a list of int/instances/
+                Can either be a single int/instance or a list of int/instances
             instance_lookup: A list of Instances to be used to retrieve indices
 
         Returns:
@@ -326,7 +297,7 @@ class AssociationMatrix:
         Returns:
             A dictionary of track_id:instances
         """
-        if label.lower() == "pred":
+        if label == "pred":
             traj_ids = set([instance.pred_track_id.item() for instance in instances])
             traj = {
                 track_id: [
@@ -337,7 +308,7 @@ class AssociationMatrix:
                 for track_id in traj_ids
             }
 
-        elif label.lower() == "gt":
+        elif label == "gt":
             traj_ids = set(
                 [instance.gt_track_id.item() for instance in self.ref_instances]
             )
