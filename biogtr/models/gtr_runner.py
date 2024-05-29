@@ -66,7 +66,8 @@ class GTRRunner(LightningModule):
         """Execute forward pass of the lightning module.
 
         Args:
-            instances: a list of dicts where each dict is a frame with gt data
+            ref_instances: a list of `Instance` objects containing crops and other data needed for transformer model
+            query_instances: a list of `Instance` objects used as queries in the decoder. Mostly used for inference.
 
         Returns:
             An association matrix between objects
@@ -80,8 +81,8 @@ class GTRRunner(LightningModule):
         """Execute single training step for model.
 
         Args:
-            train_batch: A single batch from the dataset which is a list of dicts
-            with length `clip_length` where each dict is a frame
+            train_batch: A single batch from the dataset which is a list of `Frame` objects
+                        with length `clip_length` containing Instances and other metadata.
             batch_idx: the batch number used by lightning
 
         Returns:
@@ -98,8 +99,8 @@ class GTRRunner(LightningModule):
         """Execute single val step for model.
 
         Args:
-            val_batch: A single batch from the dataset which is a list of dicts
-            with length `clip_length` where each dict is a frame
+            val_batch: A single batch from the dataset which is a list of `Frame` objects
+                        with length `clip_length` containing Instances and other metadata.
             batch_idx: the batch number used by lightning
 
         Returns:
@@ -116,8 +117,8 @@ class GTRRunner(LightningModule):
         """Execute single test step for model.
 
         Args:
-            val_batch: A single batch from the dataset which is a list of dicts
-            with length `clip_length` where each dict is a frame
+            test_batch: A single batch from the dataset which is a list of `Frame` objects
+                        with length `clip_length` containing Instances and other metadata.
             batch_idx: the batch number used by lightning
 
         Returns:
@@ -134,8 +135,8 @@ class GTRRunner(LightningModule):
         Computes association + assignment.
 
         Args:
-            batch: A single batch from the dataset which is a list of dicts
-            with length `clip_length` where each dict is a frame
+            batch: A single batch from the dataset which is a list of `Frame` objects
+                    with length `clip_length` containing Instances and other metadata.
             batch_idx: the batch number used by lightning
 
         Returns:
@@ -149,18 +150,16 @@ class GTRRunner(LightningModule):
         """Run evaluation used by train, test, and val steps.
 
         Args:
-            frames: A list of dicts where each dict is a frame containing gt data
+            frames: A list of `Frame` objects with length `clip_length` containing Instances and other metadata.
             mode: which metrics to compute and whether to use persistent tracking or not
 
         Returns:
             a dict containing the loss and any other metrics specified by `eval_metrics`
         """
         try:
-            frames = [frame for frame in frames if frame.has_instances()]
-            if len(frames) == 0:
-                return None
-
             instances = [instance for frame in frames for instance in frame.instances]
+            if len(instances) == 0:
+                return None
 
             eval_metrics = self.metrics[mode]
             persistent_tracking = self.persistent_tracking[mode]
