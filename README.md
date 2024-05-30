@@ -26,14 +26,14 @@ conda env remove -n biogtr
 Here we describe a basic workflow from setting up data thru training and running inference
 ### Background
 
-This repo uses [`hydra`](https://hydra.cc) for config handling, and [`pytorch`](https://pytorch.org)/[`pytorch-lightning`](https://lightning.ai) to handle high-level training/eval/inference. Thus, we recommend skimming thru their respective docs to get some familiarity but is not necessary.
+This repo uses [`hydra`](https://hydra.cc) for config handling, and [`pytorch`](https://pytorch.org)/[`pytorch-lightning`](https://lightning.ai) to handle high-level training/eval/inference. Thus, we recommend skimming through their respective docs to get some familiarity but is not necessary.
 
 ## Step 1. Data Acquisition.
 
 ### Step 1.1: Get detections
-One of the main advantages of this system is that we ***decouple** detection and tracking. This means that our model assumes that you already have detections available when you are ready to track. In order to get these detections we recommend a couple methods. For animal pose-estimation, we highly recommend heading over to [`sleap`](https://sleap.ai) and running through their work flow. For microscopy tracking, checkout [`trackmate`](https://imagej.net/plugins/trackmate/) as well as [`cellpose`](https://www.cellpose.org) and [`StarDist`](https://imagej.net/plugins/stardist). If you are only doing tracking (ie inference), then you once you have your detections you are good to go! 
+One of the main advantages of this system is that we *decouple* detection and tracking. This means that our model assumes that you already have detections available when you are ready to track. In order to get these detections we recommend a couple methods. For animal pose-estimation, we highly recommend heading over to [SLEAP](https://sleap.ai) and running through their work flow. For microscopy tracking, check out [TrackMate](https://imagej.net/plugins/trackmate/) as well as [CellPose](https://www.cellpose.org) and [StarDist](https://imagej.net/plugins/stardist). If you are only doing tracking (ie inference), then you once you have your detections you are good to go! 
 ### ***FOR TRAINING*** Step 1.2 Proofreading
-Otherwise, we recommend using the `sleap-label` gui to proofread your track labels. For animal tracking, if you used `sleap` you can start proofreading right away. Otherwise if you used a different system (e.g `DeepLabCut`) check out `sleap.io.format` for available converters. With microscopy, we highly recommend starting out with `trackmate` and then proofreading in `sleap`. Here is [a converter from trackmate's output to a `.slp`](https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e) file. In general, you can use [`sleap-io`](https://io.sleap.ai/latest/) to write a custom converter to `.slp` if you'd like to use the sleap-gui for proofreading
+Otherwise, we recommend using the `sleap-label` gui to proofread your track labels. For animal tracking, if you used SLEAP you can start proofreading right away. Otherwise if you used a different system (e.g DeepLabCut) check out [`sleap.io.convert`](https://sleap.ai/api/sleap.io.convert.html#module-sleap.io.convert) for available converters. With microscopy, we highly recommend starting out with TrackMate and then proofreading in `sleap`. Here is [a converter from trackmate's output to a `.slp`](https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e) file. In general, you can use [`sleap-io`](https://io.sleap.ai/latest/) to write a custom converter to `.slp` if you'd like to use the sleap-gui for proofreading
 ### Step 1.3 Organize data.
 
 Although, our data loading does take paths to label files and video files directly so it's fairly flexible, we recommend organizing your data with a couple things in mind.
@@ -76,7 +76,7 @@ Now that you have your dataset set up, we can start training! In [`biogtr.traini
 
 ## Step 2.1. Setup Config:
 
-The input into our training script is a `.yaml` file that contains all the parameters needed for training. Please checkout the `README` in `biogtr/training/configs` for a description of all the different parameters. We also provide an example config in `biogtr/training/configs/base.yaml` to give you an idea for how the config should look. In general, the best practice is to keep a single `base.yaml` file which has all the default arguments you'd like to use. Then you can have a second `.yaml` file which will override only those specific set of parameters when training.
+The input into our training script is a `.yaml` file that contains all the parameters needed for training. Please checkout the [`README`](biogtr/training/configs/README.md) in `biogtr/training/configs` for a description of all the different parameters. We also provide an example config in [`biogtr/training/configs/base.yaml`](biogtr/training/configs/base.yaml) to give you an idea for how the config should look. In general, the best practice is to keep a single `base.yaml` file which has all the default arguments you'd like to use. Then you can have a second `.yaml` file which will override only those specific set of parameters when training (for an example see [`biogtr/training/configs/params.yaml`](biogtr/training/configs/params.yaml)).
 
 ## Step 2.2 Train Model
 
@@ -87,17 +87,57 @@ python /path/to/biogtr/training/train.py --config-base=[CONFIG_DIR] --config-nam
 ```
 where `CONFIG_DIR` is the directory that `hydra` should search for the `config.yaml` and `CONFIG_STEM` is the name of the config without the `.yaml` extension.
 
+e.g. If I have a config file called `base.yaml` inside my `/home/aaprasad/biogtr_configs` directory I can call
+```bash
+python /home/aaprasad/biogtr/training/train.py --config-base=/home/aaprasad/biogtr_configs --config-name=base
+```
+
+### Overriding Arguments
+Instead of changing the `base.yaml` file every time you want to run a different config, `hydra` enables us to either 
+1. provide another `.yaml` file with a subset of the parameters to overide
+2. provide the args to the cli directly
+#### File-based override
 For overriding specific params with a sub-config, you can specify a `params_config` key and path in your `config.yaml` or run
 
 ```bash
 python /path/to/biogtr/training/train.py --config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM] ++params_config="/path/to/params.yaml"
 ```
 
-For overriding a specific param via the command line directly you can use the `section.param=key` syntax e.g.
+e.g. If I have a `params_to_override.yaml` file inside my `/home/aaprasad/biogtr_configs` directory that contains a only a small selection of parameters that I'd like to override, I can run:
 
+```bash
+python /home/aaprasad/biogtr/training/train.py --config-base=/home/aaprasad/biogtr_configs --config-name=base ++params_config=/home/aaprasad/biogtr_configs/params_to_override.yaml
+```
+
+#### CLI-based override
+For directly overriding a specific param via the command line directly you can use the `section.param=key` syntax as so:
+
+```bash
+python /path/to/biogtr/training/train.py --config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM] section.param=value
+```
+
+"""
+Note: Generally you will only need the direct override or the file-based override however you can technically do both via 
 ```bash
 python /path/to/biogtr/training/train.py --config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM] ++params_config="/path/to/params.yaml" section.param=value
 ```
+but you do need the `--config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM]` arguments regardless.
+"""
+
+e.g If now I want to override a couple parameters again, say change the number of attention heads and change the name of this run in my logger, I can pass `model.head=3` and `logger.name="test_nheads=3"` into 
+
+```bash
+python /home/aaprasad/biogtr/training/train.py --config-base=/home/aaprasad/biogtr_configs --config-name=base model.nhead=3 logger.name="test_nheads=3"
+```
+
+or alongside the `params_to_override.yaml`
+
+```bash
+python /home/aaprasad/biogtr/training/train.py --config-base=/home/aaprasad/biogtr_configs --config-name=base ++params_config=/home/aaprasad/biogtr_configs/params_to_override.yaml model.nhead=3 logger.name="test_nheads=3"
+```
+"""
+Note: When overriding the parameters, make sure your config contains that parameter and you match the parameter names exactly otherwise it will cause an error.
+"""
 See [here](https://hydra.cc/docs/advanced/override_grammar/basic/) for more information on overriding params.
 
 ## Step 3. Inference
@@ -122,7 +162,7 @@ Similar to training, we need to set up a config file that specifies
 3. a `Tracker` config
 4. a `dataset` config with a `test_dataset` subsection containing dataset params.
 
-Please see the README in `biogtr/inference/configs` for details and see `biogtr/inference/configs/inference.yaml` for an example inference configuration.
+Please see the [README](biogtr/inference/configs/inference.yaml) in `biogtr/inference/configs` for details and see [`biogtr/inference/configs/inference.yaml`](biogtr/inference/configs/inference.yaml) for an example inference config file.
 
 ### Step 3.2 Run Inference
 
@@ -131,5 +171,15 @@ Just like training we can use the hydra syntax for specifying arguments via the 
 ```bash
 python /path/to/biogtr/inference/inference.py --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]
 ```
+
+e.g. If I had an inference config called `track.yaml` inside `/home/aaprasad/biogtr_configs` 
+
+```bash
+python /home/aaprasad/biogtr/inference/inference.py --config-base=/home/aaprasad/biogtr_configs --config-name=track
+```
+
+"""
+Note: you can use relative paths as well but may be a bit riskier so we recommend absolute paths whenever possible.
+"""
 
 This will run inference on the videos/detections you specified in the `dataset.test_dataset` section of the config and save the tracks to individual `/outdir/[VID_NAME].biogtr_inference.slp` files. Now you can load the file with `sleap-io` and do what you please!
