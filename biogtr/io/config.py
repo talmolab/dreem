@@ -192,21 +192,21 @@ class Config:
                 dataset_params.slp_files = label_files
             if vid_files is not None:
                 dataset_params.video_files = vid_files
-            return SleapDataset(**dataset_params)
+            return SleapDataset(mode=mode, **dataset_params)
 
         elif "tracks" in dataset_params or "source" in dataset_params:
             if label_files is not None:
                 dataset_params.tracks = label_files
             if vid_files is not None:
                 dataset_params.video_files = vid_files
-            return MicroscopyDataset(**dataset_params)
+            return MicroscopyDataset(mode=mode, **dataset_params)
 
         elif "raw_images" in dataset_params:
             if label_files is not None:
                 dataset_params.gt_images = label_files
             if vid_files is not None:
                 dataset_params.raw_images = vid_files
-            return CellTrackingDataset(**dataset_params)
+            return CellTrackingDataset(mode=mode, **dataset_params)
 
         else:
             raise ValueError(
@@ -330,8 +330,10 @@ class Config:
         if "dirpath" not in checkpoint_params or checkpoint_params["dirpath"] is None:
             if "group" in logging_params:
                 dirpath = f"./models/{logging_params.group}/{logging_params.name}"
-            else:
+            elif "name" in logging_params:
                 dirpath = f"./models/{logging_params.name}"
+            else:
+                dirpath = f"./models"
 
         else:
             dirpath = checkpoint_params["dirpath"]
