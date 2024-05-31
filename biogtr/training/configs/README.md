@@ -342,7 +342,7 @@ scheduler:
 * [`Cosine Annealing with Warm Restarts`](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.CosineAnnealingWarmRestarts.html#torch.optim.lr_scheduler.CosineAnnealingWarmRestarts)
 ```YAML
 ...
-scheduler
+scheduler:
     name: "CosineAnnealingWarmRestarts"
     T_0: 10
     T_mult: 1
