@@ -2,21 +2,21 @@
 
 Here we describe the parameters used for inference.
 
-* `ckpt_path`: A `str` containing the path to the saved model checkpoint. Can optionally provide a list of models and this will trigger batch inference where each pod gets a model to run inference with.
+* [`ckpt_path`](inference.yaml#L1): A `str` containing the path to the saved model checkpoint. Can optionally provide a list of models and this will trigger batch inference where each pod gets a model to run inference with.
 e.g:
 ```YAML
 ...
 ckpt_path: "/path/to/model.ckpt"
 ...
 ```
-* `out_dir`: A `str` containing a directory path where to store outputs.
+* [`out_dir`](inference.yaml#L2): A `str` containing a directory path where to store outputs.
 e.g:
 ```YAML
 ...
 out_dir: "/path/to/results/dir"
 ...
 ```
-## `tracker`
+## [`tracker`](inference.yaml#L3-8)
 
 This section configures the tracker.
 
@@ -45,7 +45,7 @@ tracker:
 ...
 ```
 
-## `dataset`:
+## [`dataset`](inference.yaml#L10-16):
 This section contains the params for initializing the datasets for training. Requires a `test_dataset` keys. 
 
 ### [`BaseDataset`](../../datasets/base_dataset.py) args
@@ -102,7 +102,7 @@ dataset:
                 tracking challenge format: `"track_id", "start_frame",
                 "end_frame", "parent_id"`
 ### Examples
-* [`SleapDataset`](../../datasets/sleap_dataset.py)
+#### [`SleapDataset`](../../datasets/sleap_dataset.py)
 ```YAML
 ...
 ...
@@ -119,7 +119,7 @@ dataset:
         ... # we don't include augmentations bc usually you shouldnt use augmentations during val/test
 ...
 ```
-* [`MicroscopyDataset`](../../datasets/microscopy_dataset.py)
+#### [`MicroscopyDataset`](../../datasets/microscopy_dataset.py)
 ```YAML
 dataset:
     test_dataset:
@@ -131,4 +131,20 @@ dataset:
         chunk: True
         clip_length: 32
         ... # we don't include augmentations bc usually you shouldnt use augmentations during val/test
+```
+
+## [dataloader](inference.yaml#L18-21)
+This section outlines the params needed for the dataloader. Should have a `train_dataloader` and optionally `val_dataloader`/`test_dataloader` keys. 
+> Below we list the args we found useful/necessary for the dataloaders. For more advanced users see [`torch.utils.data.Dataloader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for more ways to initialize the dataloaders
+
+* `shuffle`: (`bool`) Set to `True` to have the data reshuffled at every epoch (during training, this should always be `True` and during val/test usually `False`) 
+* `num_workers`: (`int`) How many subprocesses to use for data loading. 0 means that the data will be loaded in the main process.
+
+### Example
+```YAML
+...
+dataloader:
+    test_dataloader: # we leave out the `shuffle` field as default=`False` which is what we want
+        num_workers: 4
+...
 ```

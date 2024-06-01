@@ -1,4 +1,5 @@
 ckpt_path: "../training/models/example/example_train/epoch=0-best-val_sw_cnt=31.06133270263672.ckpt"
+out_dir: "./results"
 tracker:
   overlap_thresh: 0.01
   decay_time: 0.9

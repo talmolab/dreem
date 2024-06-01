@@ -17,7 +17,7 @@ Here, we describe the hyperparameters used for setting up training. Please see [
 >   ...
 > ```
 
-## `model`
+## [`model`](base.yaml#L1-24)
 
 This section contains all the parameters for initializing a [`GTRRunner`](../../models/gtr_runner.py) object
 
@@ -30,30 +30,30 @@ This section contains all the parameters for initializing a [`GTRRunner`](../../
 * `activation`: One of {`"relu"`, `"gelu"` `"glu"`}. [Which activation function to use in the transformer](../../models/transformer.py#L561)
 * `return_intermediate_dec`: (`bool`) whether or not to return the output from the intermediate decoder layers.
 * `norm`: (`bool`) whether or not to normalize output of encoder and decoder.
-* num_layers_attn_head: An `int` The number of layers in the [`AttentionHead`](../../models/attention_head.py) block.
+* `num_layers_attn_head`: An `int` The number of layers in the [`AttentionHead`](../../models/attention_head.py) block.
 * `dropout_attn_head`: (`float`)  the dropout probability for the [`AttentionHead`](../../models/attention_head.py) block.
 * `return_embedding`: (`bool`) whether to return [the spatiotemporal embeddings](../../models/embeddings.py)
 * `decoder_self_attn`: (`bool`) whether to use self attention in the decoder.
-### `embedding_meta`: 
+### [`embedding_meta`](base.yaml#L17-22): 
 
 This section contains parameters for initializing the [`Embedding`](../../models/embedding.py) Layer.
 
-#### `pos`
+#### [`pos`](base.yaml#L18-20)
 
 This subsection contains the parameters for initializing a Spatial [`Embedding`](../../models/embedding.py).
 
 * `mode`: (`str`) One of {`"fixed"`, `"learned"`, `"None"`}. Indicates whether to use a [fixed sinusoidal](../../models/embedding.py#L174), [learned](../../models/embedding.py#L251), or [no](../../models/embedding.py#L93) embedding.
 * `n_points`: (`int`) the number of points that will be embedded.
 ##### Fixed Sinusoidal Params
-    * `temperature`: (`float`) the temperature constant to be used when computing the sinusoidal position embedding
-    * `normalize`: (`bool`) whether or not to normalize the positions (Only used in fixed embeddings).
-    * `scale`: (`float`) factor by which to scale the positions after normalizing (Only used in fixed embeddings).
+* `temperature`: (`float`) the temperature constant to be used when computing the sinusoidal position embedding
+* `normalize`: (`bool`) whether or not to normalize the positions (Only used in fixed embeddings).
+* `scale`: (`float`) factor by which to scale the positions after normalizing (Only used in fixed embeddings).
 ##### Learned Params:
-    * `emb_num`: (`int`) the number of embeddings in the `self.lookup` table (Only used in learned embeddings).
-    * `over_boxes`: (`bool`) Whether to compute the position embedding for each bbox coordinate (y1x1y2x2) or the centroid + bbox size (yxwh).
+* `emb_num`: (`int`) the number of embeddings in the `self.lookup` table (Only used in learned embeddings).
+* `over_boxes`: (`bool`) Whether to compute the position embedding for each bbox coordinate (`y1x1y2x2`) or the centroid + bbox size (`yxwh`).
 ##### `mlp_cfg`
 
-This subsection contains [`MLP`](../../models/mlp.py) hyperparameters for projecting embedding to correct space. Required when `n_points > 1`, optional.
+This subsection contains [`MLP`](../../models/mlp.py) hyperparameters for projecting embedding to correct space. Required when `n_points > 1`, optional otherwise.
 
 * `hidden_dims`: (`int`) The dimensionality of the MLP hidden layers.
 * `num_layers`: (`int`) Number of hidden layers.
@@ -75,7 +75,7 @@ model:
 ```
 
 ##### Examples:
-With MLP:
+###### With MLP:
 ```YAML
 ...
 model:
@@ -96,7 +96,7 @@ model:
     ...
 ...
 ```
-With no MLP
+###### With no MLP
 ```YAML
 model:
     ...
@@ -112,18 +112,18 @@ model:
     ...
 ...
 ```
-#### `temp`
+#### [`temp`](base.yaml#L21-22)
 
 This subsection contains the parameters for initializing a Temporal [`Embedding`](../../models/embedding.py)
 
-* mode: (`str`) One of {`"fixed"`, `"learned"`, `"None"`}. Indicates whether to use [a fixed sinusoidal](../../models/embedding.py#L219), learned(../../models/embedding.py#L308), or [no](../../models/embedding.py#L93) embedding.
+* `mode`: (`str`) One of {`"fixed"`, `"learned"`, `"None"`}. Indicates whether to use [a fixed sinusoidal](../../models/embedding.py#L219), [learned](../../models/embedding.py#L308), or [no](../../models/embedding.py#L93) embedding.
 ##### Fixed Sinusoidal Params
 * `temperature`: (`float`) the temperature constant to be used when computing the sinusoidal position embedding
 ##### Learned Params:
 * `emb_num`: (`int`) the number of embeddings in the lookup table.
 Note: See [`biogtr.models.Embedding`](../../models/embedding.py) for additional `kwargs` that can be passed
 ##### Examples:
-Fixed:
+###### Fixed:
 ```YAML
 model:
     ...
@@ -135,7 +135,7 @@ model:
     ...
 ...
 ```    
-Turned Off:
+###### Turned Off:
 ```YAML
 model:
     ...
@@ -184,7 +184,7 @@ model:
 
 ```
             
-### `encoder_cfg`
+### [`encoder_cfg`](base.yaml#L3-6)
 
 This section contains all the parameters for initializing a `VisualEncoder` model.
 
@@ -196,7 +196,7 @@ This section contains all the parameters for initializing a `VisualEncoder` mode
 > Note: For more advanced users, see [`timm.create_model`](https://timm.fast.ai/create_model) or [`torchvision.models.resnet`](https://pytorch.org/vision/stable/models/resnet.html) for additional `kwargs` that can be passed to the visual encoder.
 
 #### Example:
-`timm`:
+##### `timm`:
 ```YAML
 ...
 model:
@@ -209,7 +209,8 @@ model:
         ...
     ...
 ...
-`torchvision`:
+```
+##### `torchvision`:
 ```YAML
 ...
 model:
@@ -223,7 +224,7 @@ model:
     ...
 ...
 ```
-### Example:
+### `model` Example:
 Putting it all together your `model` config section will look something like this
 ```YAML
 ...
@@ -253,7 +254,7 @@ model:
   decoder_self_attn: False
 ...
 ```
-## `loss`
+## [`loss`](base.yaml#L26-29)
 
 This section contains parameters for the Association Loss function
 
@@ -270,13 +271,14 @@ loss:
     asso_weight: 1.0
 ...
 ```
-## `optimizer`
+## [`optimizer`](base.yaml#L32-37)
 
 This section contains the parameters for initializing the training optimizer
 
-* `name`: (`str`) representation of the optimizer. See [`torch.optim`](https://pytorch.org/docs/stable/optim.html#algorithms) for available optimizers. `name` must match the optimizer name exactly (case-sensitive).
+* `name`: (`str`) representation of the optimizer. 
+    > See [`torch.optim`](https://pytorch.org/docs/stable/optim.html#algorithms) for available optimizers.(`name` must match the optimizer name exactly (case-sensitive)).
 
-Below, we list the arguments we use for [`Adam`](https://pytorch.org/docs/stable/generated/torch.optim.Adam.html) which is the optimizer we use and is our default. For more advanced users please see the respective pytorch documentation page for the arguments expected in your requested optimizer.
+> Below, we list the arguments we use for [`Adam`](https://pytorch.org/docs/stable/generated/torch.optim.Adam.html) which is the optimizer we use and is our default. For more advanced users please see the respective pytorch documentation page for the arguments expected in your requested optimizer.
 
 * `lr`: (`float`) learning rate
 * `betas`: (`tuple[float, float]`) coefficients used for computing running averages of gradient and its square
@@ -285,7 +287,7 @@ Below, we list the arguments we use for [`Adam`](https://pytorch.org/docs/stable
 
 ### Examples:
 Here we provide a couple examples for different optimizers:
-* [`Adam`](https://pytorch.org/docs/stable/generated/torch.optim.Adam.html)
+#### [`Adam`](https://pytorch.org/docs/stable/generated/torch.optim.Adam.html)
 ```YAML
 ...
 optimizer:
@@ -297,7 +299,7 @@ optimizer:
     ...
 ...
 ```
-* [`Stochastic Gradient Descent`](https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD)
+#### [`Stochastic Gradient Descent`](https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD)
 ```YAML
 ...
 optimizer:
@@ -310,24 +312,25 @@ optimizer:
     ...
 ...
 ```
-## `scheduler` 
+## [`scheduler`]((base.yaml#L40-46)) 
 
 This section contains parameters for initializing the learning rate scheduler.
 
-* `name`: (`str`) Representation of the scheduler. See [`torch.optim.lr_scheduler`](https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate) for available schedulers. `name` must match the scheduler name exactly (case-sensitive).
+* `name`: (`str`) Representation of the scheduler. 
+    > See [`torch.optim.lr_scheduler`](https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate) for available schedulers. `name` must match the scheduler name exactly (case-sensitive).
 
-Below, we list the arguments we use for [`ReduceLROnPlateau`](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau) which is the scheduler we use and is our default. For more advanced users please see the respective pytorch documentation page for the arguments expected in your requested scheduler.
+> Below, we list the arguments we use for [`ReduceLROnPlateau`](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau) which is the scheduler we use and is our default. For more advanced users please see the respective pytorch documentation page for the arguments expected in your requested scheduler.
 
-* mode: (`str`) One of {`"min"`, `"max"`}. In `min` mode, lr will be reduced when the quantity monitored has stopped decreasing; in `max` mode it will be reduced when the quantity monitored has stopped increasing.
-* factor: (`float`) Factor by which the learning rate will be reduced. `new_lr = lr * factor`
-* patience: (`int`) The number of allowed epochs with no improvement after which the learning rate will be reduced.
-* threshold: (`float`) Threshold for measuring the new optimum, to only focus on significant changes. 
-* threshold_mode: (`str`)  One of {`"rel"`, "`abs`"}. In `rel` mode, `dynamic_threshold = best * ( 1 + threshold )` in `max` mode or `best * ( 1 - threshold )` in `min` mode. In `abs` mode, `dynamic_threshold = best + threshold` in `max` mode or `best - threshold` in `min` mode.
+* `mode`: (`str`) One of {`"min"`, `"max"`}. In `min` mode, lr will be reduced when the quantity monitored has stopped decreasing; in `max` mode it will be reduced when the quantity monitored has stopped increasing.
+* `factor`: (`float`) Factor by which the learning rate will be reduced. `new_lr = lr * factor`
+* `patience`: (`int`) The number of allowed epochs with no improvement after which the learning rate will be reduced.
+* `threshold`: (`float`) Threshold for measuring the new optimum, to only focus on significant changes. 
+* `threshold_mode`: (`str`)  One of {`"rel"`, "`abs`"}. In `rel` mode, `dynamic_threshold = best * ( 1 + threshold )` in `max` mode or `best * ( 1 - threshold )` in `min` mode. In `abs` mode, `dynamic_threshold = best + threshold` in `max` mode or `best - threshold` in `min` mode.
 
 ### Examples:
 Here we give a couple examples of configs for different schedulers:
 
-* [`Reduce Learning rate on Plateau`](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau)
+#### [`Reduce Learning Rate on Plateau`](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau)
 ```YAML
 ...
 scheduler:
@@ -339,7 +342,8 @@ scheduler:
   threshold_mode: "rel"
   ...
 ...
-* [`Cosine Annealing with Warm Restarts`](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.CosineAnnealingWarmRestarts.html#torch.optim.lr_scheduler.CosineAnnealingWarmRestarts)
+```
+#### [`Cosine Annealing with Warm Restarts`](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.CosineAnnealingWarmRestarts.html#torch.optim.lr_scheduler.CosineAnnealingWarmRestarts)
 ```YAML
 ...
 scheduler:
@@ -351,7 +355,7 @@ scheduler:
     verbose: True
 ...
 ```
-## `tracker`:
+## [`tracker`]((base.yaml#L48-55)):
 
 This section contains parameters for initializing the `Tracker`
 
@@ -377,20 +381,21 @@ tracker:
     decay_time: 0.9
     iou: "mult"
     max_center_dist: 0.1
+    ...
 ...
 ```
-## `runner`
+## [`runner`](base.yaml#L57-65)
 
 This section contains parameters for how to handle training/validation/testing
 
-### `metrics`
+### [`metrics`](base.yaml#L58-61)
 
 This section contains config for which metrics to compute during training/validation/testing. See [`pymotmetrics.list_metrics`](https://github.com/cheind/py-motmetrics) for available metrics.
 
 Should have a `train`, `val` and `test` key with corresponding list of metrics to compute during training.
 
 #### Examples:
-* Only computing the loss:
+##### Only computing the loss:
 ```YAML
 ...
 runner:
@@ -402,7 +407,7 @@ runner:
     ...
 ...
 ```
-* Computing `num_switches` during validation:
+##### Computing `num_switches` during validation:
 ```YAML
 ...
 runner:
@@ -414,7 +419,7 @@ runner:
     ...
 ...
 ```
-* Computing `num_switches` and  `mota` during testing:
+##### Computing `num_switches` and  `mota` during testing:
 ```YAML
 ...
 runner:
@@ -426,7 +431,7 @@ runner:
     ...
 ...
 ```
-### `persistent_tracking`
+### [`persistent_tracking`](base.yaml#L62-65)
 
 This section indicates whether or not to track across chunks during training/validation/testing
 
@@ -444,7 +449,7 @@ runner
         test: true # assuming we test on a contiguous video.
 ```
 
-## `dataset`
+## [`dataset`](base.yaml#L67-90)
 
 This section contains the params for initializing the datasets for training. Requires a `train_dataset` and optionally `val_dataset`, `test_dataset` keys. 
 
@@ -516,10 +521,9 @@ augmentations:
 * `gt_list`: (`list[str]`) An optional path to .txt file containing gt ids stored in cell
                 tracking challenge format: `"track_id", "start_frame",
                 "end_frame", "parent_id"`
-### Examples
-* [`SleapDataset`](../../datasets/sleap_dataset.py)
+### `dataset` Examples
+#### [`SleapDataset`](../../datasets/sleap_dataset.py)
 ```YAML
-...
 ...
 dataset:
     train_dataset:
@@ -562,7 +566,7 @@ dataset:
         ... # we don't include augmentations bc usually you shouldnt use augmentations during val/test
 ...
 ```
-* [`MicroscopyDataset`](../../datasets/microscopy_dataset.py)
+#### [`MicroscopyDataset`](../../datasets/microscopy_dataset.py)
 ```YAML
 dataset:
     train_dataset:
@@ -593,7 +597,7 @@ dataset:
         ... # we don't include augmentations bc usually you shouldnt use augmentations during val/test
     test_dataset:
         tracks: ["/path/to/test/labels1.csv", "/path/to/test/labels2.csv", ..., "/path/to/test/labelsN.csv"]
-        videos: ["/path/to/test/video1.tiff", "/path/to/test/video2.csv", ..., "/path/to/test/videoN.csv"]
+        videos: ["/path/to/test/video1.tiff", "/path/to/test/video2.tiff", ..., "/path/to/test/videoN.tiff"]
         source: "trackmate"
         padding: 5
         crop_size: 128 
@@ -601,18 +605,18 @@ dataset:
         clip_length: 32
         ... # we don't include augmentations bc usually you shouldnt use augmentations during val/test
 ```
-## `dataloader`
+## [`dataloader`](base.yaml#L92-101)
 
-This section outlines the params needed for the dataloader. Should have a `train_dataloader` and optionally `val_dataloader`/`test_dataloader` keys. Below we list the args we found useful/necessary. For more advanced users see [`torch.utils.data.Dataloader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for more ways to initialize the dataloaders
+This section outlines the params needed for the dataloader. Should have a `train_dataloader` and optionally `val_dataloader`/`test_dataloader` keys. 
+> Below we list the args we found useful/necessary for the dataloaders. For more advanced users see [`torch.utils.data.Dataloader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for more ways to initialize the dataloaders
 
 * `shuffle`: (`bool`) Set to `True` to have the data reshuffled at every epoch (during training, this should always be `True` and during val/test usually `False`) 
 * `num_workers`: (`int`) How many subprocesses to use for data loading. 0 means that the data will be loaded in the main process.
 
 ### Example
-
 ```YAML
 ...
-dataloader
+dataloader:
     train_dataloader:
         shuffle: true
         num_workers: 4
@@ -622,13 +626,12 @@ dataloader
         num_workers: 4
 ```
 
-## `logging`:
-
+## [`logging`](base.yaml#L103-113):
 This section sets up logging for the training job. 
 
 * `logger_type`: (`str`) Which logger to use. Available loggers are {`"CSVLogger"`, `"TensorBoardLogger"`,`"WandbLogger"`}
 
-Below we list the arguments we found useful for the [`WandbLogger`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.wandb.html#module-lightning.pytorch.loggers.wandb) as this is the logger we use and recommend. Please see the documentation for the corresponding logger at [`lightning.loggers`](https://lightning.ai/docs/pytorch/stable/api_references.html#loggers) for respective available parameters.
+> Below we list the arguments we found useful for the [`WandbLogger`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.wandb.html#module-lightning.pytorch.loggers.wandb) as this is the logger we use and recommend. Please see the documentation for the corresponding logger at [`lightning.loggers`](https://lightning.ai/docs/pytorch/stable/api_references.html#loggers) for respective available parameters.
 
 * `name`: (`str`) A short display name for this run, which is how you'll identify this run in the UI.
 * `save_dir`: (`str`) An absolute path to a directory where metadata will be stored. 
@@ -639,11 +642,11 @@ Below we list the arguments we found useful for the [`WandbLogger`](https://ligh
 * `entity`: (`str`) An entity is a username or team name where you're sending runs
 * `notes`: (`str`) A longer description of the run, like a `-m `commit message in git.
 
-See [`wandb.init()`](https://docs.wandb.ai/ref/python/init) and [`WandbLogger`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.wandb.html#module-lightning.pytorch.loggers.wandb) for more fine-grained config args.
+> See [`wandb.init()`](https://docs.wandb.ai/ref/python/init) and [`WandbLogger`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.wandb.html#module-lightning.pytorch.loggers.wandb) for more fine-grained config args.
 
 ### Examples:
 Here we provide a couple examples for different available loggers
-* [`wandb`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.wandb.html#module-lightning.pytorch.loggers.wandb)
+#### [`wandb`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.wandb.html#module-lightning.pytorch.loggers.wandb)
 ```YAML
 ...
 logging:
@@ -661,7 +664,7 @@ logging:
 ...
 ```
 
-* [`csv logger`]:
+#### [`csv logger`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.csv_logs.html#module-lightning.pytorch.loggers.csv_logs):
 ```YAML
 ...
 logging:
@@ -672,9 +675,11 @@ logging:
     ...
 ...
 ``` 
-### `early_stopping`
+## [`early_stopping`]((base.yaml#L115-122))
 
-This section configures early stopping for training runs. Below we provide descriptions of the arguments we found useful for EarlyStopping. For advanced users, see [`lightning.callbacks.EarlyStopping](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.callbacks.EarlyStopping.html#lightning.pytorch.callbacks.EarlyStopping) for available arguments for more fine grained control
+This section configures early stopping for training runs. 
+
+> Below we provide descriptions of the arguments we found useful for EarlyStopping. For advanced users, see [`lightning.callbacks.EarlyStopping](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.callbacks.EarlyStopping.html#lightning.pytorch.callbacks.EarlyStopping) for available arguments for more fine grained control
 
 * `monitor` (`str`): quantity to be monitored.
 * `min_delta` (`float`): minimum change in the monitored quantity to qualify as an improvement, i.e. an absolute change of less than or equal to min_delta, will count as no improvement.
@@ -684,7 +689,7 @@ This section configures early stopping for training runs. Below we provide descr
 * `stopping_threshold` (`float`): Stop training immediately once the monitored quantity reaches this threshold.
 * `divergence_threshold` (`float`): Stop training as soon as the monitored quantity becomes worse than this threshold.
 
-#### Example:
+### Example:
 ```YAML
 ...
 early_stopping:
@@ -699,22 +704,22 @@ early_stopping:
 ...
 ```
 
-### `checkpointing`
+## [`checkpointing`](base.yaml#L124-130)
 
 This section enables model checkpointing during training
 
 * `monitor`: A list of metrics to save best models for. Usually should be `"val_{METRIC}"` notation.
-> Note: We initialize a separate [`ModelCheckpoint`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.callbacks.ModelCheckpoint.html#lightning.pytorch.callbacks.ModelCheckpoint) for each metric to monitor.
-> This means that you'll save at least $|monitor|$ checkpoints at the end of training.
+    > Note: We initialize a separate [`ModelCheckpoint`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.callbacks.ModelCheckpoint.html#lightning.pytorch.callbacks.ModelCheckpoint) for each metric to monitor.
+    > This means that you'll save at least $|monitor|$ checkpoints at the end of training.
 
-Below we describe the arguments we found useful for checkpointing. For more fine grained control see [`lightning.callbacks.ModelCheckpoint`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.callbacks.ModelCheckpoint.html#lightning.pytorch.callbacks.ModelCheckpoint) for available checkpointing params and generally more info on how `lightning` sets up checkpoints
+> Below we describe the arguments we found useful for checkpointing. For more fine grained control see [`lightning.callbacks.ModelCheckpoint`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.callbacks.ModelCheckpoint.html#lightning.pytorch.callbacks.ModelCheckpoint) for available checkpointing params and generally more info on how `lightning` sets up checkpoints
 
 * `dirpath`: (`str`) Directory to save the models. If left empty then we first try to save to `./models/[GROUP]/[NAME]` or `./models/[NAME]` if logger is `wandb` otherwise we just save to `./models` 
 * `save_last`: (`bool`): When `True`, saves a last.ckpt copy whenever a checkpoint file gets saved. Can be set to 'link' on a local filesystem to create a symbolic link. This allows accessing the latest checkpoint in a deterministic manner.
 * `save_top_k`: (`int`): if `save_top_k == k`, the best k models according to the quantity monitored will be saved. if `save_top_k == 0`, no models are saved. if `save_top_k == -1`, all models are saved. (Recommend -1)
 * `every_n_epochs`: (`int`) Number of epochs between checkpoints. This value must be `None` or non-negative. To disable saving top-k checkpoints, set `every_n_epochs = 0`. This argument does not impact the saving of `save_last=True` checkpoints.
 
-#### Example:
+### Example:
 ```YAML
 ...
 checkpointing:
@@ -727,30 +732,31 @@ checkpointing:
 ...
 ```
 
-### `trainer`
+## [`trainer`]((base.yaml#L132-141))
 
-This section configures the `lightning.Trainer` object for training. Below we describe the arguments we found useful for the `Trainer`. If you're an advanced user, Please see `lightning.Trainer`(https://lightning.ai/docs/pytorch/stable/common/trainer.html) for more fine grained control and how the `trainer` works in general
+This section configures the `lightning.Trainer` object for training. 
+> Below we describe the arguments we found useful for the `Trainer`. If you're an advanced user, Please see `lightning.Trainer`(https://lightning.ai/docs/pytorch/stable/common/trainer.html) for more fine grained control and how the `trainer` works in general
 
 * `accelerator`: (`str`) Supports passing different accelerator types `(“cpu”, “gpu”, “tpu”, “ipu”, “hpu”, “mps”, “auto”)` as well as custom accelerator instances.
 * `strategy`: (`str`) Supports different training strategies with aliases as well custom strategies
 * `devices`: (`list[int]` | `str`| `int`)`The devices to use. Can be set to:
-    * a positive number (int or str) 
-    * a sequence of device indices (list or str), 
-    * the value -1 to indicate all available devices should be used
+    * a positive number (`int` | `str`) 
+    * a sequence of device indices (`list` | `str`), 
+    * the value `-1` to indicate all available devices should be used
     *  "auto" for automatic selection based on the chosen accelerator 
-* `fast_dev_run`: (`int` | `bool`) Runs n if set to n (int) else 1 if set to True batch(es) of train, val and test to find any bugs (ie: a sort of unit test).
-* `check_val_every_n_epoch`: (`int`) Perform a validation loop every after every N training epochs
-* `enable_checkpointing`: (`bool`) If True, enable checkpointing. It will configure a default ModelCheckpoint callback if there is no user-defined ModelCheckpoint in callbacks.
+* `fast_dev_run`: (`int` | `bool`) Runs `n` (if set to `n` (`int`)) else `1` (if set to `True`) batch(es) of train, val and test to find any bugs (ie: a sort of unit test).
+* `check_val_every_n_epoch`: (`int`) Perform a validation loop every after every `N` training epochs
+* `enable_checkpointing`: (`bool`) If `True`, enable checkpointing. It will configure a default `ModelCheckpoint` callback if there is no user-defined `ModelCheckpoint` in callbacks.
 * `gradient_clip_val`:  (`float`) The value at which to clip gradients
-* `limit_train_batches`: (`int` | `float`) How much of training dataset to check (float = fraction, int = num_batches) (mostly for debugging)
-* `limit_test_batches`: (`int` | `float`) How much of test dataset to check (float = fraction, int = num_batches). (mostly for debugging)
-* `limit_val_batches`: (`int` | `float`) How much of validation dataset to check (float = fraction, int = num_batches) (mostly for debugging)
-* `limit_predict_batches`: (`int` | `float`) How much of prediction dataset to check (float = fraction, int = num_batches)
+* `limit_train_batches`: (`int` | `float`) How much of training dataset to check (`float` = fraction, `int` = num_batches) (mostly for debugging)
+* `limit_test_batches`: (`int` | `float`) How much of test dataset to check (`float` = fraction, `int` = num_batches). (mostly for debugging)
+* `limit_val_batches`: (`int` | `float`) How much of validation dataset to check (`float` = fraction, `int` = num_batches) (mostly for debugging)
+* `limit_predict_batches`: (`int` | `float`) How much of prediction dataset to check (`float` = fraction, `int` = num_batches)
 * `log_every_n_steps`:  (`int`) How often to log within steps
-* `max_epochs`: (`int`) Stop training once this number of epochs is reached. To enable infinite training, set max_epochs = -1.
+* `max_epochs`: (`int`) Stop training once this number of epochs is reached. To enable infinite training, set `max_epochs` = -1.
 * `min_epochs`: (`int`) Force training for at least these many epochs
 
-#### Examples:
+### Examples:
 ```YAML
 trainer:
   check_val_every_n_epoch: 1
@@ -764,7 +770,7 @@ trainer:
   min_epochs: 10
 ```
 
-### `view_batch`
+## [`view_batch`](base.yaml#L143-146)
 
 This section allows you to visualize the data before training
 
@@ -772,22 +778,22 @@ This section allows you to visualize the data before training
 * `num_frames`: (`int`) The number of frames in the batch to visualize
 * `no_train`: (`bool`)  whether or not to train after visualization is complete
 
-#### Examples:
-* Off
+### Examples:
+#### Off
 ```YAML
 view_batch:
   enable: False
   num_frames: 0 #this arg can be anything
   no_train: False #This can be false
 ```
-* On, no training:
+#### On, no training:
 ```YAML
 view_batch:
   enable: False
   num_frames: 32 #this arg can be anything
   no_train: True #training will not occur
 ```
-* On, with training: 
+#### On, with training: 
 ```YAML
 view_batch:
   enable: False
