@@ -12,7 +12,6 @@ dataset:
     video_files: ['tests/data/sleap/two_flies.mp4', 'tests/data/sleap/two_flies.mp4']
     clip_length: 32
     anchors: "centroid"
-    mode: "test"
 
 dataloader:
   test_dataloader:
