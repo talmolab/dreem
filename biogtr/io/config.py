@@ -209,17 +209,17 @@ class Config:
             if vid_files is not None:
                 dataset_params.raw_images = vid_files
             return CellTrackingDataset(**dataset_params)
-          
+
         # todo: handle this better
         if "slp_files" in dataset_params:
             return SleapDataset(**dataset_params)
-          
+
         elif "tracks" in dataset_params or "source" in dataset_params:
             return MicroscopyDataset(**dataset_params)
-          
+
         elif "raw_images" in dataset_params:
             return CellTrackingDataset(**dataset_params)
-          
+
         else:
             raise ValueError(
                 "Could not resolve dataset type from Config! Please include \
