@@ -82,7 +82,7 @@ class Config:
 
         if ckpt_path is not None and len(ckpt_path) > 0:
             return GTRRunner.load_from_checkpoint(ckpt_path).model
-
+          
         return GlobalTrackingTransformer(**model_params)
 
     def get_tracker_cfg(self) -> dict:
@@ -104,13 +104,15 @@ class Config:
         scheduler_params = self.cfg.scheduler
         loss_params = self.cfg.loss
         gtr_runner_params = self.cfg.runner
+
         model_params = self.cfg.model
 
         ckpt_path = model_params.pop("ckpt_path", None)
 
         if ckpt_path is not None and ckpt_path != "":
+
             model = GTRRunner.load_from_checkpoint(
-                self.cfg.model.ckpt_path,
+                ckpt_path,
                 tracker_cfg=tracker_params,
                 train_metrics=self.cfg.runner.metrics.train,
                 val_metrics=self.cfg.runner.metrics.val,
