@@ -1,5 +1,6 @@
 # to implement - config class that handles getters/setters
 """Data structures for handling config parsing."""
+
 from omegaconf import DictConfig, OmegaConf
 from pprint import pprint
 from typing import Union, Iterable
@@ -95,6 +96,8 @@ class Config:
         """Get lightning module for training, validation, and inference."""
         from biogtr.models import GTRRunner
 
+    def get_gtr_runner(self):
+        """Get lightning module for training, validation, and inference."""
         tracker_params = self.cfg.tracker
         optimizer_params = self.cfg.optimizer
         scheduler_params = self.cfg.scheduler
@@ -106,7 +109,7 @@ class Config:
 
         if ckpt_path is not None and ckpt_path != "":
             model = GTRRunner.load_from_checkpoint(
-                self.cfg.model.ckpt_path,
+                ckpt_path,
                 tracker_cfg=tracker_params,
                 train_metrics=self.cfg.runner.metrics.train,
                 val_metrics=self.cfg.runner.metrics.val,
@@ -216,6 +219,7 @@ class Config:
         from biogtr.models.model_utils import init_optimizer
 
         optimizer_params = self.cfg.optimizer
+        
         return init_optimizer(params, optimizer_params)
 
     def get_scheduler(
@@ -232,9 +236,10 @@ class Config:
         from biogtr.models.model_utils import init_scheduler
 
         lr_scheduler_params = self.cfg.scheduler
+        
         return init_scheduler(optimizer, lr_scheduler_params)
 
-    def get_loss(self) -> "AssoLoss":
+    def get_loss(self) -> AssoLoss:
         """Getter for loss functions.
 
         Returns:
@@ -243,6 +248,7 @@ class Config:
         from biogtr.training.losses import AssoLoss
 
         loss_params = self.cfg.loss
+        
         return AssoLoss(**loss_params)
 
     def get_logger(self):
@@ -252,8 +258,9 @@ class Config:
             A Logger with specified params
         """
         from biogtr.models.model_utils import init_logger
-
+        
         logger_params = OmegaConf.to_container(self.cfg.logging, resolve=True)
+        
         return init_logger(
             logger_params, OmegaConf.to_container(self.cfg, resolve=True)
         )

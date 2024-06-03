@@ -522,7 +522,7 @@ def test_tracking_transformer():
     )
     instances = [instance for frame in frames for instance in frame.instances]
     asso_preds = tracking_transformer(instances)
-
+    
     assert asso_preds[0].matrix.size() == (num_detected * num_frames,) * 2
 
     pos_emb = torch.concat(
