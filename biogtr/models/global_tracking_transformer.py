@@ -2,7 +2,7 @@
 
 from biogtr.models.transformer import Transformer
 from biogtr.models.visual_encoder import VisualEncoder
-from biogtr.data_structures import Instance
+from biogtr.io.instance import Instance
 import torch
 
 # todo: do we want to handle params with configs already here?
@@ -81,7 +81,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
 
     def forward(
         self, ref_instances: list[Instance], query_instances: list[Instance] = None
-    ):
+    ) -> list["AssociationMatrix"]:
         """Execute forward pass of GTR Model to get asso matrix.
 
         Args:
@@ -97,9 +97,9 @@ class GlobalTrackingTransformer(torch.nn.Module):
         if query_instances:
             self.extract_features(query_instances)
 
-        asso_preds, emb = self.transformer(ref_instances, query_instances)
+        asso_preds = self.transformer(ref_instances, query_instances)
 
-        return asso_preds, emb
+        return asso_preds
 
     def extract_features(
         self, instances: list["Instance"], force_recompute: bool = False

@@ -3,7 +3,7 @@
 import numpy as np
 import motmetrics as mm
 import torch
-from biogtr.data_structures import Frame
+from biogtr.io.frame import Frame
 from typing import Union, Iterable
 
 # from biogtr.inference.post_processing import _pairwise_iou
@@ -105,7 +105,7 @@ def to_track_eval(frames: list[Frame]) -> dict:
     """Reformats frames the output from `sliding_inference` to be used by `TrackEval`.
 
     Args:
-        frames: A list of Frames. `See biogtr.data_structures for more info`.
+        frames: A list of Frames. `See biogtr.io.data_structures for more info`.
 
     Returns:
         data: A dictionary. Example provided below.

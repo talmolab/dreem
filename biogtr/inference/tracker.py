@@ -3,7 +3,7 @@
 import torch
 import pandas as pd
 import warnings
-from biogtr.data_structures import Frame
+from biogtr.io.frame import Frame
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.models import model_utils
 from biogtr.inference.track_queue import TrackQueue
@@ -128,7 +128,7 @@ class Tracker:
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
-            frame: A list of Frames (See `biogtr.data_structures.Frame` for more info).
+            frames: A list of Frames (See `biogtr.io.data_structures.Frame` for more info).
 
 
         Returns:
@@ -209,7 +209,7 @@ class Tracker:
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
-            frames: A list of Frames containing reid features. See `biogtr.data_structures` for more info.
+            frames: A list of Frames containing reid features. See `biogtr.io.data_structures` for more info.
             query_ind: An integer for the query frame within the window of instances.
 
         Returns:
@@ -259,12 +259,12 @@ class Tracker:
 
         # (L=1, n_query, total_instances)
         with torch.no_grad():
-            asso_output, embed = model(all_instances, query_instances)
+            asso_matrix = model(all_instances, query_instances)
             # if model.transformer.return_embedding:
             # query_frame.embeddings = embed TODO add embedding to Instance Object
         # if query_frame == 1:
         #     print(asso_output)
-        asso_output = asso_output[-1].split(
+        asso_output = asso_matrix[-1].matrix.split(
             instances_per_frame, dim=1
         )  # (window_size, n_query, N_i)
         asso_output = model_utils.softmax_asso(
@@ -281,7 +281,7 @@ class Tracker:
         asso_output_df.columns.name = "Instances"
 
         query_frame.add_traj_score("asso_output", asso_output_df)
-        query_frame.asso_output = asso_output
+        query_frame.asso_output = asso_matrix
 
         try:
             n_query = (

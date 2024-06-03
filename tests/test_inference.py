@@ -3,11 +3,91 @@
 import torch
 import pytest
 import numpy as np
-from biogtr.data_structures import Frame, Instance
+from biogtr.io.frame import Frame
+from biogtr.io.instance import Instance
 from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.inference.tracker import Tracker
+from biogtr.inference.track_queue import TrackQueue
 from biogtr.inference import post_processing
 from biogtr.inference import metrics
+
+
+def test_track_queue():
+    window_size = 8
+    max_gap = 10
+    img_shape = (3, 1024, 1024)
+    n_instances_per_frame = [2] * window_size
+
+    frames = []
+    instances_per_frame = []
+
+    tq = TrackQueue(window_size, max_gap)
+    for i in range(window_size):
+        instances = []
+        for j in range(n_instances_per_frame[i]):
+            instances.append(Instance(gt_track_id=j, pred_track_id=j))
+        instances_per_frame.append(instances)
+        frame = Frame(video_id=0, frame_id=i, img_shape=img_shape, instances=instances)
+        frames.append(frame)
+
+        tq.add_frame(frame)
+
+    assert len(tq) == sum(n_instances_per_frame[1:])
+    assert tq.n_tracks == max(n_instances_per_frame)
+    assert tq.tracks == [i for i in range(max(n_instances_per_frame))]
+    assert len(tq.collate_tracks()) == window_size - 1
+    assert all([gap == 0 for gap in tq._curr_gap.values()])
+    assert tq.curr_track == max(n_instances_per_frame) - 1
+
+    tq.add_frame(
+        Frame(
+            video_id=0,
+            frame_id=window_size + 1,
+            img_shape=img_shape,
+            instances=[Instance(gt_track_id=0, pred_track_id=0)],
+        )
+    )
+
+    assert len(tq._queues[0]) == window_size - 1
+    assert tq._curr_gap[0] == 0
+    assert tq._curr_gap[max(n_instances_per_frame) - 1] == 1
+
+    tq.add_frame(
+        Frame(
+            video_id=0,
+            frame_id=window_size + 1,
+            img_shape=img_shape,
+            instances=[
+                Instance(gt_track_id=1, pred_track_id=1),
+                Instance(
+                    gt_track_id=max(n_instances_per_frame),
+                    pred_track_id=max(n_instances_per_frame),
+                ),
+            ],
+        )
+    )
+
+    assert len(tq._queues[max(n_instances_per_frame)]) == 1
+    assert tq._curr_gap[1] == 0
+    assert tq._curr_gap[0] == 1
+
+    for i in range(max_gap):
+        tq.add_frame(
+            Frame(
+                video_id=0,
+                frame_id=window_size + i + 1,
+                img_shape=img_shape,
+                instances=[Instance(gt_track_id=0, pred_track_id=0)],
+            )
+        )
+
+    assert tq.n_tracks == 1
+    assert tq.curr_track == max(n_instances_per_frame)
+    assert 0 in tq._queues.keys()
+
+    tq.end_tracks()
+
+    assert len(tq) == 0
 
 
 def test_tracker():

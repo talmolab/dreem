@@ -11,7 +11,8 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
     * added fixed embeddings over boxes
 """
 
-from biogtr.data_structures import Instance
+from biogtr.io.instance import Instance
+from biogtr.io.association_matrix import AssociationMatrix
 from biogtr.models.attention_head import ATTWeightHead
 from biogtr.models.embedding import Embedding
 from biogtr.models.model_utils import get_boxes, get_times
@@ -141,7 +142,7 @@ class Transformer(torch.nn.Module):
 
     def forward(
         self, ref_instances: list[Instance], query_instances: list[Instance] = None
-    ) -> tuple[list[torch.Tensor], dict[str, torch.Tensor]]:
+    ) -> list[AssociationMatrix]:
         """Execute a forward pass through the transformer and attention head.
 
         Args:
@@ -153,8 +154,6 @@ class Transformer(torch.nn.Module):
                 L: number of decoder blocks
                 n_query: number of instances in current query/frame
                 total_instances: number of instances in window
-            embedding_dict: A dictionary containing the "pos" and "temp" embeddings
-                            if `self.return_embeddings` is False then they are None.
         """
         ref_features = torch.cat(
             [instance.features for instance in ref_instances], dim=0
@@ -164,10 +163,6 @@ class Transformer(torch.nn.Module):
         # instances_per_frame = [frame.num_detected for frame in frames]
         total_instances = len(ref_instances)
         embed_dim = ref_features.shape[-1]
-        embeddings_dict = {
-            "ref": {"pos": None, "temp": None},
-            "query": {"pos": None, "temp": None},
-        }
         # print(f'T: {window_length}; N: {total_instances}; N_t: {instances_per_frame} n_reid: {reid_features.shape}')
         ref_boxes = get_boxes(ref_instances)  # total_instances, 4
         ref_boxes = torch.nan_to_num(ref_boxes, -1.0)
@@ -176,12 +171,13 @@ class Transformer(torch.nn.Module):
         window_length = len(ref_times.unique())
 
         ref_temp_emb = self.temp_emb(ref_times / window_length)
-        if self.return_embedding:
-            embeddings_dict["ref"]["temp"] = ref_temp_emb
 
         ref_pos_emb = self.pos_emb(ref_boxes)
+
         if self.return_embedding:
-            embeddings_dict["ref"]["pos"] = ref_pos_emb
+            for i, instance in enumerate(ref_instances):
+                instance.add_embedding("pos", ref_pos_emb[i])
+                instance.add_embedding("temp", ref_temp_emb[i])
 
         ref_emb = (ref_pos_emb + ref_temp_emb) / 2.0
 
@@ -222,18 +218,21 @@ class Transformer(torch.nn.Module):
             query_boxes = get_boxes(query_instances)
 
             query_temp_emb = self.temp_emb(query_times / window_length)
-            if self.return_embedding:
-                embeddings_dict["query"]["temp"] = query_temp_emb
 
             query_pos_emb = self.pos_emb(query_boxes)
-            if self.return_embedding:
-                embeddings_dict["query"]["pos"] = query_pos_emb
 
             query_emb = (query_pos_emb + query_temp_emb) / 2.0
 
             query_emb = query_emb.view(1, n_query, embed_dim)
 
             query_emb = query_emb.permute(1, 0, 2)  # (n_query, batch_size, embed_dim)
+        else:
+            query_instances = ref_instances
+
+        if self.return_embedding:
+            for i, instance in enumerate(query_instances):
+                instance.add_embedding("pos", query_pos_emb[i])
+                instance.add_embedding("temp", query_temp_emb[i])
 
         decoder_features = self.decoder(
             query_features,
@@ -251,16 +250,15 @@ class Transformer(torch.nn.Module):
 
         asso_output = []
         for frame_features in decoder_features:
-            # x: (batch_size=1, n_query, embed_dim=512)
-
-            asso_output.append(
-                self.attn_head(frame_features, encoder_features).view(
-                    n_query, total_instances
-                )
+            asso_matrix = self.attn_head(frame_features, encoder_features).view(
+                n_query, total_instances
             )
+            asso_matrix = AssociationMatrix(asso_matrix, ref_instances, query_instances)
+
+            asso_output.append(asso_matrix)
 
         # (L=1, n_query, total_instances)
-        return (asso_output, embeddings_dict)
+        return asso_output
 
 
 class TransformerEncoderLayer(nn.Module):

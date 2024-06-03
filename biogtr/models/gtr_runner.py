@@ -8,7 +8,8 @@ from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
 from biogtr.models.model_utils import init_optimizer, init_scheduler
 from pytorch_lightning import LightningModule
-from biogtr.data_structures import Frame, Instance
+from biogtr.io.frame import Frame
+from biogtr.io.instance import Instance
 
 
 class GTRRunner(LightningModule):
@@ -72,7 +73,7 @@ class GTRRunner(LightningModule):
         Returns:
             An association matrix between objects
         """
-        asso_preds, _ = self.model(ref_instances, query_instances)
+        asso_preds = self.model(ref_instances, query_instances)
         return asso_preds
 
     def training_step(
@@ -165,6 +166,7 @@ class GTRRunner(LightningModule):
             persistent_tracking = self.persistent_tracking[mode]
 
             logits = self(instances)
+            logits = [asso.matrix for asso in logits]
             loss = self.loss(logits, frames)
 
             return_metrics = {"loss": loss}

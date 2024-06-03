@@ -1,7 +1,7 @@
 """Module handling sliding window tracking."""
 
 import warnings
-from biogtr.data_structures import Frame
+from biogtr.io.frame import Frame
 from collections import deque
 import numpy as np
 
