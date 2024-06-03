@@ -223,9 +223,7 @@ class Transformer(torch.nn.Module):
             query_pos_emb = self.pos_emb(query_boxes)
 
             query_emb = (query_pos_emb + query_temp_emb) / 2.0
-
             query_emb = query_emb.view(1, n_query, embed_dim)
-
             query_emb = query_emb.permute(1, 0, 2)  # (n_query, batch_size, embed_dim)
         else:
             query_instances = ref_instances

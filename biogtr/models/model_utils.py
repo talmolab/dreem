@@ -12,7 +12,8 @@ def get_boxes(instances: List["biogtr.io.Instance"]) -> torch.tensor:
         instances: List of Instance objects.
 
     Returns:
-        The bounding boxes normalized by the height and width of the image
+        An (n_instances, n_points, 4) float tensor containing the bounding boxes
+        normalized by the height and width of the image
     """
     boxes = []
     for i, instance in enumerate(instances):

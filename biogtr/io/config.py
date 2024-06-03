@@ -1,5 +1,6 @@
 # to implement - config class that handles getters/setters
 """Data structures for handling config parsing."""
+
 from omegaconf import DictConfig, OmegaConf
 from pprint import pprint
 from typing import Union, Iterable
@@ -21,6 +22,7 @@ class Config:
             cfg: The `DictConfig` containing all the hyperparameters needed for
                 training/evaluation.
             params_cfg: The `DictConfig` containing subset of hyperparameters to override.
+                training/evaluation
         """
         base_cfg = cfg
         print(f"Base Config: {cfg}")
@@ -120,7 +122,7 @@ class Config:
 
         if ckpt_path is not None and ckpt_path != "":
             model = GTRRunner.load_from_checkpoint(
-                self.cfg.model.ckpt_path,
+                ckpt_path,
                 tracker_cfg=tracker_params,
                 train_metrics=self.cfg.runner.metrics.train,
                 val_metrics=self.cfg.runner.metrics.val,
@@ -207,7 +209,17 @@ class Config:
             if vid_files is not None:
                 dataset_params.raw_images = vid_files
             return CellTrackingDataset(**dataset_params)
-
+          
+        # todo: handle this better
+        if "slp_files" in dataset_params:
+            return SleapDataset(**dataset_params)
+          
+        elif "tracks" in dataset_params or "source" in dataset_params:
+            return MicroscopyDataset(**dataset_params)
+          
+        elif "raw_images" in dataset_params:
+            return CellTrackingDataset(**dataset_params)
+          
         else:
             raise ValueError(
                 "Could not resolve dataset type from Config! Please include \
@@ -267,6 +279,7 @@ class Config:
         from biogtr.models.model_utils import init_optimizer
 
         optimizer_params = self.cfg.optimizer
+
         return init_optimizer(params, optimizer_params)
 
     def get_scheduler(
@@ -283,9 +296,10 @@ class Config:
         from biogtr.models.model_utils import init_scheduler
 
         lr_scheduler_params = self.cfg.scheduler
+
         return init_scheduler(optimizer, lr_scheduler_params)
 
-    def get_loss(self) -> "AssoLoss":
+    def get_loss(self) -> "biogtr.training.losses.AssoLoss":
         """Getter for loss functions.
 
         Returns:
@@ -294,6 +308,7 @@ class Config:
         from biogtr.training.losses import AssoLoss
 
         loss_params = self.cfg.loss
+
         return AssoLoss(**loss_params)
 
     def get_logger(self):
@@ -305,6 +320,7 @@ class Config:
         from biogtr.models.model_utils import init_logger
 
         logger_params = OmegaConf.to_container(self.cfg.logging, resolve=True)
+
         return init_logger(
             logger_params, OmegaConf.to_container(self.cfg, resolve=True)
         )

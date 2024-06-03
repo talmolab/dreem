@@ -170,6 +170,7 @@ class Frame:
         """
         if track_lookup is None:
             track_lookup = {}
+
         slp_instances = []
         for instance in self.instances:
             slp_instance, track_lookup = instance.to_slp(track_lookup=track_lookup)
