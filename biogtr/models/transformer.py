@@ -11,10 +11,9 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
     * added fixed embeddings over boxes
 """
 
-from biogtr.io.instance import Instance
-from biogtr.io.association_matrix import AssociationMatrix
+from biogtr.io import AssociationMatrix
 from biogtr.models.attention_head import ATTWeightHead
-from biogtr.models.embedding import Embedding
+from biogtr.models import Embedding
 from biogtr.models.model_utils import get_boxes, get_times
 from torch import nn
 import copy
@@ -141,12 +140,14 @@ class Transformer(torch.nn.Module):
                     raise (e)
 
     def forward(
-        self, ref_instances: list[Instance], query_instances: list[Instance] = None
+        self,
+        ref_instances: list["biogtr.io.Instance"],
+        query_instances: list["biogtr.io.Instance"] = None,
     ) -> list[AssociationMatrix]:
         """Execute a forward pass through the transformer and attention head.
 
         Args:
-            ref instances: A list of instance objects (See `biogtr.data_structures.Instance` for more info.)
+            ref instances: A list of instance objects (See `biogtr.io.Instance` for more info.)
             query_instances: An set of instances to be used as decoder queries.
 
         Returns:
@@ -222,9 +223,7 @@ class Transformer(torch.nn.Module):
             query_pos_emb = self.pos_emb(query_boxes)
 
             query_emb = (query_pos_emb + query_temp_emb) / 2.0
-
             query_emb = query_emb.view(1, n_query, embed_dim)
-
             query_emb = query_emb.permute(1, 0, 2)  # (n_query, batch_size, embed_dim)
         else:
             query_instances = ref_instances

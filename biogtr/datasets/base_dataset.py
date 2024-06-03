@@ -1,7 +1,7 @@
 """Module containing logic for loading datasets."""
 
 from biogtr.datasets import data_utils
-from biogtr.io.frame import Frame
+from biogtr.io import Frame
 from torch.utils.data import Dataset
 from typing import List, Union
 import numpy as np

@@ -1,13 +1,6 @@
 # to implement - config class that handles getters/setters
 """Data structures for handling config parsing."""
 
-from biogtr.datasets.microscopy_dataset import MicroscopyDataset
-from biogtr.datasets.sleap_dataset import SleapDataset
-from biogtr.models.model_utils import init_optimizer, init_scheduler, init_logger
-from biogtr.datasets.cell_tracking_dataset import CellTrackingDataset
-from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
-from biogtr.models.gtr_runner import GTRRunner
-from biogtr.training.losses import AssoLoss
 from omegaconf import DictConfig, OmegaConf
 from pprint import pprint
 from typing import Union, Iterable
@@ -71,12 +64,14 @@ class Config:
                 return False
         return True
 
-    def get_model(self) -> GlobalTrackingTransformer:
+    def get_model(self) -> "GlobalTrackingTransformer":
         """Getter for gtr model.
 
         Returns:
             A global tracking transformer with parameters indicated by cfg
         """
+        from biogtr.models import GlobalTrackingTransformer
+
         model_params = self.cfg.model
         ckpt_path = model_params.pop("ckpt_path", None)
 
@@ -99,18 +94,18 @@ class Config:
 
     def get_gtr_runner(self):
         """Get lightning module for training, validation, and inference."""
+        from biogtr.models import GTRRunner
+
         tracker_params = self.cfg.tracker
         optimizer_params = self.cfg.optimizer
         scheduler_params = self.cfg.scheduler
         loss_params = self.cfg.loss
         gtr_runner_params = self.cfg.runner
-
         model_params = self.cfg.model
 
         ckpt_path = model_params.pop("ckpt_path", None)
 
         if ckpt_path is not None and ckpt_path != "":
-
             model = GTRRunner.load_from_checkpoint(
                 ckpt_path,
                 tracker_cfg=tracker_params,
@@ -133,7 +128,7 @@ class Config:
 
     def get_dataset(
         self, mode: str
-    ) -> Union[SleapDataset, MicroscopyDataset, CellTrackingDataset]:
+    ) -> Union["SleapDataset", "MicroscopyDataset", "CellTrackingDataset"]:
         """Getter for datasets.
 
         Args:
@@ -143,6 +138,8 @@ class Config:
         Returns:
             Either a `SleapDataset` or `MicroscopyDataset` with params indicated by cfg
         """
+        from biogtr.datasets import MicroscopyDataset, SleapDataset, CellTrackingDataset
+
         if mode.lower() == "train":
             dataset_params = self.cfg.dataset.train_dataset
         elif mode.lower() == "val":
@@ -169,7 +166,7 @@ class Config:
 
     def get_dataloader(
         self,
-        dataset: Union[SleapDataset, MicroscopyDataset, CellTrackingDataset],
+        dataset: Union["SleapDataset", "MicroscopyDataset", "CellTrackingDataset"],
         mode: str,
     ) -> torch.utils.data.DataLoader:
         """Getter for dataloader.
@@ -217,7 +214,10 @@ class Config:
         Returns:
             A torch Optimizer with specified params
         """
+        from biogtr.models.model_utils import init_optimizer
+
         optimizer_params = self.cfg.optimizer
+
         return init_optimizer(params, optimizer_params)
 
     def get_scheduler(
@@ -231,16 +231,22 @@ class Config:
         Returns:
             A torch learning rate scheduler with specified params
         """
+        from biogtr.models.model_utils import init_scheduler
+
         lr_scheduler_params = self.cfg.scheduler
+
         return init_scheduler(optimizer, lr_scheduler_params)
 
-    def get_loss(self) -> AssoLoss:
+    def get_loss(self) -> "biogtr.training.losses.AssoLoss":
         """Getter for loss functions.
 
         Returns:
             An AssoLoss with specified params
         """
+        from biogtr.training.losses import AssoLoss
+
         loss_params = self.cfg.loss
+
         return AssoLoss(**loss_params)
 
     def get_logger(self):
@@ -249,7 +255,10 @@ class Config:
         Returns:
             A Logger with specified params
         """
+        from biogtr.models.model_utils import init_logger
+
         logger_params = OmegaConf.to_container(self.cfg.logging, resolve=True)
+
         return init_logger(
             logger_params, OmegaConf.to_container(self.cfg, resolve=True)
         )

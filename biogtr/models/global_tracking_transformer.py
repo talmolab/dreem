@@ -1,8 +1,7 @@
 """Module containing GTR model used for training."""
 
-from biogtr.models.transformer import Transformer
-from biogtr.models.visual_encoder import VisualEncoder
-from biogtr.io.instance import Instance
+from biogtr.models import Transformer
+from biogtr.models import VisualEncoder
 import torch
 
 # todo: do we want to handle params with configs already here?
@@ -79,7 +78,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
         )
 
     def forward(
-        self, ref_instances: list[Instance], query_instances: list[Instance] = None
+        self, ref_instances: list["Instance"], query_instances: list["Instance"] = None
     ) -> list["AssociationMatrix"]:
         """Execute forward pass of GTR Model to get asso matrix.
 

@@ -2,23 +2,22 @@
 
 import pytest
 import torch
-from biogtr.io.frame import Frame
-from biogtr.io.instance import Instance
+from biogtr.io import Frame, Instance
 from biogtr.models.mlp import MLP
 from biogtr.models.attention_head import ATTWeightHead
-from biogtr.models.embedding import Embedding
-from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
-from biogtr.models.transformer import (
+from biogtr.models import (
+    Embedding,
+    VisualEncoder,
     Transformer,
+    GlobalTrackingTransformer,
+)
+from biogtr.models.transformer import (
     TransformerEncoderLayer,
     TransformerDecoderLayer,
 )
-from biogtr.models.visual_encoder import VisualEncoder
 
 
 # todo: add named tensor tests
-
-
 def test_mlp():
     """Test MLP logic."""
     b, n, f = 1, 10, 1024  # batch size, num instances, features

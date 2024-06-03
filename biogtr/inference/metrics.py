@@ -3,14 +3,13 @@
 import numpy as np
 import motmetrics as mm
 import torch
-from biogtr.io.frame import Frame
 from typing import Union, Iterable
 
 # from biogtr.inference.post_processing import _pairwise_iou
 # from biogtr.inference.boxes import Boxes
 
 
-def get_matches(frames: list[Frame]) -> tuple[dict, list, int]:
+def get_matches(frames: list["biogtr.io.Frame"]) -> tuple[dict, list, int]:
     """Get comparison between predicted and gt trajectory labels.
 
     Args:
@@ -101,7 +100,7 @@ def get_switch_count(switches: dict) -> int:
     return sw_cnt
 
 
-def to_track_eval(frames: list[Frame]) -> dict:
+def to_track_eval(frames: list["biogtr.io.Frame"]) -> dict:
     """Reformats frames the output from `sliding_inference` to be used by `TrackEval`.
 
     Args:

@@ -1,10 +1,8 @@
 """Module containing microscopy dataset."""
 
 from PIL import Image
-from biogtr.datasets import data_utils
-from biogtr.datasets.base_dataset import BaseDataset
-from biogtr.io.frame import Frame
-from biogtr.io.instance import Instance
+from biogtr.datasets import data_utils, BaseDataset
+from biogtr.io import Instance, Frame
 from typing import Union
 import albumentations as A
 import numpy as np

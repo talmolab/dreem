@@ -2,9 +2,9 @@
 
 import torch
 import gc
-from biogtr.inference.tracker import Tracker
+from biogtr.inference import Tracker
 from biogtr.inference import metrics
-from biogtr.models.global_tracking_transformer import GlobalTrackingTransformer
+from biogtr.models import GlobalTrackingTransformer
 from biogtr.training.losses import AssoLoss
 from biogtr.models.model_utils import init_optimizer, init_scheduler
 from pytorch_lightning import LightningModule
@@ -74,7 +74,9 @@ class GTRRunner(LightningModule):
         )
 
     def forward(
-        self, ref_instances: list[Instance], query_instances: list[Instance] = None
+        self,
+        ref_instances: list["biogtr.io.Instance"],
+        query_instances: list["biogtr.io.Instance"] = None,
     ) -> torch.Tensor:
         """Execute forward pass of the lightning module.
 
@@ -89,7 +91,7 @@ class GTRRunner(LightningModule):
         return asso_preds
 
     def training_step(
-        self, train_batch: list[list[Frame]], batch_idx: int
+        self, train_batch: list[list["biogtr.io.Frame"]], batch_idx: int
     ) -> dict[str, float]:
         """Execute single training step for model.
 
@@ -107,7 +109,7 @@ class GTRRunner(LightningModule):
         return result
 
     def validation_step(
-        self, val_batch: list[list[Frame]], batch_idx: int
+        self, val_batch: list[list["biogtr.io.Frame"]], batch_idx: int
     ) -> dict[str, float]:
         """Execute single val step for model.
 
@@ -125,7 +127,7 @@ class GTRRunner(LightningModule):
         return result
 
     def test_step(
-        self, test_batch: list[list[Frame]], batch_idx: int
+        self, test_batch: list[list["biogtr.io.Frame"]], batch_idx: int
     ) -> dict[str, float]:
         """Execute single test step for model.
 
@@ -142,7 +144,9 @@ class GTRRunner(LightningModule):
 
         return result
 
-    def predict_step(self, batch: list[list[Frame]], batch_idx: int) -> list[Frame]:
+    def predict_step(
+        self, batch: list[list["biogtr.io.Frame"]], batch_idx: int
+    ) -> list["biogtr.io.Frame"]:
         """Run inference for model.
 
         Computes association + assignment.
@@ -159,11 +163,13 @@ class GTRRunner(LightningModule):
         frames_pred = self.tracker(self.model, batch[0])
         return frames_pred
 
-    def _shared_eval_step(self, frames: list[Frame], mode: str) -> dict[str, float]:
+    def _shared_eval_step(
+        self, frames: list["biogtr.io.Frame"], mode: str
+    ) -> dict[str, float]:
         """Run evaluation used by train, test, and val steps.
 
         Args:
-            frames: A list of `Frame` objects with length `clip_length` containing Instances and other metadata.
+            frames: A list of dicts where each dict is a frame containing gt data
             mode: which metrics to compute and whether to use persistent tracking or not
 
         Returns:

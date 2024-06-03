@@ -1,10 +1,8 @@
 """Module containing cell tracking challenge dataset."""
 
 from PIL import Image
-from biogtr.datasets import data_utils
-from biogtr.datasets.base_dataset import BaseDataset
-from biogtr.io.frame import Frame
-from biogtr.io.instance import Instance
+from biogtr.datasets import data_utils, BaseDataset
+from biogtr.io import Frame, Instance
 from scipy.ndimage import measurements
 from typing import List, Optional, Union
 import albumentations as A
