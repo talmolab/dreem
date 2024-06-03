@@ -157,6 +157,7 @@ class AssociationMatrix:
         return asso_df
 
     def reduce(
+        self,
         row_dims: str = "instance",
         col_dims: str = "track",
         row_grouping: str = None,
@@ -255,13 +256,13 @@ class AssociationMatrix:
         """
         if isinstance(instance, Instance):
             ind = np.array([instance_lookup.index(instance)])
-            
+
         elif instance is None:
             ind = np.arange(len(instance_lookup))
 
         elif np.isscalar(instance):
             ind = np.array([instance])
-            
+
         else:
             instances = instance
             if not [isinstance(inst, (Instance, int)) for inst in instance]:

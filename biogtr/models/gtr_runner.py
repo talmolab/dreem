@@ -171,7 +171,7 @@ class GTRRunner(LightningModule):
         """
         try:
             instances = [instance for frame in frames for instance in frame.instances]
-            
+
             if len(instances) == 0:
                 return None
 

@@ -82,7 +82,7 @@ class Config:
 
         if ckpt_path is not None and len(ckpt_path) > 0:
             return GTRRunner.load_from_checkpoint(ckpt_path).model
-          
+
         return GlobalTrackingTransformer(**model_params)
 
     def get_tracker_cfg(self) -> dict:
