@@ -173,7 +173,7 @@ class AssociationMatrix:
                 Either "instance" (remains unchanged), or "track" (n_cols=n_traj)
            row_grouping: A str indicating how to group rows when aggregating. Either "pred" or "gt".
            col_grouping: A str indicating how to group columns when aggregating. Either "pred" or "gt".
-           method: A callable function that operates on numpy matrices and can take an `axis` arg for reducing.
+           reduce_method: A callable function that operates on numpy matrices and can take an `axis` arg for reducing.
 
         Returns:
             The association matrix reduced to an inst/traj x traj/inst association matrix as a dataframe.
@@ -199,7 +199,6 @@ class AssociationMatrix:
 
         reduced_matrix = []
         for row_track, row_instances in row_tracks.items():
-
             for col_track, col_instances in col_tracks.items():
                 asso_matrix = self[row_instances, col_instances]
 
@@ -208,7 +207,6 @@ class AssociationMatrix:
 
                 if row_dims == "track":
                     asso_matrix = reduce_method(asso_matrix, axis=0)
-
                 reduced_matrix.append(asso_matrix)
 
         reduced_matrix = np.array(reduced_matrix).reshape(n_cols, n_rows).T
@@ -234,7 +232,6 @@ class AssociationMatrix:
 
         try:
             return self.numpy()[query_ind[:, None], ref_ind].squeeze()
-
         except IndexError as e:
             print(f"Query_insts: {type(query_inst)}")
             print(f"Query_inds: {query_ind}")
