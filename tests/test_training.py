@@ -123,15 +123,22 @@ def test_basic_gtr_runner():
     os.environ.get("GITHUB_ACTIONS") == "true",
     reason="Silent fail on GitHub Actions",
 )
-def test_config_gtr_runner(base_config, params_config, two_flies):
+def test_config_gtr_runner(tmp_path, base_config, params_config, two_flies):
     """Test config GTR Runner."""
     base_cfg = OmegaConf.load(base_config)
     base_cfg["params_config"] = params_config
     cfg = Config(base_cfg)
 
+    model_dir = tmp_path / "models"
+    model_dir.mkdir()
+
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
     hparams = {
         "dataset.clip_length": 8,
         "trainer.min_epochs": 1,
+        "checkpointing.dirpath": model_dir,
+        "logging.save_dir": logs_dir,
     }
 
     cfg.set_hparams(hparams)

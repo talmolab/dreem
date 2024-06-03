@@ -5,6 +5,7 @@ from omegaconf import DictConfig, OmegaConf
 from pprint import pprint
 from typing import Union, Iterable
 from pathlib import Path
+import glob
 import pytorch_lightning as pl
 import torch
 
@@ -12,26 +13,28 @@ import torch
 class Config:
     """Class handling loading components based on config params."""
 
-    def __init__(self, cfg: DictConfig):
+    def __init__(self, cfg: DictConfig, params_cfg: DictConfig = None):
         """Initialize the class with config from hydra/omega conf.
 
         First uses `base_param` file then overwrites with specific `params_config`.
 
         Args:
             cfg: The `DictConfig` containing all the hyperparameters needed for
+                training/evaluation.
+            params_cfg: The `DictConfig` containing subset of hyperparameters to override.
                 training/evaluation
         """
         base_cfg = cfg
         print(f"Base Config: {cfg}")
 
         if "params_config" in cfg:
-            # merge configs
-            params_config = OmegaConf.load(cfg.params_config)
-            pprint(f"Overwriting base config with {params_config}")
-            self.cfg = OmegaConf.merge(base_cfg, params_config)
+            params_cfg = OmegaConf.load(cfg.params_config)
+
+        if params_cfg:
+            pprint(f"Overwriting base config with {params_cfg}")
+            self.cfg = OmegaConf.merge(base_cfg, params_cfg)  # merge configs
         else:
-            # just use base config
-            self.cfg = base_cfg
+            self.cfg = cfg
 
     def __repr__(self):
         """Object representation of config class."""
@@ -40,6 +43,18 @@ class Config:
     def __str__(self):
         """Return a string representation of config class."""
         return f"Config({self.cfg})"
+
+    @classmethod
+    def from_yaml(cls, base_cfg_path: str, params_cfg_path: str = None) -> None:
+        """Load config directly from yaml.
+
+        Args:
+            base_cfg_path: path to base config file.
+            params_cfg_path: path to override params.
+        """
+        base_cfg = OmegaConf.load(base_cfg_path)
+        params_cfg = OmegaConf.load(params_cfg_path) if params_cfg else None
+        return cls(base_cfg, params_cfg)
 
     def set_hparams(self, hparams: dict) -> bool:
         """Setter function for overwriting specific hparams.
@@ -92,7 +107,7 @@ class Config:
             tracker_cfg[key] = val
         return tracker_cfg
 
-    def get_gtr_runner(self):
+    def get_gtr_runner(self) -> "GTRRunner":
         """Get lightning module for training, validation, and inference."""
         from biogtr.models import GTRRunner
 
@@ -126,6 +141,27 @@ class Config:
 
         return model
 
+    def get_data_paths(self, data_cfg: dict) -> tuple[list[str], list[str]]:
+        """Get file paths from directory.
+
+        Args:
+            data_cfg: Config for the dataset containing "dir" key.
+
+        Returns:
+            lists of labels file paths and video file paths respectively
+        """
+        dir_cfg = data_cfg.pop("dir", None)
+
+        if dir_cfg:
+            labels_suff = dir_cfg.labels_suffix
+            vid_suff = dir_cfg.vid_suffix
+
+            label_files = glob.glob(f"{dir_cfg.path}/*.{labels_suff}")
+            vid_files = glob.glob(f"{dir_cfg.path}/*.{vid_suff}")
+            return label_files, vid_files
+
+        return None, None
+
     def get_dataset(
         self, mode: str
     ) -> Union["SleapDataset", "MicroscopyDataset", "CellTrackingDataset"]:
@@ -151,13 +187,39 @@ class Config:
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
 
+        label_files, vid_files = self.get_data_paths(dataset_params)
+        # todo: handle this better
+        if "slp_files" in dataset_params:
+            if label_files is not None:
+                dataset_params.slp_files = label_files
+            if vid_files is not None:
+                dataset_params.video_files = vid_files
+            return SleapDataset(**dataset_params)
+
+        elif "tracks" in dataset_params or "source" in dataset_params:
+            if label_files is not None:
+                dataset_params.tracks = label_files
+            if vid_files is not None:
+                dataset_params.video_files = vid_files
+            return MicroscopyDataset(**dataset_params)
+
+        elif "raw_images" in dataset_params:
+            if label_files is not None:
+                dataset_params.gt_images = label_files
+            if vid_files is not None:
+                dataset_params.raw_images = vid_files
+            return CellTrackingDataset(**dataset_params)
+
         # todo: handle this better
         if "slp_files" in dataset_params:
             return SleapDataset(**dataset_params)
+
         elif "tracks" in dataset_params or "source" in dataset_params:
             return MicroscopyDataset(**dataset_params)
+
         elif "raw_images" in dataset_params:
             return CellTrackingDataset(**dataset_params)
+
         else:
             raise ValueError(
                 "Could not resolve dataset type from Config! Please include \
@@ -315,10 +377,10 @@ class Config:
 
     def get_trainer(
         self,
-        callbacks: list[pl.callbacks.Callback],
-        logger: pl.loggers.WandbLogger,
+        callbacks: list[pl.callbacks.Callback] = None,
+        logger: pl.loggers.WandbLogger = None,
         devices: int = 1,
-        accelerator: str = None,
+        accelerator: str = "auto",
     ) -> pl.Trainer:
         """Getter for the lightning trainer.
 
@@ -332,17 +394,23 @@ class Config:
         Returns:
             A lightning Trainer with specified params
         """
-        if "accelerator" not in self.cfg.trainer:
-            self.set_hparams({"trainer.accelerator": accelerator})
-        if "devices" not in self.cfg.trainer:
-            self.set_hparams({"trainer.devices": devices})
+        if "trainer" in self.cfg:
+            trainer_params = self.cfg.trainer
 
-        trainer_params = self.cfg.trainer
-        if "profiler" in trainer_params:
+        else:
+            trainer_params = {}
+
+        profiler = trainer_params.pop("profiler", None)
+        if "profiler":
             profiler = pl.profilers.AdvancedProfiler(filename="profile.txt")
-            trainer_params.pop("profiler")
         else:
             profiler = None
+
+        if "accelerator" not in trainer_params:
+            trainer_params["accelerator"] = accelerator
+        if "devices" not in trainer_params:
+            trainer_params["devices"] = devices
+
         return pl.Trainer(
             callbacks=callbacks,
             logger=logger,

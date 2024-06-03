@@ -3,88 +3,13 @@
 import torch
 import pytest
 import numpy as np
-from biogtr.io import Frame, Instance
-from biogtr.models import GlobalTrackingTransformer
+from pytorch_lightning import Trainer
+from omegaconf import OmegaConf, DictConfig
+from biogtr.io import Frame, Instance, Config
+from biogtr.models import GTRRunner, GlobalTrackingTransformer
 from biogtr.inference import Tracker, post_processing, metrics
 from biogtr.inference.track_queue import TrackQueue
-
-
-def test_track_queue():
-    window_size = 8
-    max_gap = 10
-    img_shape = (3, 1024, 1024)
-    n_instances_per_frame = [2] * window_size
-
-    frames = []
-    instances_per_frame = []
-
-    tq = TrackQueue(window_size, max_gap)
-    for i in range(window_size):
-        instances = []
-        for j in range(n_instances_per_frame[i]):
-            instances.append(Instance(gt_track_id=j, pred_track_id=j))
-        instances_per_frame.append(instances)
-        frame = Frame(video_id=0, frame_id=i, img_shape=img_shape, instances=instances)
-        frames.append(frame)
-
-        tq.add_frame(frame)
-
-    assert len(tq) == sum(n_instances_per_frame[1:])
-    assert tq.n_tracks == max(n_instances_per_frame)
-    assert tq.tracks == [i for i in range(max(n_instances_per_frame))]
-    assert len(tq.collate_tracks()) == window_size - 1
-    assert all([gap == 0 for gap in tq._curr_gap.values()])
-    assert tq.curr_track == max(n_instances_per_frame) - 1
-
-    tq.add_frame(
-        Frame(
-            video_id=0,
-            frame_id=window_size + 1,
-            img_shape=img_shape,
-            instances=[Instance(gt_track_id=0, pred_track_id=0)],
-        )
-    )
-
-    assert len(tq._queues[0]) == window_size - 1
-    assert tq._curr_gap[0] == 0
-    assert tq._curr_gap[max(n_instances_per_frame) - 1] == 1
-
-    tq.add_frame(
-        Frame(
-            video_id=0,
-            frame_id=window_size + 1,
-            img_shape=img_shape,
-            instances=[
-                Instance(gt_track_id=1, pred_track_id=1),
-                Instance(
-                    gt_track_id=max(n_instances_per_frame),
-                    pred_track_id=max(n_instances_per_frame),
-                ),
-            ],
-        )
-    )
-
-    assert len(tq._queues[max(n_instances_per_frame)]) == 1
-    assert tq._curr_gap[1] == 0
-    assert tq._curr_gap[0] == 1
-
-    for i in range(max_gap):
-        tq.add_frame(
-            Frame(
-                video_id=0,
-                frame_id=window_size + i + 1,
-                img_shape=img_shape,
-                instances=[Instance(gt_track_id=0, pred_track_id=0)],
-            )
-        )
-
-    assert tq.n_tracks == 1
-    assert tq.curr_track == max(n_instances_per_frame)
-    assert 0 in tq._queues.keys()
-
-    tq.end_tracks()
-
-    assert len(tq) == 0
+from biogtr.inference.track import run
 
 
 def test_track_queue():
@@ -339,3 +264,40 @@ def test_metrics():
             sw_cnt,
             clear_mot["num_switches"],
         )
+
+
+def get_ckpt(ckpt_path: str):
+    """Save GTR Runner to checkpoint file."""
+
+    class DummyDataset(torch.utils.data.Dataset):
+
+        def __len__(self):
+            return 0
+
+        def __getitem__(self, idx):
+            return None
+
+    dl = torch.utils.data.DataLoader(DummyDataset())
+    model = GTRRunner()
+    trainer = Trainer(max_steps=1, min_steps=1)
+    trainer.fit(model, dl)
+    trainer.save_checkpoint(ckpt_path)
+
+    return ckpt_path
+
+
+def test_track(tmp_path, inference_config):
+    ckpt_path = tmp_path / "model.ckpt"
+    get_ckpt(ckpt_path)
+
+    out_dir = tmp_path / "preds"
+    out_dir.mkdir()
+
+    inference_cfg = OmegaConf.load(inference_config)
+
+    cfg = Config(inference_cfg)
+
+    cfg.set_hparams({"ckpt_path": ckpt_path, "outdir": out_dir})
+
+    run(cfg.cfg)
+    assert len(list(out_dir.iterdir())) == len(cfg.cfg.dataset.test_dataset.video_files)

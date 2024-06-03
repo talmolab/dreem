@@ -155,7 +155,7 @@ class Tracker:
                 self.track_queue.end_tracks()
 
             """
-            Initialize tracks on first frame of video or first instance of detections.
+            Initialize tracks on first frame where detections appear.
             """
             if len(self.track_queue) == 0:
                 if frame_to_track.has_instances():
@@ -167,12 +167,12 @@ class Tracker:
                     curr_track_id = 0
                     for i, instance in enumerate(frames[batch_idx].instances):
                         instance.pred_track_id = instance.gt_track_id
-                        curr_track_id = instance.pred_track_id
+                        curr_track_id = max(curr_track_id, instance.pred_track_id)
 
                     for i, instance in enumerate(frames[batch_idx].instances):
                         if instance.pred_track_id == -1:
-                            instance.pred_track_id = curr_track_id
                             curr_track += 1
+                            instance.pred_track_id = curr_track_id
 
             else:
                 if (
@@ -250,6 +250,7 @@ class Tracker:
         overlap_thresh = self.overlap_thresh
         mult_thresh = self.mult_thresh
         n_traj = self.track_queue.n_tracks
+        curr_track = self.track_queue.curr_track
 
         reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
             None
@@ -470,8 +471,8 @@ class Tracker:
             if track_ids[i] < 0:
                 if self.verbose:
                     print(f"Creating new track {n_traj}")
-                track_ids[i] = n_traj
-                n_traj += 1
+                curr_track += 1
+                track_ids[i] = curr_track
 
         query_frame.matches = (match_i, match_j)
 

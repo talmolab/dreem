@@ -158,7 +158,7 @@ class Frame:
         )
 
     def to_slp(
-        self, track_lookup: dict[int, sio.Track] = {}
+        self, track_lookup: dict[int, sio.Track] = None
     ) -> tuple[sio.LabeledFrame, dict[int, sio.Track]]:
         """Convert Frame to sleap_io.LabeledFrame object.
 
@@ -168,13 +168,22 @@ class Frame:
         Returns: A tuple containing a LabeledFrame object with necessary metadata and
         a lookup dictionary containing the track_id and sio.Track for persistence
         """
+        if track_lookup is None:
+            track_lookup = {}
+
         slp_instances = []
         for instance in self.instances:
             slp_instance, track_lookup = instance.to_slp(track_lookup=track_lookup)
             slp_instances.append(slp_instance)
+
+        video = (
+            self.video
+            if isinstance(self.video, sio.Video)
+            else sio.load_video(self.video)
+        )
         return (
             sio.LabeledFrame(
-                video=self.video,
+                video=video,
                 frame_idx=self.frame_id.item(),
                 instances=slp_instances,
             ),

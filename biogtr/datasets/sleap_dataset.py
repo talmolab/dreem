@@ -65,7 +65,8 @@ class SleapDataset(BaseDataset):
             verbose: boolean representing whether to print
         """
         super().__init__(
-            slp_files + video_files,
+            slp_files,
+            video_files,
             padding,
             crop_size,
             chunk,
