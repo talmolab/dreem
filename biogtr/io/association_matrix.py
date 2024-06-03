@@ -107,7 +107,7 @@ class AssociationMatrix:
         if not isinstance(row_labels, str):
             if len(row_labels) == len(self.query_instances):
                 row_inds = row_labels
-                
+
             else:
                 raise ValueError(
                     (
@@ -115,7 +115,7 @@ class AssociationMatrix:
                         f"Found {len(row_labels)} with {len(self.query_instances)} rows",
                     )
                 )
-                
+
         else:
             if row_labels == "gt":
                 row_inds = [
@@ -133,7 +133,7 @@ class AssociationMatrix:
         if not isinstance(col_labels, str):
             if len(col_labels) == len(self.ref_instances):
                 col_inds = col_labels
-                
+
             else:
                 raise ValueError(
                     (
@@ -141,7 +141,7 @@ class AssociationMatrix:
                         f"Found {len(col_labels)} with {len(self.ref_instances)} columns",
                     )
                 )
-                
+
         else:
             if col_labels == "gt":
                 col_inds = [
@@ -204,7 +204,7 @@ class AssociationMatrix:
         reduced_matrix = []
         for row_track, row_instances in row_tracks.items():
             for col_track, col_instances in col_tracks.items():
-              
+
                 asso_matrix = self[row_instances, col_instances]
 
                 if col_dims == "track":
@@ -212,7 +212,7 @@ class AssociationMatrix:
 
                 if row_dims == "track":
                     asso_matrix = reduce_method(asso_matrix, axis=0)
-                    
+
                 reduced_matrix.append(asso_matrix)
 
         reduced_matrix = np.array(reduced_matrix).reshape(n_cols, n_rows).T
@@ -323,7 +323,7 @@ class AssociationMatrix:
                 ]
                 for track_id in traj_ids
             }
-           
+
         else:
             raise ValueError(f"Unsupported label '{label}'. Expected 'pred' or 'gt'.")
 

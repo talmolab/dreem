@@ -216,7 +216,6 @@ class Transformer(torch.nn.Module):
                 1, 0, 2
             )  # (n_query, batch_size, embed_dim)
 
-
             query_boxes = get_boxes(query_instances)
 
             query_temp_emb = self.temp_emb(query_times / window_length)

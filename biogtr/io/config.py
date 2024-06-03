@@ -92,12 +92,10 @@ class Config:
             tracker_cfg[key] = val
         return tracker_cfg
 
-    def get_gtr_runner(self) -> "GTRRunner":
+    def get_gtr_runner(self):
         """Get lightning module for training, validation, and inference."""
         from biogtr.models import GTRRunner
 
-    def get_gtr_runner(self):
-        """Get lightning module for training, validation, and inference."""
         tracker_params = self.cfg.tracker
         optimizer_params = self.cfg.optimizer
         scheduler_params = self.cfg.scheduler
@@ -219,7 +217,7 @@ class Config:
         from biogtr.models.model_utils import init_optimizer
 
         optimizer_params = self.cfg.optimizer
-        
+
         return init_optimizer(params, optimizer_params)
 
     def get_scheduler(
@@ -236,10 +234,10 @@ class Config:
         from biogtr.models.model_utils import init_scheduler
 
         lr_scheduler_params = self.cfg.scheduler
-        
+
         return init_scheduler(optimizer, lr_scheduler_params)
 
-    def get_loss(self) -> AssoLoss:
+    def get_loss(self) -> "biogtr.training.losses.AssoLoss":
         """Getter for loss functions.
 
         Returns:
@@ -248,7 +246,7 @@ class Config:
         from biogtr.training.losses import AssoLoss
 
         loss_params = self.cfg.loss
-        
+
         return AssoLoss(**loss_params)
 
     def get_logger(self):
@@ -258,9 +256,9 @@ class Config:
             A Logger with specified params
         """
         from biogtr.models.model_utils import init_logger
-        
+
         logger_params = OmegaConf.to_container(self.cfg.logging, resolve=True)
-        
+
         return init_logger(
             logger_params, OmegaConf.to_container(self.cfg, resolve=True)
         )

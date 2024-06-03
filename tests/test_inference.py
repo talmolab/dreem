@@ -86,6 +86,7 @@ def test_track_queue():
 
     assert len(tq) == 0
 
+
 def test_track_queue():
     window_size = 8
     max_gap = 10
