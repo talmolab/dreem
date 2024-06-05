@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "biogtr"
+name = "dreem"
 authors = [
     {name = "Arlo Sheridan", email = "asheridan@salk.edu"},
     {name = "Aaditya Prasad", email = "aprasad@salk.edu"},
@@ -33,7 +33,7 @@ dependencies = [
 dynamic = ["version", "readme"]
 
 [tool.setuptools.dynamic]
-version = {attr = "biogtr.version.__version__"}
+version = {attr = "dreem.version.__version__"}
 readme = {file = ["README.md"]}
 
 [project.optional-dependencies]
@@ -48,11 +48,11 @@ dev = [
 ]
 
 [project.scripts]
-biogtr = "biogtr.cli:cli"
+dreem = "dreem.cli:cli"
 
 [project.urls]
-Homepage = "https://github.com/talmolab/biogtr"
-Repository = "https://github.com/talmolab/biogtr"
+Homepage = "https://github.com/talmolab/dreem"
+Repository = "https://github.com/talmolab/dreem"
 
 [tool.black]
 line-length = 88

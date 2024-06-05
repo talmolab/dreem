@@ -1,8 +1,8 @@
 """Test version."""
 
-import biogtr
+import dreem
 
 
 def test_version():
     """Test version."""
-    assert biogtr.__version__ == biogtr.version.__version__
+    assert dreem.__version__ == dreem.version.__version__

@@ -1,4 +1,4 @@
-"""Fixtures for testing biogtr."""
+"""Fixtures for testing dreem."""
 
 import pytest
 from pathlib import Path
