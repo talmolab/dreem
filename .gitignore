@@ -137,5 +137,5 @@ logs
 
 # vscode
 .vscode
-biogtr/training/.hydra/*
-biogtr/training/models/*
+dreem/training/.hydra/*
+dreem/training/models/*

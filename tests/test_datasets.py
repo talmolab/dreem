@@ -1,14 +1,14 @@
 """Test dataset logic."""
 
-from biogtr.datasets import (
+from dreem.datasets import (
     BaseDataset,
     MicroscopyDataset,
     SleapDataset,
     CellTrackingDataset,
     TrackingDataset,
 )
-from biogtr.datasets.data_utils import get_max_padding, NodeDropout
-from biogtr.models.model_utils import get_device
+from dreem.datasets.data_utils import get_max_padding, NodeDropout
+from dreem.models.model_utils import get_device
 from torch.utils.data import DataLoader
 import pytest
 import torch

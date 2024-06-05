@@ -2,16 +2,16 @@
 
 import pytest
 import torch
-from biogtr.io import Frame, Instance
-from biogtr.models.mlp import MLP
-from biogtr.models.attention_head import ATTWeightHead
-from biogtr.models import (
+from dreem.io import Frame, Instance
+from dreem.models.mlp import MLP
+from dreem.models.attention_head import ATTWeightHead
+from dreem.models import (
     Embedding,
     VisualEncoder,
     Transformer,
     GlobalTrackingTransformer,
 )
-from biogtr.models.transformer import (
+from dreem.models.transformer import (
     TransformerEncoderLayer,
     TransformerDecoderLayer,
 )
