@@ -144,11 +144,8 @@ class VisualEncoder(torch.nn.Module):
 
         # Reshape feature vectors
         feats = feats.reshape([img.shape[0], -1])  # (B, out_dim)
-
         # Map feature vectors to output dimension using linear layer.
         feats = self.out_layer(feats)  # (B, d_model)
-
         # Normalize output feature vectors.
         feats = F.normalize(feats)  # (B, d_model)
-
         return feats

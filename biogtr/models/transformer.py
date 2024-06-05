@@ -217,7 +217,7 @@ class Transformer(torch.nn.Module):
             )  # (n_query, batch_size, embed_dim)
 
             query_boxes = get_boxes(query_instances)
-
+            query_boxes = torch.nan_to_num(query_boxes, -1.0)
             query_temp_emb = self.temp_emb(query_times / window_length)
 
             query_pos_emb = self.pos_emb(query_boxes)
@@ -225,6 +225,7 @@ class Transformer(torch.nn.Module):
             query_emb = (query_pos_emb + query_temp_emb) / 2.0
             query_emb = query_emb.view(1, n_query, embed_dim)
             query_emb = query_emb.permute(1, 0, 2)  # (n_query, batch_size, embed_dim)
+
         else:
             query_instances = ref_instances
 

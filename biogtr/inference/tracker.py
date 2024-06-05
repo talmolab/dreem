@@ -445,7 +445,13 @@ class Tracker:
         query_frame.add_traj_score("scaled", scaled_traj_score_df)
         ################################################################################
 
-        match_i, match_j = linear_sum_assignment((-traj_score))
+        try:
+            match_i, match_j = linear_sum_assignment((-traj_score))
+        except ValueError as e:
+            print(reid_features.isnan().any())
+            print(asso_output)
+            print(traj_score)
+            raise (e)
 
         track_ids = instance_ids.new_full((n_query,), -1)
         for i, j in zip(match_i, match_j):
