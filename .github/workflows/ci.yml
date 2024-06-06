@@ -5,7 +5,7 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
     paths:
-      - "biogtr/**"
+      - "dreem/**"
       - "tests/**"
       - ".github/workflows/ci.yml"
       - "environment_cpu.yml"
@@ -14,7 +14,7 @@ on:
     branches:
       - main
     paths:
-      - "biogtr/**"
+      - "dreem/**"
       - "tests/**"
       - ".github/workflows/ci.yml"
       - "environment_cpu.yml"
@@ -53,11 +53,11 @@ jobs:
 
     - name: Run Black
       run: |
-        black --check biogtr tests
+        black --check dreem tests
 
     - name: Run pydocstyle
       run: |
-        pydocstyle --convention=google biogtr/
+        pydocstyle --convention=google dreem/
 
   # Tests with pytest
   tests:
@@ -105,7 +105,7 @@ jobs:
         if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.python == 3.9 }}
         shell: bash -l {0}
         run: |
-          pytest --cov=biogtr --cov-report=xml tests/
+          pytest --cov=dreem --cov-report=xml tests/
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3

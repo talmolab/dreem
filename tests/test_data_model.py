@@ -1,6 +1,6 @@
 """Tests for Instance, Frame, and AssociationMatrix Objects"""
 
-from biogtr.io import Frame, Instance, AssociationMatrix, Track
+from dreem.io import Frame, Instance, AssociationMatrix, Track
 import torch
 import pytest
 import numpy as np
@@ -185,8 +185,8 @@ def test_association_matrix():
 
     traj_score = pd.concat(
         [
-            query_matrix.to_dataframe(row_label="inst").drop(1, axis=1).sum(1),
-            query_matrix.to_dataframe(row_label="inst").drop(0, axis=1).sum(1),
+            query_matrix.to_dataframe(row_labels="inst").drop(1, axis=1).sum(1),
+            query_matrix.to_dataframe(row_labels="inst").drop(0, axis=1).sum(1),
         ],
         axis=1,
     )

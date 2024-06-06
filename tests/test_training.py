@@ -3,11 +3,11 @@
 import os
 import pytest
 import torch
-from biogtr.io import Frame, Instance, Config
-from biogtr.training.losses import AssoLoss
-from biogtr.models import GTRRunner
+from dreem.io import Frame, Instance, Config
+from dreem.training.losses import AssoLoss
+from dreem.models import GTRRunner
 from omegaconf import OmegaConf, DictConfig
-from biogtr.training.train import run
+from dreem.training.train import run
 
 # TODO: add named tensor tests
 # TODO: use temp dir and cleanup after tests (https://docs.pytest.org/en/7.1.x/how-to/tmp_path.html)

@@ -5,11 +5,11 @@ import pytest
 import numpy as np
 from pytorch_lightning import Trainer
 from omegaconf import OmegaConf, DictConfig
-from biogtr.io import Frame, Instance, Config
-from biogtr.models import GTRRunner, GlobalTrackingTransformer
-from biogtr.inference import Tracker, post_processing, metrics
-from biogtr.inference.track_queue import TrackQueue
-from biogtr.inference.track import run
+from dreem.io import Frame, Instance, Config
+from dreem.models import GTRRunner, GlobalTrackingTransformer
+from dreem.inference import Tracker, post_processing, metrics
+from dreem.inference.track_queue import TrackQueue
+from dreem.inference.track import run
 
 
 def test_track_queue():

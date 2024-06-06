@@ -1,10 +1,10 @@
-# BioGTR
+# DREEM Reconstructs Every Entities' Motion
 Global Tracking Transformers for biological multi-object tracking.
 
 ## Installation
 <!-- ### Basic
 ```
-pip install biogtr
+pip install dreem
 ``` -->
 ### Development
 #### Clone the repository:
@@ -27,7 +27,7 @@ conda env create -y -f environment_osx-arm.yml && conda activate biogtr
 ```
 ### Uninstalling
 ```
-conda env remove -n biogtr
+conda env remove -n dreem
 ```
 
 ## Usage

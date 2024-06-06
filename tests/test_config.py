@@ -1,8 +1,8 @@
 """Tests for `config.py`"""
 
 from omegaconf import OmegaConf
-from biogtr.io import Config
-from biogtr.models import GlobalTrackingTransformer, GTRRunner
+from dreem.io import Config
+from dreem.models import GlobalTrackingTransformer, GTRRunner
 
 import torch
 
