@@ -1,6 +1,6 @@
 # Description of training parameters
 
-Here, we describe the hyperparameters used for setting up training. Please see [biogtr/training/configs/base.yaml](./base.yaml) for an example
+Here, we describe the hyperparameters used for setting up training. Please see [dreem/training/configs/base.yaml](./base.yaml) for an example
 
 > Note: for using defaults, simply leave the field blank or don't include the key. Using `null` will initialize the value to `None` e.g
 > ```YAML
@@ -121,7 +121,7 @@ This subsection contains the parameters for initializing a Temporal [`Embedding`
 * `temperature`: (`float`) the temperature constant to be used when computing the sinusoidal position embedding
 ##### Learned Params:
 * `emb_num`: (`int`) the number of embeddings in the lookup table.
-Note: See [`biogtr.models.Embedding`](../../models/embedding.py) for additional `kwargs` that can be passed
+Note: See [`dreem.models.Embedding`](../../models/embedding.py) for additional `kwargs` that can be passed
 ##### Examples:
 ###### Fixed:
 ```YAML
