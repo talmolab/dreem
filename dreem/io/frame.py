@@ -38,12 +38,12 @@ class Frame:
         img_shape: The shape of the original frame (not the crop).
         instances: A list of Instance objects that appear in the frame.
         asso_output: The association matrix between instances
-        output directly from the transformer.
+            output directly from the transformer.
         matches: matches from LSA algorithm between the instances and
-        available trajectories during tracking.
+            available trajectories during tracking.
         traj_score: Either a dict containing the association matrix
-        between instances and trajectories along postprocessing pipeline
-        or a single association matrix.
+            between instances and trajectories along postprocessing pipeline
+            or a single association matrix.
         device: The device the frame should be moved to.
     """
 
@@ -91,7 +91,7 @@ class Frame:
             ")"
         )
 
-    def to(self, map_location: str):
+    def to(self, map_location: str) -> "Frame":
         """Move frame to different device or dtype (See `torch.to` for more info).
 
         Args:
@@ -390,12 +390,12 @@ class Frame:
             return True
         return False
 
-    def get_traj_score(self, key=None) -> Union[dict, ArrayLike, None]:
+    def get_traj_score(self, key: str = None) -> Union[dict, ArrayLike, None]:
         """Get dictionary containing association matrix between instances and trajectories along postprocessing pipeline.
 
         Args:
             key: The key of the trajectory score to be accessed.
-            Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
+                Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
 
         Returns:
             - dictionary containing all trajectory scores if key is None
@@ -411,7 +411,7 @@ class Frame:
                 print(f"Could not access {key} traj_score due to {e}")
                 return None
 
-    def add_traj_score(self, key, traj_score: ArrayLike) -> None:
+    def add_traj_score(self, key: str, traj_score: ArrayLike) -> None:
         """Add trajectory score to dictionary.
 
         Args:
@@ -514,7 +514,7 @@ class Frame:
             print(self)
             raise (e)
 
-    def has_features(self):
+    def has_features(self) -> bool:
         """Check if any of frames instances has reid features already computed.
 
         Returns:
@@ -524,7 +524,7 @@ class Frame:
             return any([instance.has_features() for instance in self.instances])
         return False
 
-    def get_features(self):
+    def get_features(self) -> torch.Tensor:
         """Get the reid feature vectors of all instances in the frame.
 
         Returns:

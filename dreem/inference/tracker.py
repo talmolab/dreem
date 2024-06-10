@@ -27,7 +27,7 @@ class Tracker:
         persistent_tracking: bool = False,
         max_gap: int = inf,
         max_tracks: int = inf,
-        verbose=False,
+        verbose: bool = False,
     ):
         """Initialize a tracker to run inference.
 
@@ -43,7 +43,7 @@ class Tracker:
             persistent_tracking: whether to keep a buffer across chunks or not.
             max_gap: the max number of frames a trajectory can be missing before termination.
             max_tracks: the maximum number of tracks that can be created while tracking.
-            We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
+                We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
             verbose: Whether or not to turn on debug printing after each operation.
         """
         self.track_queue = TrackQueue(
@@ -59,7 +59,9 @@ class Tracker:
         self.verbose = verbose
         self.max_tracks = max_tracks
 
-    def __call__(self, model: GlobalTrackingTransformer, frames: list[Frame]):
+    def __call__(
+        self, model: GlobalTrackingTransformer, frames: list[Frame]
+    ) -> list[Frame]:
         """Wrap around `track` to enable `tracker()` instead of `tracker.track()`.
 
         Args:
@@ -71,7 +73,9 @@ class Tracker:
         """
         return self.track(model, frames)
 
-    def track(self, model: GlobalTrackingTransformer, frames: list[dict]):
+    def track(
+        self, model: GlobalTrackingTransformer, frames: list[dict]
+    ) -> list[Frame]:
         """Run tracker and get predicted trajectories.
 
         Args:
@@ -122,7 +126,9 @@ class Tracker:
 
         return instances_pred
 
-    def sliding_inference(self, model: GlobalTrackingTransformer, frames: list[Frame]):
+    def sliding_inference(
+        self, model: GlobalTrackingTransformer, frames: list[Frame]
+    ) -> list[Frame]:
         """Perform sliding inference on the input video (instances) with a given window size.
 
         Args:
@@ -130,7 +136,7 @@ class Tracker:
             frames: A list of Frames (See `dreem.io.Frame` for more info).
 
         Returns:
-            Frames: A list of Frames populated with pred_track_ids and asso_matrices
+            frames: A list of Frames populated with pred_track_ids and asso_matrices
         """
         # B: batch size.
         # D: embedding dimension.

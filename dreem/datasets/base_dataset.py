@@ -122,7 +122,7 @@ class BaseDataset(Dataset):
         """
         return len(self.chunked_frame_idx)
 
-    def no_batching_fn(self, batch) -> List[Frame]:
+    def no_batching_fn(self, batch: list[Frame]) -> List[Frame]:
         """Collate function used to overwrite dataloader batching function.
 
         Args:
@@ -138,7 +138,7 @@ class BaseDataset(Dataset):
 
         Args:
             idx: the index of the batch. Note this is not the index of the video
-            or the frame.
+                or the frame.
 
         Returns:
             A list of `Frame`s in the chunk containing the metadata + instance features.

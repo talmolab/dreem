@@ -116,7 +116,7 @@ class SleapDataset(BaseDataset):
         # used in call to get_instances()
         self.create_chunks()
 
-    def get_indices(self, idx):
+    def get_indices(self, idx: int) -> tuple:
         """Retrieve label and frame indices given batch index.
 
         Args:

@@ -1,6 +1,6 @@
 """Module containing Boxes class."""
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
 import torch
 
 
@@ -102,7 +102,7 @@ class Boxes:
         keep = (widths > threshold) & (heights > threshold)
         return keep
 
-    def __getitem__(self, item) -> "Boxes":
+    def __getitem__(self, item: Union[int, slice, torch.BoolTensor]) -> "Boxes":
         """Getter for boxes.
 
         Args:
@@ -185,7 +185,7 @@ class Boxes:
         """Concatenates a list of Boxes into a single Boxes.
 
         Arguments:
-            boxes_list (list[Boxes])
+            boxes_list: list of `Boxes`
 
         Returns:
             Boxes: the concatenated Boxes

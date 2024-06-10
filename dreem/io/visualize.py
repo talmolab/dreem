@@ -57,16 +57,16 @@ def fill_missing(data: np.ndarray, kind: str = "linear") -> np.ndarray:
 
 
 def annotate_video(
-    video,
+    video: imageio.core.format.Reader,
     labels: pd.DataFrame,
     key: str,
-    color_palette=palette,
+    color_palette: list = palette,
     trails: int = 2,
     boxes: int = (64, 64),
     names: bool = True,
     track_scores=0.5,
     centroids: int = 4,
-    poses=False,
+    poses: bool = False,
     save_path: str = "debug_animal.mp4",
     fps: int = 30,
     alpha=0.2,

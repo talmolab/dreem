@@ -219,7 +219,9 @@ class AssociationMatrix:
 
         return pd.DataFrame(reduced_matrix, index=row_inds, columns=col_inds)
 
-    def __getitem__(self, inds) -> np.ndarray:
+    def __getitem__(
+        self, inds: tuple[Union[int, Instance, list[Union[int, Instance]]]]
+    ) -> np.ndarray:
         """Get elements of the association matrix.
 
         Args:

@@ -4,6 +4,7 @@ import numpy as np
 import motmetrics as mm
 import torch
 from typing import Union, Iterable
+import pandas as pd
 
 # from dreem.inference.post_processing import _pairwise_iou
 # from dreem.inference.boxes import Boxes
@@ -14,7 +15,7 @@ def get_matches(frames: list["dreem.io.Frame"]) -> tuple[dict, list, int]:
 
     Args:
         frames: a list of Frames containing the video_id, frame_id,
-        gt labels and predicted labels
+            gt labels and predicted labels
 
     Returns:
         matches: a dict containing predicted and gt trajectory labels
@@ -90,7 +91,7 @@ def get_switch_count(switches: dict) -> int:
 
     Args:
         switches: a dict of dicts containing the mislabeled trajectories
-        and the frames at which they occur
+            and the frames at which they occur
 
     Returns:
         the number of switched labels in the video chunk
@@ -239,7 +240,7 @@ def get_pymotmetrics(
     metrics: Union[str, tuple] = "all",
     key: str = "tracker_ids",
     save: str = None,
-):
+) -> pd.DataFrame:
     """Given data and a key, evaluate the predictions.
 
     Args:

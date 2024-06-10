@@ -131,7 +131,7 @@ class Instance:
             ")"
         )
 
-    def to(self, map_location):
+    def to(self, map_location: Union[str, torch.device]) -> "Instance":
         """Move instance to different device or change dtype. (See `torch.to` for more info).
 
         Args:
@@ -146,7 +146,7 @@ class Instance:
             self._bbox = self._bbox.to(map_location)
             self._crop = self._crop.to(map_location)
             self._features = self._features.to(map_location)
-            if isinstance(map_location, str):
+            if isinstance(map_location, str, torch.device):
                 self.device = map_location
 
         return self

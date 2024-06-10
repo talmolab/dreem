@@ -77,7 +77,9 @@ class Track:
         """
         return len(self.instances)
 
-    def __getitem__(self, ind) -> Union["Instance", list["Instance"]]:
+    def __getitem__(
+        self, ind: Union[int, list[int]]
+    ) -> Union["Instance", list["Instance"]]:
         """Get an instance from the track.
 
         Args:
@@ -88,7 +90,7 @@ class Track:
         """
         if isinstance(ind, int):
             return self.instances[ind]
-        elif isinstance(ind, list[int]):
+        elif isinstance(ind, list):
             return [self.instances[i] for i in ind]
         else:
             raise ValueError(f"Ind must be an int or list of ints, found {type(ind)}")

@@ -105,11 +105,14 @@ class CellTrackingDataset(BaseDataset):
         # used in call to get_instances()
         self.create_chunks()
 
-    def get_indices(self, idx):
+    def get_indices(self, idx: int) -> tuple:
         """Retrieve label and frame indices given batch index.
 
         Args:
             idx: the index of the batch.
+
+        Returns:
+            the label and frame indices corresponding to a batch,
         """
         return self.label_idx[idx], self.chunked_frame_idx[idx]
 
