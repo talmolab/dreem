@@ -91,7 +91,7 @@ class Frame:
             ")"
         )
 
-    def to(self, map_location: str) -> "Frame":
+    def to(self, map_location: Union[str, torch.device]) -> "Frame":
         """Move frame to different device or dtype (See `torch.to` for more info).
 
         Args:
@@ -116,7 +116,7 @@ class Frame:
         for instance in self.instances:
             instance = instance.to(map_location)
 
-        if isinstance(map_location, str):
+        if isinstance(map_location, (str, torch.device)):
             self._device = map_location
 
         return self
