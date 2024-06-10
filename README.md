@@ -1,4 +1,11 @@
-# DREEM Reconstructs Every Entities' Motion
+# DREEM Relates Every Entities' Motion
+
+[![CI](https://github.com/talmolab/dreem/actions/workflows/ci.yml/badge.svg)](https://github.com/talmolab/dreem/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/talmolab/dreem/branch/main/graph/badge.svg?token=Sj8kIFl3pi)](https://codecov.io/gh/talmolab/dreem)
+<!-- [![Release](https://img.shields.io/github/v/release/talmolab/dreem?label=Latest)](https://github.com/talmolab/dream/releases/)
+[![PyPI](https://img.shields.io/pypi/v/dreem?label=PyPI)](https://pypi.org/project/dreem)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dreem) -->
+
 Global Tracking Transformers for biological multi-object tracking.
 
 ## Installation
@@ -9,21 +16,21 @@ pip install dreem
 ### Development
 #### Clone the repository:
 ```bash
-git clone https://github.com/talmolab/biogtr && cd biogtr
+git clone https://github.com/talmolab/dreem && cd dreem
 ```
 #### Set up in a new conda environment:
 ##### Linux/Windows:
 ###### GPU-accelerated (requires CUDA/nvidia gpu)
 ```bash
-conda env create -y -f environment.yml && conda activate biogtr
+conda env create -y -f environment.yml && conda activate dreem
 ```
 ###### CPU:
 ```bash
-conda env create -y -f environment_cpu.yml && conda activate biogtr
+conda env create -y -f environment_cpu.yml && conda activate dreem
 ```
 #### OSX (M chip)
 ```bash
-conda env create -y -f environment_osx-arm.yml && conda activate biogtr
+conda env create -y -f environment_osx-arm.yml && conda activate dreem
 ```
 ### Uninstalling
 ```
@@ -46,21 +53,21 @@ Thus, we recommend skimming through their respective docs to get some familiarit
 #### Step 1. Clone the repository:
 In your terminal run:
 ```bash
-git clone https://github.com/talmolab/biogtr && cd biogtr
+git clone https://github.com/talmolab/dreem && cd dreem
 ```
-This will clone the biogtr repo into your current working directory and then move you inside the `biogtr` directory.
+This will clone the dreem repo into your current working directory and then move you inside the `dreem` directory.
 #### Step 2. Set up in a new conda environment:
 Next run:
 ```bash
-conda env create -y -f environment.yml && conda activate biogtr
+conda env create -y -f environment.yml && conda activate dreem
 ```
-This will create a conda environment called `biogtr` which will have `biogtr` installed as well as any other dependcies needed to run.
-#### Step 3. Activate the `biogtr` environment
+This will create a conda environment called `dreem` which will have `dreem` installed as well as any other dependcies needed to run.
+#### Step 3. Activate the `dreem` environment
 Finally run:
 ```bash
-conda activate biogtr && cd ..
+conda activate dreem && cd ..
 ```
-This will activate the `biogtr` repo and move you back to your original working directory.
+This will activate the `dreem` repo and move you back to your original working directory.
 
 ### Training
 
@@ -78,7 +85,7 @@ To generate your initial labels we recommend a couple methods.
  - For animal pose-estimation, we highly recommend heading over to [SLEAP](https://sleap.ai) and running through their work flow. 
  - For microscopy tracking, check out [TrackMate](https://imagej.net/plugins/trackmate/).
 
- This is because these methods will handle both the detection and tracking steps together. Furthermore, these are currently the two main label formats we support in our data pipelines for arbitrary [animal](biogtr/datasets/sleap_dataset.py) and [microscopy](biogtr/datasets/microscopy_dataset.py) datasets. If you'd like to use a different method, (e.g DeepLabCut or ilastik etc), the easiest way to make your data compatible with `biogtr` is to convert your labels to a `.slp` file and your video to an [`imageio`-supported]((https://imageio.readthedocs.io/en/v2.4.1/formats.html)) video format. See the next section for more information on how to do this. Alternatively, you can write a custom dataloader but that will take significantly more overhead.
+ This is because these methods will handle both the detection and tracking steps together. Furthermore, these are currently the two main label formats we support in our data pipelines for arbitrary [animal](dreem/datasets/sleap_dataset.py) and [microscopy](dreem/datasets/microscopy_dataset.py) datasets. If you'd like to use a different method, (e.g DeepLabCut or ilastik etc), the easiest way to make your data compatible with `dreem` is to convert your labels to a `.slp` file and your video to an [`imageio`-supported]((https://imageio.readthedocs.io/en/v2.4.1/formats.html)) video format. See the next section for more information on how to do this. Alternatively, you can write a custom dataloader but that will take significantly more overhead.
 ##### Step 1.2 Proofreading
 Once you have your labels file containing the detections and tracks, you'll want to make sure to proofread your labels. This is because object-tracking is hard and the methods we recommend above may have made mistakes. The most important thing to train a good model is to have high quality data. In our case good quality means two things:
 
@@ -130,24 +137,24 @@ dataset_name/
 
 #### Step 2. Training
 
-Now that you have your dataset set up, we can start training! In [`biogtr.training.train`](https://github.com/talmolab/biogtr/blob/main/biogtr/training/train.py), we provide a train script that allows you to train with just a `.yaml` file. It also serves as a good example for how to write your own train script if you're an advanced user and would like to have some additional flexibility!
+Now that you have your dataset set up, we can start training! In [`dreem.training.train`](https://github.com/talmolab/dreem/blob/main/dreem/training/train.py), we provide a train script that allows you to train with just a `.yaml` file. It also serves as a good example for how to write your own train script if you're an advanced user and would like to have some additional flexibility!
 
 ##### Step 2.1. Setup Config:
 
-The input into our training script is a `.yaml` file that contains all the parameters needed for training. Please checkout the [`README`](biogtr/training/configs/README.md) in `biogtr/training/configs` for a detailed description of all the parameters and how to set up the config. We also provide an example config in [`biogtr/training/configs/base.yaml`](biogtr/training/configs/base.yaml) to give you an idea for how the config should look. In general, the best practice is to keep a single `base.yaml` file which has all the default arguments you'd like to use. Then you can have a second `.yaml` file which will override only those specific set of parameters when training (for an example see [`biogtr/training/configs/params.yaml`](biogtr/training/configs/params.yaml)).
+The input into our training script is a `.yaml` file that contains all the parameters needed for training. Please checkout the [`README`](dreem/training/configs/README.md) in `dreem/training/configs` for a detailed description of all the parameters and how to set up the config. We also provide an example config in [`dreem/training/configs/base.yaml`](dreem/training/configs/base.yaml) to give you an idea for how the config should look. In general, the best practice is to keep a single `base.yaml` file which has all the default arguments you'd like to use. Then you can have a second `.yaml` file which will override only those specific set of parameters when training (for an example see [`dreem/training/configs/params.yaml`](dreem/training/configs/params.yaml)).
 
 ##### Step 2.2 Train Model
 
 Once you have your config file and dataset set up, training is as easy as running
 
 ```bash
-python /path/to/biogtr/training/train.py --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]
+python /path/to/dreem/training/train.py --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]
 ```
 where `CONFIG_DIR` is the directory that `hydra` should search for the `config.yaml` and `CONFIG_STEM` is the name of the config without the `.yaml` extension.
 
-e.g. If I have a config file called `base.yaml` inside my `/home/aaprasad/biogtr_configs` directory I can call
+e.g. If I have a config file called `base.yaml` inside my `/home/aaprasad/dreem_configs` directory I can call
 ```bash
-python /home/aaprasad/biogtr/training/train.py --config-base=/home/aaprasad/biogtr_configs --config-name=base
+python /home/aaprasad/dreem/training/train.py --config-base=/home/aaprasad/dreem_configs --config-name=base
 ```
 
 > Note: you can use relative paths as well but may be a bit riskier so we recommend absolute paths whenever possible.
@@ -161,26 +168,26 @@ Instead of changing the `base.yaml` file every time you want to run a different 
 For overriding specific params with a sub-config, you can specify a `params_config` key and path in your `config.yaml` or run
 
 ```bash
-python /path/to/biogtr/training/train.py --config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM] ++params_config="/path/to/params.yaml"
+python /path/to/dreem/training/train.py --config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM] ++params_config="/path/to/params.yaml"
 ```
 
-e.g. If I have a `params_to_override.yaml` file inside my `/home/aaprasad/biogtr_configs` directory that contains a only a small selection of parameters that I'd like to override, I can run:
+e.g. If I have a `params_to_override.yaml` file inside my `/home/aaprasad/dreem_configs` directory that contains a only a small selection of parameters that I'd like to override, I can run:
 
 ```bash
-python /home/aaprasad/biogtr/training/train.py --config-base=/home/aaprasad/biogtr_configs --config-name=base ++params_config=/home/aaprasad/biogtr_configs/params_to_override.yaml
+python /home/aaprasad/dreem/training/train.py --config-base=/home/aaprasad/dreem_configs --config-name=base ++params_config=/home/aaprasad/dreem_configs/params_to_override.yaml
 ```
 
 ##### CLI-based override
 For directly overriding a specific param via the command line directly you can use the `section.param=key` syntax as so:
 
 ```bash
-python /path/to/biogtr/training/train.py --config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM] section.param=value
+python /path/to/dreem/training/train.py --config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM] section.param=value
 ```
 
 e.g If now I want to override a couple parameters again, say change the number of attention heads and change the name of this run in my logger, I can pass `model.head=3` and `logger.name="test_nheads=3"` into 
 
 ```bash
-python /home/aaprasad/biogtr/training/train.py --config-base=/home/aaprasad/biogtr_configs --config-name=base model.nhead=3 logger.name="test_nheads=3"
+python /home/aaprasad/dreem/training/train.py --config-base=/home/aaprasad/dreem_configs --config-name=base model.nhead=3 logger.name="test_nheads=3"
 ```
 > Note: using the `section.param` syntax for CLI override will only override if the parameter exists in your config file otherwise an error will be thrown
 > if you'd like add a new parameter you can add `++` to the front of `section.param` e.g `++model.nhead=3`, However in this case, if the parameter exists in the config it will throw an error.
@@ -192,11 +199,11 @@ See [here](https://hydra.cc/docs/advanced/override_grammar/basic/) for more info
 
 > Note: You will usually only need the direct override or the file-based override however you can technically do both via 
 > ```bash
-> python /path/to/biogtr/training/train.py --config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM] ++params_config="/path/to/params.yaml" section.param=value
+> python /path/to/dreem/training/train.py --config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM] ++params_config="/path/to/params.yaml" section.param=value
 > ```
 > e.g. alongside the `params_to_override.yaml`
 > ```bash
-> python /home/aaprasad/biogtr/training/train.py --config-base=/home/aaprasad/biogtr_configs --config-name=base ++params_config=/home/aaprasad/biogtr_configs/params_to_override.yaml model.nhead=3 logger.name="test_nheads=3"
+> python /home/aaprasad/dreem/training/train.py --config-base=/home/aaprasad/dreem_configs --config-name=base ++params_config=/home/aaprasad/dreem_configs/params_to_override.yaml model.nhead=3 logger.name="test_nheads=3"
 > ```
 > but the `--config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM]` arguments are always required. 
 > However, be careful to ensure there are no conflicts when combining CLI and file-based override syntax
@@ -246,20 +253,20 @@ Similar to training, we need to set up a config file that specifies
 3. a `Tracker` config
 4. a `dataset` config with a `test_dataset` subsection containing dataset params.
 
-Please see the [README](biogtr/inference/configs/inference.yaml) in `biogtr/inference/configs` for a walk through of the inference params as well as how to set up an inference conifg and see [`biogtr/inference/configs/inference.yaml`](biogtr/inference/configs/inference.yaml) for an example inference config file.
+Please see the [README](dreem/inference/configs/inference.yaml) in `dreem/inference/configs` for a walk through of the inference params as well as how to set up an inference conifg and see [`dreem/inference/configs/inference.yaml`](dreem/inference/configs/inference.yaml) for an example inference config file.
 
 #### Step 3 Run Inference
 
 Just like training we can use the hydra syntax for specifying arguments via the cli. Thus you can run inference via:
 
 ```bash
-python /path/to/biogtr/inference/inference.py --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]
+python /path/to/dreem/inference/inference.py --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]
 ```
 
-e.g. If I had an inference config called `track.yaml` inside `/home/aaprasad/biogtr_configs` 
+e.g. If I had an inference config called `track.yaml` inside `/home/aaprasad/dreem_configs` 
 
 ```bash
-python /home/aaprasad/biogtr/inference/inference.py --config-base=/home/aaprasad/biogtr_configs --config-name=track
+python /home/aaprasad/dreem/inference/inference.py --config-base=/home/aaprasad/dreem_configs --config-name=track
 ```
 
 ##### Overriding Parameters.
@@ -268,11 +275,11 @@ Because there aren't as many parameters during inference as during training we r
 In order to override params via the CLI, we can use the same `hydra` `section.param` syntax:
 
 ```bash
-python /path/to/biogtr/inference/inference.py --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM] section.param=[VALUE]
+python /path/to/dreem/inference/inference.py --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM] section.param=[VALUE]
 ```
 e.g if I want to set the window size of the tracker to 32 instead of 8 through `tracker.window_size=32` and use a different model saved in `/home/aaprasad/models/new_best.ckpt` I can do:
 ```bash
-python /home/aaprasad/biogtr/inference/inference.py --config-base=/home/aaprasad/biogtr_configs --config-name=track ckpt_path="/home/aaprasad/models/new_best.ckpt" tracker.window_size=32`
+python /home/aaprasad/dreem/inference/inference.py --config-base=/home/aaprasad/dreem_configs --config-name=track ckpt_path="/home/aaprasad/models/new_best.ckpt" tracker.window_size=32`
 ```
 #### Output
-This will run inference on the videos/detections you specified in the `dataset.test_dataset` section of the config and save the tracks to individual `[VID_NAME].biogtr_inference.slp` files. If an `outdir` is specified in the config it will save to  `./[OUTDIR]/[VID_NAME].biogtr_inference.slp`, otherwise it will just save to `./results/[VID_NAME].biogtr_inference.slp`. Now you can load the file with `sleap-io` and do what you please!
+This will run inference on the videos/detections you specified in the `dataset.test_dataset` section of the config and save the tracks to individual `[VID_NAME].dreem_inference.slp` files. If an `outdir` is specified in the config it will save to  `./[OUTDIR]/[VID_NAME].dreem_inference.slp`, otherwise it will just save to `./results/[VID_NAME].dreem_inference.slp`. Now you can load the file with `sleap-io` and do what you please!
