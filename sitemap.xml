@@ -2,267 +2,277 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://dreem.sleap.ai/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://dreem.sleap.ai/usage/</loc>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/configs/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/configs/config/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/configs/inference/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/configs/training/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/io/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/io/asso_matrix/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/io/config/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/io/frame/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/io/instance/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/io/track/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/io/visualize/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/models/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/models/global_tracking_transformer/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/models/gtr_runner/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://dreem.sleap.ai/models/model_parts/</loc>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/SUMMARY/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/cli/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/version/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/datasets/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/datasets/base_dataset/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/datasets/cell_tracking_dataset/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/datasets/data_utils/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/datasets/eval_dataset/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/datasets/microscopy_dataset/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/datasets/sleap_dataset/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/datasets/tracking_dataset/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/inference/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/inference/boxes/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/inference/metrics/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/inference/post_processing/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/inference/track/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/inference/track_queue/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/inference/tracker/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/io/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/io/association_matrix/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/io/config/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/io/frame/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/io/instance/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/io/track/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/io/visualize/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/models/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/models/attention_head/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/models/embedding/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/models/global_tracking_transformer/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/models/gtr_runner/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/models/mlp/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/models/model_utils/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/models/transformer/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/models/visual_encoder/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/training/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/training/losses/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/reference/dreem/training/train/</loc>
-         <lastmod>2024-06-07</lastmod>
+         <lastmod>2024-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
