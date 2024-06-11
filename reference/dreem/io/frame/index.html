@@ -775,6 +775,27 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    cli
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2156,7 +2177,7 @@ or a single association matrix.</p>
 <a id="__codelineno-0-91" name="__codelineno-0-91"></a><a href="#__codelineno-0-91"><span class="linenos" data-linenos=" 91 "></span></a>            <span class="s2">&quot;)&quot;</span>
 <a id="__codelineno-0-92" name="__codelineno-0-92"></a><a href="#__codelineno-0-92"><span class="linenos" data-linenos=" 92 "></span></a>        <span class="p">)</span>
 <a id="__codelineno-0-93" name="__codelineno-0-93"></a><a href="#__codelineno-0-93"><span class="linenos" data-linenos=" 93 "></span></a>
-<a id="__codelineno-0-94" name="__codelineno-0-94"></a><a href="#__codelineno-0-94"><span class="linenos" data-linenos=" 94 "></span></a>    <span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_location</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Frame&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-94" name="__codelineno-0-94"></a><a href="#__codelineno-0-94"><span class="linenos" data-linenos=" 94 "></span></a>    <span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_location</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;Frame&quot;</span><span class="p">:</span>
 <a id="__codelineno-0-95" name="__codelineno-0-95"></a><a href="#__codelineno-0-95"><span class="linenos" data-linenos=" 95 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Move frame to different device or dtype (See `torch.to` for more info).</span>
 <a id="__codelineno-0-96" name="__codelineno-0-96"></a><a href="#__codelineno-0-96"><span class="linenos" data-linenos=" 96 "></span></a>
 <a id="__codelineno-0-97" name="__codelineno-0-97"></a><a href="#__codelineno-0-97"><span class="linenos" data-linenos=" 97 "></span></a><span class="sd">        Args:</span>
@@ -2181,7 +2202,7 @@ or a single association matrix.</p>
 <a id="__codelineno-0-116" name="__codelineno-0-116"></a><a href="#__codelineno-0-116"><span class="linenos" data-linenos="116 "></span></a>        <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">instances</span><span class="p">:</span>
 <a id="__codelineno-0-117" name="__codelineno-0-117"></a><a href="#__codelineno-0-117"><span class="linenos" data-linenos="117 "></span></a>            <span class="n">instance</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">map_location</span><span class="p">)</span>
 <a id="__codelineno-0-118" name="__codelineno-0-118"></a><a href="#__codelineno-0-118"><span class="linenos" data-linenos="118 "></span></a>
-<a id="__codelineno-0-119" name="__codelineno-0-119"></a><a href="#__codelineno-0-119"><span class="linenos" data-linenos="119 "></span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">map_location</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-119" name="__codelineno-0-119"></a><a href="#__codelineno-0-119"><span class="linenos" data-linenos="119 "></span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">map_location</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)):</span>
 <a id="__codelineno-0-120" name="__codelineno-0-120"></a><a href="#__codelineno-0-120"><span class="linenos" data-linenos="120 "></span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">map_location</span>
 <a id="__codelineno-0-121" name="__codelineno-0-121"></a><a href="#__codelineno-0-121"><span class="linenos" data-linenos="121 "></span></a>
 <a id="__codelineno-0-122" name="__codelineno-0-122"></a><a href="#__codelineno-0-122"><span class="linenos" data-linenos="122 "></span></a>        <span class="k">return</span> <span class="bp">self</span>
@@ -4291,7 +4312,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
           <tr class="doc-section-item">
             <td><code>map_location</code></td>
             <td>
-                  <code>str</code>
+                  <code><span title="typing.Union">Union</span>[str, <span title="torch.device">device</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4330,7 +4351,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
 
             <details class="quote">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-94" name="__codelineno-0-94"></a><a href="#__codelineno-0-94"><span class="linenos" data-linenos=" 94 "></span></a><span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_location</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Frame&quot;</span><span class="p">:</span>
+              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-94" name="__codelineno-0-94"></a><a href="#__codelineno-0-94"><span class="linenos" data-linenos=" 94 "></span></a><span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_location</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;Frame&quot;</span><span class="p">:</span>
 <a id="__codelineno-0-95" name="__codelineno-0-95"></a><a href="#__codelineno-0-95"><span class="linenos" data-linenos=" 95 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Move frame to different device or dtype (See `torch.to` for more info).</span>
 <a id="__codelineno-0-96" name="__codelineno-0-96"></a><a href="#__codelineno-0-96"><span class="linenos" data-linenos=" 96 "></span></a>
 <a id="__codelineno-0-97" name="__codelineno-0-97"></a><a href="#__codelineno-0-97"><span class="linenos" data-linenos=" 97 "></span></a><span class="sd">    Args:</span>
@@ -4355,7 +4376,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
 <a id="__codelineno-0-116" name="__codelineno-0-116"></a><a href="#__codelineno-0-116"><span class="linenos" data-linenos="116 "></span></a>    <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">instances</span><span class="p">:</span>
 <a id="__codelineno-0-117" name="__codelineno-0-117"></a><a href="#__codelineno-0-117"><span class="linenos" data-linenos="117 "></span></a>        <span class="n">instance</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">map_location</span><span class="p">)</span>
 <a id="__codelineno-0-118" name="__codelineno-0-118"></a><a href="#__codelineno-0-118"><span class="linenos" data-linenos="118 "></span></a>
-<a id="__codelineno-0-119" name="__codelineno-0-119"></a><a href="#__codelineno-0-119"><span class="linenos" data-linenos="119 "></span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">map_location</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-119" name="__codelineno-0-119"></a><a href="#__codelineno-0-119"><span class="linenos" data-linenos="119 "></span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">map_location</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)):</span>
 <a id="__codelineno-0-120" name="__codelineno-0-120"></a><a href="#__codelineno-0-120"><span class="linenos" data-linenos="120 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">map_location</span>
 <a id="__codelineno-0-121" name="__codelineno-0-121"></a><a href="#__codelineno-0-121"><span class="linenos" data-linenos="121 "></span></a>
 <a id="__codelineno-0-122" name="__codelineno-0-122"></a><a href="#__codelineno-0-122"><span class="linenos" data-linenos="122 "></span></a>    <span class="k">return</span> <span class="bp">self</span>

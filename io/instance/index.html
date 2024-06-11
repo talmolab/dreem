@@ -1095,6 +1095,27 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    cli
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2699,7 +2720,7 @@
 <a id="__codelineno-0-146" name="__codelineno-0-146"></a><a href="#__codelineno-0-146"><span class="linenos" data-linenos="146 "></span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_bbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bbox</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">map_location</span><span class="p">)</span>
 <a id="__codelineno-0-147" name="__codelineno-0-147"></a><a href="#__codelineno-0-147"><span class="linenos" data-linenos="147 "></span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_crop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_crop</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">map_location</span><span class="p">)</span>
 <a id="__codelineno-0-148" name="__codelineno-0-148"></a><a href="#__codelineno-0-148"><span class="linenos" data-linenos="148 "></span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_features</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">map_location</span><span class="p">)</span>
-<a id="__codelineno-0-149" name="__codelineno-0-149"></a><a href="#__codelineno-0-149"><span class="linenos" data-linenos="149 "></span></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">map_location</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">):</span>
+<a id="__codelineno-0-149" name="__codelineno-0-149"></a><a href="#__codelineno-0-149"><span class="linenos" data-linenos="149 "></span></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">map_location</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)):</span>
 <a id="__codelineno-0-150" name="__codelineno-0-150"></a><a href="#__codelineno-0-150"><span class="linenos" data-linenos="150 "></span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">map_location</span>
 <a id="__codelineno-0-151" name="__codelineno-0-151"></a><a href="#__codelineno-0-151"><span class="linenos" data-linenos="151 "></span></a>
 <a id="__codelineno-0-152" name="__codelineno-0-152"></a><a href="#__codelineno-0-152"><span class="linenos" data-linenos="152 "></span></a>        <span class="k">return</span> <span class="bp">self</span>
@@ -4649,7 +4670,7 @@ the list of anchors around which each crop was formed</p>
 <a id="__codelineno-0-146" name="__codelineno-0-146"></a><a href="#__codelineno-0-146"><span class="linenos" data-linenos="146 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_bbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bbox</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">map_location</span><span class="p">)</span>
 <a id="__codelineno-0-147" name="__codelineno-0-147"></a><a href="#__codelineno-0-147"><span class="linenos" data-linenos="147 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_crop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_crop</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">map_location</span><span class="p">)</span>
 <a id="__codelineno-0-148" name="__codelineno-0-148"></a><a href="#__codelineno-0-148"><span class="linenos" data-linenos="148 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_features</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">map_location</span><span class="p">)</span>
-<a id="__codelineno-0-149" name="__codelineno-0-149"></a><a href="#__codelineno-0-149"><span class="linenos" data-linenos="149 "></span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">map_location</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">):</span>
+<a id="__codelineno-0-149" name="__codelineno-0-149"></a><a href="#__codelineno-0-149"><span class="linenos" data-linenos="149 "></span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">map_location</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)):</span>
 <a id="__codelineno-0-150" name="__codelineno-0-150"></a><a href="#__codelineno-0-150"><span class="linenos" data-linenos="150 "></span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">map_location</span>
 <a id="__codelineno-0-151" name="__codelineno-0-151"></a><a href="#__codelineno-0-151"><span class="linenos" data-linenos="151 "></span></a>
 <a id="__codelineno-0-152" name="__codelineno-0-152"></a><a href="#__codelineno-0-152"><span class="linenos" data-linenos="152 "></span></a>    <span class="k">return</span> <span class="bp">self</span>

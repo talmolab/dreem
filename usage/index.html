@@ -959,6 +959,27 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    cli
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2268,11 +2289,11 @@ This will activate the <code>dreem</code> repo and move you back to your origina
 <p>The input into our training script is a <code>.yaml</code> file that contains all the parameters needed for training. Please see <a href="../configs/training/">here</a> for a detailed description of all the parameters and how to set up the config. We also provide an <a href="../configs/training/#base-config">example training config</a> to give you an idea for how the config should look. In general, the best practice is to keep a single <code>base.yaml</code> file which has all the default arguments you'd like to use. Then you can have a second <code>.yaml</code> file which will override only those specific set of parameters when training (for an example see <a href="../configs/training/#override-config">here</a>).</p>
 <h4 id="step-22-train-model">Step 2.2 Train Model<a class="headerlink" href="#step-22-train-model" title="Permanent link">&para;</a></h4>
 <p>Once you have your config file and dataset set up, training is as easy as running</p>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>/path/to/dreem/training/train.py<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span>
 </code></pre></div>
 where <code>CONFIG_DIR</code> is the directory that <code>hydra</code> should search for the <code>config.yaml</code> and <code>CONFIG_STEM</code> is the name of the config without the <code>.yaml</code> extension.</p>
 <p>e.g. If I have a config file called <code>base.yaml</code> inside my <code>/home/aaprasad/dreem_configs</code> directory I can call
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>python<span class="w"> </span>/home/aaprasad/dreem/training/train.py<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base
 </code></pre></div></p>
 <blockquote>
 <p>Note: you can use relative paths as well but may be a bit riskier so we recommend absolute paths whenever possible.</p>
@@ -2285,17 +2306,17 @@ where <code>CONFIG_DIR</code> is the directory that <code>hydra</code> should se
 </ol>
 <h6 id="file-based-override">File-based override<a class="headerlink" href="#file-based-override" title="Permanent link">&para;</a></h6>
 <p>For overriding specific params with a sub-config, you can specify a <code>params_config</code> key and path in your <code>config.yaml</code> or run</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python<span class="w"> </span>/path/to/dreem/training/train.py<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>BASE_CONFIG_STEM<span class="o">]</span><span class="w"> </span>++params_config<span class="o">=</span><span class="s2">&quot;/path/to/params.yaml&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>BASE_CONFIG_STEM<span class="o">]</span><span class="w"> </span>++params_config<span class="o">=</span><span class="s2">&quot;/path/to/params.yaml&quot;</span>
 </code></pre></div>
 <p>e.g. If I have a <code>params_to_override.yaml</code> file inside my <code>/home/aaprasad/dreem_configs</code> directory that contains a only a small selection of parameters that I'd like to override, I can run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python<span class="w"> </span>/home/aaprasad/dreem/training/train.py<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base<span class="w"> </span>++params_config<span class="o">=</span>/home/aaprasad/dreem_configs/params_to_override.yaml
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base<span class="w"> </span>++params_config<span class="o">=</span>/home/aaprasad/dreem_configs/params_to_override.yaml
 </code></pre></div>
 <h6 id="cli-based-override">CLI-based override<a class="headerlink" href="#cli-based-override" title="Permanent link">&para;</a></h6>
 <p>For directly overriding a specific param via the command line directly you can use the <code>section.param=key</code> syntax as so:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python<span class="w"> </span>/path/to/dreem/training/train.py<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>BASE_CONFIG_STEM<span class="o">]</span><span class="w"> </span>section.param<span class="o">=</span>value
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>BASE_CONFIG_STEM<span class="o">]</span><span class="w"> </span>section.param<span class="o">=</span>value
 </code></pre></div>
 <p>e.g If now I want to override a couple parameters again, say change the number of attention heads and change the name of this run in my logger, I can pass <code>model.head=3</code> and <code>logger.name="test_nheads=3"</code> into </p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>python<span class="w"> </span>/home/aaprasad/dreem/training/train.py<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base<span class="w"> </span>model.nhead<span class="o">=</span><span class="m">3</span><span class="w"> </span>logger.name<span class="o">=</span><span class="s2">&quot;test_nheads=3&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base<span class="w"> </span>model.nhead<span class="o">=</span><span class="m">3</span><span class="w"> </span>logger.name<span class="o">=</span><span class="s2">&quot;test_nheads=3&quot;</span>
 </code></pre></div>
 <blockquote>
 <p>Note: using the <code>section.param</code> syntax for CLI override will only override if the parameter exists in your config file otherwise an error will be thrown
@@ -2307,10 +2328,10 @@ e.g doing <code>model.n_head=3</code> will cause the original <code>model.nhead<
 <p>See <a href="https://hydra.cc/docs/advanced/override_grammar/basic/">here</a> for more information on overriding params.</p>
 <blockquote>
 <p>Note: You will usually only need the direct override or the file-based override however you can technically do both via 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>python<span class="w"> </span>/path/to/dreem/training/train.py<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>BASE_CONFIG_STEM<span class="o">]</span><span class="w"> </span>++params_config<span class="o">=</span><span class="s2">&quot;/path/to/params.yaml&quot;</span><span class="w"> </span>section.param<span class="o">=</span>value
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>BASE_CONFIG_STEM<span class="o">]</span><span class="w"> </span>++params_config<span class="o">=</span><span class="s2">&quot;/path/to/params.yaml&quot;</span><span class="w"> </span>section.param<span class="o">=</span>value
 </code></pre></div>
 e.g. alongside the <code>params_to_override.yaml</code>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python<span class="w"> </span>/home/aaprasad/dreem/training/train.py<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base<span class="w"> </span>++params_config<span class="o">=</span>/home/aaprasad/dreem_configs/params_to_override.yaml<span class="w"> </span>model.nhead<span class="o">=</span><span class="m">3</span><span class="w"> </span>logger.name<span class="o">=</span><span class="s2">&quot;test_nheads=3&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base<span class="w"> </span>++params_config<span class="o">=</span>/home/aaprasad/dreem_configs/params_to_override.yaml<span class="w"> </span>model.nhead<span class="o">=</span><span class="m">3</span><span class="w"> </span>logger.name<span class="o">=</span><span class="s2">&quot;test_nheads=3&quot;</span>
 </code></pre></div>
 but the <code>--config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM]</code> arguments are always required. 
 However, be careful to ensure there are no conflicts when combining CLI and file-based override syntax
@@ -2362,18 +2383,18 @@ this means that it will always default to the params file value when there are c
 <p>Please see <a href="../configs/inference/">here</a> for a walk through of the inference params as well as how to set up an inference conifg and see <a href="../configs/inference/#example-config">here</a> for an example inference config file.</p>
 <h3 id="step-3-run-inference">Step 3 Run Inference<a class="headerlink" href="#step-3-run-inference" title="Permanent link">&para;</a></h3>
 <p>Just like training we can use the hydra syntax for specifying arguments via the cli. Thus you can run inference via:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>python<span class="w"> </span>/path/to/dreem/inference/inference.py<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>dreem-track<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span>
 </code></pre></div>
 <p>e.g. If I had an inference config called <code>track.yaml</code> inside <code>/home/aaprasad/dreem_configs</code> </p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>python<span class="w"> </span>/home/aaprasad/dreem/inference/inference.py<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>track
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>dreem-track<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>track
 </code></pre></div>
 <h4 id="overriding-parameters">Overriding Parameters.<a class="headerlink" href="#overriding-parameters" title="Permanent link">&para;</a></h4>
 <p>Because there aren't as many parameters during inference as during training we recommend just using the cli-based override rather than the file based but you're more than welcome to do so.</p>
 <p>In order to override params via the CLI, we can use the same <code>hydra</code> <code>section.param</code> syntax:</p>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>python<span class="w"> </span>/path/to/dreem/inference/inference.py<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span><span class="w"> </span>section.param<span class="o">=[</span>VALUE<span class="o">]</span>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>dreem-track<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span><span class="w"> </span>section.param<span class="o">=[</span>VALUE<span class="o">]</span>
 </code></pre></div>
 e.g if I want to set the window size of the tracker to 32 instead of 8 through <code>tracker.window_size=32</code> and use a different model saved in <code>/home/aaprasad/models/new_best.ckpt</code> I can do:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>python<span class="w"> </span>/home/aaprasad/dreem/inference/inference.py<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>track<span class="w"> </span><span class="nv">ckpt_path</span><span class="o">=</span><span class="s2">&quot;/home/aaprasad/models/new_best.ckpt&quot;</span><span class="w"> </span>tracker.window_size<span class="o">=</span><span class="m">32</span><span class="sb">`</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>dreem-track<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>track<span class="w"> </span><span class="nv">ckpt_path</span><span class="o">=</span><span class="s2">&quot;/home/aaprasad/models/new_best.ckpt&quot;</span><span class="w"> </span>tracker.window_size<span class="o">=</span><span class="m">32</span><span class="sb">`</span>
 </code></pre></div></p>
 <h3 id="output_1">Output<a class="headerlink" href="#output_1" title="Permanent link">&para;</a></h3>
 <p>This will run inference on the videos/detections you specified in the <code>dataset.test_dataset</code> section of the config and save the tracks to individual <code>[VID_NAME].dreem_inference.slp</code> files. If an <code>outdir</code> is specified in the config it will save to  <code>./[OUTDIR]/[VID_NAME].dreem_inference.slp</code>, otherwise it will just save to <code>./results/[VID_NAME].dreem_inference.slp</code>. Now you can load the file with <code>sleap-io</code> and do what you please!</p>
