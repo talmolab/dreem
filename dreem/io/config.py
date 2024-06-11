@@ -1,7 +1,7 @@
 # to implement - config class that handles getters/setters
 """Data structures for handling config parsing."""
 
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf, open_dict
 from pprint import pprint
 from typing import Union, Iterable
 from pathlib import Path
@@ -32,7 +32,8 @@ class Config:
 
         if params_cfg:
             pprint(f"Overwriting base config with {params_cfg}")
-            self.cfg = OmegaConf.merge(base_cfg, params_cfg)  # merge configs
+            with open_dict(base_cfg):
+                self.cfg = OmegaConf.merge(base_cfg, params_cfg)  # merge configs
         else:
             self.cfg = cfg
 
@@ -155,9 +156,13 @@ class Config:
         if dir_cfg:
             labels_suff = dir_cfg.labels_suffix
             vid_suff = dir_cfg.vid_suffix
-
-            label_files = glob.glob(f"{dir_cfg.path}/*.{labels_suff}")
-            vid_files = glob.glob(f"{dir_cfg.path}/*.{vid_suff}")
+            labels_path = f"{dir_cfg.path}/*{labels_suff}"
+            vid_path = f"{dir_cfg.path}/*{vid_suff}"
+            print(f"Searching for labels matching {labels_path}")
+            label_files = glob.glob(labels_path)
+            print(f"Searching for videos matching {vid_path}")
+            vid_files = glob.glob(vid_path)
+            print(f"Found {len(label_files)} labels and {len(vid_files)} videos")
             return label_files, vid_files
 
         return None, None
