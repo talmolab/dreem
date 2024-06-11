@@ -139,3 +139,6 @@ logs
 .vscode
 dreem/training/.hydra/*
 dreem/training/models/*
+
+# docs
+site/

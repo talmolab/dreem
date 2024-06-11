@@ -31,7 +31,7 @@ class EvalDataset(Dataset):
 
         Args:
             idx: the index of the batch. Note this is not the index of the video
-            or the frame.
+                or the frame.
 
         Returns:
             A list of Frames where frames contain instances w gt and pred track ids + bboxes.

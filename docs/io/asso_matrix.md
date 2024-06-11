@@ -1,0 +1,2 @@
+# `AssociationMatrix` 
+::: dreem.io.AssociationMatrix

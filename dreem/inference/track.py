@@ -14,7 +14,9 @@ import torch
 import sleap_io as sio
 
 
-def export_trajectories(frames_pred: list["dreem.io.Frame"], save_path: str = None):
+def export_trajectories(
+    frames_pred: list["dreem.io.Frame"], save_path: str = None
+) -> pd.DataFrame:
     """Convert trajectories to data frame and save as .csv.
 
     Args:

@@ -91,7 +91,7 @@ def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
 
 def weight_iou(
     asso_output: torch.Tensor, method: str = None, last_ious: torch.Tensor = None
-):
+) -> torch.Tensor:
     """Weight the association matrix by the IOU between object bboxes across frames.
 
     Args:
@@ -126,7 +126,7 @@ def filter_max_center_dist(
     k_boxes: torch.Tensor = None,
     nonk_boxes: torch.Tensor = None,
     id_inds: torch.Tensor = None,
-):
+) -> torch.Tensor:
     """Filter trajectory score by distances between objects across frames.
 
     Args:

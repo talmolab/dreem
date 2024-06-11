@@ -135,7 +135,7 @@ def pose_bbox(points: np.ndarray, bbox_size: Union[tuple[int], int]) -> torch.Te
     return bbox
 
 
-def resize_and_pad(img: torch.Tensor, output_size: int):
+def resize_and_pad(img: torch.Tensor, output_size: int) -> torch.Tensor:
     """Resize and pad an image to fit a square output size.
 
     Args:
@@ -449,7 +449,7 @@ class LazyTiffStack:
         self.file.close()
 
 
-def build_augmentations(augmentations: dict):
+def build_augmentations(augmentations: dict) -> A.Compose:
     """Get augmentations for dataset.
 
     Args:

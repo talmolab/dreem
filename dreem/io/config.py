@@ -311,7 +311,7 @@ class Config:
 
         return AssoLoss(**loss_params)
 
-    def get_logger(self):
+    def get_logger(self) -> pl.loggers.Logger:
         """Getter for logging callback.
 
         Returns:

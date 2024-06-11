@@ -57,16 +57,16 @@ def fill_missing(data: np.ndarray, kind: str = "linear") -> np.ndarray:
 
 
 def annotate_video(
-    video,
+    video: "imageio.core.format.Reader",
     labels: pd.DataFrame,
     key: str,
-    color_palette=palette,
+    color_palette: list = palette,
     trails: int = 2,
     boxes: int = (64, 64),
     names: bool = True,
     track_scores=0.5,
     centroids: int = 4,
-    poses=False,
+    poses: bool = False,
     save_path: str = "debug_animal.mp4",
     fps: int = 30,
     alpha=0.2,
@@ -316,8 +316,14 @@ def main(cfg: DictConfig):
     """Take in a path to a video + labels file, annotates a video and saves it to the specified path."""
     labels = pd.read_csv(cfg.labels_path)
     video = imageio.get_reader(cfg.vid_path, "ffmpeg")
-    annotated_frames = annotate_video(video, labels, **cfg.annotate)
-    save_vid(annotated_frames, **cfg.save)
+    frames_annotated = annotate_video(
+        video, labels, save_path=cfg.save_path, **cfg.annotate
+    )
+
+    if frames_annotated:
+        print("Video saved to {cfg.save_path}!")
+    else:
+        print("Failed to annotate video!")
 
 
 if __name__ == "__main__":

@@ -14,14 +14,16 @@ class TrackQueue:
     and will be compared against later frames for assignment.
     """
 
-    def __init__(self, window_size: int, max_gap: int = np.inf, verbose: bool = False):
+    def __init__(
+        self, window_size: int, max_gap: int = np.inf, verbose: bool = False
+    ) -> None:
         """Initialize track queue.
 
         Args:
             window_size: The number of instances per trajectory allowed in the
-            queue to be compared against.
+                queue to be compared against.
             max_gap: The number of consecutive frames a trajectory can fail to
-            appear in before terminating the track.
+                appear in before terminating the track.
             verbose: Whether to print info during operations.
         """
         self._window_size = window_size
@@ -33,7 +35,7 @@ class TrackQueue:
         self._curr_track = -1
         self._verbose = verbose
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Get length of the queue.
 
         Returns:
@@ -41,7 +43,7 @@ class TrackQueue:
         """
         return sum([len(queue) for queue in self._queues.values()])
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the TrackQueue.
 
         Returns:
@@ -64,7 +66,7 @@ class TrackQueue:
 
         Returns:
             An int representing The maximum number of instances allowed in a
-            sub-queue to be compared against.
+                sub-queue to be compared against.
         """
         return self._window_size
 
@@ -74,7 +76,7 @@ class TrackQueue:
 
         Args:
             window_size: An int representing The maximum number of instances
-            allowed in a sub-queue to be compared against.
+                allowed in a sub-queue to be compared against.
         """
         self._window_size = window_size
 
@@ -84,7 +86,7 @@ class TrackQueue:
 
         Returns:
             An int representing the maximum number of consecutive frames an trajectory can fail to
-            appear before termination.
+                appear before termination.
         """
         return self._max_gap
 
@@ -94,7 +96,7 @@ class TrackQueue:
 
         Args:
             max_gap: An int representing the maximum number of consecutive frames an trajectory can fail to
-            appear before termination.
+                appear before termination.
         """
         self._max_gap = max_gap
 
@@ -152,16 +154,16 @@ class TrackQueue:
         """
         self._verbose = verbose
 
-    def end_tracks(self, track_id=None):
+    def end_tracks(self, track_id: int = None) -> bool:
         """Terminate tracks and removing them from the queue.
 
         Args:
             track_id: The index of the trajectory to be ended and removed.
-            If `None` then then every trajectory is removed and the track queue is reset.
+                If `None` then then every trajectory is removed and the track queue is reset.
 
         Returns:
             True if the track is successively removed, otherwise False.
-            (ie if the track doesn't exist in the queue.)
+                (ie if the track doesn't exist in the queue.)
         """
         if track_id is None:
             self._queues = {}
@@ -226,9 +228,9 @@ class TrackQueue:
 
         Args:
             track_ids: A list of trajectorys to merge. If None, then merge all
-            queues, otherwise filter queues by track_ids then merge.
+                queues, otherwise filter queues by track_ids then merge.
             device: A str representation of the device the frames should be on after merging
-            since all instances in the queue are kept on the cpu.
+                since all instances in the queue are kept on the cpu.
 
         Returns:
             A sorted list of Frame objects from which each instance came from,
@@ -266,8 +268,8 @@ class TrackQueue:
 
         Args:
             pred_track_ids: A list of track_ids to be matched against the trajectories in the queue.
-            If a trajectory is in `pred_track_ids` then its gap counter is reset,
-            otherwise its incremented by 1.
+                If a trajectory is in `pred_track_ids` then its gap counter is reset,
+                otherwise its incremented by 1.
 
         Returns:
             A dictionary containing the trajectory id and a boolean value representing

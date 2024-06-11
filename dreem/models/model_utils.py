@@ -5,7 +5,7 @@ from pytorch_lightning import loggers
 import torch
 
 
-def get_boxes(instances: List["dreem.io.Instance"]) -> torch.tensor:
+def get_boxes(instances: List["dreem.io.Instance"]) -> torch.Tensor:
     """Extract the bounding boxes from the input list of instances.
 
     Args:
@@ -93,7 +93,7 @@ def softmax_asso(asso_output: list[torch.Tensor]) -> list[torch.Tensor]:
     return asso_active
 
 
-def init_optimizer(params: Iterable, config: dict):
+def init_optimizer(params: Iterable, config: dict) -> torch.optim.Optimizer:
     """Initialize optimizer based on config parameters.
 
     Allows more flexibility in which optimizer to use
@@ -130,7 +130,9 @@ def init_optimizer(params: Iterable, config: dict):
     return optimizer_class(params, **optimizer_params)
 
 
-def init_scheduler(optimizer: torch.optim.Optimizer, config: dict):
+def init_scheduler(
+    optimizer: torch.optim.Optimizer, config: dict
+) -> torch.optim.lr_scheduler.LRScheduler:
     """Initialize scheduler based on config parameters.
 
     Allows more flexibility in choosing which scheduler to use.
@@ -168,7 +170,7 @@ def init_scheduler(optimizer: torch.optim.Optimizer, config: dict):
     return scheduler_class(optimizer, **scheduler_params)
 
 
-def init_logger(logger_params: dict, config: dict = None):
+def init_logger(logger_params: dict, config: dict = None) -> loggers.Logger:
     """Initialize logger based on config parameters.
 
     Allows more flexibility in choosing which logger to use.
@@ -207,7 +209,7 @@ def init_logger(logger_params: dict, config: dict = None):
         return None
 
 
-def get_device():
+def get_device() -> str:
     """Utility function to get available device.
 
     Returns:

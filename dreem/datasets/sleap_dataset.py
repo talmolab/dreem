@@ -116,7 +116,7 @@ class SleapDataset(BaseDataset):
         # used in call to get_instances()
         self.create_chunks()
 
-    def get_indices(self, idx):
+    def get_indices(self, idx: int) -> tuple:
         """Retrieve label and frame indices given batch index.
 
         Args:
@@ -124,7 +124,7 @@ class SleapDataset(BaseDataset):
         """
         return self.label_idx[idx], self.chunked_frame_idx[idx]
 
-    def get_instances(self, label_idx: List[int], frame_idx: List[int]) -> list[dict]:
+    def get_instances(self, label_idx: List[int], frame_idx: List[int]) -> list[Frame]:
         """Get an element of the dataset.
 
         Args:
@@ -132,22 +132,7 @@ class SleapDataset(BaseDataset):
             frame_idx: index of the frames
 
         Returns:
-            A list of dicts where each dict corresponds a frame in the chunk and each value is a `torch.Tensor`
-            Dict Elements:
-            {
-                        "video_id": The video being passed through the transformer,
-                        "img_shape": the shape of each frame,
-                        "frame_id": the specific frame in the entire video being used,
-                        "num_detected": The number of objects in the frame,
-                        "gt_track_ids": The ground truth labels,
-                        "bboxes": The bounding boxes of each object,
-                        "crops": The raw pixel crops,
-                        "features": The feature vectors for each crop outputed by the CNN encoder,
-                        "pred_track_ids": The predicted trajectory labels from the tracker,
-                        "asso_output": the association matrix preprocessing,
-                        "matches": the true positives from the model,
-                        "traj_score": the association matrix post processing,
-                }
+            A list of `dreem.io.Frame` objects containing metadata and instance data for the batch/clip.
 
         """
         video = self.labels[label_idx]
