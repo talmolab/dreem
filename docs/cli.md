@@ -24,7 +24,7 @@ optional arguments:
     +batch_config   Path to .csv file where each row indicates params to override for a single task in a batch job
 ```
 
-See [the usage guide](./usage#step-21-set-up-config) for a more in-depth explanation on how to use `dreem-train` and see [`the training config walkthrough`](./configs/training.md) for all available parameters.
+See [the usage guide](./usage.md#step-21-setup-config) for a more in-depth explanation on how to use `dreem-train` and see [the training config walkthrough](./configs/training.md) for all available parameters.
 
 ### `dreem-track`
 
@@ -45,7 +45,7 @@ optional arguments:
     +params_config  Path to .yaml file containing subset of params to override
     +batch_config   Path to .csv file where each row indicates params to override for a single task in a batch job
 ```
-See [the usage guide](./usage#step-2-set-up-config) for a more in-depth explanation on how to use `dreem-traack` and see [`the inference config walkthrough`](./configs/inference.md) for all available parameters.
+See [the usage guide](./usage.md#step-2-set-up-config) for a more in-depth explanation on how to use `dreem-track` and see [the inference config walkthrough](./configs/inference.md) for all available parameters.
 
 ### `dreem-visualize`
 
