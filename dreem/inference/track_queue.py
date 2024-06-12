@@ -6,6 +6,7 @@ from torch import device
 
 import logging
 import numpy as np
+from torch import device
 
 logger = logging.getLogger("dreem.inference")
 

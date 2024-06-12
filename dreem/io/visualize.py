@@ -4,7 +4,6 @@ from scipy.interpolate import interp1d
 from copy import deepcopy
 from tqdm import tqdm
 from omegaconf import DictConfig
-from typing import Union
 
 import seaborn as sns
 import imageio
