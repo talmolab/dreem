@@ -88,7 +88,7 @@ class Config:
         """
         from dreem.models import GlobalTrackingTransformer
 
-        model_params = self.cfg.model
+        model_params = OmegaConf.to_container(self.cfg.model)
         ckpt_path = model_params.pop("ckpt_path", None)
 
         if ckpt_path is not None and len(ckpt_path) > 0:
@@ -117,7 +117,7 @@ class Config:
         scheduler_params = self.cfg.scheduler
         loss_params = self.cfg.loss
         gtr_runner_params = self.cfg.runner
-        model_params = self.cfg.model
+        model_params = OmegaConf.to_container(self.cfg.model)
 
         ckpt_path = model_params.pop("ckpt_path", None)
 
@@ -191,7 +191,7 @@ class Config:
             raise ValueError(
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
-
+        dataset_params = OmegaConf.to_container(dataset_params)
         label_files, vid_files = self.get_data_paths(dataset_params)
         # todo: handle this better
         if "slp_files" in dataset_params:
@@ -348,14 +348,12 @@ class Config:
         # convert to dict to enable extracting/removing params
         checkpoint_params = OmegaConf.to_container(self.cfg.checkpointing, resolve=True)
         logging_params = self.cfg.logging
-        if "dirpath" not in checkpoint_params or checkpoint_params["dirpath"] is None:
+        dirpath = checkpoint_params.pop("dirpath", None)
+        if dirpath is None:
             if "group" in logging_params:
                 dirpath = f"./models/{logging_params.group}/{logging_params.name}"
             else:
                 dirpath = f"./models/{logging_params.name}"
-
-        else:
-            dirpath = checkpoint_params["dirpath"]
 
         dirpath = Path(dirpath).resolve()
         if not Path(dirpath).exists():
@@ -366,7 +364,6 @@ class Config:
                     f"Cannot create a new folder. Check the permissions to the given Checkpoint directory. \n {e}"
                 )
 
-        _ = checkpoint_params.pop("dirpath")
         checkpointers = []
         monitor = checkpoint_params.pop("monitor")
         for metric in monitor:
