@@ -8,6 +8,7 @@ import sleap_io as sio
 import numpy as np
 import attrs
 import logging
+import h5py
 
 logger = logging.getLogger("dreem.io")
 
@@ -164,7 +165,7 @@ class Frame:
         )
 
     def to_slp(
-        self, track_lookup: dict[int, sio.Track] = None
+        self, track_lookup: dict[int, sio.Track] | None = None, video: sio.Video | None = None
     ) -> tuple[sio.LabeledFrame, dict[int, sio.Track]]:
         """Convert Frame to sleap_io.LabeledFrame object.
 
@@ -182,11 +183,13 @@ class Frame:
             slp_instance, track_lookup = instance.to_slp(track_lookup=track_lookup)
             slp_instances.append(slp_instance)
 
-        video = (
-            self.video
-            if isinstance(self.video, sio.Video)
-            else sio.load_video(self.video)
-        )
+        if video is None:
+            video = (
+                self.video
+                if isinstance(self.video, sio.Video)
+                else sio.load_video(self.video)
+            )
+        
         return (
             sio.LabeledFrame(
                 video=video,
@@ -195,6 +198,47 @@ class Frame:
             ),
             track_lookup,
         )
+
+    def to_h5(
+        self,
+        clip_group: h5py.Group,
+        instance_labels: list | None = None,
+        save: dict[str, bool] | None = None,
+    ) -> h5py.Group:
+        """Convert frame to h5py group.
+
+        Args:
+            clip_group: the h5py group representing the clip (e.g batch/video) the frame belongs to
+            instance_labels: the labels used to create instance group names
+            save: whether to save crops, features and embeddings for the instance
+        Returns:
+            An h5py group containing the frame
+        """
+        if save is None:
+            save = {"crop": False, "features": False, "embeddings": False}
+        frame_group = clip_group.require_group(f"frame_{self.frame_id.item()}")
+        frame_group.attrs.create("frame_id", self.frame_id.item())
+        frame_group.attrs.create("vid_id", self.video_id.item())
+        frame_group.attrs.create("vid_name", self.vid_name)
+        
+        frame_group.create_dataset("asso_matrix", data=self.asso_output.numpy() if self.asso_output is not None else [])
+        asso_group = frame_group.require_group("traj_scores")
+        for key, value in self.get_traj_score().items():
+            asso_group.create_dataset(key, data=value.to_numpy() if value is not None else [])
+
+        if instance_labels is None: instance_labels = self.get_gt_track_ids.cpu().numpy()
+        for instance_label, instance in zip(instance_labels, self.instances):
+            kwargs = {}
+            if save.get("crop", False):
+                kwargs["crop"] = instance.crop.cpu().numpy()
+            if save.get("features", False):
+                kwargs["features"] = instance.features.cpu().numpy()
+            if save.get("embeddings", False):
+                for key, val in instance.get_embedding().items():
+                    kwargs[f"{key}_emb"] = val.cpu().numpy()
+            _ = instance.to_h5(frame_group, f"instance_{instance_label}", **kwargs)
+
+        return frame_group
 
     @property
     def device(self) -> str:
@@ -266,7 +310,7 @@ class Frame:
         return self._video
 
     @video.setter
-    def video(self, video_filename: str) -> None:
+    def video(self, video: sio.Video | str) -> None:
         """Set the video associated with the frame.
 
         Note: we try to store the video in an sio.Video object.
@@ -274,12 +318,26 @@ class Frame:
         then we simply store the string.
 
         Args:
-            video_filename: string path to video_file
+            video: sio.Video containing the vid reader or string path to video_file
         """
-        try:
-            self._video = sio.load_video(video_filename)
-        except ValueError:
-            self._video = video_filename
+        if isinstance(video, sio.Video):
+            self._video = video
+        else:
+            try:
+                self._video = sio.load_video(video)
+            except ValueError:
+                self._video = video
+
+    @property
+    def vid_name(self) -> str:
+        """Get the path to the video corresponding to this frame.
+
+        Returns: A str file path corresponding to the frame.
+        """
+        if isinstance(self.video, str):
+            return self.video
+        else:
+            return self.video.name
 
     @property
     def img_shape(self) -> torch.Tensor:
