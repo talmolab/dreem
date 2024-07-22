@@ -78,20 +78,22 @@ class Tracker:
 
     def __repr__(self) -> str:
         """Get string representation of tracker.
-        
+
         Returns: the string representation of the tracker
         """
-        return ("Tracker("
-               f"persistent_tracking={self.persistent_tracking}, "
-               f"max_tracks={self.max_tracks}, "
-               f"use_vis_feats={self.use_vis_feats}, "
-               f"overlap_thresh={self.overlap_thresh}, "
-               f"mult_thresh={self.mult_thresh}, "
-               f"decay_time={self.decay_time}, "
-               f"max_center_dist={self.max_center_dist}, "
-               f"verbose={self.verbose}, "
-               f"queue={self.track_queue}"
+        return (
+            "Tracker("
+            f"persistent_tracking={self.persistent_tracking}, "
+            f"max_tracks={self.max_tracks}, "
+            f"use_vis_feats={self.use_vis_feats}, "
+            f"overlap_thresh={self.overlap_thresh}, "
+            f"mult_thresh={self.mult_thresh}, "
+            f"decay_time={self.decay_time}, "
+            f"max_center_dist={self.max_center_dist}, "
+            f"verbose={self.verbose}, "
+            f"queue={self.track_queue}"
         )
+
     def track(
         self, model: GlobalTrackingTransformer, frames: list[dict]
     ) -> list[Frame]:

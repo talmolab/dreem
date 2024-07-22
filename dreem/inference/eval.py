@@ -16,6 +16,7 @@ import logging
 
 logger = logging.getLogger("dreem.inference")
 
+
 @hydra.main(config_path=None, config_name=None, version_base=None)
 def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     """Run inference based on config file.
@@ -50,9 +51,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     model.test_results["save_path"] = eval_cfg.cfg.runner.save_path
     logger.info(f"Saving results to {model.test_results['save_path']}")
 
-    labels_files, vid_files = eval_cfg.get_data_paths(
-        eval_cfg.cfg.dataset.test_dataset
-    )
+    labels_files, vid_files = eval_cfg.get_data_paths(eval_cfg.cfg.dataset.test_dataset)
     trainer = eval_cfg.get_trainer()
     for label_file, vid_file in zip(labels_files, vid_files):
         dataset = eval_cfg.get_dataset(

@@ -43,7 +43,7 @@ class GTRRunner(LightningModule):
         scheduler_cfg: dict | None = None,
         metrics: dict[str, list[str]] | None = None,
         persistent_tracking: dict[str, bool] | None = None,
-        test_save_path="./test_results.h5"
+        test_save_path="./test_results.h5",
     ):
         """Initialize a lightning module for GTR.
 
@@ -65,10 +65,10 @@ class GTRRunner(LightningModule):
         self.loss_cfg = loss_cfg if loss_cfg else {}
         self.tracker_cfg = tracker_cfg if tracker_cfg else {}
 
-        _ = model_cfg.pop("ckpt_path", None)
-        self.model = GlobalTrackingTransformer(**model_cfg)
-        self.loss = AssoLoss(**loss_cfg)
-        self.tracker = Tracker(**tracker_cfg)
+        _ = self.model_cfg.pop("ckpt_path", None)
+        self.model = GlobalTrackingTransformer(**self.model_cfg)
+        self.loss = AssoLoss(**self.loss_cfg)
+        self.tracker = Tracker(**self.tracker_cfg)
 
         self.optimizer_cfg = optimizer_cfg
         self.scheduler_cfg = scheduler_cfg
@@ -207,7 +207,9 @@ class GTRRunner(LightningModule):
                 return_metrics.update(clearmot.to_dict())
 
                 if mode == "test":
-                    self.test_results["preds"].append([ frame.to("cpu") for frame in frames_pred])
+                    self.test_results["preds"].append(
+                        [frame.to("cpu") for frame in frames_pred]
+                    )
                     self.test_results["metrics"].append(return_metrics)
             return_metrics["batch_size"] = len(frames)
         except Exception as e:
@@ -278,8 +280,10 @@ class GTRRunner(LightningModule):
 
         Currently, we save results to an h5py file. and clear the predictions
         """
-        fname=self.test_results["save_path"]
-        test_results = {key:val for key,val in self.test_results.items() if key!="save_path"}
+        fname = self.test_results["save_path"]
+        test_results = {
+            key: val for key, val in self.test_results.items() if key != "save_path"
+        }
         metrics_dict = [
             {
                 key: (
@@ -304,8 +308,13 @@ class GTRRunner(LightningModule):
                     clip_group.attrs.create(key, val)
                 for frame in frames:
                     if metrics.get("num_switches", 0) > 0:
-                        _ = frame.to_h5(clip_group, frame.get_gt_track_ids().cpu().numpy(), save={"crop": True, "features": True, "embeddings": True})
+                        _ = frame.to_h5(
+                            clip_group,
+                            frame.get_gt_track_ids().cpu().numpy(),
+                            save={"crop": True, "features": True, "embeddings": True},
+                        )
                     else:
-                        _ = frame.to_h5(clip_group, frame.get_gt_track_ids().cpu().numpy())
+                        _ = frame.to_h5(
+                            clip_group, frame.get_gt_track_ids().cpu().numpy()
+                        )
         self.test_results = {"metrics": [], "preds": [], "save_path": fname}
-

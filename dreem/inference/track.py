@@ -75,12 +75,17 @@ def track(
     for batch in preds:
         for frame in batch:
             if frame.frame_id.item() == 0:
-                video = sio.Video(frame.video) if isinstance(frame.video, str) else sio.Video
+                video = (
+                    sio.Video(frame.video)
+                    if isinstance(frame.video, str)
+                    else sio.Video
+                )
             lf, tracks = frame.to_slp(tracks, video=video)
             pred_slp.append(lf)
     pred_slp = sio.Labels(pred_slp)
     print(pred_slp)
     return pred_slp
+
 
 @hydra.main(config_path=None, config_name=None, version_base=None)
 def run(cfg: DictConfig) -> dict[int, sio.Labels]:
@@ -113,9 +118,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     logger.info(f"Using the following tracker:")
     logger.info(model.tracker)
 
-    labels_files, vid_files = pred_cfg.get_data_paths(
-        pred_cfg.cfg.dataset.test_dataset
-    )
+    labels_files, vid_files = pred_cfg.get_data_paths(pred_cfg.cfg.dataset.test_dataset)
     trainer = pred_cfg.get_trainer()
     outdir = pred_cfg.cfg.outdir if "outdir" in pred_cfg.cfg else "./results"
     os.makedirs(outdir, exist_ok=True)
@@ -126,7 +129,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         )
         dataloader = pred_cfg.get_dataloader(dataset, mode="test")
         preds = track(model, trainer, dataloader)
-        outpath = os.path.join(outdir,f"{Path(label_file).stem}.dreem_inference.slp")
+        outpath = os.path.join(outdir, f"{Path(label_file).stem}.dreem_inference.slp")
         preds.save(outpath)
 
     return preds

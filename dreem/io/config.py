@@ -114,10 +114,10 @@ class Config:
 
     def get_gtr_runner(self, ckpt_path=None) -> "GTRRunner":
         """Get lightning module for training, validation, and inference.
-        
+
         Args:
             ckpt_path: path to checkpoint for override
-            
+
         Returns:
             a gtr runner model
         """
@@ -367,7 +367,7 @@ class Config:
             A lightning checkpointing callback with specified params
         """
         # convert to dict to enable extracting/removing params
-        checkpoint_params = OmegaConf.to_container(self.cfg.checkpointing, resolve=True)
+        checkpoint_params = self.cfg.checkpointing
         logging_params = self.cfg.logging
         dirpath = checkpoint_params.pop("dirpath", None)
         if dirpath is None:
@@ -388,7 +388,7 @@ class Config:
             _ = checkpoint_params.pop("dirpath")
             monitor = checkpoint_params.pop("monitor")
         checkpointers = []
-        
+
         for metric in monitor:
             checkpointer = pl.callbacks.ModelCheckpoint(
                 monitor=metric,

@@ -261,6 +261,7 @@ class Instance:
             frame_group: the h5py group representing the frame the instance appears on
             label: the name of the instance group that will be created
             **kwargs: additional key:value pairs to be saved as datasets.
+
         Returns:
             The h5 group representing this instance.
         """

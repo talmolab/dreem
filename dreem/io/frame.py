@@ -165,12 +165,15 @@ class Frame:
         )
 
     def to_slp(
-        self, track_lookup: dict[int, sio.Track] | None = None, video: sio.Video | None = None
+        self,
+        track_lookup: dict[int, sio.Track] | None = None,
+        video: sio.Video | None = None,
     ) -> tuple[sio.LabeledFrame, dict[int, sio.Track]]:
         """Convert Frame to sleap_io.LabeledFrame object.
 
         Args:
             track_lookup: A lookup dictionary containing the track_id and sio.Track for persistence
+            video: An sio.Video object used for overriding.
 
         Returns: A tuple containing a LabeledFrame object with necessary metadata and
         a lookup dictionary containing the track_id and sio.Track for persistence
@@ -189,7 +192,7 @@ class Frame:
                 if isinstance(self.video, sio.Video)
                 else sio.load_video(self.video)
             )
-        
+
         return (
             sio.LabeledFrame(
                 video=video,
@@ -220,13 +223,19 @@ class Frame:
         frame_group.attrs.create("frame_id", self.frame_id.item())
         frame_group.attrs.create("vid_id", self.video_id.item())
         frame_group.attrs.create("vid_name", self.vid_name)
-        
-        frame_group.create_dataset("asso_matrix", data=self.asso_output.numpy() if self.asso_output is not None else [])
+
+        frame_group.create_dataset(
+            "asso_matrix",
+            data=self.asso_output.numpy() if self.asso_output is not None else [],
+        )
         asso_group = frame_group.require_group("traj_scores")
         for key, value in self.get_traj_score().items():
-            asso_group.create_dataset(key, data=value.to_numpy() if value is not None else [])
+            asso_group.create_dataset(
+                key, data=value.to_numpy() if value is not None else []
+            )
 
-        if instance_labels is None: instance_labels = self.get_gt_track_ids.cpu().numpy()
+        if instance_labels is None:
+            instance_labels = self.get_gt_track_ids.cpu().numpy()
         for instance_label, instance in zip(instance_labels, self.instances):
             kwargs = {}
             if save.get("crop", False):
