@@ -420,16 +420,16 @@ class Config:
             A lightning Trainer with specified params
         """
         if "trainer" in self.cfg:
-            trainer_params = self.cfg.trainer
+            trainer_params = OmegaConf.to_container(self.cfg.trainer, resolve=True)
 
         else:
             trainer_params = {}
-        with open_dict(trainer_params):
-            profiler = trainer_params.pop("profiler", None)
-            if "accelerator" not in trainer_params:
-                trainer_params["accelerator"] = accelerator
-            if "devices" not in trainer_params:
-                trainer_params["devices"] = devices
+
+        profiler = trainer_params.pop("profiler", None)
+        if "accelerator" not in trainer_params:
+            trainer_params["accelerator"] = accelerator
+        if "devices" not in trainer_params:
+            trainer_params["devices"] = devices
 
         if "profiler":
             profiler = pl.profilers.AdvancedProfiler(filename="profile.txt")
