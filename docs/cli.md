@@ -26,12 +26,30 @@ optional arguments:
 
 See [the usage guide](./usage.md#step-21-setup-config) for a more in-depth explanation on how to use `dreem-train` and see [the training config walkthrough](./configs/training.md) for all available parameters.
 
-### `dreem-track`
+## Eval
+### `dreem-eval`
+`dreem-eval` is the command-line interface for [inference](./reference/dreem/inference/eval.md). Use this for evaluating a trained model using [pymotmetrics](https://github.com/cheind/py-motmetrics) on a remote machine/cluster/notebook instead of using the API directly.
+#### Usage
 
+```
+usage: dreem-eval [-h] [--hydra-help] [--config-dir] [--config-name] [+params_config] [+batch_config]
+
+positional arguments:
+    --config-dir    Path to configs dir
+    --config-name   Name of the .yaml config file stored in config-dir without the .yaml extension
+
+optional arguments:
+    -h, --help      Shows the application's help and exit.
+    --hydra-help    Shows Hydra specific flags (recommended over -h) 
+    +params_config  Path to .yaml file containing subset of params to override
+    +batch_config   Path to .csv file where each row indicates params to override for a single task in a batch job
+```
+See [the usage guide](./usage.md#step-2-set-up-config) for a more in-depth explanation on how to use `dreem-track` and see [the inference config walkthrough](./configs/inference.md) for all available parameters.
+## Inference
+### `dreem-track`
 `dreem-track` is the command-line interface for [inference](./reference/dreem/inference/track.md). Use this for tracking using a pretrained model on a remote machine/cluster/notebook instead of using the API directly.
 
 #### Usage
-
 ```
 usage: dreem-track [-h] [--hydra-help] [--config-dir] [--config-name] [+params_config] [+batch_config]
 
