@@ -56,6 +56,7 @@ dev = [
 
 [project.scripts]
 dreem-train = "dreem.training.train:run"
+dreem-eval = "dreem.inference.eval:run"
 dreem-track = "dreem.inference.track:run"
 dreem-visualize = "dreem.io.visualize:main"
 

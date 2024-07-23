@@ -179,6 +179,70 @@ See [here](https://hydra.cc/docs/advanced/override_grammar/basic/) for more info
 ### Output
 The output of the train script will be at least 1 `*.ckpt` file, assuming you've configured the `checkpointing` section of the config correctly and depending on the params you've used.
 
+## Eval
+Normally, testing will be done at the end of training assuming you passed in a test dataset. However, if you'd like to test your model on another dataset, we provide a way to do so here. Please [see above](./usage.md#step-1-generate-ground-truth-data) for how to set up your evaluation data. Basically we recommend storing your test videos/labels files as so to make things easier:
+dataset_name/
+    test/
+        vid_1.{VID_EXTENSION}
+        vid_1.{slp, csv, xml}
+            .
+            .
+            .
+        vid_n.{slp, csv, xml}
+        vid_n.{slp, csv, xml}
+Once you have your dataset set up you can move on to setting up your config!
+### Step 2. Set up config
+
+Similar to training, we need to set up a config file that specifies
+ 
+1. a `ckpt_path`
+2. a `runner.save_path`
+3. a list of the [`pymotmetrics`](https://github.com/cheind/py-motmetrics) to be computed
+3. a `Tracker` config
+4. a `dataset` config with a `test_dataset` subsection containing dataset params.
+
+Please see [here](configs/inference.md) for a walk through of the inference params as well as how to set up an inference conifg and see [here](configs/inference.md#example-config) for an example inference config file.
+### Step 3 Run Evaluation
+
+Just like training we can use the hydra syntax for specifying arguments via the cli. Thus you can run inference via:
+
+```bash
+dreem-eval --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]
+```
+
+e.g. If I had an inference config called `track.yaml` inside `/home/aaprasad/dreem_configs` 
+
+```bash
+dreem-eval --config-base=/home/aaprasad/dreem_configs --config-name=track
+```
+
+#### Overriding Parameters.
+Because there aren't as many parameters during inference as during training we recommend just using the cli-based override rather than the file based but you're more than welcome to do so.
+
+In order to override params via the CLI, we can use the same `hydra` `section.param` syntax:
+
+```bash
+dreem-eval --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM] section.param=[VALUE]
+```
+e.g if I want to set the window size of the tracker to 32 instead of 8 through `tracker.window_size=32` and use a different model saved in `/home/aaprasad/models/new_best.ckpt` I can do:
+```bash
+dreem-eval --config-base=/home/aaprasad/dreem_configs --config-name=track ckpt_path="/home/aaprasad/models/new_best.ckpt" tracker.window_size=32`
+```
+### Output
+This will run inference on the videos/detections you specified in the `dataset.test_dataset` section of the config and compute the pymotmetrics for the videos you specified. These results will be saved in an hdf5 file saved to the `runner.save_path` argument. It will be structured as so:
+```
+results_h5/
+    vid_1_file_name/
+        clip_1/
+            frame_0/
+                instance_0/
+                instance_1/
+                ...
+                instance_n/
+                traj_scores
+                asso_output
+```
+The evaluation metrics, and respective metadata etc will be stored in the `attrs` of the hdf5 file. If you aren't familiar with opening, reading and manipulating hdf5 files, we recommend checking out the docs for [`h5py`](https://www.h5py.org) We also store model inputs (e.g crops, visual encoder features, spatiotemporal embeddings) in failure cases (identity switches)
 ## Inference
 
 ### Step 1. Setup Data

@@ -5,6 +5,7 @@ import sleap_io as sio
 import numpy as np
 import attrs
 import logging
+import h5py
 from numpy.typing import ArrayLike
 from typing import Self
 
@@ -219,7 +220,7 @@ class Instance:
         Args:
             track_lookup: A track look up dictionary containing track_id:sio.Track.
         Returns: A sleap_io.PredictedInstance with necessary metadata
-        and a track_lookup dictionary to persist tracks.
+            and a track_lookup dictionary to persist tracks.
         """
         try:
             track_id = self.pred_track_id.item()
@@ -244,6 +245,52 @@ class Instance:
                 f"Pose: {np.array(list(self.pose.values())).shape}, Pose score shape {self.point_scores.shape}"
             )
             raise RuntimeError(f"Failed to convert to sio.PredictedInstance: {e}")
+
+    def to_h5(self, frame_group=h5py.Group, label=None, **kwargs: dict) -> h5py.Group:
+        """Convert instance to an h5 group".
+
+        By default we always save:
+            - the gt/pred track id
+            - bbox
+            - centroid
+            - pose
+            - instance/traj/points score
+        Larger arrays (crops/features/embeddings) can be saved by passing as kwargs
+
+        Args:
+            frame_group: the h5py group representing the frame the instance appears on
+            label: the name of the instance group that will be created
+            **kwargs: additional key:value pairs to be saved as datasets.
+
+        Returns:
+            The h5 group representing this instance.
+        """
+        if label is None:
+            if pred_track_id != -1:
+                label = f"instance_{self.pred_track_id.item()}"
+            else:
+                label = f"instance_{self.gt_track_id.item()}"
+        instance_group = frame_group.create_group(label)
+        instance_group.attrs.create("gt_track_id", self.gt_track_id.item())
+        instance_group.attrs.create("pred_track_id", self.pred_track_id.item())
+        instance_group.attrs.create("track_score", self.track_score)
+        instance_group.attrs.create("instance_score", self.instance_score)
+
+        instance_group.create_dataset("bbox", data=self.bbox.cpu().numpy())
+
+        pose_group = instance_group.create_group("pose")
+        pose_group.create_dataset("points", data=np.array(list(self.pose.values())))
+        pose_group.attrs.create("nodes", list(self.pose.keys()))
+        pose_group.create_dataset("scores", data=self.point_scores)
+
+        for key, value in kwargs.items():
+            if "emb" in key:
+                emb_group = instance_group.require_group("emb")
+                emb_group.create_dataset(key, data=value)
+            else:
+                instance_group.create_dataset(key, data=value)
+
+        return instance_group
 
     @property
     def device(self) -> str:

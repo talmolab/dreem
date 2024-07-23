@@ -3,6 +3,8 @@
 import torch
 import gc
 import logging
+import pandas as pd
+import h5py
 from dreem.inference import Tracker
 from dreem.inference import metrics
 from dreem.models import GlobalTrackingTransformer
@@ -30,6 +32,7 @@ class GTRRunner(LightningModule):
         "val": True,
         "test": True,
     }
+    DEFAULT_SAVE = {"train": False, "val": False, "test": False}
 
     def __init__(
         self,
@@ -40,6 +43,7 @@ class GTRRunner(LightningModule):
         scheduler_cfg: dict | None = None,
         metrics: dict[str, list[str]] | None = None,
         persistent_tracking: dict[str, bool] | None = None,
+        test_save_path="./test_results.h5",
     ):
         """Initialize a lightning module for GTR.
 
@@ -52,18 +56,19 @@ class GTRRunner(LightningModule):
             scheduler_cfg: hyperparameters for lr_scheduler used to overwrite `configure_optimizer
             metrics: a dict containing the metrics to be computed during train, val, and test.
             persistent_tracking: a dict containing whether to use persistent tracking during train, val and test inference.
+            test_save_path: path to an .h5 file to save the test results to
         """
         super().__init__()
         self.save_hyperparameters()
 
-        model_cfg = model_cfg if model_cfg else {}
-        loss_cfg = loss_cfg if loss_cfg else {}
-        tracker_cfg = tracker_cfg if tracker_cfg else {}
+        self.model_cfg = model_cfg if model_cfg else {}
+        self.loss_cfg = loss_cfg if loss_cfg else {}
+        self.tracker_cfg = tracker_cfg if tracker_cfg else {}
 
-        _ = model_cfg.pop("ckpt_path", None)
-        self.model = GlobalTrackingTransformer(**model_cfg)
-        self.loss = AssoLoss(**loss_cfg)
-        self.tracker = Tracker(**tracker_cfg)
+        _ = self.model_cfg.pop("ckpt_path", None)
+        self.model = GlobalTrackingTransformer(**self.model_cfg)
+        self.loss = AssoLoss(**self.loss_cfg)
+        self.tracker = Tracker(**self.tracker_cfg)
 
         self.optimizer_cfg = optimizer_cfg
         self.scheduler_cfg = scheduler_cfg
@@ -74,6 +79,7 @@ class GTRRunner(LightningModule):
             if persistent_tracking is not None
             else self.DEFAULT_TRACKING
         )
+        self.test_results = {"metrics": [], "preds": [], "save_path": test_save_path}
 
     def forward(
         self,
@@ -199,6 +205,12 @@ class GTRRunner(LightningModule):
                 clearmot = metrics.get_pymotmetrics(frames_mm, eval_metrics)
 
                 return_metrics.update(clearmot.to_dict())
+
+                if mode == "test":
+                    self.test_results["preds"].append(
+                        [frame.to("cpu") for frame in frames_pred]
+                    )
+                    self.test_results["metrics"].append(return_metrics)
             return_metrics["batch_size"] = len(frames)
         except Exception as e:
             logger.exception(
@@ -262,3 +274,47 @@ class GTRRunner(LightningModule):
         """
         gc.collect()
         torch.cuda.empty_cache()
+
+    def on_test_epoch_end(self):
+        """Execute hook for test end.
+
+        Currently, we save results to an h5py file. and clear the predictions
+        """
+        fname = self.test_results["save_path"]
+        test_results = {
+            key: val for key, val in self.test_results.items() if key != "save_path"
+        }
+        metrics_dict = [
+            {
+                key: (
+                    val.detach().cpu().numpy() if isinstance(val, torch.Tensor) else val
+                )
+                for key, val in metrics.items()
+            }
+            for metrics in test_results["metrics"]
+        ]
+        results_df = pd.DataFrame(metrics_dict)
+        preds = test_results["preds"]
+
+        with h5py.File(fname, "a") as results_file:
+            for key in results_df.columns:
+                avg_result = results_df[key].mean()
+                results_file.attrs.create(key, avg_result)
+            for i, (metrics, frames) in enumerate(zip(metrics_dict, preds)):
+                vid_name = frames[0].vid_name.split("/")[-1].split(".")[0]
+                vid_group = results_file.require_group(vid_name)
+                clip_group = vid_group.require_group(f"clip_{i}")
+                for key, val in metrics.items():
+                    clip_group.attrs.create(key, val)
+                for frame in frames:
+                    if metrics.get("num_switches", 0) > 0:
+                        _ = frame.to_h5(
+                            clip_group,
+                            frame.get_gt_track_ids().cpu().numpy(),
+                            save={"crop": True, "features": True, "embeddings": True},
+                        )
+                    else:
+                        _ = frame.to_h5(
+                            clip_group, frame.get_gt_track_ids().cpu().numpy()
+                        )
+        self.test_results = {"metrics": [], "preds": [], "save_path": fname}

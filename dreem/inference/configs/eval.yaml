@@ -1,0 +1,24 @@
+ckpt_path: "../training/models/example/example_train/epoch=0-best-val_sw_cnt=31.06133270263672.ckpt"
+tracker:
+  overlap_thresh: 0.01
+  decay_time: 0.9
+  iou: "mult"
+  max_center_dist: 1.0
+  persistent_tracking: True
+
+dataset:
+  test_dataset:
+    slp_files: ["../training/190612_110405_wt_18159111_rig2.2@11730.slp", "../training/190612_110405_wt_18159111_rig2.2@11730.slp"]
+    video_files: ["../training/190612_110405_wt_18159111_rig2.2@11730.mp4", "../training/190612_110405_wt_18159111_rig2.2@11730.mp4"]
+    chunk: True
+    clip_length: 32
+    anchor: "centroid"
+
+dataloader:
+  test_dataloader:
+    shuffle: False
+    num_workers: 0
+
+  
+
+  

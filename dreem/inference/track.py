@@ -1,6 +1,7 @@
 """Script to run inference and get out tracks."""
 
 from dreem.io import Config
+from dreem.inference import Tracker
 from dreem.models import GTRRunner
 from omegaconf import DictConfig
 from pathlib import Path
@@ -68,28 +69,25 @@ def track(
     Return:
         List of DataFrames containing prediction results for each video
     """
-    num_videos = len(dataloader.dataset.vid_files)
     preds = trainer.predict(model, dataloader)
-
-    vid_trajectories = {i: [] for i in range(num_videos)}
-
+    pred_slp = []
     tracks = {}
     for batch in preds:
         for frame in batch:
-            lf, tracks = frame.to_slp(tracks)
             if frame.frame_id.item() == 0:
-                logger.info(f"Video: {lf.video}")
-            vid_trajectories[frame.video_id.item()].append(lf)
+                video = (
+                    sio.Video(frame.video)
+                    if isinstance(frame.video, str)
+                    else sio.Video
+                )
+            lf, tracks = frame.to_slp(tracks, video=video)
+            pred_slp.append(lf)
+    pred_slp = sio.Labels(pred_slp)
+    print(pred_slp)
+    return pred_slp
 
-    for vid_id, video in vid_trajectories.items():
-        if len(video) > 0:
 
-            vid_trajectories[vid_id] = sio.Labels(video)
-
-    return vid_trajectories
-
-
-@hydra.main(config_path="configs", config_name=None, version_base=None)
+@hydra.main(config_path=None, config_name=None, version_base=None)
 def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     """Run inference based on config file.
 
@@ -116,30 +114,23 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     tracker_cfg = pred_cfg.get_tracker_cfg()
     logger.info("Updating tracker hparams")
     model.tracker_cfg = tracker_cfg
-    logger.info(f"Using the following params for tracker:")
-    logger.info(model.tracker_cfg)
+    model.tracker = Tracker(**model.tracker_cfg)
+    logger.info(f"Using the following tracker:")
+    logger.info(model.tracker)
 
-    dataset = pred_cfg.get_dataset(mode="test")
-    dataloader = pred_cfg.get_dataloader(dataset, mode="test")
-
+    labels_files, vid_files = pred_cfg.get_data_paths(pred_cfg.cfg.dataset.test_dataset)
     trainer = pred_cfg.get_trainer()
-
-    preds = track(model, trainer, dataloader)
-
     outdir = pred_cfg.cfg.outdir if "outdir" in pred_cfg.cfg else "./results"
     os.makedirs(outdir, exist_ok=True)
 
-    run_num = 0
-    for i, pred in preds.items():
-        outpath = os.path.join(
-            outdir,
-            f"{Path(dataloader.dataset.label_files[i]).stem}.dreem_inference.v{run_num}.slp",
+    for label_file, vid_file in zip(labels_files, vid_files):
+        dataset = pred_cfg.get_dataset(
+            label_files=[label_file], vid_files=[vid_file], mode="test"
         )
-        if os.path.exists(outpath):
-            run_num += 1
-            outpath = outpath.replace(f".v{run_num-1}", f".v{run_num}")
-        logger.info(f"Saving {preds} to {outpath}")
-        pred.save(outpath)
+        dataloader = pred_cfg.get_dataloader(dataset, mode="test")
+        preds = track(model, trainer, dataloader)
+        outpath = os.path.join(outdir, f"{Path(label_file).stem}.dreem_inference.slp")
+        preds.save(outpath)
 
     return preds
 

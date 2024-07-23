@@ -203,8 +203,8 @@ def test_post_processing():  # set_default_device
     ).all()
 
     im_size = 128
-    k_boxes = torch.rand((N_t, 4)) * im_size
-    nonk_boxes = torch.rand((N_p, 4)) * im_size
+    k_boxes = torch.rand((N_t, 3, 4)) * im_size
+    nonk_boxes = torch.rand((N_p, 3, 4)) * im_size
     id_inds = torch.tile(torch.cat((torch.zeros(M - 1), torch.ones(1))), (N_p, 1))
 
     assert (

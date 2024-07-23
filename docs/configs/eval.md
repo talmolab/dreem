@@ -1,19 +1,12 @@
 # Description of inference params
 
-Here we describe the parameters used for inference. See [here](./inference.md#example-config) for an example inference config.
+Here we describe the parameters used for inference. See [here](./eval.md#example-config) for an example inference config.
 
 * `ckpt_path`: (`str`) the path to the saved model checkpoint. Can optionally provide a list of models and this will trigger batch inference where each pod gets a model to run inference with.
 e.g:
 ```YAML
 ...
 ckpt_path: "/path/to/model.ckpt"
-...
-```
-* `out_dir`: (`str`) a directory path where to store outputs.
-e.g:
-```YAML
-...
-out_dir: "/path/to/results/dir"
 ...
 ```
 ## `tracker`
@@ -148,7 +141,7 @@ dataset:
 ```
 
 ## dataloader
-This section outlines the params needed for the dataloader. Should have a `train_dataloader` and optionally `val_dataloader`/`test_dataloader` keys. 
+This section outlines the params needed for the dataloader. Should have a `test_dataloader` 
 > Below we list the args we found useful/necessary for the dataloaders. For more advanced users see [`torch.utils.data.Dataloader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for more ways to initialize the dataloaders
 
 * `shuffle`: (`bool`) Set to `True` to have the data reshuffled at every epoch (during training, this should always be `True` and during val/test usually `False`) 
@@ -162,9 +155,26 @@ dataloader:
         num_workers: 4
 ...
 ```
-
+## `runner`
+This section outlines arguments to be overridden for the GTR Runner
+* `save_path`: Path to `*.hdf5` file where eval results will be saved
+* `metrics`: Contains a subkey called `test` with a list of pymotmetrics to be computed or `"all"` to compute all metrics
+### Example (Computing all metrics):
+```YAML
+runner:
+    save_path: "./test_eval.hdf5"
+    metrics:
+        test: "all"
+```
+### Example (Only computing `num_switches`)
+```YAML
+runner:
+    save_path: "./test_eval.hdf5"
+    metrics:
+        test: ["num_switches"]
+```
 ## Example Config
 
 ```YAML
---8<-- "dreem/inference/configs/inference.yaml"
+--8<-- "dreem/inference/configs/eval.yaml"
 ```

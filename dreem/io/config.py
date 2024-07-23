@@ -91,8 +91,9 @@ class Config:
         """
         from dreem.models import GlobalTrackingTransformer
 
-        model_params = OmegaConf.to_container(self.cfg.model)
-        ckpt_path = model_params.pop("ckpt_path", None)
+        model_params = self.cfg.model
+        with open_dict(model_params):
+            ckpt_path = model_params.pop("ckpt_path", None)
 
         if ckpt_path is not None and len(ckpt_path) > 0:
             return GTRRunner.load_from_checkpoint(ckpt_path).model
@@ -111,8 +112,15 @@ class Config:
             tracker_cfg[key] = val
         return tracker_cfg
 
-    def get_gtr_runner(self) -> "GTRRunner":
-        """Get lightning module for training, validation, and inference."""
+    def get_gtr_runner(self, ckpt_path=None) -> "GTRRunner":
+        """Get lightning module for training, validation, and inference.
+
+        Args:
+            ckpt_path: path to checkpoint for override
+
+        Returns:
+            a gtr runner model
+        """
         from dreem.models import GTRRunner
 
         tracker_params = self.cfg.tracker
@@ -120,9 +128,11 @@ class Config:
         scheduler_params = self.cfg.scheduler
         loss_params = self.cfg.loss
         gtr_runner_params = self.cfg.runner
-        model_params = OmegaConf.to_container(self.cfg.model)
+        model_params = self.cfg.model
 
-        ckpt_path = model_params.pop("ckpt_path", None)
+        if ckpt_path is None:
+            with open_dict(model_params):
+                ckpt_path = model_params.pop("ckpt_path", None)
 
         if ckpt_path is not None and ckpt_path != "":
             model = GTRRunner.load_from_checkpoint(
@@ -131,6 +141,7 @@ class Config:
                 train_metrics=self.cfg.runner.metrics.train,
                 val_metrics=self.cfg.runner.metrics.val,
                 test_metrics=self.cfg.runner.metrics.test,
+                test_save_path=self.cfg.runner.save_path,
             )
 
         else:
@@ -154,8 +165,9 @@ class Config:
         Returns:
             lists of labels file paths and video file paths respectively
         """
-        dir_cfg = data_cfg.pop("dir", None)
-
+        with open_dict(data_cfg):
+            dir_cfg = data_cfg.pop("dir", None)
+        label_files = vid_files = None
         if dir_cfg:
             labels_suff = dir_cfg.labels_suffix
             vid_suff = dir_cfg.vid_suffix
@@ -166,18 +178,33 @@ class Config:
             logger.debug(f"Searching for videos matching {vid_path}")
             vid_files = glob.glob(vid_path)
             logger.debug(f"Found {len(label_files)} labels and {len(vid_files)} videos")
-            return label_files, vid_files
 
-        return None, None
+        else:
+            if "slp_files" in data_cfg:
+                label_files = data_cfg.slp_files
+                vid_files = data_cfg.video_files
+            elif "tracks" in data_cfg or "source" in data_cfg:
+                label_files = data_cfg.tracks
+                vid_files = data_cfg.videos
+            elif "raw_images" in data_cfg:
+                label_files = data_cfg.gt_images
+                vid_files = data_cfg.raw_images
+
+        return label_files, vid_files
 
     def get_dataset(
-        self, mode: str
+        self,
+        mode: str,
+        label_files: list[str] | None = None,
+        vid_files: list[str | list[str]] = None,
     ) -> "SleapDataset" | "MicroscopyDataset" | "CellTrackingDataset":
         """Getter for datasets.
 
         Args:
             mode: [None, "train", "test", "val"]. Indicates whether to use
                 train, val, or test params for dataset
+            label_files: path to label_files for override
+            vid_files: path to vid_files for override
 
         Returns:
             Either a `SleapDataset` or `MicroscopyDataset` with params indicated by cfg
@@ -194,8 +221,9 @@ class Config:
             raise ValueError(
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
-        dataset_params = OmegaConf.to_container(dataset_params)
-        label_files, vid_files = self.get_data_paths(dataset_params)
+        if label_files is None or vid_files is None:
+            with open_dict(dataset_params):
+                label_files, vid_files = self.get_data_paths(dataset_params)
         # todo: handle this better
         if "slp_files" in dataset_params:
             if label_files is not None:
@@ -208,7 +236,7 @@ class Config:
             if label_files is not None:
                 dataset_params.tracks = label_files
             if vid_files is not None:
-                dataset_params.video_files = vid_files
+                dataset_params.videos = vid_files
             return MicroscopyDataset(**dataset_params)
 
         elif "raw_images" in dataset_params:
@@ -216,16 +244,6 @@ class Config:
                 dataset_params.gt_images = label_files
             if vid_files is not None:
                 dataset_params.raw_images = vid_files
-            return CellTrackingDataset(**dataset_params)
-
-        # todo: handle this better
-        if "slp_files" in dataset_params:
-            return SleapDataset(**dataset_params)
-
-        elif "tracks" in dataset_params or "source" in dataset_params:
-            return MicroscopyDataset(**dataset_params)
-
-        elif "raw_images" in dataset_params:
             return CellTrackingDataset(**dataset_params)
 
         else:
@@ -349,7 +367,7 @@ class Config:
             A lightning checkpointing callback with specified params
         """
         # convert to dict to enable extracting/removing params
-        checkpoint_params = OmegaConf.to_container(self.cfg.checkpointing, resolve=True)
+        checkpoint_params = self.cfg.checkpointing
         logging_params = self.cfg.logging
         dirpath = checkpoint_params.pop("dirpath", None)
         if dirpath is None:
@@ -366,9 +384,11 @@ class Config:
                 logger.exception(
                     f"Cannot create a new folder. Check the permissions to the given Checkpoint directory. \n {e}"
                 )
-
+        with open_dict(checkpoint_params):
+            _ = checkpoint_params.pop("dirpath", None)
+            monitor = checkpoint_params.pop("monitor", ["val_loss"])
         checkpointers = []
-        monitor = checkpoint_params.pop("monitor")
+
         for metric in monitor:
             checkpointer = pl.callbacks.ModelCheckpoint(
                 monitor=metric,
@@ -400,21 +420,21 @@ class Config:
             A lightning Trainer with specified params
         """
         if "trainer" in self.cfg:
-            trainer_params = self.cfg.trainer
+            trainer_params = OmegaConf.to_container(self.cfg.trainer, resolve=True)
 
         else:
             trainer_params = {}
 
         profiler = trainer_params.pop("profiler", None)
-        if "profiler":
-            profiler = pl.profilers.AdvancedProfiler(filename="profile.txt")
-        else:
-            profiler = None
-
         if "accelerator" not in trainer_params:
             trainer_params["accelerator"] = accelerator
         if "devices" not in trainer_params:
             trainer_params["devices"] = devices
+
+        if "profiler":
+            profiler = pl.profilers.AdvancedProfiler(filename="profile.txt")
+        else:
+            profiler = None
 
         return pl.Trainer(
             callbacks=callbacks,

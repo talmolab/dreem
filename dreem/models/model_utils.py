@@ -41,11 +41,15 @@ def get_times(
     Returns:
         Tuple of Corresponding frame indices eg [0, 0, 1, 1, ..., T, T] for ref and query instances.
     """
-    ref_inds = torch.concat([instance.frame.frame_id for instance in ref_instances])
+    ref_inds = torch.tensor(
+        [instance.frame.frame_id.item() for instance in ref_instances],
+        device=ref_instances[0].device,
+    )
 
     if query_instances is not None:
-        query_inds = torch.concat(
-            [instance.frame.frame_id for instance in query_instances]
+        query_inds = torch.tensor(
+            [instance.frame.frame_id.item() for instance in query_instances],
+            device=ref_inds.device,
         )
     else:
         query_inds = torch.tensor([], device=ref_inds.device)
