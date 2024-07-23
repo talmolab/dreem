@@ -107,7 +107,7 @@ def test_encoder_torch():
     output = encoder(input_tensor)
 
     assert output.shape == (b, features)
-    assert not torch.is_nonzero.any()
+    assert not torch.is_nonzero().any()
 
     encoder = VisualEncoder(
         model_name="resnet18", in_chans=c, d_model=features, backend=backend
