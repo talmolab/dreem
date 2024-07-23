@@ -112,7 +112,7 @@ class Config:
             tracker_cfg[key] = val
         return tracker_cfg
 
-    def get_gtr_runner(self, ckpt_path=None) -> "GTRRunner":
+    def get_gtr_runner(self, ckpt_path: str | None = None) -> "GTRRunner":
         """Get lightning module for training, validation, and inference.
 
         Args:

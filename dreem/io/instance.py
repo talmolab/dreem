@@ -7,7 +7,7 @@ import attrs
 import logging
 import h5py
 from numpy.typing import ArrayLike
-from typing import Self
+from typing import Self, Any
 
 logger = logging.getLogger("dreem.io")
 
@@ -246,7 +246,9 @@ class Instance:
             )
             raise RuntimeError(f"Failed to convert to sio.PredictedInstance: {e}")
 
-    def to_h5(self, frame_group=h5py.Group, label=None, **kwargs: dict) -> h5py.Group:
+    def to_h5(
+        self, frame_group: h5py.Group, label: Any = None, **kwargs: dict
+    ) -> h5py.Group:
         """Convert instance to an h5 group".
 
         By default we always save:
