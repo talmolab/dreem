@@ -2137,7 +2137,7 @@
 <a id="__codelineno-0-112" name="__codelineno-0-112"></a><a href="#__codelineno-0-112"><span class="linenos" data-linenos="112 "></span></a>            <span class="n">tracker_cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 <a id="__codelineno-0-113" name="__codelineno-0-113"></a><a href="#__codelineno-0-113"><span class="linenos" data-linenos="113 "></span></a>        <span class="k">return</span> <span class="n">tracker_cfg</span>
 <a id="__codelineno-0-114" name="__codelineno-0-114"></a><a href="#__codelineno-0-114"><span class="linenos" data-linenos="114 "></span></a>
-<a id="__codelineno-0-115" name="__codelineno-0-115"></a><a href="#__codelineno-0-115"><span class="linenos" data-linenos="115 "></span></a>    <span class="k">def</span> <span class="nf">get_gtr_runner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ckpt_path</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;GTRRunner&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-115" name="__codelineno-0-115"></a><a href="#__codelineno-0-115"><span class="linenos" data-linenos="115 "></span></a>    <span class="k">def</span> <span class="nf">get_gtr_runner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ckpt_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;GTRRunner&quot;</span><span class="p">:</span>
 <a id="__codelineno-0-116" name="__codelineno-0-116"></a><a href="#__codelineno-0-116"><span class="linenos" data-linenos="116 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get lightning module for training, validation, and inference.</span>
 <a id="__codelineno-0-117" name="__codelineno-0-117"></a><a href="#__codelineno-0-117"><span class="linenos" data-linenos="117 "></span></a>
 <a id="__codelineno-0-118" name="__codelineno-0-118"></a><a href="#__codelineno-0-118"><span class="linenos" data-linenos="118 "></span></a><span class="sd">        Args:</span>
@@ -3258,6 +3258,7 @@ train, val, or test params for dataset</p>
           <tr class="doc-section-item">
             <td><code>ckpt_path</code></td>
             <td>
+                  <code>str | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3296,7 +3297,7 @@ train, val, or test params for dataset</p>
 
             <details class="quote">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-115" name="__codelineno-0-115"></a><a href="#__codelineno-0-115"><span class="linenos" data-linenos="115 "></span></a><span class="k">def</span> <span class="nf">get_gtr_runner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ckpt_path</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;GTRRunner&quot;</span><span class="p">:</span>
+              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-115" name="__codelineno-0-115"></a><a href="#__codelineno-0-115"><span class="linenos" data-linenos="115 "></span></a><span class="k">def</span> <span class="nf">get_gtr_runner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ckpt_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;GTRRunner&quot;</span><span class="p">:</span>
 <a id="__codelineno-0-116" name="__codelineno-0-116"></a><a href="#__codelineno-0-116"><span class="linenos" data-linenos="116 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get lightning module for training, validation, and inference.</span>
 <a id="__codelineno-0-117" name="__codelineno-0-117"></a><a href="#__codelineno-0-117"><span class="linenos" data-linenos="117 "></span></a>
 <a id="__codelineno-0-118" name="__codelineno-0-118"></a><a href="#__codelineno-0-118"><span class="linenos" data-linenos="118 "></span></a><span class="sd">    Args:</span>
