@@ -43,7 +43,7 @@ class GTRRunner(LightningModule):
         scheduler_cfg: dict | None = None,
         metrics: dict[str, list[str]] | None = None,
         persistent_tracking: dict[str, bool] | None = None,
-        test_save_path="./test_results.h5",
+        test_save_path: str = "./test_results.h5",
     ):
         """Initialize a lightning module for GTR.
 
