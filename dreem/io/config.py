@@ -128,7 +128,7 @@ class Config:
         scheduler_params = self.cfg.scheduler
         loss_params = self.cfg.loss
         gtr_runner_params = self.cfg.runner
-        model_params = OmegaConf.to_container(self.cfg.model)
+        model_params = self.cfg.model
 
         if ckpt_path is None:
             with open_dict(model_params):
@@ -385,8 +385,8 @@ class Config:
                     f"Cannot create a new folder. Check the permissions to the given Checkpoint directory. \n {e}"
                 )
         with open_dict(checkpoint_params):
-            _ = checkpoint_params.pop("dirpath")
-            monitor = checkpoint_params.pop("monitor")
+            _ = checkpoint_params.pop("dirpath", None)
+            monitor = checkpoint_params.pop("monitor", ["val_loss"])
         checkpointers = []
 
         for metric in monitor:
