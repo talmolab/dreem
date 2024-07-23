@@ -74,9 +74,11 @@ class VisualEncoder(torch.nn.Module):
             a CNN encoder based on the config and backend selected.
         """
         if model_name in ["", "off", None]:
-            feature_extractor = lambda lambda tensor: torch.zeros(
-            (tensor.shape[0], self.d_model), dtype=tensor.dtype, device=tensor.device
-        )  # turn off visual features by returning zeros
+            feature_extractor = lambda tensor: torch.zeros(
+                (tensor.shape[0], self.d_model),
+                dtype=tensor.dtype,
+                device=tensor.device,
+            )  # turn off visual features by returning zeros
         else:
             if "timm" in backend.lower():
                 feature_extractor = timm.create_model(
