@@ -2132,7 +2132,7 @@
 <a id="__codelineno-0-106" name="__codelineno-0-106"></a><a href="#__codelineno-0-106"><span class="linenos" data-linenos="106 "></span></a>        <span class="c1"># if self.seed is not None:</span>
 <a id="__codelineno-0-107" name="__codelineno-0-107"></a><a href="#__codelineno-0-107"><span class="linenos" data-linenos="107 "></span></a>        <span class="c1">#     np.random.seed(self.seed)</span>
 <a id="__codelineno-0-108" name="__codelineno-0-108"></a><a href="#__codelineno-0-108"><span class="linenos" data-linenos="108 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">sio</span><span class="o">.</span><span class="n">load_slp</span><span class="p">(</span><span class="n">slp_file</span><span class="p">)</span> <span class="k">for</span> <span class="n">slp_file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">slp_files</span><span class="p">]</span>
-<a id="__codelineno-0-109" name="__codelineno-0-109"></a><a href="#__codelineno-0-109"><span class="linenos" data-linenos="109 "></span></a>
+<a id="__codelineno-0-109" name="__codelineno-0-109"></a><a href="#__codelineno-0-109"><span class="linenos" data-linenos="109 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">videos</span> <span class="o">=</span> <span class="p">[</span><span class="n">imageio</span><span class="o">.</span><span class="n">get_reader</span><span class="p">(</span><span class="n">vid_file</span><span class="p">)</span> <span class="k">for</span> <span class="n">vid_file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vid_files</span><span class="p">]</span>
 <a id="__codelineno-0-110" name="__codelineno-0-110"></a><a href="#__codelineno-0-110"><span class="linenos" data-linenos="110 "></span></a>        <span class="c1"># do we need this? would need to update with sleap-io</span>
 <a id="__codelineno-0-111" name="__codelineno-0-111"></a><a href="#__codelineno-0-111"><span class="linenos" data-linenos="111 "></span></a>
 <a id="__codelineno-0-112" name="__codelineno-0-112"></a><a href="#__codelineno-0-112"><span class="linenos" data-linenos="112 "></span></a>        <span class="c1"># for label in self.labels:</span>
@@ -2166,7 +2166,7 @@
 <a id="__codelineno-0-140" name="__codelineno-0-140"></a><a href="#__codelineno-0-140"><span class="linenos" data-linenos="140 "></span></a>
 <a id="__codelineno-0-141" name="__codelineno-0-141"></a><a href="#__codelineno-0-141"><span class="linenos" data-linenos="141 "></span></a>        <span class="n">video_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_files</span><span class="p">[</span><span class="n">label_idx</span><span class="p">]</span>
 <a id="__codelineno-0-142" name="__codelineno-0-142"></a><a href="#__codelineno-0-142"><span class="linenos" data-linenos="142 "></span></a>
-<a id="__codelineno-0-143" name="__codelineno-0-143"></a><a href="#__codelineno-0-143"><span class="linenos" data-linenos="143 "></span></a>        <span class="n">vid_reader</span> <span class="o">=</span> <span class="n">imageio</span><span class="o">.</span><span class="n">get_reader</span><span class="p">(</span><span class="n">video_name</span><span class="p">,</span> <span class="s2">&quot;ffmpeg&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-143" name="__codelineno-0-143"></a><a href="#__codelineno-0-143"><span class="linenos" data-linenos="143 "></span></a>        <span class="n">vid_reader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">videos</span><span class="p">[</span><span class="n">label_idx</span><span class="p">]</span>
 <a id="__codelineno-0-144" name="__codelineno-0-144"></a><a href="#__codelineno-0-144"><span class="linenos" data-linenos="144 "></span></a>
 <a id="__codelineno-0-145" name="__codelineno-0-145"></a><a href="#__codelineno-0-145"><span class="linenos" data-linenos="145 "></span></a>        <span class="n">img</span> <span class="o">=</span> <span class="n">vid_reader</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <a id="__codelineno-0-146" name="__codelineno-0-146"></a><a href="#__codelineno-0-146"><span class="linenos" data-linenos="146 "></span></a>
@@ -2396,6 +2396,11 @@
 <a id="__codelineno-0-370" name="__codelineno-0-370"></a><a href="#__codelineno-0-370"><span class="linenos" data-linenos="370 "></span></a>            <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
 <a id="__codelineno-0-371" name="__codelineno-0-371"></a><a href="#__codelineno-0-371"><span class="linenos" data-linenos="371 "></span></a>
 <a id="__codelineno-0-372" name="__codelineno-0-372"></a><a href="#__codelineno-0-372"><span class="linenos" data-linenos="372 "></span></a>        <span class="k">return</span> <span class="n">frames</span>
+<a id="__codelineno-0-373" name="__codelineno-0-373"></a><a href="#__codelineno-0-373"><span class="linenos" data-linenos="373 "></span></a>
+<a id="__codelineno-0-374" name="__codelineno-0-374"></a><a href="#__codelineno-0-374"><span class="linenos" data-linenos="374 "></span></a>    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-375" name="__codelineno-0-375"></a><a href="#__codelineno-0-375"><span class="linenos" data-linenos="375 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle file closing before garbage collection.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-376" name="__codelineno-0-376"></a><a href="#__codelineno-0-376"><span class="linenos" data-linenos="376 "></span></a>        <span class="k">for</span> <span class="n">reader</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">videos</span><span class="p">:</span>
+<a id="__codelineno-0-377" name="__codelineno-0-377"></a><a href="#__codelineno-0-377"><span class="linenos" data-linenos="377 "></span></a>            <span class="n">reader</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </code></pre></div>
               </details>
 
@@ -2410,6 +2415,31 @@
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="dreem.datasets.sleap_dataset.SleapDataset.__del__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__del__</span><span class="p">()</span></code>
+
+<a href="#dreem.datasets.sleap_dataset.SleapDataset.__del__" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+      <p>Handle file closing before garbage collection.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>dreem/datasets/sleap_dataset.py</code></summary>
+              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-374" name="__codelineno-0-374"></a><a href="#__codelineno-0-374"><span class="linenos" data-linenos="374 "></span></a><span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-375" name="__codelineno-0-375"></a><a href="#__codelineno-0-375"><span class="linenos" data-linenos="375 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle file closing before garbage collection.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-376" name="__codelineno-0-376"></a><a href="#__codelineno-0-376"><span class="linenos" data-linenos="376 "></span></a>    <span class="k">for</span> <span class="n">reader</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">videos</span><span class="p">:</span>
+<a id="__codelineno-0-377" name="__codelineno-0-377"></a><a href="#__codelineno-0-377"><span class="linenos" data-linenos="377 "></span></a>        <span class="n">reader</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</code></pre></div>
+            </details>
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-function">
 
@@ -2727,7 +2757,7 @@ Can either a fraction of the dataset (ie (0,1.0]) or number of chunks</p>
 <a id="__codelineno-0-106" name="__codelineno-0-106"></a><a href="#__codelineno-0-106"><span class="linenos" data-linenos="106 "></span></a>    <span class="c1"># if self.seed is not None:</span>
 <a id="__codelineno-0-107" name="__codelineno-0-107"></a><a href="#__codelineno-0-107"><span class="linenos" data-linenos="107 "></span></a>    <span class="c1">#     np.random.seed(self.seed)</span>
 <a id="__codelineno-0-108" name="__codelineno-0-108"></a><a href="#__codelineno-0-108"><span class="linenos" data-linenos="108 "></span></a>    <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">sio</span><span class="o">.</span><span class="n">load_slp</span><span class="p">(</span><span class="n">slp_file</span><span class="p">)</span> <span class="k">for</span> <span class="n">slp_file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">slp_files</span><span class="p">]</span>
-<a id="__codelineno-0-109" name="__codelineno-0-109"></a><a href="#__codelineno-0-109"><span class="linenos" data-linenos="109 "></span></a>
+<a id="__codelineno-0-109" name="__codelineno-0-109"></a><a href="#__codelineno-0-109"><span class="linenos" data-linenos="109 "></span></a>    <span class="bp">self</span><span class="o">.</span><span class="n">videos</span> <span class="o">=</span> <span class="p">[</span><span class="n">imageio</span><span class="o">.</span><span class="n">get_reader</span><span class="p">(</span><span class="n">vid_file</span><span class="p">)</span> <span class="k">for</span> <span class="n">vid_file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vid_files</span><span class="p">]</span>
 <a id="__codelineno-0-110" name="__codelineno-0-110"></a><a href="#__codelineno-0-110"><span class="linenos" data-linenos="110 "></span></a>    <span class="c1"># do we need this? would need to update with sleap-io</span>
 <a id="__codelineno-0-111" name="__codelineno-0-111"></a><a href="#__codelineno-0-111"><span class="linenos" data-linenos="111 "></span></a>
 <a id="__codelineno-0-112" name="__codelineno-0-112"></a><a href="#__codelineno-0-112"><span class="linenos" data-linenos="112 "></span></a>    <span class="c1"># for label in self.labels:</span>
@@ -2896,7 +2926,7 @@ Can either a fraction of the dataset (ie (0,1.0]) or number of chunks</p>
 <a id="__codelineno-0-140" name="__codelineno-0-140"></a><a href="#__codelineno-0-140"><span class="linenos" data-linenos="140 "></span></a>
 <a id="__codelineno-0-141" name="__codelineno-0-141"></a><a href="#__codelineno-0-141"><span class="linenos" data-linenos="141 "></span></a>    <span class="n">video_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_files</span><span class="p">[</span><span class="n">label_idx</span><span class="p">]</span>
 <a id="__codelineno-0-142" name="__codelineno-0-142"></a><a href="#__codelineno-0-142"><span class="linenos" data-linenos="142 "></span></a>
-<a id="__codelineno-0-143" name="__codelineno-0-143"></a><a href="#__codelineno-0-143"><span class="linenos" data-linenos="143 "></span></a>    <span class="n">vid_reader</span> <span class="o">=</span> <span class="n">imageio</span><span class="o">.</span><span class="n">get_reader</span><span class="p">(</span><span class="n">video_name</span><span class="p">,</span> <span class="s2">&quot;ffmpeg&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-143" name="__codelineno-0-143"></a><a href="#__codelineno-0-143"><span class="linenos" data-linenos="143 "></span></a>    <span class="n">vid_reader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">videos</span><span class="p">[</span><span class="n">label_idx</span><span class="p">]</span>
 <a id="__codelineno-0-144" name="__codelineno-0-144"></a><a href="#__codelineno-0-144"><span class="linenos" data-linenos="144 "></span></a>
 <a id="__codelineno-0-145" name="__codelineno-0-145"></a><a href="#__codelineno-0-145"><span class="linenos" data-linenos="145 "></span></a>    <span class="n">img</span> <span class="o">=</span> <span class="n">vid_reader</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <a id="__codelineno-0-146" name="__codelineno-0-146"></a><a href="#__codelineno-0-146"><span class="linenos" data-linenos="146 "></span></a>
