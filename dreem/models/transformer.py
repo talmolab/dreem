@@ -171,7 +171,7 @@ class Transformer(torch.nn.Module):
 
         window_length = len(ref_times.unique())
 
-        ref_temp_emb = self.temp_emb(ref_times / window_length)
+        ref_temp_emb = self.temp_emb(ref_times)
 
         ref_pos_emb = self.pos_emb(ref_boxes)
 
@@ -218,7 +218,7 @@ class Transformer(torch.nn.Module):
 
             query_boxes = get_boxes(query_instances)
             query_boxes = torch.nan_to_num(query_boxes, -1.0)
-            query_temp_emb = self.temp_emb(query_times / window_length)
+            query_temp_emb = self.temp_emb(query_times)
 
             query_pos_emb = self.pos_emb(query_boxes)
 
