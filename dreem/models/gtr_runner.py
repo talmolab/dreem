@@ -85,7 +85,7 @@ class GTRRunner(LightningModule):
         self,
         ref_instances: list["dreem.io.Instance"],
         query_instances: list["dreem.io.Instance"] | None = None,
-    ) -> torch.Tensor:
+    ) -> list["AssociationMatrix"]:
         """Execute forward pass of the lightning module.
 
         Args:

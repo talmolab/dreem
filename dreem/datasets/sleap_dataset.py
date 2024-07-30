@@ -142,7 +142,7 @@ class SleapDataset(BaseDataset):
 
         vid_reader = self.videos[label_idx]
 
-        img = vid_reader.get_data(0)
+        #img = vid_reader.get_data(0)
 
         skeleton = video.skeletons[-1]
 
@@ -162,10 +162,7 @@ class SleapDataset(BaseDataset):
             lf = video[frame_ind]
 
             try:
-                img = vid_reader.get_data(frame_ind)
-                if len(img.shape) == 2:
-                    img = np.expand_dims(img, 0)
-                h, w, c = img.shape
+                img = vid_reader.get_data(lf.frame_idx)
             except IndexError as e:
                 logger.warning(
                     f"Could not read frame {frame_ind} from {video_name} due to {e}"
