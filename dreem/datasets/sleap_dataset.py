@@ -162,7 +162,7 @@ class SleapDataset(BaseDataset):
             lf = video[frame_ind]
 
             try:
-                img = vid_reader.get_data(lf.frame_idx)
+                img = vid_reader.get_data(int(lf.frame_idx))
             except IndexError as e:
                 logger.warning(
                     f"Could not read frame {frame_ind} from {video_name} due to {e}"
