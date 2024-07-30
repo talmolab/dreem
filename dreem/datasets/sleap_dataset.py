@@ -142,7 +142,7 @@ class SleapDataset(BaseDataset):
 
         vid_reader = self.videos[label_idx]
 
-        #img = vid_reader.get_data(0)
+        # img = vid_reader.get_data(0)
 
         skeleton = video.skeletons[-1]
 
