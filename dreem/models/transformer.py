@@ -19,6 +19,7 @@ from torch import nn
 import copy
 import torch
 import torch.nn.functional as F
+from typing import List
 
 # todo: add named tensors
 # todo: add flash attention
@@ -298,21 +299,22 @@ class TransformerEncoderLayer(nn.Module):
         self.activation = _get_activation_fn(activation)
 
     def forward(
-        self, queries: torch.Tensor, pos_emb: torch.Tensor = None
+        self, queries: torch.Tensor, embeddings : List[Embedding]
     ) -> torch.Tensor:
         """Execute a forward pass of the encoder layer.
 
         Args:
-            queries: Input sequence for encoder (n_query, batch_size, embed_dim).
+            queries: Input sequence for encoder (n_query, batch_size, embed_dim); transformed with embedding
             pos_emb: Position embedding, if provided is added to src
 
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
-        if pos_emb is None:
-            pos_emb = torch.zeros_like(queries)
+        # TODO: delete this section; keep to check that pos_emb None is taken care of automatically by config
+#         if pos_emb is None:
+#             pos_emb = torch.zeros_like(queries)
 
-        queries = queries + pos_emb
+#         queries = queries + pos_emb
 
         # q = k = src
 
@@ -471,6 +473,8 @@ class TransformerEncoder(nn.Module):
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
         for layer in self.layers:
+            # TODO: add embedding object call
+            # TODO: add the embedding object into the argument list to the forward() call
             queries = layer(queries, pos_emb=pos_emb)
 
         encoder_features = self.norm(queries)
