@@ -66,24 +66,24 @@ runner:
       
 dataset:
   train_dataset:
-    slp_files: ["../../tests/data/sleap/two_flies.slp"]
-    video_files: ["../../tests/data/sleap/two_flies.mp4"]
+    slp_files: ["tests/data/sleap/two_flies.slp"]
+    video_files: ["tests/data/sleap/two_flies.mp4"]
     padding: 5
     crop_size: 128
     chunk: true
     clip_length: 32
 
   val_dataset:
-    slp_files: ["../../tests/data/sleap/two_flies.slp"]
-    video_files: ["../../tests/data/sleap/two_flies.mp4"]
+    slp_files: ["tests/data/sleap/two_flies.slp"]
+    video_files: ["tests/data/sleap/two_flies.mp4"]
     padding: 5
     crop_size: 128 
     chunk: True
     clip_length: 32
 
   test_dataset:
-    slp_files: ["../../tests/data/sleap/two_flies.slp"]
-    video_files: ["../../tests/data/sleap/two_flies.mp4"]
+    slp_files: ["tests/data/sleap/two_flies.slp"]
+    video_files: ["tests/data/sleap/two_flies.mp4"]
     padding: 5
     crop_size: 128 
     chunk: True
@@ -137,8 +137,8 @@ trainer:
   limit_test_batches: 1.0
   limit_val_batches: 1.0
   log_every_n_steps: 1
-  max_epochs: 100
-  min_epochs: 10
+  max_epochs: 1
+  min_epochs: 1
 
 view_batch:
   enable: False
