@@ -92,8 +92,6 @@ class RotaryPositionalEmbeddings(nn.Module):
             - n_h: num heads
             - h_d: head dim
 
-        TODO: The implementation below can be made more efficient
-        for inference.
         """
         # input tensor has shape [b, s, n_h, h_d]
         seq_len = x.size(1)
@@ -116,10 +114,7 @@ class RotaryPositionalEmbeddings(nn.Module):
         return rope_cache
 
     
-    
-    
-    
-    
+
     
 class Embedding(torch.nn.Module):
     """Class that wraps around different embedding types. 
