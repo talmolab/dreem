@@ -36,7 +36,7 @@ class RotaryPositionalEmbeddings(nn.Module):
         self,
         dim: int,
         max_seq_len: int = 4096,
-        base: int = 10_000,
+        base: int = 10000,
     ) -> None:
         super().__init__()
         self.dim = dim
@@ -258,9 +258,20 @@ class Embedding(torch.nn.Module):
     
     
     def _apply_rope(self, x, emb): 
+        """
+        Applies Rotary Positional Embedding to input queries
+
+        Args:
+            x: Input queries of shape (batch_size, n_query, embed_dim)
+            emb: Rotation matrix of shape (batch_size, n_query, num_heads, embed_dim // 2, 2)
         
-        
-        # tensor has shape [b, s, n_h, h_d // 2, 2]
+        Returns:
+            Tensor of input queries transformed by RoPE
+        """
+        x_out = torch.unsqueeze(x, 2)
+        # input needs shape [batch_size, n_query, num_heads, embed_dim // 2, 2]
+        x_out = x_out.float().reshape(*x_out.shape[:-1], -1, 2)
+        # apply RoPE to each query token
         x_out = torch.stack(
             [
                 x[..., 0] * emb[..., 0]
@@ -270,15 +281,24 @@ class Embedding(torch.nn.Module):
             ],
             -1,
         )
-        # tensor has shape [b, s, n_h, h_d]
+        # output has shape [batch_size, n_query, num_heads, embed_dim]
         x_out = x_out.flatten(3)
         
         return x_out
     
     
     def _apply_additive_embeddings(self, x, emb):
+        """
+        Applies additive embeddings to input queries
+
+        Args:
+            x: Input tensor of shape (batch_size, N, embed_dim)
+            emb: Embedding array of shape (N, embed_dim)
         
-        return x + emb
+        Returns:
+            Tensor: Input queries with embeddings added - shape (batch_size, N, embed_dim)
+        """
+        return x + emb.unsqueeze(0)
     
         
     def forward(self, x, seq_positions: torch.Tensor) -> torch.Tensor:
@@ -286,25 +306,29 @@ class Embedding(torch.nn.Module):
 
         Args:
             seq_positions:
-                * An (`N`, 1) tensor where seq_positions[i] represents the temporal position of instance_i in the sequence.
-                * An (`N`, n_anchors x 4) tensor where seq_positions[i, j, :] represents the [y1, x1, y2, x2] spatial locations of jth point of instance_i in the sequence.
+                * An (N,) tensor where seq_positions[i] represents the temporal position of instance_i in the sequence.
+                * An (N, n_anchors x 4) tensor where seq_positions[i, j, :] represents the [y1, x1, y2, x2] spatial locations of jth point of instance_i in the sequence.
+            x: Input data of shape ((batch_size, N, embed_dim))
 
         Returns:
-            An `N` x `self.features` tensor representing the corresponding spatial or temporal embedding.
+            - Tensor: input queries transformed by embedding
+            - An `N` x `self.features` tensor representing the corresponding spatial or temporal embedding.
         """
-        # create embedding array (_emb_func selects appropriate callback based on config input)
+        # create embedding array; either rotation matrix of shape 
+        # (batch_size, n_query, num_heads, embed_dim // 2, 2), 
+        # or (N, embed_dim) array
         emb = self._emb_func(seq_positions)
         
         # transform the input data with the embedding
-        x = self._transform(emb, x)
+        x = self._transform(x, emb)
 
-        if emb.shape[-1] != self.features:
-            raise RuntimeError(
-                (
-                    f"Output embedding dimension is {emb.shape[-1]} but requested {self.features} dimensions! \n"
-                    f"hint: Try turning the MLP on by passing `mlp_cfg` to the constructor to project to the correct embedding dimensions."
-                )
-            )
+        # if emb.shape[-1] != self.features:
+        #     raise RuntimeError(
+        #         (
+        #             f"Output embedding dimension is {emb.shape[-1]} but requested {self.features} dimensions! \n"
+        #             f"hint: Try turning the MLP on by passing `mlp_cfg` to the constructor to project to the correct embedding dimensions."
+        #         )
+        #     )
         return x, emb
 
     def _torch_int_div(
@@ -322,12 +346,19 @@ class Embedding(torch.nn.Module):
         return torch.div(tensor1, tensor2, rounding_mode="floor")
 
     
-    def _rope_embedding(self, x: torch.Tensor, emb_ids: torch.Tensor) -> torch.Tensor:
-        
-        # input must be of shape (num_batches, num_instances, num_attn_heads, d_model)
+    def _rope_embedding(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Computes the rotation matrix to apply RoPE to input queries
+        Args:
+            x: Input queries of shape (num_batches, n_queries, embed_dim)
+        Returns:
+            Tensor: (N, embed_dim) rotation matrix
+        """
+        # input must be of shape (num_batches, num_instances, num_attn_heads, embed_dim)
         # use num_heads=1 for compatibility with torch ROPE
         x_rope = torch.unsqueeze(x, 2)
-        rope = RotaryPositionalEmbeddings(self.features)
+        # RoPE module takes in dimension, num_queries as input to calculate rotation matrix
+        rope = RotaryPositionalEmbeddings(self.features, x.shape[1])
         rot_mat = rope(x_rope)
         
         return rot_mat
