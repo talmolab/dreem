@@ -14,6 +14,7 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 from dreem.io import AssociationMatrix
 from dreem.models.attention_head import ATTWeightHead
 from dreem.models import Embedding
+from dreem.models.mlp import MLP
 from dreem.models.model_utils import get_boxes, get_times
 from torch import nn
 import copy
@@ -245,7 +246,7 @@ class Transformer(torch.nn.Module):
 
         asso_output = []
         for frame_features in decoder_features:
-            # todo: this needs to handle the 3x queries that come out of the encoder/decoder
+            # TODO: this needs to handle the 3x queries that come out of the encoder/decoder
             asso_matrix = self.attn_head(frame_features, encoder_features).view(
                 n_query, total_instances
             )
@@ -460,13 +461,13 @@ class TransformerEncoder(nn.Module):
             ref_boxes: torch.Tensor, ref_times: torch.Tensor,
             embedding_agg_method: str
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Execute a forward pass of encoder layer.
+        """Execute a forward pass of encoder layer. Computes and applies embeddings before input to EncoderLayer
 
         Args:
             queries: The input tensor of shape (n_query, batch_size, embed_dim).
             embedding_map: Dict of Embedding objects defining the pos/temp embeddings to be applied to
                         the input data before it passes to the EncoderLayer
-            ref_boxes:
+            ref_boxes: Bounding box based embedding ids of shape (n_query, batch_size, 4)
             ref_times:
             embedding_agg_method:
 
@@ -485,52 +486,55 @@ class TransformerEncoder(nn.Module):
                 _, ref_pos_emb = pos_emb(queries, ref_boxes)
                 ref_emb = (ref_pos_emb + ref_temp_emb) / 2
                 queries = queries + ref_emb
-                queries = queries.permute(1, 0, 2) # transpose back before input to EncoderLayer
             else:
-                # calculate embedding array for x,y from bounding box centroids
+                # calculate embedding array for x,y from bb centroids; ref_x, ref_y of shape (n_query,)
                 ref_x, ref_y = self._spatial_emb_from_bb(ref_boxes)
+                # forward pass of Embedding object transforms input queries with embeddings
                 queries_x, ref_pos_emb_x = pos_emb(queries, ref_x)
                 queries_y, ref_pos_emb_y = pos_emb(queries, ref_y)
 
-            # concatenate, stack, or average the queries
+            # concatenate or stack the queries (avg. method done above since it applies differently)
             queries = self.collate_queries(
                 (queries, queries_t, queries_x, queries_y),
                 embedding_agg_method)
-
-            # todo: encoderLayer needs to be made compatible with stack/concatenate;
-            #   need to pass in embedding_agg_method
+            # transpose for input to EncoderLayer to (n_queries, batch_size, embed_dim)
+            queries = queries.permute(1, 0, 2)
+            # pass through EncoderLayer
             queries = layer(queries)
 
         encoder_features = self.norm(queries)
 
         return encoder_features, ref_pos_emb, ref_temp_emb
 
-    def collate_queries(self, _queries: Tuple[torch.Tensor], embedding_agg_method: str
+
+    def collate_queries(self, queries: Tuple[torch.Tensor], embedding_agg_method: str
                         ) -> torch.Tensor:
         """
         
         Args:
-            _queries: 3-tuple of queries (already transformed by embeddings) for x, y, t  
+            _queries: 4-tuple of queries (already transformed by embeddings) for _, x, y, t  
                       each of shape (batch_size, n_query, embed_dim)
             embedding_agg_method: String representing the aggregation method for embeddings
 
-        Returns: Tensor of aggregated queries; can be concatenated (increased length of tokens),
+        Returns: Tensor of aggregated queries of shape; can be concatenated (increased length of tokens),
                 stacked (increased number of tokens), or averaged (original token number and length)
         """
 
-        queries, queries_t, queries_x, queries_y = _queries
+        queries_t, queries_x, queries_y = queries
 
-        if embedding_agg_method == "average":
-            return queries
-        elif embedding_agg_method == "stack":
+        mlp = MLP(input_dim=queries_t.shape[-1]*3, hidden_dim=queries_t.shape[-1]*2, 
+                  output_dim=queries_t.shape[-1], num_layers=1, dropout=0.)
+
+        if embedding_agg_method == "stack":
             # stacked is of shape (batch_size, 3*n_query, embed_dim)
-            stacked = torch.cat((queries_t, queries_x, queries_y), dim=1)
-            # transpose for input to EncoderLayer
-            return stacked.permute(1, 0, 2)
+            collated_queries = torch.cat((queries_t, queries_x, queries_y), dim=1)
         elif embedding_agg_method == "concatenate":
-            # todo: complete this, pass it through an MLP and transpose output
-
-            return concatenated.permute(1, 0, 2)
+            # concatenated is of shape (batch_size, n_query, 3*embed_dim)
+            collated_queries = torch.cat((queries_t, queries_x, queries_y), dim=2)
+            # pass through MLP to project into space of (batch_size, n_query, embed_dim)
+            collated_queries = mlp(collated_queries)
+            
+        return collated_queries
         
 
     def _spatial_emb_from_bb(self, bb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -541,12 +545,10 @@ class TransformerEncoder(nn.Module):
             each bounding box is [ymin, xmin, ymax, xmax]
         
         Returns: 
-            A tuple of tensors containing the emebdding array for x,y dimensions
+            A tuple of tensors containing the emebdding array for x,y dimensions, each of shape (n_query,)
         """
-
-        centroid_x, centroid_y = bb[:,:,[1,3]].mean(axis=2), bb[:,:,[0,2]].mean(axis=2)
-        
-        return 
+        # compute avg of xmin,xmax and ymin,ymax
+        return bb[:,:,[1,3]].mean(axis=2).squeeze(), bb[:,:,[0,2]].mean(axis=2).squeeze()
 
 
 
