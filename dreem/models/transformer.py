@@ -191,6 +191,8 @@ class Transformer(torch.nn.Module):
                 instance.add_embedding("pos", ref_pos_emb[i])
                 instance.add_embedding("temp", ref_temp_emb[i])
 
+        # -------------- Begin decoder pre-processing --------------- #
+
         n_query = total_instances
 
         query_features = ref_features
@@ -243,6 +245,7 @@ class Transformer(torch.nn.Module):
 
         asso_output = []
         for frame_features in decoder_features:
+            # todo: this needs to handle the 3x queries that come out of the encoder/decoder
             asso_matrix = self.attn_head(frame_features, encoder_features).view(
                 n_query, total_instances
             )
@@ -474,22 +477,20 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             pos_emb, temp_emb = embedding_map["pos"], embedding_map["temp"]
             # queries is of shape (n_query, batch_size, embed_dim); transpose for embeddings
-            queries = queries.permute(1,0,2)
-            # queries is now of shape (batch_size, n_query, embed_dim)
+            queries = queries.permute(1,0,2) # queries is shape (batch_size, n_query, embed_dim)
             # calculate temporal embeddings and transform queries
             queries_t, ref_temp_emb = temp_emb(queries, ref_times)
-            # if avg temp and pos, need bounding boxes
+            # if avg. of temp and pos, need bounding boxes
             if embedding_agg_method == "average":
                 _, ref_pos_emb = pos_emb(queries, ref_boxes)
                 ref_emb = (ref_pos_emb + ref_temp_emb) / 2
                 queries = queries + ref_emb
-                queries = queries.permute(1, 0, 2)
+                queries = queries.permute(1, 0, 2) # transpose back before input to EncoderLayer
             else:
-                # todo: input for x,y should be different (not ref_boxes)
-                #  just extract the x,y coordinates from ref_boxes?
-                # calculate spatial embedding for x, y separately
-                queries_x, ref_pos_emb = pos_emb(queries, ref_x)
-                queries_y, ref_pos_emb = pos_emb(queries, ref_y)
+                # calculate embedding array for x,y from bounding box centroids
+                ref_x, ref_y = self._spatial_emb_from_bb(ref_boxes)
+                queries_x, ref_pos_emb_x = pos_emb(queries, ref_x)
+                queries_y, ref_pos_emb_y = pos_emb(queries, ref_y)
 
             # concatenate, stack, or average the queries
             queries = self.collate_queries(
@@ -504,20 +505,49 @@ class TransformerEncoder(nn.Module):
 
         return encoder_features, ref_pos_emb, ref_temp_emb
 
-    def collate_queries(self, _queries: Tuple[torch.Tensor], embedding_agg_method
+    def collate_queries(self, _queries: Tuple[torch.Tensor], embedding_agg_method: str
                         ) -> torch.Tensor:
+        """
+        
+        Args:
+            _queries: 3-tuple of queries (already transformed by embeddings) for x, y, t  
+                      each of shape (batch_size, n_query, embed_dim)
+            embedding_agg_method: String representing the aggregation method for embeddings
+
+        Returns: Tensor of aggregated queries; can be concatenated (increased length of tokens),
+                stacked (increased number of tokens), or averaged (original token number and length)
+        """
+
         queries, queries_t, queries_x, queries_y = _queries
 
         if embedding_agg_method == "average":
             return queries
         elif embedding_agg_method == "stack":
-            # stacked of shape (3, batch_size, n_query, embed_dim)
-            stacked = torch.stack((queries_t, queries_x, queries_y), dim=-1)
+            # stacked is of shape (batch_size, 3*n_query, embed_dim)
+            stacked = torch.cat((queries_t, queries_x, queries_y), dim=1)
             # transpose for input to EncoderLayer
-            return stacked.permute(0, 2, 1, 3)
+            return stacked.permute(1, 0, 2)
         elif embedding_agg_method == "concatenate":
-            # todo: complete this, and transpose output
-            return
+            # todo: complete this, pass it through an MLP and transpose output
+
+            return concatenated.permute(1, 0, 2)
+        
+
+    def _spatial_emb_from_bb(self, bb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Computes embedding arrays for x,y spatial dimensions using centroids from bounding boxes
+        Args:
+            bb: Bounding boxes of shape (n_query, batch_size, 4) from which to compute x,y centroids;
+            each bounding box is [ymin, xmin, ymax, xmax]
+        
+        Returns: 
+            A tuple of tensors containing the emebdding array for x,y dimensions
+        """
+
+        centroid_x, centroid_y = bb[:,:,[1,3]].mean(axis=2), bb[:,:,[0,2]].mean(axis=2)
+        
+        return 
+
 
 
 class TransformerDecoder(nn.Module):
