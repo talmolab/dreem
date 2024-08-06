@@ -16,10 +16,11 @@ model:
   dropout_attn_head: 0.1
   embedding_meta: 
     pos:
-        mode: "fixed"
+        mode: "fixed" # supports fixed, learned, rope
         normalize: true
     temp:
-        mode: "fixed"
+        mode: "fixed" # supports fixed, learned, rope
+    embedding_agg_method: "stack" # supports stack, average, concatenate
   return_embedding: False
   decoder_self_attn: False
 
@@ -66,24 +67,24 @@ runner:
       
 dataset:
   train_dataset:
-    slp_files: ["tests/data/sleap/two_flies.slp"]
-    video_files: ["tests/data/sleap/two_flies.mp4"]
+    slp_files: ["../../tests/data/sleap/two_flies.slp"]
+    video_files: ["../../tests/data/sleap/two_flies.mp4"]
     padding: 5
     crop_size: 128
     chunk: true
     clip_length: 32
 
   val_dataset:
-    slp_files: ["tests/data/sleap/two_flies.slp"]
-    video_files: ["tests/data/sleap/two_flies.mp4"]
+    slp_files: ["../../tests/data/sleap/two_flies.slp"]
+    video_files: ["../../tests/data/sleap/two_flies.mp4"]
     padding: 5
     crop_size: 128 
     chunk: True
     clip_length: 32
 
   test_dataset:
-    slp_files: ["tests/data/sleap/two_flies.slp"]
-    video_files: ["tests/data/sleap/two_flies.mp4"]
+    slp_files: ["../../tests/data/sleap/two_flies.slp"]
+    video_files: ["../../tests/data/sleap/two_flies.mp4"]
     padding: 5
     crop_size: 128 
     chunk: True
@@ -130,6 +131,8 @@ checkpointing:
   every_n_epochs: 10
 
 trainer:
+  accelerator: "mps"
+  devices: 1
   check_val_every_n_epoch: 1
   enable_checkpointing: true
   gradient_clip_val: null

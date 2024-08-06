@@ -221,6 +221,7 @@ class Embedding(torch.nn.Module):
                 self._emb_func = self._sine_temp_embedding
                 
         elif self.mode == "rope":
+            # TODO: pos/temp uses the same processing but takes the input differently
             self._emb_func = self._rope_embedding
 
 
