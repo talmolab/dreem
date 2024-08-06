@@ -19,7 +19,7 @@ from torch import nn
 import copy
 import torch
 import torch.nn.functional as F
-from typing import List
+from typing import Dict, Tuple
 
 # todo: add named tensors
 # todo: add flash attention
@@ -161,7 +161,6 @@ class Transformer(torch.nn.Module):
             [instance.features for instance in ref_instances], dim=0
         ).unsqueeze(0)
 
-        # window_length = len(frames)
         # instances_per_frame = [frame.num_detected for frame in frames]
         total_instances = len(ref_instances)
         embed_dim = ref_features.shape[-1]
@@ -169,23 +168,6 @@ class Transformer(torch.nn.Module):
         ref_boxes = get_boxes(ref_instances)  # total_instances, 4
         ref_boxes = torch.nan_to_num(ref_boxes, -1.0)
         ref_times, query_times = get_times(ref_instances, query_instances)
-
-        window_length = len(ref_times.unique())
-
-        ref_temp_emb = self.temp_emb(ref_times)
-
-        ref_pos_emb = self.pos_emb(ref_boxes)
-
-        if self.return_embedding:
-            for i, instance in enumerate(ref_instances):
-                instance.add_embedding("pos", ref_pos_emb[i])
-                instance.add_embedding("temp", ref_temp_emb[i])
-
-        ref_emb = (ref_pos_emb + ref_temp_emb) / 2.0
-
-        ref_emb = ref_emb.view(1, total_instances, embed_dim)
-
-        ref_emb = ref_emb.permute(1, 0, 2)  # (total_instances, batch_size, embed_dim)
 
         batch_size, total_instances, embed_dim = ref_features.shape
 
@@ -195,9 +177,19 @@ class Transformer(torch.nn.Module):
 
         encoder_queries = ref_features
 
-        encoder_features = self.encoder(
-            encoder_queries, pos_emb=ref_emb
+        encoder_features, ref_pos_emb, ref_temp_emb = self.encoder(
+            encoder_queries,
+            embedding_map={"pos": self.pos_emb, "temp": self.temp_emb},
+            ref_boxes=ref_boxes,
+            ref_times=ref_times,
+            embedding_agg_method=self.embedding_meta["embedding_agg_method"]
         )  # (total_instances, batch_size, embed_dim)
+
+        # TODO: check if instance.add_embedding() supports rotation matrices
+        if self.return_embedding:
+            for i, instance in enumerate(ref_instances):
+                instance.add_embedding("pos", ref_pos_emb[i])
+                instance.add_embedding("temp", ref_temp_emb[i])
 
         n_query = total_instances
 
@@ -299,13 +291,13 @@ class TransformerEncoderLayer(nn.Module):
         self.activation = _get_activation_fn(activation)
 
     def forward(
-        self, queries: torch.Tensor, embeddings : List[Embedding]
+        self, queries: torch.Tensor
     ) -> torch.Tensor:
         """Execute a forward pass of the encoder layer.
 
         Args:
-            queries: Input sequence for encoder (n_query, batch_size, embed_dim); transformed with embedding
-            pos_emb: Position embedding, if provided is added to src
+            queries: Input sequence for encoder (n_query, batch_size, embed_dim);
+                    data is already transformed with embedding
 
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
@@ -461,24 +453,71 @@ class TransformerEncoder(nn.Module):
         self.norm = norm if norm is not None else nn.Identity()
 
     def forward(
-        self, queries: torch.Tensor, pos_emb: torch.Tensor = None
-    ) -> torch.Tensor:
+        self, queries: torch.Tensor, embedding_map: Dict[str, Embedding],
+            ref_boxes: torch.Tensor, ref_times: torch.Tensor,
+            embedding_agg_method: str
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Execute a forward pass of encoder layer.
 
         Args:
             queries: The input tensor of shape (n_query, batch_size, embed_dim).
-            pos_emb: The positional embedding tensor of shape (n_query, embed_dim).
+            embedding_map: Dict of Embedding objects defining the pos/temp embeddings to be applied to
+                        the input data before it passes to the EncoderLayer
+            ref_boxes:
+            ref_times:
+            embedding_agg_method:
 
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
+
         for layer in self.layers:
-            # TODO: add embedding object call
-            # TODO: add the embedding object into the argument list to the forward() call
-            queries = layer(queries, pos_emb=pos_emb)
+            pos_emb, temp_emb = embedding_map["pos"], embedding_map["temp"]
+            # queries is of shape (n_query, batch_size, embed_dim); transpose for embeddings
+            queries = queries.permute(1,0,2)
+            # queries is now of shape (batch_size, n_query, embed_dim)
+            # calculate temporal embeddings and transform queries
+            queries_t, ref_temp_emb = temp_emb(queries, ref_times)
+            # if avg temp and pos, need bounding boxes
+            if embedding_agg_method == "average":
+                _, ref_pos_emb = pos_emb(queries, ref_boxes)
+                ref_emb = (ref_pos_emb + ref_temp_emb) / 2
+                queries = queries + ref_emb
+                queries = queries.permute(1, 0, 2)
+            else:
+                # todo: input for x,y should be different (not ref_boxes)
+                #  just extract the x,y coordinates from ref_boxes?
+                # calculate spatial embedding for x, y separately
+                queries_x, ref_pos_emb = pos_emb(queries, ref_x)
+                queries_y, ref_pos_emb = pos_emb(queries, ref_y)
+
+            # concatenate, stack, or average the queries
+            queries = self.collate_queries(
+                (queries, queries_t, queries_x, queries_y),
+                embedding_agg_method)
+
+            # todo: encoderLayer needs to be made compatible with stack/concatenate;
+            #   need to pass in embedding_agg_method
+            queries = layer(queries)
 
         encoder_features = self.norm(queries)
-        return encoder_features
+
+        return encoder_features, ref_pos_emb, ref_temp_emb
+
+    def collate_queries(self, _queries: Tuple[torch.Tensor], embedding_agg_method
+                        ) -> torch.Tensor:
+        queries, queries_t, queries_x, queries_y = _queries
+
+        if embedding_agg_method == "average":
+            return queries
+        elif embedding_agg_method == "stack":
+            # stacked of shape (3, batch_size, n_query, embed_dim)
+            stacked = torch.stack((queries_t, queries_x, queries_y), dim=-1)
+            # transpose for input to EncoderLayer
+            return stacked.permute(0, 2, 1, 3)
+        elif embedding_agg_method == "concatenate":
+            # todo: complete this, and transpose output
+            return
 
 
 class TransformerDecoder(nn.Module):
@@ -577,3 +616,4 @@ def _get_activation_fn(activation: str) -> callable:
     if activation == "glu":
         return F.glu
     raise RuntimeError(f"activation should be relu/gelu/glu, not {activation}.")
+
