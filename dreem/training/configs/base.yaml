@@ -73,6 +73,7 @@ dataset:
     crop_size: 128
     chunk: true
     clip_length: 32
+    mode: "train"
 
   val_dataset:
     slp_files: ["../../tests/data/sleap/two_flies.slp"]
@@ -81,6 +82,7 @@ dataset:
     crop_size: 128 
     chunk: True
     clip_length: 32
+    mode: "val"
 
   test_dataset:
     slp_files: ["../../tests/data/sleap/two_flies.slp"]
@@ -89,6 +91,7 @@ dataset:
     crop_size: 128 
     chunk: True
     clip_length: 32
+    mode: "test"
 
 dataloader:
   train_dataloader:
@@ -131,6 +134,7 @@ checkpointing:
   every_n_epochs: 10
 
 trainer:
+  # only use mps and devices params for apple silicon runs
   accelerator: "mps"
   devices: 1
   check_val_every_n_epoch: 1
