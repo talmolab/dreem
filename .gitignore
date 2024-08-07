@@ -142,3 +142,4 @@ dreem/training/models/*
 
 # docs
 site/
+*.xml
