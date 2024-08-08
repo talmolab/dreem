@@ -85,13 +85,17 @@ class Transformer(torch.nn.Module):
                 pos_emb_cfg = self.embedding_meta["pos"]
                 if pos_emb_cfg:
                     self.pos_emb = Embedding(
-                        emb_type="pos", features=self.d_model, **pos_emb_cfg
-                    )
+                        emb_type="pos", features=self.d_model,
+                        embedding_agg_method=self.embedding_meta["embedding_agg_method"],
+                        **pos_emb_cfg
+                    ) # agg method must be the same for pos and temp embeddings
             if "temp" in self.embedding_meta:
                 temp_emb_cfg = self.embedding_meta["temp"]
                 if temp_emb_cfg:
                     self.temp_emb = Embedding(
-                        emb_type="temp", features=self.d_model, **temp_emb_cfg
+                        emb_type="temp", features=self.d_model,
+                        embedding_agg_method=self.embedding_meta["embedding_agg_method"],
+                        **temp_emb_cfg
                     )
 
         # Transformer Encoder
@@ -178,7 +182,8 @@ class Transformer(torch.nn.Module):
 
         encoder_queries = ref_features
 
-        encoder_features, ref_pos_emb, ref_temp_emb = self.encoder(
+        # (encoder_features, ref_pos_emb, ref_temp_emb) \
+        encoder_features = self.encoder(
             encoder_queries,
             embedding_map={"pos": self.pos_emb, "temp": self.temp_emb},
             ref_boxes=ref_boxes,
@@ -187,10 +192,11 @@ class Transformer(torch.nn.Module):
         )  # (total_instances, batch_size, embed_dim)
 
         # TODO: check if instance.add_embedding() supports rotation matrices
-        if self.return_embedding:
-            for i, instance in enumerate(ref_instances):
-                instance.add_embedding("pos", ref_pos_emb[i])
-                instance.add_embedding("temp", ref_temp_emb[i])
+        # TODO: include support for adding x,y,t embeddings to the instance
+        # if self.return_embedding:
+        #     for i, instance in enumerate(ref_instances):
+        #         instance.add_embedding("pos", ref_pos_emb[i])
+        #         instance.add_embedding("temp", ref_temp_emb[i])
 
         # -------------- Begin decoder pre-processing --------------- #
 
@@ -225,10 +231,11 @@ class Transformer(torch.nn.Module):
         else:
             query_instances = ref_instances
 
-        if self.return_embedding:
-            for i, instance in enumerate(query_instances):
-                instance.add_embedding("pos", query_pos_emb[i])
-                instance.add_embedding("temp", query_temp_emb[i])
+        # TODO: include support for x,y,t embeddings and uncomment this
+        # if self.return_embedding:
+        #     for i, instance in enumerate(query_instances):
+        #         instance.add_embedding("pos", query_pos_emb[i])
+        #         instance.add_embedding("temp", query_temp_emb[i])
 
         decoder_features = self.decoder(
             query_features,
@@ -481,7 +488,7 @@ class TransformerEncoder(nn.Module):
             queries = queries.permute(1,0,2) # queries is shape (batch_size, n_query, embed_dim)
             # calculate temporal embeddings and transform queries
             queries_t, ref_temp_emb = temp_emb(queries, ref_times)
-            # if avg. of temp and pos, need bounding boxes
+            # if avg. of temp and pos, need bounding boxes; bb only used for method "average"
             if embedding_agg_method == "average":
                 _, ref_pos_emb = pos_emb(queries, ref_boxes)
                 ref_emb = (ref_pos_emb + ref_temp_emb) / 2
@@ -495,7 +502,7 @@ class TransformerEncoder(nn.Module):
 
             # concatenate or stack the queries (avg. method done above since it applies differently)
             queries = self.collate_queries(
-                (queries, queries_t, queries_x, queries_y),
+                (queries_t, queries_x, queries_y),
                 embedding_agg_method)
             # transpose for input to EncoderLayer to (n_queries, batch_size, embed_dim)
             queries = queries.permute(1, 0, 2)
@@ -504,7 +511,7 @@ class TransformerEncoder(nn.Module):
 
         encoder_features = self.norm(queries)
 
-        return encoder_features, ref_pos_emb, ref_temp_emb
+        return encoder_features# , ref_pos_emb, ref_temp_emb
 
 
     def collate_queries(self, queries: Tuple[torch.Tensor], embedding_agg_method: str
