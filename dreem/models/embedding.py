@@ -146,6 +146,7 @@ class Embedding(torch.nn.Module):
         normalize: bool = False,
         scale: float | None = None,
         mlp_cfg: dict | None = None,
+        embedding_agg_method: str = "average"
     ):
         """Initialize embeddings.
 
@@ -164,12 +165,14 @@ class Embedding(torch.nn.Module):
             mlp_cfg: A dictionary of mlp hyperparameters for projecting embedding to correct space.
                     Example: {"hidden_dims": 256, "num_layers":3, "dropout": 0.3}
         """
+
         self._check_init_args(emb_type, mode)
 
         super().__init__()
 
         self.emb_type = emb_type
         self.mode = mode
+        self.embedding_agg_method = embedding_agg_method
         self.features = features
         self.emb_num = emb_num
         self.over_boxes = over_boxes
@@ -216,12 +219,15 @@ class Embedding(torch.nn.Module):
 
         elif self.mode == "fixed":
             if self.emb_type == "pos":
-                self._emb_func = self._sine_box_embedding
+                if self.embedding_agg_method == "average":
+                    self._emb_func = self._sine_box_embedding
+                else:
+                    self._emb_func = self._sine_pos_embedding
             elif self.emb_type == "temp":
                 self._emb_func = self._sine_temp_embedding
                 
         elif self.mode == "rope":
-            # TODO: pos/temp uses the same processing but takes the input differently
+            # pos/temp embeddings processed the same way with different embedding array inputs
             self._emb_func = self._rope_embedding
 
 
@@ -363,7 +369,37 @@ class Embedding(torch.nn.Module):
         
         return rot_mat
     
-        
+
+    def _sine_pos_embedding(self, centroids: torch.Tensor) -> torch.Tensor:
+        """Compute fixed sine temporal embeddings per dimension (x,y)
+
+        Args:
+            centroids: the input centroids for either the x,y dimension represented
+            by fraction of distance of original image that the instance centroid lies at;
+             of shape (N,) or (N,1) where N = # of query tokens (i.e. instances)
+             values between [0,1]
+
+        Returns:
+            an n_instances x D embedding representing the temporal embedding.
+        """
+        d = self.features
+        n = self.temperature
+
+        positions = centroids.unsqueeze(1)
+        temp_lookup = torch.zeros(len(centroids), d, device=centroids.device)
+
+        denominators = torch.pow(
+            n, 2 * torch.arange(0, d // 2, device=centroids.device) / d
+        )  # 10000^(2i/d_model), i is the index of embedding
+        temp_lookup[:, 0::2] = torch.sin(
+            positions / denominators
+        )  # sin(pos/10000^(2i/d_model))
+        temp_lookup[:, 1::2] = torch.cos(
+            positions / denominators
+        )  # cos(pos/10000^(2i/d_model))
+
+        return temp_lookup  # .view(len(times), self.features)
+
     def _sine_box_embedding(self, boxes: torch.Tensor) -> torch.Tensor:
         """Compute sine positional embeddings for boxes using given parameters.
 
