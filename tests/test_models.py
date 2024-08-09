@@ -166,7 +166,8 @@ def test_embedding_validity():
 
     _ = Embedding(emb_type="pos", mode="learned", features=128)
 
-
+# TODO: create test_embedding_rope and test the xshaped vs xout in the apply_rope function;
+#    how did the shapes match if i was using x vs xshaped?
 def test_embedding_basic():
     """Test embedding logic."""
 
