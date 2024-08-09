@@ -274,16 +274,16 @@ class Embedding(torch.nn.Module):
         Returns:
             Tensor of input queries transformed by RoPE
         """
-        x_out = torch.unsqueeze(x, 2)
+        xout = torch.unsqueeze(x, 2)
         # input needs shape [batch_size, n_query, num_heads, embed_dim // 2, 2]
-        x_out = x_out.float().reshape(*x_out.shape[:-1], -1, 2)
+        xout = xout.float().reshape(*xout.shape[:-1], -1, 2)
         # apply RoPE to each query token
-        x_out = torch.stack(
+        xout = torch.stack(
             [
-                x[..., 0] * emb[..., 0]
-                - x[..., 1] * emb[..., 1],
-                x[..., 1] * emb[..., 0]
-                + x[..., 0] * emb[..., 1],
+                xout[..., 0] * emb[..., 0]
+                - xout[..., 1] * emb[..., 1],
+                xout[..., 1] * emb[..., 0]
+                + xout[..., 0] * emb[..., 1],
             ],
             -1,
         )

@@ -2,7 +2,8 @@ from dreem.training import train
 from omegaconf import OmegaConf
 import os
 
-os.chdir("./dreem/training")
+os.chdir("/Users/main/Documents/GitHub/dreem/dreem/training")
+
 base_config = "./configs/base.yaml"
 # params_config = "./configs/override.yaml"
 
