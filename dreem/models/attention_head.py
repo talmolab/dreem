@@ -27,12 +27,15 @@ class ATTWeightHead(torch.nn.Module):
         super().__init__()
         self.embedding_agg_method = embedding_agg_method
 
-        # if using stacked embeddings, use 1x1 conv with x,y,t embeddings as channels  
+        # if using stacked embeddings, use 1x1 conv with x,y,t embeddings as channels
+        # ensures output represents ref instances by query instances
         if self.embedding_agg_method == "stack":
-            self.conv_1x1 = torch.nn.Conv2d(in_channels=3,out_channels=1,
-                                            kernel_size=1,stride=1,padding=0)
-            self.q_proj = self.conv_1x1
-            self.k_proj = self.conv_1x1
+            self.q_proj = torch.nn.Conv1d(in_channels=3, out_channels=1,
+                                          kernel_size=1, stride=1, padding=0
+                                          )
+            self.k_proj = torch.nn.Conv1d(in_channels=3, out_channels=1,
+                                          kernel_size=1, stride=1, padding=0
+                                          )
         else:
             self.q_proj = MLP(feature_dim, feature_dim, feature_dim, num_layers, dropout)
             self.k_proj = MLP(feature_dim, feature_dim, feature_dim, num_layers, dropout)
@@ -51,13 +54,26 @@ class ATTWeightHead(torch.nn.Module):
         Returns:
             Output tensor of shape (batch_size, num_frame_instances, num_window_instances).
         """
-        # if stacked embeddings, create channels for each x,y,t embedding dimension
-        if self.embedding_agg_method == "stack":
-            key = 
-            query = 
+        batch_size, num_query_instances, feature_dim = query.size()
+        num_window_instances = key.shape[1]
 
-        k = self.k_proj(key)
-        q = self.q_proj(query)
+        # if stacked embeddings, create channels for each x,y,t embedding dimension
+        # maps shape (1,192,1024) -> (1,64,3,1024)
+        if self.embedding_agg_method == "stack":
+            key = key.view(
+                batch_size, 3, num_window_instances//3, feature_dim
+            ).permute(0, 2, 1, 3).squeeze(0)
+            query = query.view(
+                batch_size, 3, num_query_instances//3, feature_dim
+            ).permute(0, 2, 1, 3).squeeze(0)
+            # key, query of shape (batch_size, num_instances, 3, feature_dim)
+            k = self.k_proj(key).transpose(1, 0)
+            q = self.q_proj(query).transpose(1, 0)
+            # k,q of shape (batch_size, num_instances, feature_dim)
+        else:
+            k = self.k_proj(key)
+            q = self.q_proj(query)
+
         attn_weights = torch.bmm(q, k.transpose(1, 2))
 
         return attn_weights  # (B, N_t, N)
