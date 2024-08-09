@@ -131,6 +131,7 @@ class Transformer(torch.nn.Module):
             feature_dim=feature_dim_attn_head,
             num_layers=num_layers_attn_head,
             dropout=dropout_attn_head,
+            embedding_agg_method=self.embedding_meta["embedding_agg_method"]
         )
 
         self._reset_parameters()
@@ -242,8 +243,7 @@ class Transformer(torch.nn.Module):
 
         asso_output = []
         for frame_features in decoder_features:
-            # TODO: attn_head handles the 3x queries that can come out of the encoder/decoder if using stacked embeddings;
-            # does this by altering the MLP dimensions prior to attention outer product
+            # attn_head handles the 3x queries that can come out of the encoder/decoder if using stacked embeddings
             # n_query should be the number of instances in the last frame if running inference,
             # or number of ref instances for training. total_instances is always the number of reference instances
             asso_matrix = self.attn_head(frame_features, encoder_features).view(
