@@ -14,7 +14,7 @@ class ATTWeightHead(torch.nn.Module):
         feature_dim: int,
         num_layers: int,
         dropout: float,
-        embedding_agg_method: str
+        embedding_agg_method: str = "average"
     ):
         """Initialize an instance of ATTWeightHead.
 
