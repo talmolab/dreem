@@ -235,8 +235,7 @@ def test_embedding_aggregation():
     """Test stack, concatenate agg methods"""
 
 
-# TODO: create test_embedding_rope and test the xshaped vs xout in the apply_rope function;
-#    how did the shapes match if i was using x vs xshaped?
+
 def test_embedding_basic():
     """Test embedding logic."""
 

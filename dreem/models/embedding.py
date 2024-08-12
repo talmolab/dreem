@@ -35,13 +35,13 @@ class RotaryPositionalEmbeddings(nn.Module):
     def __init__(
         self,
         dim: int,
-        max_seq_len: int = 4096,
+        # max_seq_len: int,
         base: int = 10000,
     ) -> None:
         super().__init__()
         self.dim = dim
         self.base = base
-        self.max_seq_len = max_seq_len
+        # self.max_seq_len = max_seq_len
         self._rope_init()
 
     # We need to explicitly define reset_parameters for FSDP initialization, see
@@ -55,10 +55,10 @@ class RotaryPositionalEmbeddings(nn.Module):
             ** (torch.arange(0, self.dim, 2)[: (self.dim // 2)].float() / self.dim)
         )
         self.register_buffer("theta", theta, persistent=False)
-        self.build_rope_cache(self.max_seq_len)
 
-    def build_rope_cache(self, max_seq_len: int = 4096) -> None:
+    def build_rope_cache(self, max_seq_len: int) -> None:
         # Create position indexes `[0, 1, ..., max_seq_len - 1]`
+
         seq_idx = torch.arange(
             max_seq_len, dtype=self.theta.dtype, device=self.theta.device
         )
@@ -96,6 +96,12 @@ class RotaryPositionalEmbeddings(nn.Module):
         # input tensor has shape [b, s, n_h, h_d]
         seq_len = x.size(1)
 
+        # create the lookup array based on how many instances there are
+        # max(101, seq_len) is for positional vs temporal; pos can only have idx up to
+        # 100 since it's a fraction of [0,1]*100. temp is from [0, clip_len]; since clip_len
+        # not available, we use # of instances from input x; this is always >= clip_len
+        self.build_rope_cache(max(101, seq_len)) # registers cache
+        self.cache = self.cache.to(input_pos.device)
         # extract the values based on whether input_pos is set or not
         rope_cache = (
             self.cache[:seq_len] if input_pos is None else self.cache[input_pos]
@@ -113,7 +119,6 @@ class RotaryPositionalEmbeddings(nn.Module):
 
         return rope_cache
 
-    
 
     
 class Embedding(torch.nn.Module):
@@ -222,7 +227,7 @@ class Embedding(torch.nn.Module):
             if self.emb_type == "pos":
                 if self.embedding_agg_method == "average":
                     self._emb_func = self._sine_box_embedding
-                else:
+                else: # if using stacked/concatenated agg method
                     self._emb_func = self._sine_pos_embedding
             elif self.emb_type == "temp":
                 self._emb_func = self._sine_temp_embedding
@@ -230,6 +235,8 @@ class Embedding(torch.nn.Module):
         elif self.mode == "rope":
             # pos/temp embeddings processed the same way with different embedding array inputs
             self._emb_func = self._rope_embedding
+            # create instance so embedding lookup array is created only once
+            self.rope_instance = RotaryPositionalEmbeddings(self.features)
 
 
     def _check_init_args(self, emb_type: str, mode: str):
@@ -364,12 +371,13 @@ class Embedding(torch.nn.Module):
         # create dummy input of shape (num_batches, num_instances, num_attn_heads, embed_dim)
         # use num_heads=1 for compatibility with torch ROPE
         x_rope = torch.rand(input_shape).unsqueeze(2)
+        # infer whether it is a positional or temporal embedding
+        is_pos_emb = 1 if seq_positions.max() <= 1 else 0
+        # if it is positional, scale seq_positions since these are fractions
+        # in [0,1] and we need int indexes for embedding lookup
+        seq_positions = seq_positions*100 if is_pos_emb else seq_positions
         # RoPE module takes in dimension, num_queries as input to calculate rotation matrix
-        rope = RotaryPositionalEmbeddings(self.features, input_shape[1])
-        # convert seq_positions (indicates relative position in frame) to int
-        # to index into the theta array for rope
-        seq_pos = 100*seq_positions.unsqueeze(0)
-        rot_mat = rope(x_rope, seq_pos.int())
+        rot_mat = self.rope_instance(x_rope, seq_positions.unsqueeze(0).int())
 
         return rot_mat
     
