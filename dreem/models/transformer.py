@@ -79,9 +79,10 @@ class Transformer(torch.nn.Module):
 
         self.pos_emb = Embedding(emb_type="off", mode="off", features=self.d_model)
         self.temp_emb = Embedding(emb_type="off", mode="off", features=self.d_model)
-        self.embedding_agg_method = "average"  # default arg in case it's not passed into configs
 
         if self.embedding_meta:
+            self.embedding_agg_method = embedding_meta["embedding_agg_method"] \
+                if "embedding_agg_method" in embedding_meta else "average"
             if "pos" in self.embedding_meta:
                 pos_emb_cfg = self.embedding_meta["pos"]
                 if pos_emb_cfg:
@@ -98,8 +99,6 @@ class Transformer(torch.nn.Module):
                         embedding_agg_method=self.embedding_agg_method,
                         **temp_emb_cfg
                     )
-            self.embedding_agg_method = embedding_meta["embedding_agg_method"] \
-                if "embedding_agg_method" in embedding_meta else "average"
 
         # Transformer Encoder
         encoder_layer = TransformerEncoderLayer(
@@ -568,6 +567,7 @@ def apply_embeddings(queries: torch.Tensor, embedding_map: Dict[str, Embedding],
         # forward pass of Embedding object transforms input queries with embeddings
         queries_x, ref_pos_emb_x = pos_emb(queries, ref_x)
         queries_y, ref_pos_emb_y = pos_emb(queries, ref_y)
+        queries_avg = None # pass dummy var in to collate_queries
 
     # concatenate or stack the queries (avg. method done above since it applies differently)
     queries = collate_queries(
@@ -613,7 +613,7 @@ def _get_activation_fn(activation: str) -> callable:
 def collate_queries(queries: Tuple[torch.Tensor], embedding_agg_method: str
                         ) -> torch.Tensor:
         """
-        
+        Aggregates queries transformed by embeddings
         Args:
             _queries: 4-tuple of queries (already transformed by embeddings) for _, x, y, t
                       each of shape (batch_size, n_query, embed_dim)
