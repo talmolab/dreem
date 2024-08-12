@@ -628,7 +628,6 @@ def collate_queries(queries: Tuple[torch.Tensor], embedding_agg_method: str
         if embedding_agg_method == "average":
             collated_queries = queries_avg
         elif embedding_agg_method == "stack":
-            # TODO: try changing order of stacking so that order is by query token (x1,y1,t1),(x2,y2,t2) rather than
             # (t1,t2,t3...),(x1,x2,x3...),(y1,y2,y3...)
             # stacked is of shape (batch_size, 3*n_query, embed_dim)
             collated_queries = torch.cat((queries_t, queries_x, queries_y), dim=1)

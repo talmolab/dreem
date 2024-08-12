@@ -231,10 +231,6 @@ def test_rope_embedding():
     assert x_rope.size() == x.size()
     assert y_rope.size() == x.size()
 
-def test_embedding_aggregation():
-    """Test stack, concatenate agg methods"""
-
-
 
 def test_embedding_basic():
     """Test embedding logic."""
@@ -470,8 +466,9 @@ def test_transformer_basic():
     num_frames = 32
     num_detected = 10
     img_shape = (1, 100, 100)
-
-    transformer = Transformer(d_model=feats, num_encoder_layers=1, num_decoder_layers=1)
+    embedding_meta = {"embedding_agg_method": "stack"}
+    transformer = Transformer(d_model=feats, num_encoder_layers=1, num_decoder_layers=1,
+                              embedding_meta=embedding_meta)
 
     frames = []
 
