@@ -186,18 +186,22 @@ class Transformer(torch.nn.Module):
         encoder_queries = ref_features
 
         # (encoder_features, ref_pos_emb, ref_temp_emb) \
-        encoder_features = self.encoder(
+        encoder_features, pos_emb_traceback, temp_emb_traceback = self.encoder(
             encoder_queries, embedding_map={"pos": self.pos_emb, "temp": self.temp_emb},
             boxes=ref_boxes, times=ref_times,
             embedding_agg_method=self.embedding_agg_method
         )  # (total_instances, batch_size, embed_dim) or 
            # (3*total_instances,batch_size,embed_dim) if using stacked embeddings
 
-        # TODO: include support for adding x,y,t embeddings to the instance
-        # if self.return_embedding:
-        #     for i, instance in enumerate(ref_instances):
-        #         instance.add_embedding("pos", ref_pos_emb[i])
-        #         instance.add_embedding("temp", ref_temp_emb[i])
+        if self.return_embedding:
+            for i, instance in enumerate(ref_instances):
+                if self.embedding_agg_method == "average":
+                    ref_pos_emb = pos_emb_traceback[0][i] # array
+                else:
+                    ref_pos_emb = {"x": pos_emb_traceback[0][0][i], "y": pos_emb_traceback[1][0][i]} # dict
+
+                instance.add_embedding("pos", ref_pos_emb) # can be an array or a dict
+                instance.add_embedding("temp", temp_emb_traceback)
 
         # -------------- Begin decoder --------------- #
 
@@ -223,18 +227,22 @@ class Transformer(torch.nn.Module):
             query_times = ref_times
 
 
-        decoder_features = self.decoder(
+        decoder_features, pos_emb_traceback, temp_emb_traceback = self.decoder(
             query_features, encoder_features,
             embedding_map={"pos": self.pos_emb, "temp": self.temp_emb},
             boxes=query_boxes, times=query_times, 
             embedding_agg_method=self.embedding_agg_method
         )  # (L, n_query, batch_size, embed_dim)
 
-        # TODO: include support for x,y,t embeddings and uncomment this
-        # if self.return_embedding:
-        #     for i, instance in enumerate(query_instances):
-        #         instance.add_embedding("pos", query_pos_emb[i])
-        #         instance.add_embedding("temp", query_temp_emb[i])
+        if self.return_embedding:
+            for i, instance in enumerate(ref_instances):
+                if self.embedding_agg_method == "average":
+                    ref_pos_emb = pos_emb_traceback[0][i]  # array
+                else:
+                    ref_pos_emb = {"x": pos_emb_traceback[0][0][i], "y": pos_emb_traceback[1][0][i]}  # dict
+
+                instance.add_embedding("pos", ref_pos_emb)  # can be an array or a dict
+                instance.add_embedding("temp", temp_emb_traceback)
 
         decoder_features = decoder_features.transpose(
             1, 2
@@ -460,13 +468,15 @@ class TransformerEncoder(nn.Module):
 
         for layer in self.layers:
             # compute embeddings and apply to the input queries
-            queries = apply_embeddings(queries, embedding_map, boxes, times, embedding_agg_method)
+            queries, pos_emb_traceback, temp_emb_traceback = apply_embeddings(
+                queries, embedding_map, boxes, times, embedding_agg_method
+            )
             # pass through EncoderLayer
             queries = layer(queries)
 
         encoder_features = self.norm(queries)
 
-        return encoder_features# , ref_pos_emb, ref_temp_emb
+        return encoder_features, pos_emb_traceback, temp_emb_traceback
 
 
 class TransformerDecoder(nn.Module):
@@ -518,15 +528,16 @@ class TransformerDecoder(nn.Module):
         # since the encoder output doesn't change for any number of decoder layer inputs, 
         # we can process its embedding outside the loop
         if embedding_agg_method == "average":
-            encoder_features = apply_embeddings(encoder_features, embedding_map,
+            encoder_features, *_ = apply_embeddings(encoder_features, embedding_map,
                                                 boxes, times, embedding_agg_method)
             # TODO: ^ should embeddings really be applied to encoder output again before cross attention?
             #   switched off for stack and concatenate methods as those further split the tokens. Kept for "average"
             #   for backward compatibility
 
         for layer in self.layers:
-            decoder_features = apply_embeddings(decoder_features, embedding_map,
-                                                  boxes, times, embedding_agg_method)
+            decoder_features, pos_emb_traceback, temp_emb_traceback = apply_embeddings(
+                decoder_features, embedding_map, boxes, times, embedding_agg_method
+            )
             decoder_features = layer(
                 decoder_features, encoder_features
             )
@@ -537,10 +548,9 @@ class TransformerDecoder(nn.Module):
         if self.return_intermediate:
             intermediate.pop()
             intermediate.append(decoder_features)
-
             return torch.stack(intermediate)
 
-        return decoder_features.unsqueeze(0)
+        return decoder_features.unsqueeze(0), pos_emb_traceback, temp_emb_traceback
 
 
 def apply_embeddings(queries: torch.Tensor, embedding_map: Dict[str, Embedding],
@@ -561,6 +571,7 @@ def apply_embeddings(queries: torch.Tensor, embedding_map: Dict[str, Embedding],
         ref_emb = (ref_pos_emb + ref_temp_emb) / 2
         queries_avg = queries + ref_emb
         queries_t = queries_x = queries_y = None
+        pos_emb_traceback = (ref_pos_emb,)
     else:
         # calculate embedding array for x,y from bb centroids; ref_x, ref_y of shape (n_query,)
         ref_x, ref_y = spatial_emb_from_bb(boxes)
@@ -568,6 +579,7 @@ def apply_embeddings(queries: torch.Tensor, embedding_map: Dict[str, Embedding],
         queries_x, ref_pos_emb_x = pos_emb(queries, ref_x)
         queries_y, ref_pos_emb_y = pos_emb(queries, ref_y)
         queries_avg = None # pass dummy var in to collate_queries
+        pos_emb_traceback = (ref_pos_emb_x, ref_pos_emb_y)
 
     # concatenate or stack the queries (avg. method done above since it applies differently)
     queries = collate_queries(
@@ -576,7 +588,7 @@ def apply_embeddings(queries: torch.Tensor, embedding_map: Dict[str, Embedding],
     # transpose for input to EncoderLayer to (n_queries, batch_size, embed_dim)
     queries = queries.permute(1, 0, 2)
 
-    return queries
+    return queries, pos_emb_traceback, ref_temp_emb
 
 
 def _get_clones(module: nn.Module, N: int) -> nn.ModuleList:

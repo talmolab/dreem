@@ -516,13 +516,13 @@ def test_transformer_embedding():
         "temp": {"mode": "learned", "emb_num": 16, "normalize": True},
         "embedding_agg_method": "average"
     }
-    # TODO: add support for return_embedding=True
+
     transformer = Transformer(
         d_model=feats,
         num_encoder_layers=1,
         num_decoder_layers=1,
         embedding_meta=embedding_meta,
-        return_embedding=False,
+        return_embedding=True,
     )
 
     assert transformer.pos_emb.mode == "learned"
@@ -532,22 +532,22 @@ def test_transformer_embedding():
 
     assert asso_preds[0].matrix.size() == (num_detected * num_frames,) * 2
 
-    # pos_emb = torch.concat(
-    #     [instance.get_embedding("pos") for instance in instances], axis=0
-    # )
-    # temp_emb = torch.concat(
-    #     [instance.get_embedding("pos") for instance in instances], axis=0
-    # )
-    #
-    # assert pos_emb.size() == (
-    #     len(instances),
-    #     feats,
-    # ), pos_emb.shape
-    #
-    # assert temp_emb.size() == (
-    #     len(instances),
-    #     feats,
-    # ), temp_emb.shape
+    pos_emb = torch.concat(
+        [instance.get_embedding("pos") for instance in instances], axis=0
+    )
+    temp_emb = torch.concat(
+        [instance.get_embedding("pos") for instance in instances], axis=0
+    )
+
+    assert pos_emb.size() == (
+        len(instances),
+        feats,
+    ), pos_emb.shape
+
+    assert temp_emb.size() == (
+        len(instances),
+        feats,
+    ), temp_emb.shape
 
 
 def test_tracking_transformer():
@@ -582,7 +582,7 @@ def test_tracking_transformer():
     }
 
     encoder_cfg = {"model_name": "resnet18", "pretrained": False, "in_chans": 3}
-    # TODO: add support for return_embedding=True and uncomment lines below
+
     tracking_transformer = GlobalTrackingTransformer(
         encoder_cfg=encoder_cfg,
         d_model=feats,
@@ -596,19 +596,19 @@ def test_tracking_transformer():
 
     assert asso_preds[0].matrix.size() == (num_detected * num_frames,) * 2
 
-    # pos_emb = torch.concat(
-    #     [instance.get_embedding("pos") for instance in instances], axis=0
-    # )
-    # temp_emb = torch.concat(
-    #     [instance.get_embedding("pos") for instance in instances], axis=0
-    # )
-    #
-    # assert pos_emb.size() == (
-    #     len(instances),
-    #     feats,
-    # ), pos_emb.shape
-    #
-    # assert temp_emb.size() == (
-    #     len(instances),
-    #     feats,
-    # ), temp_emb.shape
+    pos_emb = torch.concat(
+        [instance.get_embedding("pos") for instance in instances], axis=0
+    )
+    temp_emb = torch.concat(
+        [instance.get_embedding("pos") for instance in instances], axis=0
+    )
+
+    assert pos_emb.size() == (
+        len(instances),
+        feats,
+    ), pos_emb.shape
+
+    assert temp_emb.size() == (
+        len(instances),
+        feats,
+    ), temp_emb.shape
