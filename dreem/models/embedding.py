@@ -99,8 +99,9 @@ class RotaryPositionalEmbeddings(nn.Module):
         # create the lookup array based on how many instances there are
         # max(101, seq_len) is for positional vs temporal; pos can only have idx up to
         # 100 since it's a fraction of [0,1]*100. temp is from [0, clip_len]; since clip_len
-        # not available, we use # of instances from input x; this is always >= clip_len
-        self.build_rope_cache(max(101, seq_len)) # registers cache
+        # not available, we use the last value in the indexing array since this will be the
+        # last possible frame that we would need to index since no instances in a frame after that
+        self.build_rope_cache(max(101, input_pos[:, -1].max() + 1)) # registers cache
         self.cache = self.cache.to(input_pos.device)
         # extract the values based on whether input_pos is set or not
         rope_cache = (
@@ -269,7 +270,13 @@ class Embedding(torch.nn.Module):
 
             
     def _transform(self, x, emb):
-        
+        """Routes to the relevant embedding function to transform the input queries
+
+        Args:
+             x: Input queries of shape (batch_size, N, embed_dim)
+             emb: Embedding array to apply to data; can be (N, embed_dim) or
+             (batch_size, n_query, num_heads, embed_dim // 2, 2) if using RoPE
+        """
         if self._emb_func == self._rope_embedding:
             return self._apply_rope(x, emb)
         else:
@@ -277,8 +284,7 @@ class Embedding(torch.nn.Module):
     
     
     def _apply_rope(self, x, emb): 
-        """
-        Applies Rotary Positional Embedding to input queries
+        """Applies Rotary Positional Embedding to input queries
 
         Args:
             x: Input queries of shape (batch_size, n_query, embed_dim)
@@ -308,8 +314,7 @@ class Embedding(torch.nn.Module):
     
     
     def _apply_additive_embeddings(self, x, emb):
-        """
-        Applies additive embeddings to input queries
+        """Applies additive embeddings to input queries
 
         Args:
             x: Input tensor of shape (batch_size, N, embed_dim)
@@ -361,8 +366,7 @@ class Embedding(torch.nn.Module):
 
     
     def _rope_embedding(self, seq_positions: torch.Tensor, input_shape: torch.Size) -> torch.Tensor:
-        """
-        Computes the rotation matrix to apply RoPE to input queries
+        """Computes the rotation matrix to apply RoPE to input queries
         Args:
             seq_positions: Pos array of shape (embed_dim,) used to compute rotational embedding
             input_shape: Shape of the input queries; needed for rope
