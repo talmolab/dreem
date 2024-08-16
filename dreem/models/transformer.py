@@ -99,6 +99,9 @@ class Transformer(torch.nn.Module):
                         embedding_agg_method=self.embedding_agg_method,
                         **temp_emb_cfg
                     )
+        else:
+            self.embedding_meta = {}
+            self.embedding_agg_method = None
 
         # Transformer Encoder
         encoder_layer = TransformerEncoderLayer(
@@ -133,7 +136,7 @@ class Transformer(torch.nn.Module):
             feature_dim=feature_dim_attn_head,
             num_layers=num_layers_attn_head,
             dropout=dropout_attn_head,
-            embedding_agg_method=self.embedding_agg_method
+            **self.embedding_meta
         )
 
         self._reset_parameters()
@@ -230,6 +233,7 @@ class Transformer(torch.nn.Module):
         decoder_features, pos_emb_traceback, temp_emb_traceback = self.decoder(
             query_features, encoder_features,
             embedding_map={"pos": self.pos_emb, "temp": self.temp_emb},
+            enc_boxes=ref_boxes, enc_times=ref_times,
             boxes=query_boxes, times=query_times, 
             embedding_agg_method=self.embedding_agg_method
         )  # (L, n_query, batch_size, embed_dim)
@@ -450,7 +454,7 @@ class TransformerEncoder(nn.Module):
     def forward(
         self, queries: torch.Tensor, embedding_map: Dict[str, Embedding],
             boxes: torch.Tensor, times: torch.Tensor,
-            embedding_agg_method: str
+            embedding_agg_method: str = None
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Execute a forward pass of encoder layer. Computes and applies embeddings before input to EncoderLayer
 
@@ -508,8 +512,9 @@ class TransformerDecoder(nn.Module):
         decoder_queries: torch.Tensor,
         encoder_features: torch.Tensor,
         embedding_map: Dict[str, Embedding],
+        enc_boxes: torch.Tensor, enc_times: torch.Tensor,
         boxes: torch.Tensor, times: torch.Tensor,
-        embedding_agg_method: str
+        embedding_agg_method: str = None
     ) -> torch.Tensor:
         """Execute a forward pass of the decoder block.
 
@@ -529,7 +534,7 @@ class TransformerDecoder(nn.Module):
         # we can process its embedding outside the loop
         if embedding_agg_method == "average":
             encoder_features, *_ = apply_embeddings(encoder_features, embedding_map,
-                                                boxes, times, embedding_agg_method)
+                                                enc_boxes, enc_times, embedding_agg_method)
             # TODO: ^ should embeddings really be applied to encoder output again before cross attention?
             #   switched off for stack and concatenate methods as those further split the tokens. Kept for "average"
             #   for backward compatibility
@@ -565,25 +570,31 @@ def apply_embeddings(queries: torch.Tensor, embedding_map: Dict[str, Embedding],
     queries = queries.permute(1,0,2) # queries is shape (batch_size, n_query, embed_dim)
     # calculate temporal embeddings and transform queries
     queries_t, ref_temp_emb = temp_emb(queries, times)
-    # if avg. of temp and pos, need bounding boxes; bb only used for method "average"
-    if embedding_agg_method == "average":
-        _, ref_pos_emb = pos_emb(queries, boxes)
-        ref_emb = (ref_pos_emb + ref_temp_emb) / 2
-        queries_avg = queries + ref_emb
-        queries_t = queries_x = queries_y = None
-        pos_emb_traceback = (ref_pos_emb,)
+
+    if embedding_agg_method is None:
+        pos_emb_traceback = (torch.zeros_like(queries),)
+        queries_avg = queries_t = queries_x = queries_y = None
     else:
-        # calculate embedding array for x,y from bb centroids; ref_x, ref_y of shape (n_query,)
-        ref_x, ref_y = spatial_emb_from_bb(boxes)
-        # forward pass of Embedding object transforms input queries with embeddings
-        queries_x, ref_pos_emb_x = pos_emb(queries, ref_x)
-        queries_y, ref_pos_emb_y = pos_emb(queries, ref_y)
-        queries_avg = None # pass dummy var in to collate_queries
-        pos_emb_traceback = (ref_pos_emb_x, ref_pos_emb_y)
+        # if avg. of temp and pos, need bounding boxes; bb only used for method "average"
+        if embedding_agg_method == "average":
+            _, ref_pos_emb = pos_emb(queries, boxes)
+            ref_emb = (ref_pos_emb + ref_temp_emb) / 2
+            queries_avg = queries + ref_emb
+            queries_t = queries_x = queries_y = None
+            pos_emb_traceback = (ref_pos_emb,)
+        else:
+            # calculate embedding array for x,y from bb centroids; ref_x, ref_y of shape (n_query,)
+            ref_x, ref_y = spatial_emb_from_bb(boxes)
+            # forward pass of Embedding object transforms input queries with embeddings
+            queries_x, ref_pos_emb_x = pos_emb(queries, ref_x)
+            queries_y, ref_pos_emb_y = pos_emb(queries, ref_y)
+            queries_avg = None # pass dummy var in to collate_queries
+            pos_emb_traceback = (ref_pos_emb_x, ref_pos_emb_y)
+
 
     # concatenate or stack the queries (avg. method done above since it applies differently)
     queries = collate_queries(
-        (queries_avg, queries_t, queries_x, queries_y),
+        (queries_avg, queries_t, queries_x, queries_y, queries),
         embedding_agg_method)
     # transpose for input to EncoderLayer to (n_queries, batch_size, embed_dim)
     queries = queries.permute(1, 0, 2)
@@ -627,7 +638,7 @@ def collate_queries(queries: Tuple[torch.Tensor], embedding_agg_method: str
         """
         Aggregates queries transformed by embeddings
         Args:
-            _queries: 4-tuple of queries (already transformed by embeddings) for _, x, y, t
+            _queries: 5-tuple of queries (already transformed by embeddings) for _, x, y, t, original input
                       each of shape (batch_size, n_query, embed_dim)
             embedding_agg_method: String representing the aggregation method for embeddings
 
@@ -635,7 +646,7 @@ def collate_queries(queries: Tuple[torch.Tensor], embedding_agg_method: str
                 stacked (increased number of tokens), or averaged (original token number and length)
         """
 
-        queries_avg, queries_t, queries_x, queries_y = queries
+        queries_avg, queries_t, queries_x, queries_y, orig_queries = queries
 
         if embedding_agg_method == "average":
             collated_queries = queries_avg
@@ -650,6 +661,8 @@ def collate_queries(queries: Tuple[torch.Tensor], embedding_agg_method: str
             collated_queries = torch.cat((queries_t, queries_x, queries_y), dim=2)
             # pass through MLP to project into space of (batch_size, n_query, embed_dim)
             collated_queries = mlp(collated_queries)
+        else:
+            collated_queries = orig_queries
             
         return collated_queries
         
