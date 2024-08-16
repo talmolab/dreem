@@ -14,7 +14,7 @@ class ATTWeightHead(torch.nn.Module):
         feature_dim: int,
         num_layers: int,
         dropout: float,
-        embedding_agg_method: str = "average"
+        **kwargs
     ):
         """Initialize an instance of ATTWeightHead.
 
@@ -25,7 +25,10 @@ class ATTWeightHead(torch.nn.Module):
             embedding_agg_method: how the embeddings are aggregated; average/stack/concatenate
         """
         super().__init__()
-        self.embedding_agg_method = embedding_agg_method
+        if 'embedding_agg_method' in kwargs:
+            self.embedding_agg_method = kwargs['embedding_agg_method']
+        else:
+            self.embedding_agg_method = None
 
         # if using stacked embeddings, use 1x1 conv with x,y,t embeddings as channels
         # ensures output represents ref instances by query instances

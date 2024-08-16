@@ -318,7 +318,8 @@ class Embedding(torch.nn.Module):
         Returns:
             Tensor: Input queries with embeddings added - shape (batch_size, N, embed_dim)
         """
-        return x + emb.unsqueeze(0)
+        _emb = emb.unsqueeze(0)
+        return x + _emb
     
         
     def forward(self, x, seq_positions: torch.Tensor) -> torch.Tensor:
