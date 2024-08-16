@@ -229,7 +229,6 @@ class Transformer(torch.nn.Module):
             query_boxes = ref_boxes
             query_times = ref_times
 
-
         decoder_features, pos_emb_traceback, temp_emb_traceback = self.decoder(
             query_features, encoder_features,
             embedding_map={"pos": self.pos_emb, "temp": self.temp_emb},
@@ -553,7 +552,7 @@ class TransformerDecoder(nn.Module):
         if self.return_intermediate:
             intermediate.pop()
             intermediate.append(decoder_features)
-            return torch.stack(intermediate)
+            return torch.stack(intermediate), pos_emb_traceback, temp_emb_traceback
 
         return decoder_features.unsqueeze(0), pos_emb_traceback, temp_emb_traceback
 
@@ -561,8 +560,16 @@ class TransformerDecoder(nn.Module):
 def apply_embeddings(queries: torch.Tensor, embedding_map: Dict[str, Embedding],
             boxes: torch.Tensor, times: torch.Tensor,
             embedding_agg_method: str):
-    """
-    Enter docstring here
+    """ Applies embeddings to input queries for various aggregation methods. This function
+    is called from the transformer encoder and decoder
+
+    Args:
+        queries: The input tensor of shape (n_query, batch_size, embed_dim).
+        embedding_map: Dict of Embedding objects defining the pos/temp embeddings to be applied
+        to the input data
+        boxes: Bounding box based embedding ids of shape (n_query, n_anchors, 4)
+        times: Times based embedding ids of shape (n_query,)
+        embedding_agg_method: method of aggregation of embeddings e.g. stack/concatenate/average
     """
 
     pos_emb, temp_emb = embedding_map["pos"], embedding_map["temp"]
@@ -635,14 +642,15 @@ def _get_activation_fn(activation: str) -> callable:
 
 def collate_queries(queries: Tuple[torch.Tensor], embedding_agg_method: str
                         ) -> torch.Tensor:
-        """
-        Aggregates queries transformed by embeddings
+        """Aggregates queries transformed by embeddings
+
         Args:
             _queries: 5-tuple of queries (already transformed by embeddings) for _, x, y, t, original input
                       each of shape (batch_size, n_query, embed_dim)
             embedding_agg_method: String representing the aggregation method for embeddings
 
-        Returns: Tensor of aggregated queries of shape; can be concatenated (increased length of tokens),
+        Returns:
+            Tensor of aggregated queries of shape; can be concatenated (increased length of tokens),
                 stacked (increased number of tokens), or averaged (original token number and length)
         """
 
@@ -670,6 +678,7 @@ def collate_queries(queries: Tuple[torch.Tensor], embedding_agg_method: str
 def spatial_emb_from_bb(bb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Computes embedding arrays for x,y spatial dimensions using centroids from bounding boxes
+
     Args:
         bb: Bounding boxes of shape (n_query, n_anchors, 4) from which to compute x,y centroids;
         each bounding box is [ymin, xmin, ymax, xmax]
