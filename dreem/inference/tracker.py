@@ -463,7 +463,6 @@ class Tracker:
         # hungarian matching
         match_i, match_j = linear_sum_assignment((-traj_score))
 
-
         track_ids = instance_ids.new_full((n_query,), -1)
         for i, j in zip(match_i, match_j):
             # The overlap threshold is multiplied by the number of times the unique track j is matched to an

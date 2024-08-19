@@ -15,7 +15,7 @@ from dreem.models.transformer import (
     TransformerEncoderLayer,
     TransformerDecoderLayer,
     spatial_emb_from_bb,
-    apply_embeddings
+    apply_embeddings,
 )
 
 
@@ -35,7 +35,9 @@ def test_att_weight_head():
     """Test self-attention head logic."""
     b, n, f = 1, 10, 1024  # batch size, num instances, features
 
-    att_weight_head = ATTWeightHead(feature_dim=f, num_layers=2, dropout=0.1, embedding_agg_method="average")
+    att_weight_head = ATTWeightHead(
+        feature_dim=f, num_layers=2, dropout=0.1, embedding_agg_method="average"
+    )
 
     q = k = torch.rand(size=(b, n, f))
 
@@ -165,19 +167,39 @@ def test_embedding_validity():
 
     with pytest.raises(Exception):
         # embedding_agg_method cannot be average for rope
-        _ = Embedding(emb_type="pos", mode="rope", features=128, embedding_agg_method="average")
-        _ = Embedding(emb_type="pos", mode="rope", features=128, embedding_agg_method="stacked")
+        _ = Embedding(
+            emb_type="pos", mode="rope", features=128, embedding_agg_method="average"
+        )
+        _ = Embedding(
+            emb_type="pos", mode="rope", features=128, embedding_agg_method="stacked"
+        )
 
-    _ = Embedding(emb_type="pos", mode="rope", features=128, embedding_agg_method="stack")
-    _ = Embedding(emb_type="pos", mode="rope", features=128, embedding_agg_method="concatenate")
+    _ = Embedding(
+        emb_type="pos", mode="rope", features=128, embedding_agg_method="stack"
+    )
+    _ = Embedding(
+        emb_type="pos", mode="rope", features=128, embedding_agg_method="concatenate"
+    )
 
-    _ = Embedding(emb_type="pos", mode="fixed", features=128, embedding_agg_method="average")
-    _ = Embedding(emb_type="pos", mode="fixed", features=128, embedding_agg_method="stack")
-    _ = Embedding(emb_type="pos", mode="fixed", features=128, embedding_agg_method="concatenate")
+    _ = Embedding(
+        emb_type="pos", mode="fixed", features=128, embedding_agg_method="average"
+    )
+    _ = Embedding(
+        emb_type="pos", mode="fixed", features=128, embedding_agg_method="stack"
+    )
+    _ = Embedding(
+        emb_type="pos", mode="fixed", features=128, embedding_agg_method="concatenate"
+    )
 
-    _ = Embedding(emb_type="pos", mode="learned", features=128, embedding_agg_method="average")
-    _ = Embedding(emb_type="pos", mode="learned", features=128, embedding_agg_method="stack")
-    _ = Embedding(emb_type="pos", mode="learned", features=128, embedding_agg_method="concatenate")
+    _ = Embedding(
+        emb_type="pos", mode="learned", features=128, embedding_agg_method="average"
+    )
+    _ = Embedding(
+        emb_type="pos", mode="learned", features=128, embedding_agg_method="stack"
+    )
+    _ = Embedding(
+        emb_type="pos", mode="learned", features=128, embedding_agg_method="concatenate"
+    )
 
     _ = Embedding(emb_type="temp", mode="learned", features=128)
     _ = Embedding(emb_type="pos", mode="learned", features=128)
@@ -198,16 +220,10 @@ def test_rope_embedding():
     x = torch.rand(size=(1, N, d_model))
 
     pos_emb = Embedding(
-        emb_type="pos",
-        mode="rope",
-        features=d_model,
-        embedding_agg_method="stack"
+        emb_type="pos", mode="rope", features=d_model, embedding_agg_method="stack"
     )
     temp_emb = Embedding(
-        emb_type="temp",
-        mode="rope",
-        features=d_model,
-        embedding_agg_method="stack"
+        emb_type="temp", mode="rope", features=d_model, embedding_agg_method="stack"
     )
 
     ref_x, ref_y = spatial_emb_from_bb(boxes)
@@ -452,10 +468,7 @@ def test_transformer_decoder():
     # with position
     pos_emb = query_pos_emb = torch.ones_like(encoder_features)
 
-    decoder_features = transformer_decoder(
-        decoder_queries,
-        encoder_features
-    )
+    decoder_features = transformer_decoder(decoder_queries, encoder_features)
 
     assert decoder_features.size() == decoder_queries.size()
 
@@ -467,8 +480,12 @@ def test_transformer_basic():
     num_detected = 10
     img_shape = (1, 100, 100)
     embedding_meta = {"embedding_agg_method": "stack"}
-    transformer = Transformer(d_model=feats, num_encoder_layers=1, num_decoder_layers=1,
-                              embedding_meta=embedding_meta)
+    transformer = Transformer(
+        d_model=feats,
+        num_encoder_layers=1,
+        num_decoder_layers=1,
+        embedding_meta=embedding_meta,
+    )
 
     frames = []
 
@@ -514,7 +531,7 @@ def test_transformer_embedding():
     embedding_meta = {
         "pos": {"mode": "learned", "emb_num": 16, "normalize": True},
         "temp": {"mode": "learned", "emb_num": 16, "normalize": True},
-        "embedding_agg_method": "average"
+        "embedding_agg_method": "average",
     }
 
     transformer = Transformer(
