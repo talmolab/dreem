@@ -37,7 +37,6 @@ class MLP(torch.nn.Module):
                     # list concatenations to ensure layer shape compability
                     for n, k in zip([input_dim] + h, h + [output_dim])
                 ]
-                
             )
             if self.dropout > 0.0:
                 self.dropouts = torch.nn.ModuleList(

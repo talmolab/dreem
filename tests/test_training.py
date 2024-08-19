@@ -138,7 +138,7 @@ def test_config_gtr_runner(tmp_path, base_config, params_config, two_flies):
         "dataset.clip_length": 8,
         "trainer.min_epochs": 1,
         "checkpointing.dirpath": model_dir,
-        "logging.save_dir": logs_dir
+        "logging.save_dir": logs_dir,
     }
 
     cfg.set_hparams(hparams)

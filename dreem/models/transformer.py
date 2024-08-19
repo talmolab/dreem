@@ -81,23 +81,28 @@ class Transformer(torch.nn.Module):
         self.temp_emb = Embedding(emb_type="off", mode="off", features=self.d_model)
 
         if self.embedding_meta:
-            self.embedding_agg_method = embedding_meta["embedding_agg_method"] \
-                if "embedding_agg_method" in embedding_meta else "average"
+            self.embedding_agg_method = (
+                embedding_meta["embedding_agg_method"]
+                if "embedding_agg_method" in embedding_meta
+                else "average"
+            )
             if "pos" in self.embedding_meta:
                 pos_emb_cfg = self.embedding_meta["pos"]
                 if pos_emb_cfg:
                     self.pos_emb = Embedding(
-                        emb_type="pos", features=self.d_model,
+                        emb_type="pos",
+                        features=self.d_model,
                         embedding_agg_method=self.embedding_agg_method,
-                        **pos_emb_cfg
-                    ) # agg method must be the same for pos and temp embeddings
+                        **pos_emb_cfg,
+                    )  # agg method must be the same for pos and temp embeddings
             if "temp" in self.embedding_meta:
                 temp_emb_cfg = self.embedding_meta["temp"]
                 if temp_emb_cfg:
                     self.temp_emb = Embedding(
-                        emb_type="temp", features=self.d_model,
+                        emb_type="temp",
+                        features=self.d_model,
                         embedding_agg_method=self.embedding_agg_method,
-                        **temp_emb_cfg
+                        **temp_emb_cfg,
                     )
         else:
             self.embedding_meta = {}
@@ -136,7 +141,7 @@ class Transformer(torch.nn.Module):
             feature_dim=feature_dim_attn_head,
             num_layers=num_layers_attn_head,
             dropout=dropout_attn_head,
-            **self.embedding_meta
+            **self.embedding_meta,
         )
 
         self._reset_parameters()
@@ -190,20 +195,25 @@ class Transformer(torch.nn.Module):
 
         # (encoder_features, ref_pos_emb, ref_temp_emb) \
         encoder_features, pos_emb_traceback, temp_emb_traceback = self.encoder(
-            encoder_queries, embedding_map={"pos": self.pos_emb, "temp": self.temp_emb},
-            boxes=ref_boxes, times=ref_times,
-            embedding_agg_method=self.embedding_agg_method
-        )  # (total_instances, batch_size, embed_dim) or 
-           # (3*total_instances,batch_size,embed_dim) if using stacked embeddings
+            encoder_queries,
+            embedding_map={"pos": self.pos_emb, "temp": self.temp_emb},
+            boxes=ref_boxes,
+            times=ref_times,
+            embedding_agg_method=self.embedding_agg_method,
+        )  # (total_instances, batch_size, embed_dim) or
+        # (3*total_instances,batch_size,embed_dim) if using stacked embeddings
 
         if self.return_embedding:
             for i, instance in enumerate(ref_instances):
                 if self.embedding_agg_method == "average":
-                    ref_pos_emb = pos_emb_traceback[0][i] # array
+                    ref_pos_emb = pos_emb_traceback[0][i]  # array
                 else:
-                    ref_pos_emb = {"x": pos_emb_traceback[0][0][i], "y": pos_emb_traceback[1][0][i]} # dict
+                    ref_pos_emb = {
+                        "x": pos_emb_traceback[0][0][i],
+                        "y": pos_emb_traceback[1][0][i],
+                    }  # dict
 
-                instance.add_embedding("pos", ref_pos_emb) # can be an array or a dict
+                instance.add_embedding("pos", ref_pos_emb)  # can be an array or a dict
                 instance.add_embedding("temp", temp_emb_traceback)
 
         # -------------- Begin decoder --------------- #
@@ -222,7 +232,7 @@ class Transformer(torch.nn.Module):
             # just get boxes, we already have query_times from above
             query_boxes = get_boxes(query_instances)
             query_boxes = torch.nan_to_num(query_boxes, -1.0)
-        else: # for training, query_instances is None so just pass in the ref data
+        else:  # for training, query_instances is None so just pass in the ref data
             n_query = total_instances
             query_instances = ref_instances
             query_features = ref_features
@@ -230,11 +240,14 @@ class Transformer(torch.nn.Module):
             query_times = ref_times
 
         decoder_features, pos_emb_traceback, temp_emb_traceback = self.decoder(
-            query_features, encoder_features,
+            query_features,
+            encoder_features,
             embedding_map={"pos": self.pos_emb, "temp": self.temp_emb},
-            enc_boxes=ref_boxes, enc_times=ref_times,
-            boxes=query_boxes, times=query_times, 
-            embedding_agg_method=self.embedding_agg_method
+            enc_boxes=ref_boxes,
+            enc_times=ref_times,
+            boxes=query_boxes,
+            times=query_times,
+            embedding_agg_method=self.embedding_agg_method,
         )  # (L, n_query, batch_size, embed_dim)
 
         if self.return_embedding:
@@ -242,7 +255,10 @@ class Transformer(torch.nn.Module):
                 if self.embedding_agg_method == "average":
                     ref_pos_emb = pos_emb_traceback[0][i]  # array
                 else:
-                    ref_pos_emb = {"x": pos_emb_traceback[0][0][i], "y": pos_emb_traceback[1][0][i]}  # dict
+                    ref_pos_emb = {
+                        "x": pos_emb_traceback[0][0][i],
+                        "y": pos_emb_traceback[1][0][i],
+                    }  # dict
 
                 instance.add_embedding("pos", ref_pos_emb)  # can be an array or a dict
                 instance.add_embedding("temp", temp_emb_traceback)
@@ -250,7 +266,7 @@ class Transformer(torch.nn.Module):
         decoder_features = decoder_features.transpose(
             1, 2
         )  # # (L, batch_size, n_query, embed_dim) or ((L, batch_size, 3*n_query, embed_dim)) if using stacked embeddings
-        encoder_features = encoder_features.permute(1, 0, 2) 
+        encoder_features = encoder_features.permute(1, 0, 2)
         # (batch_size, total_instances, embed_dim) or (batch_size, 3*total_instances, embed_dim)
 
         asso_output = []
@@ -260,7 +276,7 @@ class Transformer(torch.nn.Module):
             # or number of ref instances for training. total_instances is always the number of reference instances
             asso_matrix = self.attn_head(frame_features, encoder_features).view(
                 n_query, total_instances
-            ) # call to view() just removes the batch dimension; output of attn_head is (1,n_query,total_instances)
+            )  # call to view() just removes the batch dimension; output of attn_head is (1,n_query,total_instances)
             asso_matrix = AssociationMatrix(asso_matrix, ref_instances, query_instances)
 
             asso_output.append(asso_matrix)
@@ -305,9 +321,7 @@ class TransformerEncoderLayer(nn.Module):
 
         self.activation = _get_activation_fn(activation)
 
-    def forward(
-        self, queries: torch.Tensor
-    ) -> torch.Tensor:
+    def forward(self, queries: torch.Tensor) -> torch.Tensor:
         """Execute a forward pass of the encoder layer.
 
         Args:
@@ -451,9 +465,12 @@ class TransformerEncoder(nn.Module):
         self.norm = norm if norm is not None else nn.Identity()
 
     def forward(
-        self, queries: torch.Tensor, embedding_map: Dict[str, Embedding],
-            boxes: torch.Tensor, times: torch.Tensor,
-            embedding_agg_method: str = None
+        self,
+        queries: torch.Tensor,
+        embedding_map: Dict[str, Embedding],
+        boxes: torch.Tensor,
+        times: torch.Tensor,
+        embedding_agg_method: str = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Execute a forward pass of encoder layer. Computes and applies embeddings before input to EncoderLayer
 
@@ -511,9 +528,11 @@ class TransformerDecoder(nn.Module):
         decoder_queries: torch.Tensor,
         encoder_features: torch.Tensor,
         embedding_map: Dict[str, Embedding],
-        enc_boxes: torch.Tensor, enc_times: torch.Tensor,
-        boxes: torch.Tensor, times: torch.Tensor,
-        embedding_agg_method: str = None
+        enc_boxes: torch.Tensor,
+        enc_times: torch.Tensor,
+        boxes: torch.Tensor,
+        times: torch.Tensor,
+        embedding_agg_method: str = None,
     ) -> torch.Tensor:
         """Execute a forward pass of the decoder block.
 
@@ -521,7 +540,7 @@ class TransformerDecoder(nn.Module):
             decoder_queries: Query sequence for decoder to generate (n_query, batch_size, embed_dim).
             encoder_features: Output from encoder, that decoder uses to attend to relevant
                 parts of input sequence (total_instances, batch_size, embed_dim)
-            
+
 
         Returns:
             The output tensor of shape (L, n_query, batch_size, embed_dim).
@@ -529,11 +548,16 @@ class TransformerDecoder(nn.Module):
         decoder_features = decoder_queries
         intermediate = []
 
-        # since the encoder output doesn't change for any number of decoder layer inputs, 
+        # since the encoder output doesn't change for any number of decoder layer inputs,
         # we can process its embedding outside the loop
         if embedding_agg_method == "average":
-            encoder_features, *_ = apply_embeddings(encoder_features, embedding_map,
-                                                enc_boxes, enc_times, embedding_agg_method)
+            encoder_features, *_ = apply_embeddings(
+                encoder_features,
+                embedding_map,
+                enc_boxes,
+                enc_times,
+                embedding_agg_method,
+            )
             # TODO: ^ should embeddings really be applied to encoder output again before cross attention?
             #   switched off for stack and concatenate methods as those further split the tokens. Kept for "average"
             #   for backward compatibility
@@ -542,9 +566,7 @@ class TransformerDecoder(nn.Module):
             decoder_features, pos_emb_traceback, temp_emb_traceback = apply_embeddings(
                 decoder_features, embedding_map, boxes, times, embedding_agg_method
             )
-            decoder_features = layer(
-                decoder_features, encoder_features
-            )
+            decoder_features = layer(decoder_features, encoder_features)
             if self.return_intermediate:
                 intermediate.append(self.norm(decoder_features))
 
@@ -557,10 +579,14 @@ class TransformerDecoder(nn.Module):
         return decoder_features.unsqueeze(0), pos_emb_traceback, temp_emb_traceback
 
 
-def apply_embeddings(queries: torch.Tensor, embedding_map: Dict[str, Embedding],
-            boxes: torch.Tensor, times: torch.Tensor,
-            embedding_agg_method: str):
-    """ Applies embeddings to input queries for various aggregation methods. This function
+def apply_embeddings(
+    queries: torch.Tensor,
+    embedding_map: Dict[str, Embedding],
+    boxes: torch.Tensor,
+    times: torch.Tensor,
+    embedding_agg_method: str,
+):
+    """Applies embeddings to input queries for various aggregation methods. This function
     is called from the transformer encoder and decoder
 
     Args:
@@ -574,7 +600,9 @@ def apply_embeddings(queries: torch.Tensor, embedding_map: Dict[str, Embedding],
 
     pos_emb, temp_emb = embedding_map["pos"], embedding_map["temp"]
     # queries is of shape (n_query, batch_size, embed_dim); transpose for embeddings
-    queries = queries.permute(1,0,2) # queries is shape (batch_size, n_query, embed_dim)
+    queries = queries.permute(
+        1, 0, 2
+    )  # queries is shape (batch_size, n_query, embed_dim)
     # calculate temporal embeddings and transform queries
     queries_t, ref_temp_emb = temp_emb(queries, times)
 
@@ -595,14 +623,13 @@ def apply_embeddings(queries: torch.Tensor, embedding_map: Dict[str, Embedding],
             # forward pass of Embedding object transforms input queries with embeddings
             queries_x, ref_pos_emb_x = pos_emb(queries, ref_x)
             queries_y, ref_pos_emb_y = pos_emb(queries, ref_y)
-            queries_avg = None # pass dummy var in to collate_queries
+            queries_avg = None  # pass dummy var in to collate_queries
             pos_emb_traceback = (ref_pos_emb_x, ref_pos_emb_y)
-
 
     # concatenate or stack the queries (avg. method done above since it applies differently)
     queries = collate_queries(
-        (queries_avg, queries_t, queries_x, queries_y, queries),
-        embedding_agg_method)
+        (queries_avg, queries_t, queries_x, queries_y, queries), embedding_agg_method
+    )
     # transpose for input to EncoderLayer to (n_queries, batch_size, embed_dim)
     queries = queries.permute(1, 0, 2)
 
@@ -640,40 +667,46 @@ def _get_activation_fn(activation: str) -> callable:
     raise RuntimeError(f"activation should be relu/gelu/glu, not {activation}.")
 
 
-def collate_queries(queries: Tuple[torch.Tensor], embedding_agg_method: str
-                        ) -> torch.Tensor:
-        """Aggregates queries transformed by embeddings
+def collate_queries(
+    queries: Tuple[torch.Tensor], embedding_agg_method: str
+) -> torch.Tensor:
+    """Aggregates queries transformed by embeddings
 
-        Args:
-            _queries: 5-tuple of queries (already transformed by embeddings) for _, x, y, t, original input
-                      each of shape (batch_size, n_query, embed_dim)
-            embedding_agg_method: String representing the aggregation method for embeddings
+    Args:
+        _queries: 5-tuple of queries (already transformed by embeddings) for _, x, y, t, original input
+                  each of shape (batch_size, n_query, embed_dim)
+        embedding_agg_method: String representing the aggregation method for embeddings
 
-        Returns:
-            Tensor of aggregated queries of shape; can be concatenated (increased length of tokens),
-                stacked (increased number of tokens), or averaged (original token number and length)
-        """
+    Returns:
+        Tensor of aggregated queries of shape; can be concatenated (increased length of tokens),
+            stacked (increased number of tokens), or averaged (original token number and length)
+    """
 
-        queries_avg, queries_t, queries_x, queries_y, orig_queries = queries
+    queries_avg, queries_t, queries_x, queries_y, orig_queries = queries
 
-        if embedding_agg_method == "average":
-            collated_queries = queries_avg
-        elif embedding_agg_method == "stack":
-            # (t1,t2,t3...),(x1,x2,x3...),(y1,y2,y3...)
-            # stacked is of shape (batch_size, 3*n_query, embed_dim)
-            collated_queries = torch.cat((queries_t, queries_x, queries_y), dim=1)
-        elif embedding_agg_method == "concatenate":
-            mlp = MLP(input_dim=queries_t.shape[-1] * 3, hidden_dim=queries_t.shape[-1] * 2,
-                      output_dim=queries_t.shape[-1], num_layers=1, dropout=0.)
-            # concatenated is of shape (batch_size, n_query, 3*embed_dim)
-            collated_queries = torch.cat((queries_t, queries_x, queries_y), dim=2)
-            # pass through MLP to project into space of (batch_size, n_query, embed_dim)
-            collated_queries = mlp(collated_queries)
-        else:
-            collated_queries = orig_queries
-            
-        return collated_queries
-        
+    if embedding_agg_method == "average":
+        collated_queries = queries_avg
+    elif embedding_agg_method == "stack":
+        # (t1,t2,t3...),(x1,x2,x3...),(y1,y2,y3...)
+        # stacked is of shape (batch_size, 3*n_query, embed_dim)
+        collated_queries = torch.cat((queries_t, queries_x, queries_y), dim=1)
+    elif embedding_agg_method == "concatenate":
+        mlp = MLP(
+            input_dim=queries_t.shape[-1] * 3,
+            hidden_dim=queries_t.shape[-1] * 2,
+            output_dim=queries_t.shape[-1],
+            num_layers=1,
+            dropout=0.0,
+        )
+        # concatenated is of shape (batch_size, n_query, 3*embed_dim)
+        collated_queries = torch.cat((queries_t, queries_x, queries_y), dim=2)
+        # pass through MLP to project into space of (batch_size, n_query, embed_dim)
+        collated_queries = mlp(collated_queries)
+    else:
+        collated_queries = orig_queries
+
+    return collated_queries
+
 
 def spatial_emb_from_bb(bb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     """
@@ -682,9 +715,12 @@ def spatial_emb_from_bb(bb: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     Args:
         bb: Bounding boxes of shape (n_query, n_anchors, 4) from which to compute x,y centroids;
         each bounding box is [ymin, xmin, ymax, xmax]
-    
-    Returns: 
+
+    Returns:
         A tuple of tensors containing the emebdding array for x,y dimensions, each of shape (n_query,)
     """
     # compute avg of xmin,xmax and ymin,ymax
-    return bb[:,:,[1,3]].mean(axis=2).squeeze(), bb[:,:,[0,2]].mean(axis=2).squeeze()
+    return (
+        bb[:, :, [1, 3]].mean(axis=2).squeeze(),
+        bb[:, :, [0, 2]].mean(axis=2).squeeze(),
+    )

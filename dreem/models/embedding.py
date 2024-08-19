@@ -101,7 +101,7 @@ class RotaryPositionalEmbeddings(nn.Module):
         # 100 since it's a fraction of [0,1]*100. temp is from [0, clip_len]; since clip_len
         # not available, we use the last value in the indexing array since this will be the
         # last possible frame that we would need to index since no instances in a frame after that
-        self.build_rope_cache(max(101, input_pos[:, -1].max() + 1)) # registers cache
+        self.build_rope_cache(max(101, input_pos[:, -1].max() + 1))  # registers cache
         self.cache = self.cache.to(input_pos.device)
         # extract the values based on whether input_pos is set or not
         rope_cache = (
@@ -121,9 +121,8 @@ class RotaryPositionalEmbeddings(nn.Module):
         return rope_cache
 
 
-    
 class Embedding(torch.nn.Module):
-    """Class that wraps around different embedding types. 
+    """Class that wraps around different embedding types.
     Creates embedding array and transforms the input data
     Used for both learned and fixed embeddings.
     """
@@ -153,7 +152,7 @@ class Embedding(torch.nn.Module):
         normalize: bool = False,
         scale: float | None = None,
         mlp_cfg: dict | None = None,
-        embedding_agg_method: str = "average"
+        embedding_agg_method: str = "average",
     ):
         """Initialize embeddings.
 
@@ -228,17 +227,16 @@ class Embedding(torch.nn.Module):
             if self.emb_type == "pos":
                 if self.embedding_agg_method == "average":
                     self._emb_func = self._sine_box_embedding
-                else: # if using stacked/concatenated agg method
+                else:  # if using stacked/concatenated agg method
                     self._emb_func = self._sine_pos_embedding
             elif self.emb_type == "temp":
                 self._emb_func = self._sine_temp_embedding
-                
+
         elif self.mode == "rope":
             # pos/temp embeddings processed the same way with different embedding array inputs
             self._emb_func = self._rope_embedding
             # create instance so embedding lookup array is created only once
             self.rope_instance = RotaryPositionalEmbeddings(self.features)
-
 
     def _check_init_args(self, emb_type: str, mode: str):
         """Check whether the correct arguments were passed to initialization.
@@ -268,7 +266,6 @@ class Embedding(torch.nn.Module):
                 f"Cannot use aggregation method 'average' for rope embedding; must use 'stack' or 'concatenate'"
             )
 
-            
     def _transform(self, x, emb):
         """Routes to the relevant embedding function to transform the input queries
 
@@ -281,15 +278,14 @@ class Embedding(torch.nn.Module):
             return self._apply_rope(x, emb)
         else:
             return self._apply_additive_embeddings(x, emb)
-    
-    
-    def _apply_rope(self, x, emb): 
+
+    def _apply_rope(self, x, emb):
         """Applies Rotary Positional Embedding to input queries
 
         Args:
             x: Input queries of shape (batch_size, n_query, embed_dim)
             emb: Rotation matrix of shape (batch_size, n_query, num_heads, embed_dim // 2, 2)
-        
+
         Returns:
             Tensor of input queries transformed by RoPE
         """
@@ -300,10 +296,8 @@ class Embedding(torch.nn.Module):
         # apply RoPE to each query token
         xout = torch.stack(
             [
-                xout[..., 0] * emb[..., 0]
-                - xout[..., 1] * emb[..., 1],
-                xout[..., 1] * emb[..., 0]
-                + xout[..., 0] * emb[..., 1],
+                xout[..., 0] * emb[..., 0] - xout[..., 1] * emb[..., 1],
+                xout[..., 1] * emb[..., 0] + xout[..., 0] * emb[..., 1],
             ],
             -1,
         )
@@ -311,22 +305,20 @@ class Embedding(torch.nn.Module):
         xout = xout.flatten(3).squeeze(2)
 
         return xout
-    
-    
+
     def _apply_additive_embeddings(self, x, emb):
         """Applies additive embeddings to input queries
 
         Args:
             x: Input tensor of shape (batch_size, N, embed_dim)
             emb: Embedding array of shape (N, embed_dim)
-        
+
         Returns:
             Tensor: Input queries with embeddings added - shape (batch_size, N, embed_dim)
         """
         _emb = emb.unsqueeze(0)
         return x + _emb
-    
-        
+
     def forward(self, x, seq_positions: torch.Tensor) -> torch.Tensor:
         """Get the sequence positional embeddings.
 
@@ -341,8 +333,8 @@ class Embedding(torch.nn.Module):
             - An `N` x `self.features` tensor representing the corresponding spatial or temporal embedding.
         """
 
-        # create embedding array; either rotation matrix of shape 
-        # (batch_size, n_query, num_heads, embed_dim // 2, 2), 
+        # create embedding array; either rotation matrix of shape
+        # (batch_size, n_query, num_heads, embed_dim // 2, 2),
         # or (N, embed_dim) array
         emb = self._emb_func(seq_positions, x.size())
         # transform the input data with the embedding
@@ -364,8 +356,9 @@ class Embedding(torch.nn.Module):
         """
         return torch.div(tensor1, tensor2, rounding_mode="floor")
 
-    
-    def _rope_embedding(self, seq_positions: torch.Tensor, input_shape: torch.Size) -> torch.Tensor:
+    def _rope_embedding(
+        self, seq_positions: torch.Tensor, input_shape: torch.Size
+    ) -> torch.Tensor:
         """Computes the rotation matrix to apply RoPE to input queries
         Args:
             seq_positions: Pos array of shape (embed_dim,) used to compute rotational embedding
@@ -380,12 +373,11 @@ class Embedding(torch.nn.Module):
         is_pos_emb = 1 if seq_positions.max() <= 1 else 0
         # if it is positional, scale seq_positions since these are fractions
         # in [0,1] and we need int indexes for embedding lookup
-        seq_positions = seq_positions*100 if is_pos_emb else seq_positions
+        seq_positions = seq_positions * 100 if is_pos_emb else seq_positions
         # RoPE module takes in dimension, num_queries as input to calculate rotation matrix
         rot_mat = self.rope_instance(x_rope, seq_positions.unsqueeze(0).int())
 
         return rot_mat
-    
 
     def _sine_pos_embedding(self, centroids: torch.Tensor, *args) -> torch.Tensor:
         """Compute fixed sine temporal embeddings per dimension (x,y)
