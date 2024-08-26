@@ -186,11 +186,9 @@ class Transformer(torch.nn.Module):
         ref_times, query_times = get_times(ref_instances, query_instances)
 
         batch_size, total_instances, embed_dim = ref_features.shape
-
         ref_features = ref_features.permute(
             1, 0, 2
         )  # (total_instances, batch_size, embed_dim)
-
         encoder_queries = ref_features
 
         # (encoder_features, ref_pos_emb, ref_temp_emb) \
