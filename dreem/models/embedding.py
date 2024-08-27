@@ -101,6 +101,7 @@ class RotaryPositionalEmbeddings(nn.Module):
         # 100 since it's a fraction of [0,1]*100. temp is from [0, clip_len]; since clip_len
         # not available, we use the last value in the indexing array since this will be the
         # last possible frame that we would need to index since no instances in a frame after that
+        if input_pos.dim() <= 1: input_pos = input_pos.unsqueeze(0)
         self.build_rope_cache(max(101, input_pos[:, -1].max() + 1))  # registers cache
         self.cache = self.cache.to(input_pos.device)
         # extract the values based on whether input_pos is set or not
@@ -370,12 +371,13 @@ class Embedding(torch.nn.Module):
         # use num_heads=1 for compatibility with torch ROPE
         x_rope = torch.rand(input_shape).unsqueeze(2)
         # infer whether it is a positional or temporal embedding
-        is_pos_emb = 1 if seq_positions.max() <= 1 else 0
+        is_pos_emb = 1 if seq_positions.max() < 1 else 0
         # if it is positional, scale seq_positions since these are fractions
         # in [0,1] and we need int indexes for embedding lookup
         seq_positions = seq_positions * 100 if is_pos_emb else seq_positions
+        seq_positions = seq_positions.unsqueeze(0).int()
         # RoPE module takes in dimension, num_queries as input to calculate rotation matrix
-        rot_mat = self.rope_instance(x_rope, seq_positions.unsqueeze(0).int())
+        rot_mat = self.rope_instance(x_rope, seq_positions)
 
         return rot_mat
 
