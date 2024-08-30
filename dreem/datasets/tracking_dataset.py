@@ -131,7 +131,7 @@ class TrackingDataset(LightningDataModule):
             dataset_size = len(dataset_to_split)
 
             val_inds, test_inds = train_test_split(
-                range(test_size),
+                range(dataset_size),
                 train_size=val_frac,
                 test_size=test_frac,
             )
