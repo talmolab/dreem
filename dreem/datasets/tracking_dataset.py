@@ -99,6 +99,7 @@ class TrackingDataset(LightningDataModule):
 
         if train_frac != 0:
             dataset_to_split = copy(train_ds)
+            dataset_to_split.augmentations = None
             dataset_size = len(dataset_to_split)
             train_inds, val_inds = train_test_split(
                 range(dataset_size),
@@ -117,12 +118,10 @@ class TrackingDataset(LightningDataModule):
 
             if len(test_inds) != 0:
                 test_ds = Subset(dataset_to_split, test_inds)
-                test_ds.dataset.augmentations = None
             else:
                 test_ds = None
 
             val_ds = Subset(dataset_to_split, val_inds)
-            val_ds.dataset.augmentations = None
 
             train_ds = Subset(train_ds, train_inds)
 
