@@ -274,11 +274,10 @@ class Config:
         if dataset is None:
             logger.warn(f"{mode} dataset passed was `None`! Returning `None`")
             return None
-    
+
         elif len(dataset) == 0:
             logger.warn(f"Length of {mode} dataset is {len(dataset)}! Returning `None`")
             return None
-        
 
         if mode.lower() == "train":
             dataloader_params = self.cfg.dataloader.train_dataloader
