@@ -534,6 +534,7 @@ def test_train_test_split(two_flies):
 
     splits = (0.7, 0.2, 0.1)
     tracking_ds = TrackingDataset(train_ds=train_ds, splits=splits)
+    tracking_ds.setup("fit")
 
     assert len(tracking_ds.train_ds) == int(ds_length * splits[0])
     assert len(tracking_ds.val_ds) == int(ds_length * splits[1])
@@ -544,6 +545,8 @@ def test_train_test_split(two_flies):
     assert tracking_ds.test_ds.dataset.augmentations is None
 
     tracking_ds = TrackingDataset(train_ds=train_ds, splits=splits[:-1])
+    tracking_ds.setup("fit")
+
     assert len(tracking_ds.train_ds) == int(ds_length * splits[0])
     assert len(tracking_ds.val_ds) == int(ds_length * splits[1])
     assert tracking_ds.test_ds is None
@@ -558,7 +561,9 @@ def test_train_test_split(two_flies):
     ds_length = len(val_ds)
 
     splits = (0.5, 0.5)
+
     tracking_ds = TrackingDataset(train_ds=train_ds, val_ds=val_ds, splits=splits)
+    tracking_ds.setup("fit")
 
     assert len(tracking_ds.train_ds) == len(train_ds)
     assert len(tracking_ds.val_ds) == int(ds_length * splits[0])
