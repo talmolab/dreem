@@ -555,7 +555,7 @@ def test_train_test_split(two_flies):
     assert tracking_ds.val_ds.dataset.augmentations is None
 
     val_ds = SleapDataset(
-        [two_flies[0]], [two_flies[1]], clip_length=1, augmentations=augmentations
+        [two_flies[0]], [two_flies[1]], clip_length=1
     )
 
     ds_length = len(val_ds)
