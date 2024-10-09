@@ -106,7 +106,7 @@ class SleapDataset(BaseDataset):
         # if self.seed is not None:
         #     np.random.seed(self.seed)
         self.labels = [sio.load_slp(slp_file) for slp_file in self.slp_files]
-        self.videos = [imageio.get_reader(vid_file) for vid_file in self.vid_files]
+        self.vid_readers = {}
         # do we need this? would need to update with sleap-io
 
         # for label in self.labels:
@@ -139,9 +139,6 @@ class SleapDataset(BaseDataset):
         video = self.labels[label_idx]
 
         video_name = self.video_files[label_idx]
-
-        vid_reader = self.videos[label_idx]
-
         # img = vid_reader.get_data(0)
 
         skeleton = video.skeletons[-1]
@@ -162,12 +159,12 @@ class SleapDataset(BaseDataset):
             lf = video[frame_ind]
 
             try:
-                img = vid_reader.get_data(int(lf.frame_idx))
-            except IndexError as e:
-                logger.warning(
-                    f"Could not read frame {frame_ind} from {video_name} due to {e}"
-                )
-                continue
+                img = lf.image
+            except FileNotFoundError as e:
+                if video_name not in self.vid_readers:
+                    self.vid_readers[video_name] = sio.load_video(video_name)
+                vid_reader = self.vid_readers[video_name]
+                img = vid_reader[lf.frame_idx]
 
             if len(img.shape) == 2:
                 img = img.expand_dims(-1)
@@ -370,5 +367,5 @@ class SleapDataset(BaseDataset):
 
     def __del__(self):
         """Handle file closing before garbage collection."""
-        for reader in self.videos:
+        for reader in self.vid_readers:
             reader.close()
