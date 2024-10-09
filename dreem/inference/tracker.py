@@ -199,7 +199,7 @@ class Tracker:
                     # if no track ids, then assign new ones
                     for i, instance in enumerate(frames[batch_idx].instances):
                         if instance.pred_track_id == -1:
-                            curr_track += 1
+                            curr_track_id += 1
                             instance.pred_track_id = curr_track_id
 
             else:
@@ -351,6 +351,8 @@ class Tracker:
 
         query_frame.add_traj_score("asso_nonquery", asso_nonquery_df)
 
+        # need frame height and width to scale boxes during post-processing
+        _, h, w = query_frame.img_shape.flatten() 
         pred_boxes = model_utils.get_boxes(all_instances)
         query_boxes = pred_boxes[query_inds]  # n_k x 4
         nonquery_boxes = pred_boxes[nonquery_inds]  # n_nonquery x 4
@@ -435,7 +437,7 @@ class Tracker:
         # threshold for continuing a tracking or starting a new track -> they use 1.0
         # todo -> should also work without pos_embed
         traj_score = post_processing.filter_max_center_dist(
-            traj_score, self.max_center_dist, query_boxes, nonquery_boxes, id_inds
+            traj_score, self.max_center_dist, query_boxes, nonquery_boxes, id_inds, h, w
         )
 
         if self.max_center_dist is not None and self.max_center_dist > 0:
