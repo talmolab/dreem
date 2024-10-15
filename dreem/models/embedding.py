@@ -11,117 +11,6 @@ logger = logging.getLogger("dreem.models")
 # todo: add named tensors, clean variable names
 
 
-class RotaryPositionalEmbeddings(nn.Module):
-    """
-    This class implements Rotary Positional Embeddings (RoPE)
-    proposed in https://arxiv.org/abs/2104.09864.
-
-    Reference implementation (used for correctness verfication)
-    can be found here:
-    https://github.com/meta-llama/llama/blob/main/llama/model.py#L80
-
-    In this implementation we cache the embeddings for each position upto
-    ``max_seq_len`` by computing this during init.
-
-    Args:
-        dim (int): Embedding dimension. This is usually set to the dim of each
-            head in the attention module computed as ````embed_dim`` // ``num_heads````
-        max_seq_len (int): Maximum expected sequence length for the
-            model, if exceeded the cached freqs will be recomputed
-        base (int): The base for the geometric progression used to compute
-            the rotation angles
-    """
-
-    def __init__(
-        self,
-        dim: int,
-        # max_seq_len: int,
-        base: int = 10000,
-    ) -> None:
-        super().__init__()
-        self.dim = dim
-        self.base = base
-        # self.max_seq_len = max_seq_len
-        self._rope_init()
-
-    # We need to explicitly define reset_parameters for FSDP initialization, see
-    # https://github.com/pytorch/pytorch/blob/797d4fbdf423dd9320ebe383fb57ffb1135c4a99/torch/distributed/fsdp/_init_utils.py#L885
-    def reset_parameters(self):
-        self._rope_init()
-
-    def _rope_init(self):
-        theta = 1.0 / (
-            self.base
-            ** (torch.arange(0, self.dim, 2)[: (self.dim // 2)].float() / self.dim)
-        )
-        self.register_buffer("theta", theta, persistent=False)
-
-    def build_rope_cache(self, max_seq_len: int) -> None:
-        # Create position indexes `[0, 1, ..., max_seq_len - 1]`
-
-        seq_idx = torch.arange(
-            max_seq_len, dtype=self.theta.dtype, device=self.theta.device
-        )
-
-        # Outer product of theta and position index; output tensor has
-        # a shape of [max_seq_len, dim // 2]
-        idx_theta = torch.einsum("i, j -> ij", seq_idx, self.theta).float()
-
-        # cache includes both the cos and sin components and so the output shape is
-        # [max_seq_len, dim // 2, 2]
-        cache = torch.stack([torch.cos(idx_theta), torch.sin(idx_theta)], dim=-1)
-        self.register_buffer("cache", cache, persistent=False)
-
-    def forward(self, x: Tensor, input_pos: Optional[Tensor] = None) -> Tensor:
-        """
-        Args:
-            x (Tensor): input tensor with shape
-                [b, s, n_h, h_d]
-            input_pos (Optional[Tensor]): Optional tensor which contains the position ids
-                of each token. During training, this is used to indicate the positions
-                of each token relative to its sample when packed, shape [b, s].
-                During inference, this indicates the position of the current token.
-                If none, assume the index of the token is its position id. Default is None.
-
-        Returns:
-            Tensor: output tensor with RoPE applied
-
-        Notation used for tensor shapes:
-            - b: batch size
-            - s: sequence length
-            - n_h: num heads
-            - h_d: head dim
-
-        """
-        # input tensor has shape [b, s, n_h, h_d]
-        seq_len = x.size(1)
-
-        # create the lookup array based on how many instances there are
-        # max(101, seq_len) is for positional vs temporal; pos can only have idx up to
-        # 100 since it's a fraction of [0,1]*100. temp is from [0, clip_len]; since clip_len
-        # not available, we use the last value in the indexing array since this will be the
-        # last possible frame that we would need to index since no instances in a frame after that
-        if input_pos.dim() <= 1: input_pos = input_pos.unsqueeze(0)
-        self.build_rope_cache(max(101, input_pos[:, -1].max() + 1))  # registers cache
-        self.cache = self.cache.to(input_pos.device)
-        # extract the values based on whether input_pos is set or not
-        rope_cache = (
-            self.cache[:seq_len] if input_pos is None else self.cache[input_pos]
-        )
-
-        # reshape input; the last dimension is used for computing the output.
-        # Cast to float to match the reference implementation
-        # tensor has shape [b, s, n_h, h_d // 2, 2]
-        xshaped = x.float().reshape(*x.shape[:-1], -1, 2)
-
-        # reshape the cache for broadcasting
-        # tensor has shape [b, s, 1, h_d // 2, 2] if packed samples,
-        # otherwise has shape [1, s, 1, h_d // 2, 2]
-        rope_cache = rope_cache.view(-1, xshaped.size(1), 1, xshaped.size(3), 2)
-
-        return rope_cache
-
-
 class Embedding(torch.nn.Module):
     """Class that wraps around different embedding types.
     Creates embedding array and transforms the input data
@@ -154,6 +43,7 @@ class Embedding(torch.nn.Module):
         scale: float | None = None,
         mlp_cfg: dict | None = None,
         embedding_agg_method: str = "average",
+        use_fourier: bool = False,
     ):
         """Initialize embeddings.
 
@@ -178,6 +68,7 @@ class Embedding(torch.nn.Module):
         self.emb_type = emb_type
         self.mode = mode
         self.embedding_agg_method = embedding_agg_method
+        self.use_fourier = use_fourier
         self.features = features
         self.emb_num = emb_num
         self.over_boxes = over_boxes
@@ -210,7 +101,7 @@ class Embedding(torch.nn.Module):
 
         self._emb_func = lambda seq, x: torch.zeros(
             (seq.shape[0], self.features), dtype=seq.dtype, device=seq.device
-        )  # turn off embedding by returning zeros
+        )  # turn off embedding by returning zeros; this is overridden if mode is not "off"
 
         self.lookup = None
 
@@ -234,10 +125,13 @@ class Embedding(torch.nn.Module):
                 self._emb_func = self._sine_temp_embedding
 
         elif self.mode == "rope":
-            # pos/temp embeddings processed the same way with different embedding array inputs
             self._emb_func = self._rope_embedding
             # create instance so embedding lookup array is created only once
-            self.rope_instance = RotaryPositionalEmbeddings(self.features)
+            if self.use_fourier:    
+                self.rope_instance = FourierRotaryPositionalEmbeddings(self.features)
+            else:
+                self.rope_instance = RotaryPositionalEmbeddings(self.features)
+
 
     def _check_init_args(self, emb_type: str, mode: str):
         """Check whether the correct arguments were passed to initialization.
@@ -274,9 +168,13 @@ class Embedding(torch.nn.Module):
              x: Input queries of shape (batch_size, N, embed_dim)
              emb: Embedding array to apply to data; can be (N, embed_dim) or
              (batch_size, n_query, num_heads, embed_dim // 2, 2) if using RoPE
+             or (batch_size, N, embed_dim) if using Fourier
         """
         if self._emb_func == self._rope_embedding:
-            return self._apply_rope(x, emb)
+            if self.use_fourier:
+                return self._apply_rope_fourier(x, emb)
+            else:   
+                return self._apply_rope(x, emb)
         else:
             return self._apply_additive_embeddings(x, emb)
 
@@ -306,6 +204,16 @@ class Embedding(torch.nn.Module):
         xout = xout.flatten(3).squeeze(2)
 
         return xout
+
+    def _apply_rope_fourier(self, x, emb):
+        """Applies RoPE with learnable Fourier coefficients to input queries
+        Args:
+            x: Input queries of shape (batch_size, n_query, embed_dim)
+            emb: Rotation matrix of shape (batch_size, n_query, num_heads, embed_dim // 2, 2)
+        Returns:
+            Tensor: Input queries with RoPE and Fourier positional embeddings applied
+        """
+        return   
 
     def _apply_additive_embeddings(self, x, emb):
         """Applies additive embeddings to input queries
@@ -380,6 +288,17 @@ class Embedding(torch.nn.Module):
         rot_mat = self.rope_instance(x_rope, seq_positions)
 
         return rot_mat
+
+    def _rope_fourier_embedding(self, seq_positions: torch.Tensor, input_shape: torch.Size) -> torch.Tensor:
+        """Compute RoPE and Fourier positional embeddings (rotation matrix) for seq_positions
+        Args:
+            seq_positions: Pos array of shape (embed_dim,) used to compute rotational embedding
+            input_shape: Shape of the input queries; needed for rope
+        Returns:
+            Tensor: (N, embed_dim) rotation matrix
+        """
+        return self._rope_embedding(seq_positions, input_shape)
+    
 
     def _sine_pos_embedding(self, centroids: torch.Tensor, *args) -> torch.Tensor:
         """Compute fixed sine temporal embeddings per dimension (x,y)
@@ -596,3 +515,222 @@ class Embedding(torch.nn.Module):
         right_weight = 1.0 - left_weight
 
         return left_ind, right_ind, left_weight, right_weight
+
+
+class RotaryPositionalEmbeddings(torch.nn.Module):
+    """
+    This class implements Rotary Positional Embeddings (RoPE)
+    proposed in https://arxiv.org/abs/2104.09864.
+
+    Reference implementation (used for correctness verfication)
+    can be found here:
+    https://github.com/meta-llama/llama/blob/main/llama/model.py#L80
+
+    In this implementation we cache the embeddings for each position upto
+    ``max_seq_len`` by computing this during init.
+
+    Args:
+        dim (int): Embedding dimension. This is usually set to the dim of each
+            head in the attention module computed as ````embed_dim`` // ``num_heads````
+        max_seq_len (int): Maximum expected sequence length for the
+            model, if exceeded the cached freqs will be recomputed
+        base (int): The base for the geometric progression used to compute
+            the rotation angles
+    """
+
+    def __init__(
+        self,
+        dim: int,
+        # max_seq_len: int,
+        base: int = 10000,
+    ) -> None:
+        super().__init__()
+        self.dim = dim
+        self.base = base
+        # self.max_seq_len = max_seq_len
+        self._rope_init()
+
+    # We need to explicitly define reset_parameters for FSDP initialization, see
+    # https://github.com/pytorch/pytorch/blob/797d4fbdf423dd9320ebe383fb57ffb1135c4a99/torch/distributed/fsdp/_init_utils.py#L885
+    def reset_parameters(self):
+        self._rope_init()
+
+    def _rope_init(self):
+        theta = 1.0 / (
+            self.base
+            ** (torch.arange(0, self.dim, 2)[: (self.dim // 2)].float() / self.dim)
+        )
+        self.register_buffer("theta", theta, persistent=False)
+
+    def build_rope_cache(self, max_seq_len: int) -> None:
+        # Create position indexes `[0, 1, ..., max_seq_len - 1]`
+
+        seq_idx = torch.arange(
+            max_seq_len, dtype=self.theta.dtype, device=self.theta.device
+        )
+
+        # Outer product of theta and position index; output tensor has
+        # a shape of [max_seq_len, dim // 2]
+        idx_theta = torch.einsum("i, j -> ij", seq_idx, self.theta).float()
+
+        # cache includes both the cos and sin components and so the output shape is
+        # [max_seq_len, dim // 2, 2]
+        cache = torch.stack([torch.cos(idx_theta), torch.sin(idx_theta)], dim=-1)
+        self.register_buffer("cache", cache, persistent=False)
+
+    def forward(self, x: Tensor, input_pos: Optional[Tensor] = None) -> Tensor:
+        """
+        Args:
+            x (Tensor): input tensor with shape
+                [b, s, n_h, h_d]
+            input_pos (Optional[Tensor]): Optional tensor which contains the position ids
+                of each token. During training, this is used to indicate the positions
+                of each token relative to its sample when packed, shape [b, s].
+                During inference, this indicates the position of the current token.
+                If none, assume the index of the token is its position id. Default is None.
+
+        Returns:
+            Tensor: array of pos/temporal indices from which to compute embeddings
+
+        Notation used for tensor shapes:
+            - b: batch size
+            - s: sequence length
+            - n_h: num heads
+            - h_d: head dim
+
+        """
+        # input tensor has shape [b, s, n_h, h_d]
+        seq_len = x.size(1)
+
+        # create the lookup array based on how many instances there are
+        # max(101, seq_len) is for positional vs temporal; pos can only have idx up to
+        # 100 since it's a fraction of [0,1]*100. temp is from [0, clip_len]; since clip_len
+        # not available, we use the last value in the indexing array since this will be the
+        # last possible frame that we would need to index since no instances in a frame after that
+        if input_pos.dim() <= 1: input_pos = input_pos.unsqueeze(0)
+        self.build_rope_cache(max(101, input_pos[:, -1].max() + 1))  # registers cache
+        self.cache = self.cache.to(input_pos.device)
+        # extract the values based on whether input_pos is set or not
+        rope_cache = (
+            self.cache[:seq_len] if input_pos is None else self.cache[input_pos]
+        )
+
+        # reshape input; the last dimension is used for computing the output.
+        # Cast to float to match the reference implementation
+        # tensor has shape [b, s, n_h, h_d // 2, 2]
+        xshaped = x.float().reshape(*x.shape[:-1], -1, 2)
+
+        # reshape the cache for broadcasting
+        # tensor has shape [b, s, 1, h_d // 2, 2] if packed samples,
+        # otherwise has shape [1, s, 1, h_d // 2, 2]
+        rope_cache = rope_cache.view(-1, xshaped.size(1), 1, xshaped.size(3), 2)
+
+        return rope_cache
+    
+
+class FourierPositionalEmbeddings(nn.Module):
+
+    def __init__(
+        self,
+        num_queries: int,
+        cutoff: int = 256,
+    ):
+        """Positional encoding with given cutoff and number of frequencies for each dimension.
+        number of dimension is inferred from the length of cutoffs and n_pos.
+        """
+        super().__init__()
+        self.freq = nn.Parameter(self._pos_embed_fourier1d_init(
+                cutoff, num_queries // 2))
+
+    def _pos_embed_fourier1d_init(self, cutoff: float = 256, n: int = 32,):
+        """Create a tensor of shape (1,n) of fourier frequency coefficients"""
+        return (torch.exp(torch.linspace(0, -math.log(cutoff), n)).unsqueeze(0))
+
+    def forward(self, seq_positions: torch.Tensor):
+        """Compute learnable fourier coefficients for each spatial/temporal position.
+        Args:
+            seq_positions: tensor of shape (num_queries,)
+        Returns:
+            tensor of shape (num_queries, embed_dim)
+        """
+        freq = self.freq.to(seq_positions.device)        
+        # seq_positions is of shape (num_queries,) but needs to be (1,num_queries,1)
+        embed = torch.cat(
+                    (
+                        torch.sin(0.5 * math.pi * seq_positions.unsqueeze(-1)
+                                  .unsqueeze(0) * freq),
+                        torch.cos(0.5 * math.pi * seq_positions.unsqueeze(-1)
+                                  .unsqueeze(0) * freq),
+                    ),
+                    axis=-1,
+                ) / math.sqrt(len(freq)) # (B,N,embed_dim)
+
+        return embed 
+
+
+class FourierRotaryPositionalEmbeddings(RotaryPositionalEmbeddings):
+    def __init__(self, dim: int, base: int = 10000,) -> None:
+        super().__init__()
+        self.dim = dim
+        self.base = base
+        self._rope_init()
+
+    def reset_parameters(self):
+        self._rope_init()
+
+    def _rope_init(self):
+        # TODO: set theta to learnable fourier coefficients
+        theta = nn.Parameter(self._pos_embed_fourier1d_init(
+            cutoff, num_queries // 2))
+        
+        self.register_buffer("theta", theta, persistent=False)
+
+    def build_rope_cache(self, max_seq_len: int) -> None:
+        # Create position indexes `[0, 1, ..., max_seq_len - 1]`
+
+        # TODO: this is the equivalent of get_co_si() which outputs cos and sin rotation matrices
+
+        seq_idx = torch.arange(
+            max_seq_len, dtype=self.theta.dtype, device=self.theta.device
+        )
+
+        # Outer product of theta and position index; output tensor has
+        # a shape of [max_seq_len, dim // 2]
+        idx_theta = torch.einsum("i, j -> ij", seq_idx, self.theta).float()
+
+        # cache includes both the cos and sin components and so the output shape is
+        # [max_seq_len, dim // 2, 2]
+        cache = torch.stack([torch.cos(idx_theta), torch.sin(idx_theta)], dim=-1)
+        self.register_buffer("cache", cache, persistent=False)
+
+    def forward(self, x: Tensor, input_pos: Optional[Tensor] = None) -> Tensor:
+        """
+        See forward method in RotaryPositionalEmbeddings
+        """
+        # input tensor has shape [b, s, n_h, h_d]
+        seq_len = x.size(1)
+
+        # create the lookup array based on how many instances there are
+        # max(101, seq_len) is for positional vs temporal; pos can only have idx up to
+        # 100 since it's a fraction of [0,1]*100. temp is from [0, clip_len]; since clip_len
+        # not available, we use the last value in the indexing array since this will be the
+        # last possible frame that we would need to index since no instances in a frame after that
+        if input_pos.dim() <= 1: input_pos = input_pos.unsqueeze(0)
+        self.build_rope_cache(max(101, input_pos[:, -1].max() + 1))  # registers cache
+        self.cache = self.cache.to(input_pos.device)
+        # extract the values based on whether input_pos is set or not
+        rope_cache = (
+            self.cache[:seq_len] if input_pos is None else self.cache[input_pos]
+        )
+
+        # reshape input; the last dimension is used for computing the output.
+        # Cast to float to match the reference implementation
+        # tensor has shape [b, s, n_h, h_d // 2, 2]
+        xshaped = x.float().reshape(*x.shape[:-1], -1, 2)
+
+        # reshape the cache for broadcasting
+        # tensor has shape [b, s, 1, h_d // 2, 2] if packed samples,
+        # otherwise has shape [1, s, 1, h_d // 2, 2]
+        rope_cache = rope_cache.view(-1, xshaped.size(1), 1, xshaped.size(3), 2)
+
+        return rope_cache

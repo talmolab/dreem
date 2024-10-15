@@ -1,6 +1,6 @@
 """Model architectures and layers."""
 
-from .embedding import Embedding
+from .embedding import Embedding, FourierPositionalEmbeddings
 
 # from .mlp import MLP
 # from .attention_head import ATTWeightHead
