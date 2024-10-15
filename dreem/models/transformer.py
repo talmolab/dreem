@@ -116,7 +116,13 @@ class Transformer(torch.nn.Module):
 
         # Transformer Encoder
         encoder_layer = TransformerEncoderLayer(
-            d_model, nhead, dim_feedforward, dropout, activation, norm, **self.embedding_meta
+            d_model,
+            nhead,
+            dim_feedforward,
+            dropout,
+            activation,
+            norm,
+            **self.embedding_meta,
         )
 
         encoder_norm = nn.LayerNorm(d_model) if (norm) else None
@@ -127,13 +133,24 @@ class Transformer(torch.nn.Module):
 
         # Transformer Decoder
         decoder_layer = TransformerDecoderLayer(
-            d_model, nhead, dim_feedforward, dropout, activation, norm, decoder_self_attn, **self.embedding_meta
+            d_model,
+            nhead,
+            dim_feedforward,
+            dropout,
+            activation,
+            norm,
+            decoder_self_attn,
+            **self.embedding_meta,
         )
 
         decoder_norm = nn.LayerNorm(d_model) if (norm) else None
 
         self.decoder = TransformerDecoder(
-            decoder_layer, num_decoder_layers, return_intermediate_dec, decoder_norm, **self.embedding_meta
+            decoder_layer,
+            num_decoder_layers,
+            return_intermediate_dec,
+            decoder_norm,
+            **self.embedding_meta,
         )
 
         # Transformer attention head
@@ -193,7 +210,9 @@ class Transformer(torch.nn.Module):
 
         # apply fourier embeddings
         if "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]:
-            encoder_queries = apply_fourier_embeddings(encoder_queries, ref_boxes, ref_times)
+            encoder_queries = apply_fourier_embeddings(
+                encoder_queries, ref_boxes, ref_times
+            )
 
         # (encoder_features, ref_pos_emb, ref_temp_emb) \
         encoder_features, pos_emb_traceback, temp_emb_traceback = self.encoder(
@@ -298,7 +317,7 @@ class TransformerEncoderLayer(nn.Module):
         dropout: float = 0.1,
         activation: str = "relu",
         norm: bool = False,
-        **kwargs
+        **kwargs,
     ) -> None:
         """Initialize a transformer encoder layer.
 
@@ -324,14 +343,15 @@ class TransformerEncoderLayer(nn.Module):
 
         self.activation = _get_activation_fn(activation)
 
-
-    def forward(self, queries: torch.Tensor, orig_queries: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, queries: torch.Tensor, orig_queries: torch.Tensor
+    ) -> torch.Tensor:
         """Execute a forward pass of the encoder layer.
 
         Args:
             queries: Input sequence for encoder (n_query, batch_size, embed_dim);
                     data is already transformed with embedding
-            orig_queries: Original query data before embedding (n_query, batch_size, embed_dim). 
+            orig_queries: Original query data before embedding (n_query, batch_size, embed_dim).
                         Used for rope embedding method since rope only applied to q,k not v
 
         Returns:
@@ -346,10 +366,12 @@ class TransformerEncoderLayer(nn.Module):
 
         orig_queries = orig_queries + self.dropout1(attn_features)
         orig_queries = self.norm1(orig_queries)
-        projection = self.linear2(self.dropout(self.activation(self.linear1(orig_queries))))
+        projection = self.linear2(
+            self.dropout(self.activation(self.linear1(orig_queries)))
+        )
         orig_queries = orig_queries + self.dropout2(projection)
         orig_queries = self.norm2(orig_queries)
-        
+
         return orig_queries
 
 
@@ -365,7 +387,7 @@ class TransformerDecoderLayer(nn.Module):
         activation: str = "relu",
         norm: bool = False,
         decoder_self_attn: bool = False,
-        **kwargs
+        **kwargs,
     ) -> None:
         """Initialize transformer decoder layer.
 
@@ -404,7 +426,7 @@ class TransformerDecoderLayer(nn.Module):
         self,
         decoder_queries: torch.Tensor,
         encoder_features: torch.Tensor,
-        orig_decoder_queries: torch.Tensor
+        orig_decoder_queries: torch.Tensor,
     ) -> torch.Tensor:
         """Execute forward pass of decoder layer.
 
@@ -413,7 +435,7 @@ class TransformerDecoderLayer(nn.Module):
                               data is already transformed with embedding
             encoder_features: Output from encoder, that decoder uses to attend to relevant
                 parts of input sequence (total_instances, batch_size, embed_dim)
-            orig_decoder_queries: Original query data before embedding (n_query, batch_size, embed_dim). 
+            orig_decoder_queries: Original query data before embedding (n_query, batch_size, embed_dim).
                         Used for rope embedding method since rope only applied to q,k not v
 
         Returns:
@@ -424,28 +446,34 @@ class TransformerDecoderLayer(nn.Module):
             self_attn_features = self.self_attn(
                 query=decoder_queries, key=decoder_queries, value=orig_decoder_queries
             )[0]
-            orig_decoder_queries = orig_decoder_queries + self.dropout1(self_attn_features)
+            orig_decoder_queries = orig_decoder_queries + self.dropout1(
+                self_attn_features
+            )
             orig_decoder_queries = self.norm1(orig_decoder_queries)
 
         # TODO: embeddings need to be reapplied to decoder queries between self attention and cross attention;
         # this might need apply_embeddings to be moved into the layers themselves. Don't apply it to
         # orig_decoder_queries! Those shouldn't be modified here. Use this as reference:
         # https://github.com/facebookresearch/detr/blob/29901c51d7fe8712168b8d0d64351170bc0f83e0/models/transformer.py#L187-L233
-        
-        q = apply_embeddings(...) # apply to decoder_queries
-        k = apply_embeddings(...) # apply to encoder_features
+
+        q = apply_embeddings(...)  # apply to decoder_queries
+        k = apply_embeddings(...)  # apply to encoder_features
 
         # cross attention
         x_attn_features = self.multihead_attn(
             query=q,  # (n_query, batch_size, embed_dim)
             key=k,  # (total_instances, batch_size, embed_dim)
             value=encoder_features,  # (total_instances, batch_size, embed_dim)
-        )[0]  # (n_query, batch_size, embed_dim)
+        )[
+            0
+        ]  # (n_query, batch_size, embed_dim)
 
         orig_decoder_queries = orig_decoder_queries + self.dropout2(
             x_attn_features
         )  # (n_query, batch_size, embed_dim)
-        orig_decoder_queries = self.norm2(orig_decoder_queries)  # (n_query, batch_size, embed_dim)
+        orig_decoder_queries = self.norm2(
+            orig_decoder_queries
+        )  # (n_query, batch_size, embed_dim)
         projection = self.linear2(
             self.dropout(self.activation(self.linear1(orig_decoder_queries)))
         )  # (n_query, batch_size, embed_dim)
@@ -465,7 +493,7 @@ class TransformerEncoder(nn.Module):
         encoder_layer: TransformerEncoderLayer,
         num_layers: int,
         norm: nn.Module | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """Initialize transformer encoder.
 
@@ -504,11 +532,13 @@ class TransformerEncoder(nn.Module):
 
         for layer in self.layers:
             # compute embeddings and apply to the input queries
-            queries, orig_queries, pos_emb_traceback, temp_emb_traceback = apply_embeddings(
-                queries, embedding_map, boxes, times, embedding_agg_method
+            queries, orig_queries, pos_emb_traceback, temp_emb_traceback = (
+                apply_embeddings(
+                    queries, embedding_map, boxes, times, embedding_agg_method
+                )
             )
             # pass through EncoderLayer
-            # TODO: return orig_queries from apply_embeddings 
+            # TODO: return orig_queries from apply_embeddings
             encoder_features = layer(queries, orig_queries)
 
         encoder_features = self.norm(encoder_features)
@@ -525,7 +555,7 @@ class TransformerDecoder(nn.Module):
         num_layers: int,
         return_intermediate: bool = False,
         norm: nn.Module | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """Initialize transformer decoder block.
 
@@ -576,18 +606,25 @@ class TransformerDecoder(nn.Module):
         #         enc_times,
         #         embedding_agg_method,
         #     )
-            # TODO: ^ should embeddings really be applied to **encoder** output again before cross attention?
-            #  the original transformer paper does not do this
-            #   switched off for stack and concatenate methods as those further split the tokens. Kept for "average"
-            #   for backward compatibility
+        # TODO: ^ should embeddings really be applied to **encoder** output again before cross attention?
+        #  the original transformer paper does not do this
+        #   switched off for stack and concatenate methods as those further split the tokens. Kept for "average"
+        #   for backward compatibility
 
         for layer in self.layers:
             # TODO: return orig_decoder_queries from apply_embeddings
-            decoder_features, orig_decoder_queries, pos_emb_traceback, temp_emb_traceback = apply_embeddings(
+            (
+                decoder_features,
+                orig_decoder_queries,
+                pos_emb_traceback,
+                temp_emb_traceback,
+            ) = apply_embeddings(
                 decoder_features, embedding_map, boxes, times, embedding_agg_method
             )
-            decoder_features = layer(decoder_features, encoder_features, orig_decoder_queries)
-            
+            decoder_features = layer(
+                decoder_features, encoder_features, orig_decoder_queries
+            )
+
             if self.return_intermediate:
                 intermediate.append(self.norm(decoder_features))
 
@@ -601,10 +638,11 @@ class TransformerDecoder(nn.Module):
         return decoder_features.unsqueeze(0), pos_emb_traceback, temp_emb_traceback
 
 
-def apply_fourier_embeddings(queries: torch.Tensor, 
-                             boxes: torch.Tensor,
-                             times: torch.Tensor,
-                             ) -> torch.Tensor:
+def apply_fourier_embeddings(
+    queries: torch.Tensor,
+    boxes: torch.Tensor,
+    times: torch.Tensor,
+) -> torch.Tensor:
     """Applies Fourier positional embeddings to input queries
     Args:
         queries: Input queries of shape (n_query, batch_size, embed_dim)
@@ -614,7 +652,7 @@ def apply_fourier_embeddings(queries: torch.Tensor,
         Tensor: Input queries with Fourier positional embeddings added - shape (n_query, batch_size, embed_dim)
     """
     fourier_emb = FourierPositionalEmbeddings(queries.shape[0])
-    
+
     # queries is of shape (n_query, batch_size, embed_dim); transpose for embeddings
     queries = queries.permute(
         1, 0, 2
@@ -688,7 +726,7 @@ def apply_embeddings(
     # transpose for input to EncoderLayer to (n_queries, batch_size, embed_dim)
     queries = queries.permute(1, 0, 2)
 
-    return queries, orig_queries, pos_emb_traceback, ref_temp_emb 
+    return queries, orig_queries, pos_emb_traceback, ref_temp_emb
 
 
 def _get_clones(module: nn.Module, N: int) -> nn.ModuleList:
@@ -747,8 +785,8 @@ def collate_queries(
         collated_queries = torch.cat((queries_t, queries_x, queries_y), dim=1)
     elif embedding_agg_method == "concatenate":
         mlp = MLP(
-            input_dim=queries_t.shape[-1] * 3, # t,x,y
-            hidden_dim=queries_t.shape[-1] * 6, # not applied when num_layers=1
+            input_dim=queries_t.shape[-1] * 3,  # t,x,y
+            hidden_dim=queries_t.shape[-1] * 6,  # not applied when num_layers=1
             output_dim=queries_t.shape[-1],
             num_layers=1,
             dropout=0.0,
