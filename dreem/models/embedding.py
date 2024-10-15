@@ -213,6 +213,7 @@ class Embedding(torch.nn.Module):
         Returns:
             Tensor: Input queries with RoPE and Fourier positional embeddings applied
         """
+        # TODO: complete this
         return   
 
     def _apply_additive_embeddings(self, x, emb):
@@ -297,7 +298,8 @@ class Embedding(torch.nn.Module):
         Returns:
             Tensor: (N, embed_dim) rotation matrix
         """
-        return self._rope_embedding(seq_positions, input_shape)
+        # TODO: complete this
+        return 
     
 
     def _sine_pos_embedding(self, centroids: torch.Tensor, *args) -> torch.Tensor:
