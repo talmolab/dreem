@@ -86,6 +86,11 @@ class Transformer(torch.nn.Module):
                 if "embedding_agg_method" in embedding_meta
                 else "average"
             )
+            self.use_fourier = (
+                embedding_meta["use_fourier"]
+                if "use_fourier" in embedding_meta
+                else False
+            )
             if "pos" in self.embedding_meta:
                 pos_emb_cfg = self.embedding_meta["pos"]
                 if pos_emb_cfg:
@@ -107,6 +112,7 @@ class Transformer(torch.nn.Module):
         else:
             self.embedding_meta = {}
             self.embedding_agg_method = None
+            self.use_fourier = False
 
         # Transformer Encoder
         encoder_layer = TransformerEncoderLayer(
@@ -292,6 +298,7 @@ class TransformerEncoderLayer(nn.Module):
         dropout: float = 0.1,
         activation: str = "relu",
         norm: bool = False,
+        **kwargs
     ) -> None:
         """Initialize a transformer encoder layer.
 
@@ -341,10 +348,9 @@ class TransformerEncoderLayer(nn.Module):
         orig_queries = self.norm1(orig_queries)
         projection = self.linear2(self.dropout(self.activation(self.linear1(orig_queries))))
         orig_queries = orig_queries + self.dropout2(projection)
-        encoder_features = self.norm2(orig_queries)
+        orig_queries = self.norm2(orig_queries)
         
-
-        return encoder_features
+        return orig_queries
 
 
 class TransformerDecoderLayer(nn.Module):
@@ -359,6 +365,7 @@ class TransformerDecoderLayer(nn.Module):
         activation: str = "relu",
         norm: bool = False,
         decoder_self_attn: bool = False,
+        **kwargs
     ) -> None:
         """Initialize transformer decoder layer.
 
@@ -412,9 +419,6 @@ class TransformerDecoderLayer(nn.Module):
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
-        # TODO: fix attn block args and addition of embeddings (see encoder layer); 
-        # double check cross attention is done properly. Also add the correct args to the init;
-        # is it orig_queries from encoder or from decoder?
 
         if self.decoder_self_attn:
             self_attn_features = self.self_attn(
@@ -428,12 +432,13 @@ class TransformerDecoderLayer(nn.Module):
         # orig_decoder_queries! Those shouldn't be modified here. Use this as reference:
         # https://github.com/facebookresearch/detr/blob/29901c51d7fe8712168b8d0d64351170bc0f83e0/models/transformer.py#L187-L233
         
-        q,k = apply_embeddings(...)
+        q = apply_embeddings(...) # apply to decoder_queries
+        k = apply_embeddings(...) # apply to encoder_features
 
         # cross attention
         x_attn_features = self.multihead_attn(
-            query=orig_decoder_queries,  # (n_query, batch_size, embed_dim)
-            key=encoder_features,  # (total_instances, batch_size, embed_dim)
+            query=q,  # (n_query, batch_size, embed_dim)
+            key=k,  # (total_instances, batch_size, embed_dim)
             value=encoder_features,  # (total_instances, batch_size, embed_dim)
         )[0]  # (n_query, batch_size, embed_dim)
 
@@ -499,14 +504,14 @@ class TransformerEncoder(nn.Module):
 
         for layer in self.layers:
             # compute embeddings and apply to the input queries
-            queries, pos_emb_traceback, temp_emb_traceback = apply_embeddings(
+            queries, orig_queries, pos_emb_traceback, temp_emb_traceback = apply_embeddings(
                 queries, embedding_map, boxes, times, embedding_agg_method
             )
             # pass through EncoderLayer
             # TODO: return orig_queries from apply_embeddings 
-            queries = layer(queries)
+            encoder_features = layer(queries, orig_queries)
 
-        encoder_features = self.norm(queries)
+        encoder_features = self.norm(encoder_features)
 
         return encoder_features, pos_emb_traceback, temp_emb_traceback
 
@@ -578,14 +583,16 @@ class TransformerDecoder(nn.Module):
 
         for layer in self.layers:
             # TODO: return orig_decoder_queries from apply_embeddings
-            decoder_features, pos_emb_traceback, temp_emb_traceback = apply_embeddings(
+            decoder_features, orig_decoder_queries, pos_emb_traceback, temp_emb_traceback = apply_embeddings(
                 decoder_features, embedding_map, boxes, times, embedding_agg_method
             )
-            decoder_features = layer(decoder_features, encoder_features)
+            decoder_features = layer(decoder_features, encoder_features, orig_decoder_queries)
+            
             if self.return_intermediate:
                 intermediate.append(self.norm(decoder_features))
 
         decoder_features = self.norm(decoder_features)
+
         if self.return_intermediate:
             intermediate.pop()
             intermediate.append(decoder_features)
@@ -646,6 +653,7 @@ def apply_embeddings(
     """
 
     pos_emb, temp_emb = embedding_map["pos"], embedding_map["temp"]
+    orig_queries = copy.deepcopy(queries)
     # queries is of shape (n_query, batch_size, embed_dim); transpose for embeddings
     queries = queries.permute(
         1, 0, 2
@@ -680,7 +688,7 @@ def apply_embeddings(
     # transpose for input to EncoderLayer to (n_queries, batch_size, embed_dim)
     queries = queries.permute(1, 0, 2)
 
-    return queries, pos_emb_traceback, ref_temp_emb
+    return queries, orig_queries, pos_emb_traceback, ref_temp_emb 
 
 
 def _get_clones(module: nn.Module, N: int) -> nn.ModuleList:
@@ -734,20 +742,19 @@ def collate_queries(
     if embedding_agg_method == "average":
         collated_queries = queries_avg
     elif embedding_agg_method == "stack":
-        # TODO: fix this to only apply rope to q,k and not v
         # (t1,t2,t3...),(x1,x2,x3...),(y1,y2,y3...)
         # stacked is of shape (batch_size, 3*n_query, embed_dim)
         collated_queries = torch.cat((queries_t, queries_x, queries_y), dim=1)
     elif embedding_agg_method == "concatenate":
         mlp = MLP(
-            input_dim=queries_t.shape[-1] * 4, # t,x,y,orig_q
-            hidden_dim=queries_t.shape[-1] * 8, # not applied when num_layers=1
+            input_dim=queries_t.shape[-1] * 3, # t,x,y
+            hidden_dim=queries_t.shape[-1] * 6, # not applied when num_layers=1
             output_dim=queries_t.shape[-1],
             num_layers=1,
             dropout=0.0,
         )
         # collated_queries is of shape (batch_size, n_query, 3*embed_dim)
-        collated_queries = torch.cat((queries_t, queries_x, queries_y, orig_queries), dim=2)
+        collated_queries = torch.cat((queries_t, queries_x, queries_y), dim=2)
         # pass through MLP to project back into space of (batch_size, n_query, embed_dim)
         collated_queries = mlp(collated_queries)
     else:

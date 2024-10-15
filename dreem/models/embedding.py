@@ -113,7 +113,7 @@ class Embedding(torch.nn.Module):
                 self._emb_func = self._learned_pos_embedding
             elif self.emb_type == "temp":
                 self.lookup = torch.nn.Embedding(self.emb_num, self.features)
-                self._emb_func = self._learned_temp_embedding
+                self._emb_func = self._lrearned_temp_embedding
 
         elif self.mode == "fixed":
             if self.emb_type == "pos":
@@ -171,12 +171,10 @@ class Embedding(torch.nn.Module):
              or (batch_size, N, embed_dim) if using Fourier
         """
         if self._emb_func == self._rope_embedding:
-            if self.use_fourier:
-                return self._apply_rope_fourier(x, emb)
-            else:   
-                return self._apply_rope(x, emb)
+            return self._apply_rope(x, emb)
         else:
             return self._apply_additive_embeddings(x, emb)
+
 
     def _apply_rope(self, x, emb):
         """Applies Rotary Positional Embedding to input queries
@@ -204,17 +202,7 @@ class Embedding(torch.nn.Module):
         xout = xout.flatten(3).squeeze(2)
 
         return xout
-
-    def _apply_rope_fourier(self, x, emb):
-        """Applies RoPE with learnable Fourier coefficients to input queries
-        Args:
-            x: Input queries of shape (batch_size, n_query, embed_dim)
-            emb: Rotation matrix of shape (batch_size, n_query, num_heads, embed_dim // 2, 2)
-        Returns:
-            Tensor: Input queries with RoPE and Fourier positional embeddings applied
-        """
-        # TODO: complete this
-        return   
+    
 
     def _apply_additive_embeddings(self, x, emb):
         """Applies additive embeddings to input queries
@@ -289,17 +277,6 @@ class Embedding(torch.nn.Module):
         rot_mat = self.rope_instance(x_rope, seq_positions)
 
         return rot_mat
-
-    def _rope_fourier_embedding(self, seq_positions: torch.Tensor, input_shape: torch.Size) -> torch.Tensor:
-        """Compute RoPE and Fourier positional embeddings (rotation matrix) for seq_positions
-        Args:
-            seq_positions: Pos array of shape (embed_dim,) used to compute rotational embedding
-            input_shape: Shape of the input queries; needed for rope
-        Returns:
-            Tensor: (N, embed_dim) rotation matrix
-        """
-        # TODO: complete this
-        return 
     
 
     def _sine_pos_embedding(self, centroids: torch.Tensor, *args) -> torch.Tensor:
@@ -519,6 +496,7 @@ class Embedding(torch.nn.Module):
         return left_ind, right_ind, left_weight, right_weight
 
 
+
 class RotaryPositionalEmbeddings(torch.nn.Module):
     """
     This class implements Rotary Positional Embeddings (RoPE)
@@ -630,6 +608,11 @@ class RotaryPositionalEmbeddings(torch.nn.Module):
         return rope_cache
     
 
+def _pos_embed_fourier1d_init(self, cutoff: float = 256, n: int = 32,):
+        """Create a tensor of shape (1,n) of fourier frequency coefficients"""
+        return (torch.exp(torch.linspace(0, -math.log(cutoff), n)).unsqueeze(0))
+
+
 class FourierPositionalEmbeddings(nn.Module):
 
     def __init__(
@@ -641,12 +624,9 @@ class FourierPositionalEmbeddings(nn.Module):
         number of dimension is inferred from the length of cutoffs and n_pos.
         """
         super().__init__()
-        self.freq = nn.Parameter(self._pos_embed_fourier1d_init(
+        self.freq = nn.Parameter(_pos_embed_fourier1d_init(
                 cutoff, num_queries // 2))
 
-    def _pos_embed_fourier1d_init(self, cutoff: float = 256, n: int = 32,):
-        """Create a tensor of shape (1,n) of fourier frequency coefficients"""
-        return (torch.exp(torch.linspace(0, -math.log(cutoff), n)).unsqueeze(0))
 
     def forward(self, seq_positions: torch.Tensor):
         """Compute learnable fourier coefficients for each spatial/temporal position.
@@ -670,27 +650,19 @@ class FourierPositionalEmbeddings(nn.Module):
         return embed 
 
 
-class FourierRotaryPositionalEmbeddings(RotaryPositionalEmbeddings):
+class FourierRotaryPositionalEmbeddings(torch.nn.Module):
     def __init__(self, dim: int, base: int = 10000,) -> None:
         super().__init__()
         self.dim = dim
         self.base = base
         self._rope_init()
 
-    def reset_parameters(self):
-        self._rope_init()
-
     def _rope_init(self):
-        # TODO: set theta to learnable fourier coefficients
-        theta = nn.Parameter(self._pos_embed_fourier1d_init(
-            cutoff, num_queries // 2))
+        self.theta = nn.Parameter(self._pos_embed_fourier1d_init(
+            self.dim, self.dim // 2))
         
-        self.register_buffer("theta", theta, persistent=False)
-
     def build_rope_cache(self, max_seq_len: int) -> None:
         # Create position indexes `[0, 1, ..., max_seq_len - 1]`
-
-        # TODO: this is the equivalent of get_co_si() which outputs cos and sin rotation matrices
 
         seq_idx = torch.arange(
             max_seq_len, dtype=self.theta.dtype, device=self.theta.device
@@ -702,8 +674,9 @@ class FourierRotaryPositionalEmbeddings(RotaryPositionalEmbeddings):
 
         # cache includes both the cos and sin components and so the output shape is
         # [max_seq_len, dim // 2, 2]
-        cache = torch.stack([torch.cos(idx_theta), torch.sin(idx_theta)], dim=-1)
-        self.register_buffer("cache", cache, persistent=False)
+        self.cache = torch.stack([torch.cos(0.5*torch.pi*idx_theta)/torch.sqrt(torch.tensor(len(self.theta))), 
+                                  torch.sin(0.5*torch.pi*idx_theta)/torch.sqrt(torch.tensor(len(self.theta)))], 
+                                  dim=-1)
 
     def forward(self, x: Tensor, input_pos: Optional[Tensor] = None) -> Tensor:
         """
