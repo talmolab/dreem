@@ -98,6 +98,7 @@ class Transformer(torch.nn.Module):
                         emb_type="pos",
                         features=self.d_model,
                         embedding_agg_method=self.embedding_agg_method,
+                        use_fourier=self.use_fourier,
                         **pos_emb_cfg,
                     )  # agg method must be the same for pos and temp embeddings
             if "temp" in self.embedding_meta:
@@ -107,6 +108,7 @@ class Transformer(torch.nn.Module):
                         emb_type="temp",
                         features=self.d_model,
                         embedding_agg_method=self.embedding_agg_method,
+                        use_fourier=self.use_fourier,
                         **temp_emb_cfg,
                     )
         else:
@@ -238,6 +240,7 @@ class Transformer(torch.nn.Module):
                 instance.add_embedding("temp", temp_emb_traceback)
 
         # -------------- Begin decoder --------------- #
+        # prepare queries, embedding position ids, etc
 
         # for inference, query_instances is not None
         if query_instances is not None:
@@ -264,10 +267,10 @@ class Transformer(torch.nn.Module):
             query_features,
             encoder_features,
             embedding_map={"pos": self.pos_emb, "temp": self.temp_emb},
-            enc_boxes=ref_boxes,
-            enc_times=ref_times,
             boxes=query_boxes,
             times=query_times,
+            enc_boxes=ref_boxes,
+            enc_times=ref_times,
             embedding_agg_method=self.embedding_agg_method,
         )  # (L, n_query, batch_size, embed_dim)
 
@@ -427,6 +430,12 @@ class TransformerDecoderLayer(nn.Module):
         decoder_queries: torch.Tensor,
         encoder_features: torch.Tensor,
         orig_decoder_queries: torch.Tensor,
+        embedding_map: Dict[str, Embedding],
+        boxes: torch.Tensor,
+        times: torch.Tensor,
+        enc_boxes: torch.Tensor,
+        enc_times: torch.Tensor,
+        embedding_agg_method: str = None,
     ) -> torch.Tensor:
         """Execute forward pass of decoder layer.
 
@@ -437,12 +446,20 @@ class TransformerDecoderLayer(nn.Module):
                 parts of input sequence (total_instances, batch_size, embed_dim)
             orig_decoder_queries: Original query data before embedding (n_query, batch_size, embed_dim).
                         Used for rope embedding method since rope only applied to q,k not v
+            embedding_map: Dict of Embedding objects defining the pos/temp embeddings to be applied to
+                        the input data before it passes to the DecoderLayer
+            boxes: Bounding box based embedding ids of shape (n_query, batch_size, 4)
+            times: Times based embedding ids of shape (n_query,)
+            enc_boxes: Bounding box based embedding ids of shape (total_instances, batch_size, 4) for encoder features
+            enc_times: Times based embedding ids of shape (total_instances,) for encoder features
+            embedding_agg_method: method of aggregation of embeddings e.g. stack/concatenate/average
 
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
 
         if self.decoder_self_attn:
+            # self attn; decoder_queries has embeddings applied, orig_decoder_queries does not
             self_attn_features = self.self_attn(
                 query=decoder_queries, key=decoder_queries, value=orig_decoder_queries
             )[0]
@@ -451,22 +468,21 @@ class TransformerDecoderLayer(nn.Module):
             )
             orig_decoder_queries = self.norm1(orig_decoder_queries)
 
-        # TODO: embeddings need to be reapplied to decoder queries between self attention and cross attention;
-        # this might need apply_embeddings to be moved into the layers themselves. Don't apply it to
-        # orig_decoder_queries! Those shouldn't be modified here. Use this as reference:
-        # https://github.com/facebookresearch/detr/blob/29901c51d7fe8712168b8d0d64351170bc0f83e0/models/transformer.py#L187-L233
+        # embeddings need to be reapplied to decoder queries between self attention and cross attention;
+        # Reference: https://github.com/facebookresearch/detr/blob/29901c51d7fe8712168b8d0d64351170bc0f83e0/models/transformer.py#L187-L233
 
-        q = apply_embeddings(...)  # apply to decoder_queries
-        k = apply_embeddings(...)  # apply to encoder_features
+        q_x_attn, *_ = apply_embeddings(orig_decoder_queries, embedding_map, 
+                                        boxes, times, embedding_agg_method)  # queries from decoder
+        # remember, encoder features should have embeddings applied with encoder position ids from enc_boxes, enc_times
+        k_x_attn, *_ = apply_embeddings(encoder_features, embedding_map, 
+                                        enc_boxes, enc_times, embedding_agg_method)  # keys from encoder
 
         # cross attention
         x_attn_features = self.multihead_attn(
-            query=q,  # (n_query, batch_size, embed_dim)
-            key=k,  # (total_instances, batch_size, embed_dim)
+            query=q_x_attn,  # (n_query, batch_size, embed_dim)
+            key=k_x_attn,  # (total_instances, batch_size, embed_dim)
             value=encoder_features,  # (total_instances, batch_size, embed_dim)
-        )[
-            0
-        ]  # (n_query, batch_size, embed_dim)
+        )[0]  # (n_query, batch_size, embed_dim)
 
         orig_decoder_queries = orig_decoder_queries + self.dropout2(
             x_attn_features
@@ -538,7 +554,6 @@ class TransformerEncoder(nn.Module):
                 )
             )
             # pass through EncoderLayer
-            # TODO: return orig_queries from apply_embeddings
             encoder_features = layer(queries, orig_queries)
 
         encoder_features = self.norm(encoder_features)
@@ -576,10 +591,10 @@ class TransformerDecoder(nn.Module):
         decoder_queries: torch.Tensor,
         encoder_features: torch.Tensor,
         embedding_map: Dict[str, Embedding],
-        enc_boxes: torch.Tensor,
-        enc_times: torch.Tensor,
         boxes: torch.Tensor,
         times: torch.Tensor,
+        enc_boxes: torch.Tensor,
+        enc_times: torch.Tensor,
         embedding_agg_method: str = None,
     ) -> torch.Tensor:
         """Execute a forward pass of the decoder block.
@@ -606,13 +621,12 @@ class TransformerDecoder(nn.Module):
         #         enc_times,
         #         embedding_agg_method,
         #     )
-        # TODO: ^ should embeddings really be applied to **encoder** output again before cross attention?
-        #  the original transformer paper does not do this
+        # ^ should embeddings really be applied to **encoder** output again before cross attention?
+        #  the original transformer paper does not do this, neither do most implementations ive seen
         #   switched off for stack and concatenate methods as those further split the tokens. Kept for "average"
         #   for backward compatibility
 
         for layer in self.layers:
-            # TODO: return orig_decoder_queries from apply_embeddings
             (
                 decoder_features,
                 orig_decoder_queries,
@@ -622,7 +636,7 @@ class TransformerDecoder(nn.Module):
                 decoder_features, embedding_map, boxes, times, embedding_agg_method
             )
             decoder_features = layer(
-                decoder_features, encoder_features, orig_decoder_queries
+                decoder_features, encoder_features, orig_decoder_queries, embedding_map, boxes, times, enc_boxes, enc_times, embedding_agg_method
             )
 
             if self.return_intermediate:
@@ -691,7 +705,7 @@ def apply_embeddings(
     """
 
     pos_emb, temp_emb = embedding_map["pos"], embedding_map["temp"]
-    orig_queries = copy.deepcopy(queries)
+    orig_queries = queries.clone().detach()
     # queries is of shape (n_query, batch_size, embed_dim); transpose for embeddings
     queries = queries.permute(
         1, 0, 2

@@ -604,11 +604,7 @@ class RotaryPositionalEmbeddings(torch.nn.Module):
         return rope_cache
 
 
-def _pos_embed_fourier1d_init(
-    self,
-    cutoff: float = 256,
-    n: int = 32,
-):
+def _pos_embed_fourier1d_init(cutoff,n):
     """Create a tensor of shape (1,n) of fourier frequency coefficients"""
     return torch.exp(torch.linspace(0, -math.log(cutoff), n)).unsqueeze(0)
 
@@ -665,7 +661,7 @@ class FourierRotaryPositionalEmbeddings(torch.nn.Module):
 
     def _rope_init(self):
         self.theta = nn.Parameter(
-            self._pos_embed_fourier1d_init(self.dim, self.dim // 2)
+            _pos_embed_fourier1d_init(self.dim, self.dim // 2)
         )
 
     def build_rope_cache(self, max_seq_len: int) -> None:
@@ -677,7 +673,7 @@ class FourierRotaryPositionalEmbeddings(torch.nn.Module):
 
         # Outer product of theta and position index; output tensor has
         # a shape of [max_seq_len, dim // 2]
-        idx_theta = torch.einsum("i, j -> ij", seq_idx, self.theta).float()
+        idx_theta = torch.einsum("i, j -> ij", seq_idx, self.theta.squeeze(0).to(seq_idx.device)).float()
 
         # cache includes both the cos and sin components and so the output shape is
         # [max_seq_len, dim // 2, 2]
