@@ -636,7 +636,8 @@ class TransformerDecoder(nn.Module):
                 decoder_features, embedding_map, boxes, times, embedding_agg_method
             )
             decoder_features = layer(
-                decoder_features, encoder_features, orig_decoder_queries, embedding_map, boxes, times, enc_boxes, enc_times, embedding_agg_method
+                decoder_features, encoder_features, orig_decoder_queries, embedding_map, boxes, times, 
+                enc_boxes, enc_times, embedding_agg_method
             )
 
             if self.return_intermediate:
@@ -665,7 +666,7 @@ def apply_fourier_embeddings(
     Returns:
         Tensor: Input queries with Fourier positional embeddings added - shape (n_query, batch_size, embed_dim)
     """
-    fourier_emb = FourierPositionalEmbeddings(queries.shape[0])
+    fourier_emb = FourierPositionalEmbeddings(queries.shape[-1])
 
     # queries is of shape (n_query, batch_size, embed_dim); transpose for embeddings
     queries = queries.permute(

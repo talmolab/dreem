@@ -113,7 +113,7 @@ class Embedding(torch.nn.Module):
                 self._emb_func = self._learned_pos_embedding
             elif self.emb_type == "temp":
                 self.lookup = torch.nn.Embedding(self.emb_num, self.features)
-                self._emb_func = self._lrearned_temp_embedding
+                self._emb_func = self._learned_temp_embedding
 
         elif self.mode == "fixed":
             if self.emb_type == "pos":
@@ -613,14 +613,13 @@ class FourierPositionalEmbeddings(nn.Module):
 
     def __init__(
         self,
-        num_queries: int,
-        cutoff: int = 256,
+        embed_dim: int
     ):
         """Positional encoding with given cutoff and number of frequencies for each dimension.
         number of dimension is inferred from the length of cutoffs and n_pos.
         """
         super().__init__()
-        self.freq = nn.Parameter(_pos_embed_fourier1d_init(cutoff, num_queries // 2))
+        self.freq = nn.Parameter(_pos_embed_fourier1d_init(embed_dim, embed_dim // 2))
 
     def forward(self, seq_positions: torch.Tensor):
         """Compute learnable fourier coefficients for each spatial/temporal position.
