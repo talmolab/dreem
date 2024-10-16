@@ -91,6 +91,11 @@ class Transformer(torch.nn.Module):
                 if "use_fourier" in embedding_meta
                 else False
             )
+            self.fourier_n_components = (
+                embedding_meta["fourier_n_components"]
+                if "fourier_n_components" in embedding_meta
+                else None
+            )
             if "pos" in self.embedding_meta:
                 pos_emb_cfg = self.embedding_meta["pos"]
                 if pos_emb_cfg:
@@ -99,6 +104,7 @@ class Transformer(torch.nn.Module):
                         features=self.d_model,
                         embedding_agg_method=self.embedding_agg_method,
                         use_fourier=self.use_fourier,
+                        fourier_n_components=self.fourier_n_components,
                         **pos_emb_cfg,
                     )  # agg method must be the same for pos and temp embeddings
             if "temp" in self.embedding_meta:
@@ -109,12 +115,14 @@ class Transformer(torch.nn.Module):
                         features=self.d_model,
                         embedding_agg_method=self.embedding_agg_method,
                         use_fourier=self.use_fourier,
+                        fourier_n_components=self.fourier_n_components,
                         **temp_emb_cfg,
                     )
         else:
             self.embedding_meta = {}
             self.embedding_agg_method = None
             self.use_fourier = False
+            self.fourier_n_components = None
 
         # Transformer Encoder
         encoder_layer = TransformerEncoderLayer(
@@ -213,7 +221,7 @@ class Transformer(torch.nn.Module):
         # apply fourier embeddings
         if "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]:
             encoder_queries = apply_fourier_embeddings(
-                encoder_queries, ref_boxes, ref_times
+                encoder_queries, ref_boxes, ref_times, self.fourier_n_components
             )
 
         # (encoder_features, ref_pos_emb, ref_temp_emb) \
@@ -657,16 +665,19 @@ def apply_fourier_embeddings(
     queries: torch.Tensor,
     boxes: torch.Tensor,
     times: torch.Tensor,
+    fourier_n_components: int,
 ) -> torch.Tensor:
     """Applies Fourier positional embeddings to input queries
     Args:
         queries: Input queries of shape (n_query, batch_size, embed_dim)
         boxes: Bounding box based embedding ids of shape (n_query, n_anchors, 4)
         times: Times based embedding ids of shape (n_query,)
+        fourier_n_components: number of fourier components to use for fourier positional embeddings
     Returns:
         Tensor: Input queries with Fourier positional embeddings added - shape (n_query, batch_size, embed_dim)
     """
-    fourier_emb = FourierPositionalEmbeddings(queries.shape[-1])
+    # fourier_emb = FourierPositionalEmbeddings(queries.shape[-1])
+    fourier_emb = FourierPositionalEmbeddings(queries.shape[0], fourier_n_components, queries.shape[-1])
 
     # queries is of shape (n_query, batch_size, embed_dim); transpose for embeddings
     queries = queries.permute(

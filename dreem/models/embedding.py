@@ -44,6 +44,7 @@ class Embedding(torch.nn.Module):
         mlp_cfg: dict | None = None,
         embedding_agg_method: str = "average",
         use_fourier: bool = False,
+        fourier_n_components: int | None = None,
     ):
         """Initialize embeddings.
 
@@ -61,6 +62,8 @@ class Embedding(torch.nn.Module):
             scale: factor by which to scale the positions after normalizing (Only used in fixed embeddings).
             mlp_cfg: A dictionary of mlp hyperparameters for projecting embedding to correct space.
                     Example: {"hidden_dims": 256, "num_layers":3, "dropout": 0.3}
+            use_fourier: whether to use fourier positional embeddings
+            fourier_n_components: number of fourier components to use for fourier positional embeddings
         """
 
         super().__init__()
@@ -69,6 +72,7 @@ class Embedding(torch.nn.Module):
         self.mode = mode
         self.embedding_agg_method = embedding_agg_method
         self.use_fourier = use_fourier
+        self.fourier_n_components = fourier_n_components
         self.features = features
         self.emb_num = emb_num
         self.over_boxes = over_boxes
@@ -128,9 +132,10 @@ class Embedding(torch.nn.Module):
             self._emb_func = self._rope_embedding
             # create instance so embedding lookup array is created only once
             if self.use_fourier:
-                self.rope_instance = FourierRotaryPositionalEmbeddings(self.features)
+                self.rope_instance = FourierRotaryPositionalEmbeddings(self.features, self.fourier_n_components)
             else:
                 self.rope_instance = RotaryPositionalEmbeddings(self.features)
+
 
     def _check_init_args(self, emb_type: str, mode: str):
         """Check whether the correct arguments were passed to initialization.
@@ -613,13 +618,16 @@ class FourierPositionalEmbeddings(nn.Module):
 
     def __init__(
         self,
-        embed_dim: int
+        cutoff: int,
+        n_components: int,
+        d_model: int,
     ):
         """Positional encoding with given cutoff and number of frequencies for each dimension.
         number of dimension is inferred from the length of cutoffs and n_pos.
         """
         super().__init__()
-        self.freq = nn.Parameter(_pos_embed_fourier1d_init(embed_dim, embed_dim // 2))
+        self.d_model = d_model
+        self.freq = nn.Parameter(_pos_embed_fourier1d_init(cutoff, n_components))
 
     def forward(self, seq_positions: torch.Tensor):
         """Compute learnable fourier coefficients for each spatial/temporal position.
@@ -642,7 +650,13 @@ class FourierPositionalEmbeddings(nn.Module):
             axis=-1,
         ) / math.sqrt(
             len(freq)
-        )  # (B,N,embed_dim)
+        )  # (B,N,2*n_components)
+
+        if self.d_model % self.n_components != 0:
+            raise ValueError(f"d_model ({self.d_model}) must be divisible by number of Fourier components n_components ({self.n_components})")
+        
+        # tile until shape is (B,N,embed_dim) to multiply with input queries/keys
+        embed = embed.repeat(1, 1, self.d_model // 2*self.n_components) # 2*n_components to account for sin/cos
 
         return embed
 
@@ -651,16 +665,16 @@ class FourierRotaryPositionalEmbeddings(torch.nn.Module):
     def __init__(
         self,
         dim: int,
-        base: int = 10000,
+        n_components: int,
     ) -> None:
         super().__init__()
         self.dim = dim
-        self.base = base
+        self.n_components = n_components
         self._rope_init()
 
     def _rope_init(self):
         self.theta = nn.Parameter(
-            _pos_embed_fourier1d_init(self.dim, self.dim // 2)
+            _pos_embed_fourier1d_init(self.dim, self.n_components)
         )
 
     def build_rope_cache(self, max_seq_len: int) -> None:
