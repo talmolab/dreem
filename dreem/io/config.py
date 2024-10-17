@@ -182,10 +182,17 @@ class Config:
         label_files = vid_files = None
 
         if dir_cfg:
-            labels_suff = dir_cfg.labels_suffix
-            vid_suff = dir_cfg.vid_suffix
-            labels_path = f"{dir_cfg.path}/*{labels_suff}"
-            vid_path = f"{dir_cfg.path}/*{vid_suff}"
+            labels_suff = dir_cfg.get("labels_suffix")
+            vid_suff = dir_cfg.get("vid_suffix")
+            if labels_suff is None or vid_suff is None:
+                raise KeyError(
+                    f"Must provide a labels suffix and vid suffix to search for but found {labels_suff} and {vid_suff}!"
+                )
+            dir_path = dir_cfg.get("path", ".")
+            logger.debug(f"Searching `{dir_path}` directory")
+
+            labels_path = f"{dir_path}/*{labels_suff}"
+            vid_path = f"{dir_path}/*{vid_suff}"
             logger.debug(f"Searching for labels matching {labels_path}")
             label_files = glob.glob(labels_path)
             logger.debug(f"Searching for videos matching {vid_path}")
