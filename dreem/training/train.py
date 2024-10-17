@@ -80,7 +80,10 @@ def run(cfg: DictConfig):
     callbacks = []
     _ = callbacks.extend(train_cfg.get_checkpointing())
     _ = callbacks.append(pl.callbacks.LearningRateMonitor())
-    _ = callbacks.append(train_cfg.get_early_stopping())
+
+    early_stopping = train_cfg.get_early_stopping()
+    if early_stopping is not None:
+        callbacks.append(early_stopping)
 
     accelerator = "gpu" if torch.cuda.is_available() else "cpu"
     devices = torch.cuda.device_count() if torch.cuda.is_available() else cpu_count()

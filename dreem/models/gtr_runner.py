@@ -65,7 +65,6 @@ class GTRRunner(LightningModule):
         self.loss_cfg = loss_cfg if loss_cfg else {}
         self.tracker_cfg = tracker_cfg if tracker_cfg else {}
 
-        _ = self.model_cfg.pop("ckpt_path", None)
         self.model = GlobalTrackingTransformer(**self.model_cfg)
         self.loss = AssoLoss(**self.loss_cfg)
         self.tracker = Tracker(**self.tracker_cfg)

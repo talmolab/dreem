@@ -5,6 +5,7 @@ from dreem.inference import Tracker
 from dreem.models import GTRRunner
 from omegaconf import DictConfig
 from pathlib import Path
+from datetime import datetime
 
 import hydra
 import os
@@ -14,7 +15,19 @@ import torch
 import sleap_io as sio
 import logging
 
+
 logger = logging.getLogger("dreem.inference")
+
+
+def get_timestamp() -> str:
+    """Get current timestamp.
+
+    Returns:
+        the current timestamp in /m/d/y-H:M:S format
+    """
+    date_time = datetime.now().strftime("%m-%d-%Y-%H:%M:%S")
+    print(date_time)
+    return date_time
 
 
 def export_trajectories(
@@ -129,7 +142,11 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         )
         dataloader = pred_cfg.get_dataloader(dataset, mode="test")
         preds = track(model, trainer, dataloader)
-        outpath = os.path.join(outdir, f"{Path(label_file).stem}.dreem_inference.slp")
+        outpath = os.path.join(
+            outdir, f"{Path(label_file).stem}.dreem_inference.{get_timestamp()}.slp"
+        )
+        if os.path.exists(outpath):
+            outpath.replace(".slp", ".")
         preds.save(outpath)
 
     return preds
