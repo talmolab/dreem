@@ -1,6 +1,7 @@
 """Tests for `config.py`"""
 
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, open_dict
+from copy import deepcopy
 from dreem.io import Config
 from dreem.models import GlobalTrackingTransformer, GTRRunner
 
@@ -96,3 +97,32 @@ def test_getters(base_config):
 
     scheduler = cfg.get_scheduler(optim)
     assert isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau)
+
+
+def test_missing(base_config):
+    """Test cases when keys are missing from config for expected behavior.
+
+    Args:
+        base_config: the config params to override
+    """
+    cfg = Config.from_yaml(base_config)
+
+    key = "model"
+    with open_dict(cfg.cfg):
+        cfg.cfg.pop(key)
+        assert isinstance(cfg.get_model(), GlobalTrackingTransformer)
+
+    cfg = Config.from_yaml(base_config)
+    key = "tracker"
+    with open_dict(cfg.cfg):
+        cfg.cfg.pop(key)
+        assert (
+            isinstance(cfg.get_tracker_cfg(), dict) and len(cfg.get_tracker_cfg()) == 0
+        )
+
+    cfg = Config.from_yaml(base_config)
+    keys = ["tracker", "optimizer", "scheduler", "loss", "runner", "model"]
+    with open_dict(cfg.cfg):
+        for key in keys:
+            cfg.cfg.pop(key)
+            assert isinstance(cfg.get_gtr_runner(), GTRRunner)

@@ -106,7 +106,9 @@ def init_optimizer(params: Iterable, config: dict) -> torch.optim.Optimizer:
     Returns:
         optimizer: A torch.Optimizer with specified params
     """
-    optimizer = config["name"]
+    if config is None:
+        config = {"name": "Adam"}
+    optimizer = config.get("name", "Adam")
     optimizer_params = {
         param: val for param, val in config.items() if param.lower() != "name"
     }
@@ -145,7 +147,12 @@ def init_scheduler(
     Returns:
         scheduler: A scheduler with specified params
     """
-    scheduler = config["name"]
+    if config is None:
+        return None
+    scheduler = config.get("name")
+    if scheduler is None:
+        scheduler = "ReduceLROnPlateau"
+
     scheduler_params = {
         param: val for param, val in config.items() if param.lower() != "name"
     }
