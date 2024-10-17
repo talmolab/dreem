@@ -25,8 +25,7 @@ def get_timestamp() -> str:
     Returns:
         the current timestamp in /m/d/y-H:M:S format
     """
-    date_time = datetime.now().strftime("%m-%d-%Y-%H:%M:%S")
-    print(date_time)
+    date_time = datetime.now().strftime("%m-%d-%Y-%H-%M-%S")
     return date_time
 
 
@@ -145,8 +144,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         outpath = os.path.join(
             outdir, f"{Path(label_file).stem}.dreem_inference.{get_timestamp()}.slp"
         )
-        if os.path.exists(outpath):
-            outpath.replace(".slp", ".")
+
         preds.save(outpath)
 
     return preds
