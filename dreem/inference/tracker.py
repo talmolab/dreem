@@ -194,7 +194,7 @@ class Tracker:
 
                     for i, instance in enumerate(frames[batch_idx].instances):
                         if instance.pred_track_id == -1:
-                            curr_track += 1
+                            curr_track_id += 1
                             instance.pred_track_id = curr_track_id
 
             else:
