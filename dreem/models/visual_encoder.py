@@ -137,7 +137,15 @@ class VisualEncoder(torch.nn.Module):
         # If grayscale, tile the image to 3 channels.
         if img.shape[1] == 1:
             img = img.repeat([1, 3, 1, 1])  # (B, nc=3, H, W)
-        # Extract image features
+
+        b, c, h, w = img.shape
+
+        if c != self.in_chans:
+            raise ValueError(
+                f"""Found {c} channels in image but model was configured for {self.in_chans} channels! \n
+                    Hint: have you set the number of anchors in your dataset > 1? \n
+                    If so, make sure to set `in_chans=3 * n_anchors`"""
+            )
         feats = self.feature_extractor(
             img
         )  # (B, out_dim, 1, 1) if using resnet18 backbone.
