@@ -40,6 +40,8 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     else:
         checkpoint = eval_cfg.cfg.ckpt_path
 
+    logging.basicConfig(level=cfg.get("log_level", "INFO").upper())
+
     model = GTRRunner.load_from_checkpoint(checkpoint)
     model.tracker_cfg = eval_cfg.cfg.tracker
     model.tracker = Tracker(**model.tracker_cfg)

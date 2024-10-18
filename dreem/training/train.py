@@ -50,6 +50,7 @@ def run(cfg: DictConfig):
             logger.debug(hparams)
     else:
         hparams = {}
+    logging.basicConfig(level=cfg.get("log_level", "INFO").upper())
     logger.info(f"Final train config: {train_cfg}")
 
     model = train_cfg.get_model()

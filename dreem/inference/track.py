@@ -122,6 +122,8 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     else:
         checkpoint = pred_cfg.cfg.ckpt_path
 
+    logging.basicConfig(level=cfg.get("log_level", "INFO").upper())
+
     model = GTRRunner.load_from_checkpoint(checkpoint)
     tracker_cfg = pred_cfg.get_tracker_cfg()
     logger.info("Updating tracker hparams")

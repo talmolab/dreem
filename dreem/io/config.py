@@ -419,10 +419,7 @@ class Config:
         dirpath = checkpoint_params.pop("dirpath", None)
 
         if dirpath is None:
-            if "group" in logging_params:
-                dirpath = f"./models/{logging_params.group}/{logging_params.name}"
-            else:
-                dirpath = f"./models/{logging_params.name}"
+            dirpath = f"./models/{self.get('group', '', logging_params)}/{self.get('name', '', logging_params)}"
 
         dirpath = Path(dirpath).resolve()
         if not Path(dirpath).exists():
