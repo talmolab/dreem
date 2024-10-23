@@ -627,6 +627,7 @@ class FourierPositionalEmbeddings(nn.Module):
         """
         super().__init__()
         self.d_model = d_model
+        self.n_components = n_components
         self.freq = nn.Parameter(_pos_embed_fourier1d_init(cutoff, n_components))
 
     def forward(self, seq_positions: torch.Tensor):
@@ -656,7 +657,7 @@ class FourierPositionalEmbeddings(nn.Module):
             raise ValueError(f"d_model ({self.d_model}) must be divisible by number of Fourier components n_components ({self.n_components})")
         
         # tile until shape is (B,N,embed_dim) to multiply with input queries/keys
-        embed = embed.repeat(1, 1, self.d_model // 2*self.n_components) # 2*n_components to account for sin/cos
+        embed = embed.repeat(1, 1, self.d_model // (2*self.n_components)) # 2*n_components to account for sin/cos
 
         return embed
 

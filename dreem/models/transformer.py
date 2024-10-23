@@ -372,7 +372,7 @@ class TransformerEncoderLayer(nn.Module):
         attn_features = self.self_attn(
             query=queries,
             key=queries,
-            value=orig_queries,
+            value=queries,
         )[0]
 
         orig_queries = orig_queries + self.dropout1(attn_features)
@@ -468,8 +468,9 @@ class TransformerDecoderLayer(nn.Module):
 
         if self.decoder_self_attn:
             # self attn; decoder_queries has embeddings applied, orig_decoder_queries does not
+            # for rope, value should not be embedded so use value=orig_decoder_queries
             self_attn_features = self.self_attn(
-                query=decoder_queries, key=decoder_queries, value=orig_decoder_queries
+                query=decoder_queries, key=decoder_queries, value=decoder_queries
             )[0]
             orig_decoder_queries = orig_decoder_queries + self.dropout1(
                 self_attn_features
@@ -479,6 +480,7 @@ class TransformerDecoderLayer(nn.Module):
         # embeddings need to be reapplied to decoder queries between self attention and cross attention;
         # Reference: https://github.com/facebookresearch/detr/blob/29901c51d7fe8712168b8d0d64351170bc0f83e0/models/transformer.py#L187-L233
 
+
         q_x_attn, *_ = apply_embeddings(orig_decoder_queries, embedding_map, 
                                         boxes, times, embedding_agg_method)  # queries from decoder
         # remember, encoder features should have embeddings applied with encoder position ids from enc_boxes, enc_times
@@ -486,10 +488,11 @@ class TransformerDecoderLayer(nn.Module):
                                         enc_boxes, enc_times, embedding_agg_method)  # keys from encoder
 
         # cross attention
+        # for rope, value should not be embedded so use value=encoder_features
         x_attn_features = self.multihead_attn(
             query=q_x_attn,  # (n_query, batch_size, embed_dim)
             key=k_x_attn,  # (total_instances, batch_size, embed_dim)
-            value=encoder_features,  # (total_instances, batch_size, embed_dim)
+            value=k_x_attn,  # (total_instances, batch_size, embed_dim)
         )[0]  # (n_query, batch_size, embed_dim)
 
         orig_decoder_queries = orig_decoder_queries + self.dropout2(
@@ -623,16 +626,9 @@ class TransformerDecoder(nn.Module):
         # we can process its embedding outside the loop
         # if embedding_agg_method == "average":
         #     encoder_features, *_ = apply_embeddings(
-        #         encoder_features,
-        #         embedding_map,
-        #         enc_boxes,
-        #         enc_times,
-        #         embedding_agg_method,
+        #         encoder_features,embedding_map,enc_boxes,enc_times,embedding_agg_method,
         #     )
-        # ^ should embeddings really be applied to **encoder** output again before cross attention?
-        #  the original transformer paper does not do this, neither do most implementations ive seen
-        #   switched off for stack and concatenate methods as those further split the tokens. Kept for "average"
-        #   for backward compatibility
+        # ^ redundant since encoder features get embeddings added again in each decoder layer
 
         for layer in self.layers:
             (
@@ -690,9 +686,13 @@ def apply_fourier_embeddings(
     y_emb = fourier_emb(ref_y)
 
     queries_cat = torch.cat((t_emb, x_emb, y_emb, queries), dim=-1)
+
     # queries is shape (batch_size, n_query, embed_dim + 3*embed_dim)
     proj = nn.Linear(queries_cat.shape[-1], queries.shape[-1]).to(queries_cat.device)
+    norm = nn.LayerNorm(queries.shape[-1]).to(queries_cat.device)
+
     queries = proj(queries_cat)
+    queries = norm(queries)
 
     return queries.permute(1, 0, 2)
 
