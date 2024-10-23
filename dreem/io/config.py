@@ -40,6 +40,8 @@ class Config:
         else:
             self.cfg = cfg
 
+        OmegaConf.set_struct(self.cfg, False)
+
     def __repr__(self):
         """Object representation of config class."""
         return f"Config({self.cfg})"
