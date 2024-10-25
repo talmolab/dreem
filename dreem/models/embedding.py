@@ -132,10 +132,11 @@ class Embedding(torch.nn.Module):
             self._emb_func = self._rope_embedding
             # create instance so embedding lookup array is created only once
             if self.use_fourier:
-                self.rope_instance = FourierRotaryPositionalEmbeddings(self.features, self.fourier_n_components)
+                self.rope_instance = FourierRotaryPositionalEmbeddings(
+                    self.features, self.fourier_n_components
+                )
             else:
                 self.rope_instance = RotaryPositionalEmbeddings(self.features)
-
 
     def _check_init_args(self, emb_type: str, mode: str):
         """Check whether the correct arguments were passed to initialization.
@@ -164,7 +165,7 @@ class Embedding(torch.nn.Module):
             raise ValueError(
                 f"Cannot use aggregation method 'average' for rope embedding; must use 'stack' or 'concatenate'"
             )
-        
+
         if mode.lower() == "learned" and self.embedding_agg_method != "average":
             raise ValueError(
                 f"Cannot use aggregation method '{self.embedding_agg_method}' for learned embedding; must use 'average'"
@@ -614,7 +615,7 @@ class RotaryPositionalEmbeddings(torch.nn.Module):
         return rope_cache
 
 
-def _pos_embed_fourier1d_init(cutoff,n):
+def _pos_embed_fourier1d_init(cutoff, n):
     """Create a tensor of shape (1,n) of fourier frequency coefficients"""
     return torch.exp(torch.linspace(0, -math.log(cutoff), n)).unsqueeze(0)
 
@@ -658,10 +659,14 @@ class FourierPositionalEmbeddings(nn.Module):
         )  # (B,N,2*n_components)
 
         if self.d_model % self.n_components != 0:
-            raise ValueError(f"d_model ({self.d_model}) must be divisible by number of Fourier components n_components ({self.n_components})")
-        
+            raise ValueError(
+                f"d_model ({self.d_model}) must be divisible by number of Fourier components n_components ({self.n_components})"
+            )
+
         # tile until shape is (B,N,embed_dim) to multiply with input queries/keys
-        embed = embed.repeat(1, 1, self.d_model // (2*self.n_components)) # 2*n_components to account for sin/cos
+        embed = embed.repeat(
+            1, 1, self.d_model // (2 * self.n_components)
+        )  # 2*n_components to account for sin/cos
 
         return embed
 
@@ -691,7 +696,9 @@ class FourierRotaryPositionalEmbeddings(torch.nn.Module):
 
         # Outer product of theta and position index; output tensor has
         # a shape of [max_seq_len, dim // 2]
-        idx_theta = torch.einsum("i, j -> ij", seq_idx, self.theta.squeeze(0).to(seq_idx.device)).float()
+        idx_theta = torch.einsum(
+            "i, j -> ij", seq_idx, self.theta.squeeze(0).to(seq_idx.device)
+        ).float()
 
         # cache includes both the cos and sin components and so the output shape is
         # [max_seq_len, dim // 2, 2]

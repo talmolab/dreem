@@ -476,8 +476,16 @@ def test_transformer_decoder():
     enc_boxes = torch.rand(size=(N, 1, 4))
     enc_times = torch.rand(size=(N,))
 
-    decoder_features = transformer_decoder(decoder_queries, encoder_features, decoder_queries, embedding_map, boxes, times, 
-                enc_boxes, enc_times)
+    decoder_features = transformer_decoder(
+        decoder_queries,
+        encoder_features,
+        decoder_queries,
+        embedding_map,
+        boxes,
+        times,
+        enc_boxes,
+        enc_times,
+    )
 
     assert decoder_features.size() == decoder_queries.size()
 
@@ -487,8 +495,16 @@ def test_transformer_decoder():
     temp_emb = Embedding(emb_type="off", mode="off", features=feats)
     embedding_map = {"pos": pos_emb, "temp": temp_emb}
 
-    decoder_features = transformer_decoder(decoder_queries, encoder_features, decoder_queries, embedding_map, boxes, times, 
-                enc_boxes, enc_times)
+    decoder_features = transformer_decoder(
+        decoder_queries,
+        encoder_features,
+        decoder_queries,
+        embedding_map,
+        boxes,
+        times,
+        enc_boxes,
+        enc_times,
+    )
 
     assert decoder_features.size() == decoder_queries.size()
 
@@ -499,7 +515,11 @@ def test_transformer_basic():
     num_frames = 32
     num_detected = 10
     img_shape = (1, 100, 100)
-    embedding_meta = {"pos":{"mode":"fixed"},"temp":{"mode":"fixed"},"embedding_agg_method": "average"} 
+    embedding_meta = {
+        "pos": {"mode": "fixed"},
+        "temp": {"mode": "fixed"},
+        "embedding_agg_method": "average",
+    }
     transformer = Transformer(
         d_model=feats,
         num_encoder_layers=1,

@@ -352,7 +352,7 @@ class Tracker:
         query_frame.add_traj_score("asso_nonquery", asso_nonquery_df)
 
         # need frame height and width to scale boxes during post-processing
-        _, h, w = query_frame.img_shape.flatten() 
+        _, h, w = query_frame.img_shape.flatten()
         pred_boxes = model_utils.get_boxes(all_instances)
         query_boxes = pred_boxes[query_inds]  # n_k x 4
         nonquery_boxes = pred_boxes[nonquery_inds]  # n_nonquery x 4
