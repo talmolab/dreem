@@ -164,6 +164,11 @@ class Embedding(torch.nn.Module):
             raise ValueError(
                 f"Cannot use aggregation method 'average' for rope embedding; must use 'stack' or 'concatenate'"
             )
+        
+        if mode.lower() == "learned" and self.embedding_agg_method != "average":
+            raise ValueError(
+                f"Cannot use aggregation method '{self.embedding_agg_method}' for learned embedding; must use 'average'"
+            )
 
     def _transform(self, x, emb):
         """Routes to the relevant embedding function to transform the input queries
@@ -618,7 +623,6 @@ class FourierPositionalEmbeddings(nn.Module):
 
     def __init__(
         self,
-        cutoff: int,
         n_components: int,
         d_model: int,
     ):
@@ -628,7 +632,7 @@ class FourierPositionalEmbeddings(nn.Module):
         super().__init__()
         self.d_model = d_model
         self.n_components = n_components
-        self.freq = nn.Parameter(_pos_embed_fourier1d_init(cutoff, n_components))
+        self.freq = nn.Parameter(_pos_embed_fourier1d_init(self.d_model, n_components))
 
     def forward(self, seq_positions: torch.Tensor):
         """Compute learnable fourier coefficients for each spatial/temporal position.

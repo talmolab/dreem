@@ -94,7 +94,7 @@ class Transformer(torch.nn.Module):
             self.fourier_n_components = (
                 embedding_meta["fourier_n_components"]
                 if "fourier_n_components" in embedding_meta
-                else None
+                else self.d_model // 2
             )
             if "pos" in self.embedding_meta:
                 pos_emb_cfg = self.embedding_meta["pos"]
@@ -123,6 +123,8 @@ class Transformer(torch.nn.Module):
             self.embedding_agg_method = None
             self.use_fourier = False
             self.fourier_n_components = None
+
+        self.fourier_emb = FourierPositionalEmbeddings(self.fourier_n_components, self.d_model)
 
         # Transformer Encoder
         encoder_layer = TransformerEncoderLayer(
@@ -221,7 +223,8 @@ class Transformer(torch.nn.Module):
         # apply fourier embeddings
         if "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]:
             encoder_queries = apply_fourier_embeddings(
-                encoder_queries, ref_boxes, ref_times, self.fourier_n_components
+                encoder_queries, ref_boxes, ref_times, self.fourier_n_components,
+                self.fourier_emb
             )
 
         # (encoder_features, ref_pos_emb, ref_temp_emb) \
@@ -355,7 +358,9 @@ class TransformerEncoderLayer(nn.Module):
         self.activation = _get_activation_fn(activation)
 
     def forward(
-        self, queries: torch.Tensor, orig_queries: torch.Tensor
+        self, queries: torch.Tensor, 
+        orig_queries: torch.Tensor, 
+        embedding_map: Dict[str, Embedding],
     ) -> torch.Tensor:
         """Execute a forward pass of the encoder layer.
 
@@ -368,11 +373,16 @@ class TransformerEncoderLayer(nn.Module):
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
+        # rope only applied to q,k not v
+        if embedding_map['pos'].mode == 'rope' and embedding_map['temp'].mode == 'rope':
+            v = orig_queries
+        else:
+            v = queries
 
         attn_features = self.self_attn(
             query=queries,
             key=queries,
-            value=queries,
+            value=v,
         )[0]
 
         orig_queries = orig_queries + self.dropout1(attn_features)
@@ -465,12 +475,17 @@ class TransformerDecoderLayer(nn.Module):
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
+        # rope only applied to q,k not v
+        if embedding_map['pos'].mode == 'rope' and embedding_map['temp'].mode == 'rope':
+            v = orig_decoder_queries
+        else:
+            v = decoder_queries
 
         if self.decoder_self_attn:
             # self attn; decoder_queries has embeddings applied, orig_decoder_queries does not
             # for rope, value should not be embedded so use value=orig_decoder_queries
             self_attn_features = self.self_attn(
-                query=decoder_queries, key=decoder_queries, value=decoder_queries
+                query=decoder_queries, key=decoder_queries, value=v
             )[0]
             orig_decoder_queries = orig_decoder_queries + self.dropout1(
                 self_attn_features
@@ -489,10 +504,15 @@ class TransformerDecoderLayer(nn.Module):
 
         # cross attention
         # for rope, value should not be embedded so use value=encoder_features
+        if embedding_map['pos'].mode == 'rope' and embedding_map['temp'].mode == 'rope':
+            v = encoder_features
+        else:
+            v = k_x_attn
+
         x_attn_features = self.multihead_attn(
             query=q_x_attn,  # (n_query, batch_size, embed_dim)
             key=k_x_attn,  # (total_instances, batch_size, embed_dim)
-            value=k_x_attn,  # (total_instances, batch_size, embed_dim)
+            value=v,  # (total_instances, batch_size, embed_dim)
         )[0]  # (n_query, batch_size, embed_dim)
 
         orig_decoder_queries = orig_decoder_queries + self.dropout2(
@@ -565,7 +585,7 @@ class TransformerEncoder(nn.Module):
                 )
             )
             # pass through EncoderLayer
-            encoder_features = layer(queries, orig_queries)
+            encoder_features = layer(queries, orig_queries, embedding_map)
 
         encoder_features = self.norm(encoder_features)
 
@@ -662,6 +682,7 @@ def apply_fourier_embeddings(
     boxes: torch.Tensor,
     times: torch.Tensor,
     fourier_n_components: int,
+    fourier_emb: FourierPositionalEmbeddings,
 ) -> torch.Tensor:
     """Applies Fourier positional embeddings to input queries
     Args:
@@ -669,11 +690,10 @@ def apply_fourier_embeddings(
         boxes: Bounding box based embedding ids of shape (n_query, n_anchors, 4)
         times: Times based embedding ids of shape (n_query,)
         fourier_n_components: number of fourier components to use for fourier positional embeddings
+        fourier_emb: FourierPositionalEmbeddings object
     Returns:
         Tensor: Input queries with Fourier positional embeddings added - shape (n_query, batch_size, embed_dim)
     """
-    # fourier_emb = FourierPositionalEmbeddings(queries.shape[-1])
-    fourier_emb = FourierPositionalEmbeddings(queries.shape[0], fourier_n_components, queries.shape[-1])
 
     # queries is of shape (n_query, batch_size, embed_dim); transpose for embeddings
     queries = queries.permute(
