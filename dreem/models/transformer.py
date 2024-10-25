@@ -124,7 +124,8 @@ class Transformer(torch.nn.Module):
             self.use_fourier = False
             self.fourier_n_components = None
 
-        self.fourier_emb = FourierPositionalEmbeddings(self.fourier_n_components, self.d_model)
+        if self.use_fourier:
+            self.fourier_emb = FourierPositionalEmbeddings(self.fourier_n_components, self.d_model)
 
         # Transformer Encoder
         encoder_layer = TransformerEncoderLayer(

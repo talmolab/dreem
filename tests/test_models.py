@@ -184,22 +184,24 @@ def test_embedding_validity():
     _ = Embedding(
         emb_type="pos", mode="fixed", features=128, embedding_agg_method="average"
     )
-    _ = Embedding(
-        emb_type="pos", mode="fixed", features=128, embedding_agg_method="stack"
-    )
-    _ = Embedding(
-        emb_type="pos", mode="fixed", features=128, embedding_agg_method="concatenate"
-    )
+    # currently, learned and fixed embeddings are not supported for stack and concatenate
+    # _ = Embedding(
+    #     emb_type="pos", mode="fixed", features=128, embedding_agg_method="stack"
+    # )
+    # _ = Embedding(
+    #     emb_type="pos", mode="fixed", features=128, embedding_agg_method="concatenate"
+    # )
 
     _ = Embedding(
         emb_type="pos", mode="learned", features=128, embedding_agg_method="average"
     )
-    _ = Embedding(
-        emb_type="pos", mode="learned", features=128, embedding_agg_method="stack"
-    )
-    _ = Embedding(
-        emb_type="pos", mode="learned", features=128, embedding_agg_method="concatenate"
-    )
+    # currently, learned and fixed embeddings are not supported for stack and concatenate
+    # _ = Embedding(
+    #     emb_type="pos", mode="learned", features=128, embedding_agg_method="stack"
+    # )
+    # _ = Embedding(
+    #     emb_type="pos", mode="learned", features=128, embedding_agg_method="concatenate"
+    # )
 
     _ = Embedding(emb_type="temp", mode="learned", features=128)
     _ = Embedding(emb_type="pos", mode="learned", features=128)
@@ -430,15 +432,20 @@ def test_transformer_encoder():
 
     # no position
     queries = torch.rand(size=(N, B, D))
+    pos_emb = Embedding(emb_type="off", mode="off", features=feats)
+    temp_emb = Embedding(emb_type="off", mode="off", features=feats)
+    embedding_map = {"pos": pos_emb, "temp": temp_emb}
 
-    encoder_features = transformer_encoder(queries)
+    encoder_features = transformer_encoder(queries, queries, embedding_map)
 
     assert encoder_features.size() == queries.size()
 
     # with position
     pos_emb = torch.ones_like(queries)
+    temp_emb = torch.ones_like(queries)
+    embedding_map = {"pos": pos_emb, "temp": temp_emb}
 
-    encoder_features = transformer_encoder(queries)
+    encoder_features = transformer_encoder(queries, queries, embedding_map)
 
     assert encoder_features.size() == encoder_features.size()
 
@@ -460,15 +467,28 @@ def test_transformer_decoder():
 
     # no position
     decoder_queries = encoder_features = torch.rand(size=(N, B, D))
+    pos_emb = Embedding(emb_type="off", mode="off", features=feats)
+    temp_emb = Embedding(emb_type="off", mode="off", features=feats)
+    embedding_map = {"pos": pos_emb, "temp": temp_emb}
 
-    decoder_features = transformer_decoder(decoder_queries, encoder_features)
+    boxes = torch.rand(size=(N, 1, 4))
+    times = torch.rand(size=(N,))
+    enc_boxes = torch.rand(size=(N, 1, 4))
+    enc_times = torch.rand(size=(N,))
+
+    decoder_features = transformer_decoder(decoder_queries, encoder_features, decoder_queries, embedding_map, boxes, times, 
+                enc_boxes, enc_times)
 
     assert decoder_features.size() == decoder_queries.size()
 
     # with position
     pos_emb = query_pos_emb = torch.ones_like(encoder_features)
+    pos_emb = Embedding(emb_type="off", mode="off", features=feats)
+    temp_emb = Embedding(emb_type="off", mode="off", features=feats)
+    embedding_map = {"pos": pos_emb, "temp": temp_emb}
 
-    decoder_features = transformer_decoder(decoder_queries, encoder_features)
+    decoder_features = transformer_decoder(decoder_queries, encoder_features, decoder_queries, embedding_map, boxes, times, 
+                enc_boxes, enc_times)
 
     assert decoder_features.size() == decoder_queries.size()
 
@@ -479,7 +499,7 @@ def test_transformer_basic():
     num_frames = 32
     num_detected = 10
     img_shape = (1, 100, 100)
-    embedding_meta = {"embedding_agg_method": "stack"}
+    embedding_meta = {"pos":{"mode":"fixed"},"temp":{"mode":"fixed"},"embedding_agg_method": "average"} 
     transformer = Transformer(
         d_model=feats,
         num_encoder_layers=1,
