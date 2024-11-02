@@ -112,6 +112,7 @@ class SleapDataset(BaseDataset):
         # for label in self.labels:
         # label.remove_empty_instances(keep_empty_frames=False)
 
+        # list of lists, each sublist is a list of frame indices for a given video
         self.frame_idx = [torch.arange(len(labels)) for labels in self.labels]
         # Method in BaseDataset. Creates label_idx and chunked_frame_idx to be
         # used in call to get_instances()
@@ -123,6 +124,7 @@ class SleapDataset(BaseDataset):
         Args:
             idx: the index of the batch.
         """
+        # self.label_idx is a list of indices specifying which video each chunk belongs to
         return self.label_idx[idx], self.chunked_frame_idx[idx]
 
     def get_instances(self, label_idx: list[int], frame_idx: list[int]) -> list[Frame]:
@@ -136,7 +138,8 @@ class SleapDataset(BaseDataset):
             A list of `dreem.io.Frame` objects containing metadata and instance data for the batch/clip.
 
         """
-        video = self.labels[label_idx]
+        # each entry in self.labels is a sleap Labels object (which is a list of LabeledFrames)
+        video = self.labels[label_idx]  # label_idx is the
 
         video_name = self.video_files[label_idx]
         # img = vid_reader.get_data(0)
@@ -145,7 +148,7 @@ class SleapDataset(BaseDataset):
 
         frames = []
         for i, frame_ind in enumerate(frame_idx):
-            (
+            (  # frame_idx is a list of frame indices for a given video
                 instances,
                 gt_track_ids,
                 poses,
@@ -156,10 +159,10 @@ class SleapDataset(BaseDataset):
 
             frame_ind = int(frame_ind)
 
-            lf = video[frame_ind]
+            lf = video[frame_ind]  # video is a sleap Labels object for a given file
 
             try:
-                img = lf.image
+                img = lf.image  # a single frame from the video
             except FileNotFoundError as e:
                 if video_name not in self.vid_readers:
                     self.vid_readers[video_name] = sio.load_video(video_name)
