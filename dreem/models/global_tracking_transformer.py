@@ -90,10 +90,10 @@ class GlobalTrackingTransformer(torch.nn.Module):
             An N_T x N association matrix
         """
         # Extract feature representations with pre-trained encoder.
-        self.extract_features(ref_instances)
+        # self.extract_features(ref_instances)
 
-        if query_instances:
-            self.extract_features(query_instances)
+        # if query_instances:
+        #     self.extract_features(query_instances)
 
         asso_preds = self.transformer(ref_instances, query_instances)
 

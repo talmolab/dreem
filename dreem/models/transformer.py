@@ -205,6 +205,7 @@ class Transformer(torch.nn.Module):
                 n_query: number of instances in current query/frame
                 total_instances: number of instances in window
         """
+
         ref_features = torch.cat(
             [instance.features for instance in ref_instances], dim=0
         ).unsqueeze(0)
@@ -223,15 +224,22 @@ class Transformer(torch.nn.Module):
         )  # (total_instances, batch_size, embed_dim)
         encoder_queries = ref_features
 
+        # check to see if visual encoder is used
+        if ref_instances[0].features.numel() == 0:
+            encoder_queries = None
+
         # apply fourier embeddings
         if "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]:
             encoder_queries = apply_fourier_embeddings(
                 encoder_queries,
+                self.d_model,
                 ref_boxes,
                 ref_times,
                 self.fourier_n_components,
                 self.fourier_emb,
             )
+        else: # if not using fourier pre-encoder, seed features with 0s to use with learned/fixed embeddings
+            encoder_queries = torch.zeros((total_instances, batch_size, self.d_model), device=ref_features.device)
 
         # (encoder_features, ref_pos_emb, ref_temp_emb) \
         encoder_features, pos_emb_traceback, temp_emb_traceback = self.encoder(
@@ -279,6 +287,11 @@ class Transformer(torch.nn.Module):
             query_features = ref_features
             query_boxes = ref_boxes
             query_times = ref_times
+
+        # if visual encoder not used, then decoder queries should
+        # have pre-encoder fourier embeddings applied 
+        if query_instances[0].features.numel() == 0:
+            query_features = encoder_queries
 
         decoder_features, pos_emb_traceback, temp_emb_traceback = self.decoder(
             query_features,
@@ -696,6 +709,7 @@ class TransformerDecoder(nn.Module):
 
 def apply_fourier_embeddings(
     queries: torch.Tensor,
+    d_model: int,
     boxes: torch.Tensor,
     times: torch.Tensor,
     fourier_n_components: int,
@@ -704,6 +718,7 @@ def apply_fourier_embeddings(
     """Applies Fourier positional embeddings to input queries
     Args:
         queries: Input queries of shape (n_query, batch_size, embed_dim)
+        d_model: Model feature dimension
         boxes: Bounding box based embedding ids of shape (n_query, n_anchors, 4)
         times: Times based embedding ids of shape (n_query,)
         fourier_n_components: number of fourier components to use for fourier positional embeddings
@@ -712,21 +727,24 @@ def apply_fourier_embeddings(
         Tensor: Input queries with Fourier positional embeddings added - shape (n_query, batch_size, embed_dim)
     """
 
-    # queries is of shape (n_query, batch_size, embed_dim); transpose for embeddings
-    queries = queries.permute(
-        1, 0, 2
-    )  # queries is now of shape (batch_size, n_query, embed_dim)
-
     ref_x, ref_y = spatial_emb_from_bb(boxes)
     t_emb = fourier_emb(times)
     x_emb = fourier_emb(ref_x)
     y_emb = fourier_emb(ref_y)
 
-    queries_cat = torch.cat((t_emb, x_emb, y_emb, queries), dim=-1)
+    if queries is None:
+        queries_cat = torch.cat((t_emb, x_emb, y_emb), dim=-1)
+    else:
+        # queries is of shape (n_query, batch_size, embed_dim); transpose for embeddings
+        queries = queries.permute(
+            1, 0, 2
+        )  # queries is now of shape (batch_size, n_query, embed_dim)
+        queries_cat = torch.cat((t_emb, x_emb, y_emb, queries), dim=-1)
 
-    # queries is shape (batch_size, n_query, embed_dim + 3*embed_dim)
-    proj = nn.Linear(queries_cat.shape[-1], queries.shape[-1]).to(queries_cat.device)
-    norm = nn.LayerNorm(queries.shape[-1]).to(queries_cat.device)
+    # queries is shape (batch_size, n_query, embed_dim + 3*embed_dim) or if no visual features,
+    # then shape (batch_size, n_query, 3*embed_dim)
+    proj = nn.Linear(queries_cat.shape[-1], d_model).to(queries_cat.device)
+    norm = nn.LayerNorm(d_model).to(queries_cat.device)
 
     queries = proj(queries_cat)
     queries = norm(queries)
