@@ -81,8 +81,9 @@ class AssoLoss(nn.Module):
 
         asso_gt, match_cues = self._get_asso_gt(
             pred_box, pred_time, target_box, target_time, target_inst_id, n_t
-        )
+        )  # asso_gt is shape (n_instances, n_frames) with track id in order that its seen in frames
 
+        # asso_pred is shape (total_instances across all frames, total_instances across all frames)
         loss = sum(
             [
                 self.detr_asso_loss(asso_pred, asso_gt, match_cues, n_t)
@@ -121,6 +122,7 @@ class AssoLoss(nn.Module):
                     detection (K x 3) or (N,)
         """
         # compute ious over bboxes, ignore pairs with different time stamps
+        # note that for fixed detections, pred_box and target_box are the same so this is a diagonal matrix
         ious = torchvision.ops.box_iou(pred_box, target_box)
         ious[pred_time[:, None] != target_time[None, :]] = -1.0
 
@@ -198,6 +200,7 @@ class AssoLoss(nn.Module):
         num_objs = 0
 
         zero = asso_pred.new_zeros((asso_pred.shape[0], 1))  # M x 1
+        # split predicted association matrix by frame
         asso_pred_image = asso_pred.split(n_t, dim=1)  # T x [M x n_t]
 
         for t in range(len(n_t)):
@@ -216,7 +219,8 @@ class AssoLoss(nn.Module):
                 asso_gt_t = asso_gt[target_inds, t]  # K
 
             num_objs += (asso_gt_t != n_t[t]).float().sum()
-
+            # asso_preds_with_bg is shape (total_instances across all frames, n_t + 1) where +1 is for background class
+            # asso_gt_t is shape (total_instances across all frames); each entry is the track id of the gt instance i.e. the class label
             loss += F.cross_entropy(asso_pred_with_bg, asso_gt_t, reduction="none")
 
         return loss.sum() / (num_objs + self.epsilon)

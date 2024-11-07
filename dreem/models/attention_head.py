@@ -43,6 +43,7 @@ class ATTWeightHead(torch.nn.Module):
             self.k_proj = MLP(
                 feature_dim, feature_dim, feature_dim, num_layers, dropout
             )
+            self.final_attn = torch.nn.MultiheadAttention(feature_dim, 1)
 
     def forward(
         self,
@@ -96,5 +97,6 @@ class ATTWeightHead(torch.nn.Module):
             k = self.k_proj(key)
             q = self.q_proj(query)
             attn_weights = torch.bmm(q, k.transpose(1, 2))
+            # attn_weights, _ = self.final_attn(query, key, value=query)
 
         return attn_weights  # (B, N_t, N)
