@@ -499,27 +499,27 @@ class TransformerDecoderLayer(nn.Module):
             )
             orig_decoder_queries = self.norm1(orig_decoder_queries)
 
-        # embeddings reapplied to decoder queries between self attention and cross attention; can switch off 
+        # embeddings need to be reapplied to decoder queries between self attention and cross attention;
         # Reference: https://github.com/facebookresearch/detr/blob/29901c51d7fe8712168b8d0d64351170bc0f83e0/models/transformer.py#L187-L233
 
-        # q_x_attn, *_ = apply_embeddings(
-        #     orig_decoder_queries, embedding_map, boxes, times, embedding_agg_method
-        # )  # queries from decoder
-        # # remember, encoder features should have embeddings applied with encoder position ids from enc_boxes, enc_times
-        # k_x_attn, *_ = apply_embeddings(
-        #     encoder_features, embedding_map, enc_boxes, enc_times, embedding_agg_method
-        # )  # keys from encoder
+        q_x_attn, *_ = apply_embeddings(
+            orig_decoder_queries, embedding_map, boxes, times, embedding_agg_method
+        )  # queries from decoder
+        # remember, encoder features should have embeddings applied with encoder position ids from enc_boxes, enc_times
+        k_x_attn, *_ = apply_embeddings(
+            encoder_features, embedding_map, enc_boxes, enc_times, embedding_agg_method
+        )  # keys from encoder
 
         # cross attention
         # for rope, value should not be embedded so use value=encoder_features
         if embedding_map["pos"].mode == "rope" and embedding_map["temp"].mode == "rope":
             v = encoder_features
         else:
-            v = encoder_features
+            v = k_x_attn
 
         x_attn_features = self.multihead_attn(
-            query=orig_decoder_queries,  # (n_query, batch_size, embed_dim)
-            key=encoder_features,  # (total_instances, batch_size, embed_dim)
+            query=q_x_attn,  # (n_query, batch_size, embed_dim)
+            key=k_x_attn,  # (total_instances, batch_size, embed_dim)
             value=v,  # (total_instances, batch_size, embed_dim)
         )[
             0
