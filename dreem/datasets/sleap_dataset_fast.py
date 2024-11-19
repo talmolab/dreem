@@ -408,31 +408,33 @@ if __name__ == "__main__":
     logging.info('\n')
 
     # baseline - standard SleapDataset
-    start = time.time()
-    dataset = SleapDataset(**dataset_params)
-    logging.info(f'Creation time for standard SleapDataset: {time.time() - start:.2f} seconds')
+
+    # start = time.time()
+    # dataset = SleapDataset(**dataset_params)
+    # logging.info(f'Creation time for standard SleapDataset: {time.time() - start:.2f} seconds')
     
-    # create dataloader and access batches
-    start = time.time()
-    dataloader = torch.utils.data.DataLoader(
-            dataset=dataset,
-            batch_size=1,
-            pin_memory=False,
-            collate_fn=dataset.no_batching_fn,
-            num_workers=0,
-    )
-    sample = next(iter(dataloader))
-    logging.info(f'Single batch loading time for standard SleapDataset: {time.time() - start:.2f} seconds')
+    # # create dataloader and access batches
+    # start = time.time()
+    # dataloader = torch.utils.data.DataLoader(
+    #         dataset=dataset,
+    #         batch_size=1,
+    #         pin_memory=False,
+    #         collate_fn=dataset.no_batching_fn,
+    #         num_workers=0,
+    # )
+    # sample = next(iter(dataloader))
+    # logging.info(f'Single batch loading time for standard SleapDataset: {time.time() - start:.2f} seconds')
 
-    start = time.time() 
-    for ix, batch in enumerate(dataloader):
-        if ix % 50 == 0: print(ix)
-        # logging.info(f'Batch {ix} loaded in {time.time() - start:.2f} seconds')
+    # start = time.time() 
+    # for ix, batch in enumerate(dataloader):
+    #     if ix % 50 == 0: print(ix)
+    #     # logging.info(f'Batch {ix} loaded in {time.time() - start:.2f} seconds')
 
-    logging.info(f'Total time for loading all batches for standard SleapDataset: {time.time() - start:.2f} seconds')
+    # logging.info(f'Total time for loading all batches for standard SleapDataset: {time.time() - start:.2f} seconds')
 
 
     # IterableDataset
+
     # start = time.time()
     # iterable_dataset = SleapIterableDataset(**dataset_params)
     # logging.info(f'Creation time for SleapIterableDataset: {time.time() - start:.2f} seconds')
