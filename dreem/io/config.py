@@ -191,7 +191,7 @@ class Config:
                     f"Must provide a labels suffix and vid suffix to search for but found {labels_suff} and {vid_suff}!"
                 )
             list_dir_path = dir_cfg.get("path", ".")
-            if isinstance(list_dir_path, str):
+            if not isinstance(list_dir_path, list):
                 list_dir_path = [list_dir_path]
             label_files = []
             vid_files = []
