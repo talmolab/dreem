@@ -190,15 +190,21 @@ class Config:
                 raise KeyError(
                     f"Must provide a labels suffix and vid suffix to search for but found {labels_suff} and {vid_suff}!"
                 )
-            dir_path = dir_cfg.get("path", ".")
-            logger.debug(f"Searching `{dir_path}` directory")
+            list_dir_path = dir_cfg.get("path", ".")
+            if isinstance(list_dir_path, str):
+                list_dir_path = [list_dir_path]
+            label_files = []
+            vid_files = []
+            for dir_path in list_dir_path:
+                logger.debug(f"Searching `{dir_path}` directory")
 
-            labels_path = f"{dir_path}/*{labels_suff}"
-            vid_path = f"{dir_path}/*{vid_suff}"
-            logger.debug(f"Searching for labels matching {labels_path}")
-            label_files = glob.glob(labels_path)
-            logger.debug(f"Searching for videos matching {vid_path}")
-            vid_files = glob.glob(vid_path)
+                labels_path = f"{dir_path}/*{labels_suff}"
+                vid_path = f"{dir_path}/*{vid_suff}"
+                logger.debug(f"Searching for labels matching {labels_path}")
+                label_files.extend(glob.glob(labels_path))
+                logger.debug(f"Searching for videos matching {vid_path}")
+                vid_files.extend(glob.glob(vid_path))
+
             logger.debug(f"Found {len(label_files)} labels and {len(vid_files)} videos")
 
         else:
