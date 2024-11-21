@@ -381,18 +381,18 @@ if __name__ == "__main__":
     import time
     import logging
 
-    if os.path.exists('/Users/mustafashaikh/Documents/mot/dataloader_profiling.log'):
-        os.remove('/Users/mustafashaikh/Documents/mot/dataloader_profiling.log')
+    if os.path.exists('/root/vast/mustafa/dreem-experiments/run/mice-btc/dataloader_profiling.log'):
+        os.remove('/root/vast/mustafa/dreem-experiments/run/mice-btc/dataloader_profiling.log')
 
     logging.basicConfig(
-        filename='/Users/mustafashaikh/Documents/mot/dataloader_profiling.log', 
+        filename='/root/vast/mustafa/dreem-experiments/run/mice-btc/dataloader_profiling.log', 
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s'
     )
 
     cfg = Config.from_yaml(
-        "/Users/mustafashaikh/dreem/base.yaml",
-        "/Users/mustafashaikh/dreem/fast_loading.yaml",
+        "/root/vast/mustafa/dreem-experiments/run/mice-btc/configs/base.yaml",
+        "/root/vast/mustafa/dreem-experiments/run/mice-btc/configs/fast_loading.yaml",
     )
 
     dataset_params = cfg.get("dataset")
@@ -401,16 +401,19 @@ if __name__ == "__main__":
 
     if "slp_files" in dataset_params:
         if label_files is not None:
-            dataset_params["slp_files"] = ["/Users/mustafashaikh/Documents/mot/als2h_cohort2_cohort2.220503_153813_Camera1_mov.00001.predictions.proofread.slp"]
+            dataset_params["slp_files"] = label_files
+            # dataset_params["slp_files"] = ["/Users/mustafashaikh/Documents/mot/als2h_cohort2_cohort2.220503_153813_Camera1_mov.00001.predictions.proofread.slp"]
         if vid_files is not None:
-            dataset_params["video_files"] = ["/Users/mustafashaikh/Documents/mot/als2h_cohort2_cohort2.220503_153813_Camera1_mov.00001.mp4"]
+            dataset_params["video_files"] = vid_files
+            # dataset_params["video_files"] = ["/Users/mustafashaikh/Documents/mot/als2h_cohort2_cohort2.220503_153813_Camera1_mov.00001.mp4"]
+            
 
     logging.info('\n')
 
     # baseline - standard SleapDataset
 
-    # start = time.time()
-    # dataset = SleapDataset(**dataset_params)
+    start = time.time()
+    dataset = SleapDataset(**dataset_params)
     # logging.info(f'Creation time for standard SleapDataset: {time.time() - start:.2f} seconds')
     
     # # create dataloader and access batches
