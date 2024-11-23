@@ -247,7 +247,7 @@ class GTRRunner(LightningModule):
                 "scheduler": scheduler,
                 "monitor": "val_loss",
                 "interval": "epoch",
-                "frequency": 10,
+                "frequency": 1,
             },
         }
 
