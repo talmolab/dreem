@@ -165,8 +165,12 @@ def init_scheduler(
             milestones = scheduler_params.get("milestones", None)
             for ix, s in enumerate(scheduler):
                 params = scheduler_params[str(ix)]
-                schedulers.append(getattr(torch.optim.lr_scheduler, s)(optimizer, **params))
-            scheduler_class = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers, milestones)
+                schedulers.append(
+                    getattr(torch.optim.lr_scheduler, s)(optimizer, **params)
+                )
+            scheduler_class = torch.optim.lr_scheduler.SequentialLR(
+                optimizer, schedulers, milestones
+            )
             return scheduler_class
 
         else:
