@@ -45,6 +45,18 @@ scheduler:
   threshold: 1e-4
   threshold_mode: "rel"
 
+  # scheduler: # providing a list of schedulers will apply each scheduler sequentially
+  # name: ["LinearLR", "LinearLR"]
+  # "0": 
+  #   start_factor: 0.1
+  #   end_factor: 1
+  #   total_iters: 3
+  # "1":
+  #   start_factor: 1
+  #   end_factor: 0.1
+  #   total_iters: 30
+  # milestones: [10]
+
 tracker:
   window_size: 8
   use_vis_feats: true
