@@ -6,7 +6,9 @@ import imageio
 import numpy as np
 import sleap_io as sio
 import random
+from pathlib import Path
 import logging
+from typing import Union, Optional
 from dreem.io import Instance, Frame
 from dreem.datasets import data_utils, BaseDataset
 from torchvision.transforms import functional as tvf
@@ -21,8 +23,9 @@ class SleapDataset(BaseDataset):
         self,
         slp_files: list[str],
         video_files: list[str],
+        data_dirs: Optional[list[str]] = None,
         padding: int = 5,
-        crop_size: int = 128,
+        crop_size: Union[int, list[int]] = 128,
         anchors: int | list[str] | str = "",
         chunk: bool = True,
         clip_length: int = 500,
@@ -38,8 +41,12 @@ class SleapDataset(BaseDataset):
         Args:
             slp_files: a list of .slp files storing tracking annotations
             video_files: a list of paths to video files
+            data_dirs: a path, or a list of paths to data directories. If provided, crop_size should be a list of integers
+                with the same length as data_dirs.
             padding: amount of padding around object crops
-            crop_size: the size of the object crops
+            crop_size: the size of the object crops. Can be either:
+                - An integer specifying a single crop size for all objects
+                - A list of integers specifying different crop sizes for different data directories
             anchors: One of:
                         * a string indicating a single node to center crops around
                         * a list of skeleton node names to be used as the center of crops
@@ -79,6 +86,9 @@ class SleapDataset(BaseDataset):
         )
 
         self.slp_files = slp_files
+        self.data_dirs = (
+            data_dirs  # empty list, list of paths, or string of single path
+        )
         self.video_files = video_files
         self.padding = padding
         self.crop_size = crop_size
@@ -89,12 +99,31 @@ class SleapDataset(BaseDataset):
         self.n_chunks = n_chunks
         self.seed = seed
 
+        if self.data_dirs is None:
+            self.data_dirs = []
         if isinstance(anchors, int):
             self.anchors = anchors
         elif isinstance(anchors, str):
             self.anchors = [anchors]
         else:
             self.anchors = anchors
+
+        if not isinstance(self.data_dirs, list):
+            self.data_dirs = [self.data_dirs]
+
+        if not isinstance(self.crop_size, list):
+            # make a list so its handled consistently if multiple crops are used
+            if len(self.data_dirs) > 0:  # for test mode, data_dirs is []
+                self.crop_size = [self.crop_size] * len(self.data_dirs)
+            else:
+                self.crop_size = [self.crop_size]
+
+        if len(self.data_dirs) > 0 and len(self.crop_size) != len(self.data_dirs):
+            raise ValueError(
+                f"If a list of crop sizes or data directories are given,"
+                f"they must have the same length but got {len(self.crop_size)} "
+                f"and {len(self.data_dirs)}"
+            )
 
         if (
             isinstance(self.anchors, list) and len(self.anchors) == 0
@@ -139,6 +168,17 @@ class SleapDataset(BaseDataset):
         video = self.labels[label_idx]
 
         video_name = self.video_files[label_idx]
+
+        # get the correct crop size based on the video
+        video_par_path = Path(video_name).parent
+        if len(self.data_dirs) > 0:
+            crop_size = self.crop_size[0]
+            for j, data_dir in enumerate(self.data_dirs):
+                if Path(data_dir) == video_par_path:
+                    crop_size = self.crop_size[j]
+                    break
+        else:
+            crop_size = self.crop_size[0]
 
         vid_reader = self.videos[label_idx]
 
@@ -316,15 +356,15 @@ class SleapDataset(BaseDataset):
 
                     else:
                         bbox = data_utils.pad_bbox(
-                            data_utils.get_bbox(centroid, self.crop_size),
+                            data_utils.get_bbox(centroid, crop_size),
                             padding=self.padding,
                         )
 
                     if bbox.isnan().all():
                         crop = torch.zeros(
                             c,
-                            self.crop_size + 2 * self.padding,
-                            self.crop_size + 2 * self.padding,
+                            crop_size + 2 * self.padding,
+                            crop_size + 2 * self.padding,
                             dtype=img.dtype,
                         )
                     else:
