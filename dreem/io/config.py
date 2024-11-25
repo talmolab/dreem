@@ -513,7 +513,9 @@ class Config:
             if profiler in map_profiler:
                 profiler = map_profiler[profiler](filename="profile")
             else:
-                raise ValueError(f"Profiler {profiler} not supported! Please use one of {list(map_profiler.keys())}")
+                raise ValueError(
+                    f"Profiler {profiler} not supported! Please use one of {list(map_profiler.keys())}"
+                )
 
         return pl.Trainer(
             callbacks=callbacks,
