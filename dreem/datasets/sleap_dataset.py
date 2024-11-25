@@ -82,7 +82,9 @@ class SleapDataset(BaseDataset):
         )
 
         self.slp_files = slp_files
-        self.data_dirs = data_dirs # empty list, list of paths, or string of single path
+        self.data_dirs = (
+            data_dirs  # empty list, list of paths, or string of single path
+        )
         self.video_files = video_files
         self.padding = padding
         self.crop_size = crop_size
@@ -99,24 +101,24 @@ class SleapDataset(BaseDataset):
             self.anchors = [anchors]
         else:
             self.anchors = anchors
-        
-        
+
         if not isinstance(self.data_dirs, list):
             self.data_dirs = [self.data_dirs]
 
         if not isinstance(self.crop_size, list):
             # make a list so its handled consistently if multiple crops are used
-            if len(self.data_dirs) > 0: # for test mode, data_dirs is []
+            if len(self.data_dirs) > 0:  # for test mode, data_dirs is []
                 self.crop_size = [self.crop_size] * len(self.data_dirs)
             else:
                 self.crop_size = [self.crop_size]
 
-
         if len(self.data_dirs) > 0 and len(self.crop_size) != len(self.data_dirs):
-            raise ValueError(f"If a list of crop sizes or data directories are given,"
-                             f"they must have the same length but got {len(self.crop_size)} "
-                             f"and {len(self.data_dirs)}")
-            
+            raise ValueError(
+                f"If a list of crop sizes or data directories are given,"
+                f"they must have the same length but got {len(self.crop_size)} "
+                f"and {len(self.data_dirs)}"
+            )
+
         if (
             isinstance(self.anchors, list) and len(self.anchors) == 0
         ) or self.anchors == 0:
