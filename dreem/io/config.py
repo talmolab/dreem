@@ -180,7 +180,6 @@ class Config:
             lists of labels file paths and video file paths respectively
         """
         dir_cfg = data_cfg.pop("dir", None)
-
         label_files = vid_files = None
 
         if dir_cfg:
@@ -253,6 +252,12 @@ class Config:
             raise ValueError(
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
+
+        if "dir" in dataset_params:
+            self.data_dirs = dataset_params["dir"]["path"]
+        else:
+            self.data_dirs = []
+
         if label_files is None or vid_files is None:
             label_files, vid_files = self.get_data_paths(dataset_params)
         # todo: handle this better
@@ -261,6 +266,9 @@ class Config:
                 dataset_params["slp_files"] = label_files
             if vid_files is not None:
                 dataset_params["video_files"] = vid_files
+
+            dataset_params["data_dirs"] = self.data_dirs
+
             return SleapDataset(**dataset_params)
 
         elif "tracks" in dataset_params or "source" in dataset_params:
