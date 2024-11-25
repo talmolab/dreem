@@ -8,7 +8,7 @@ import sleap_io as sio
 import random
 from pathlib import Path
 import logging
-from typing import Union, List
+from typing import Union, Optional
 from dreem.io import Instance, Frame
 from dreem.datasets import data_utils, BaseDataset
 from torchvision.transforms import functional as tvf
@@ -23,7 +23,7 @@ class SleapDataset(BaseDataset):
         self,
         slp_files: list[str],
         video_files: list[str],
-        data_dirs: list[str] = [],
+        data_dirs: Optional[list[str]] = None,
         padding: int = 5,
         crop_size: Union[int, list[int]] = 128,
         anchors: int | list[str] | str = "",
@@ -38,35 +38,39 @@ class SleapDataset(BaseDataset):
     ):
         """Initialize SleapDataset.
 
-        Args:
-            slp_files: a list of .slp files storing tracking annotations
-            video_files: a list of paths to video files
-            padding: amount of padding around object crops
-            crop_size: the size of the object crops
-            anchors: One of:
-                        * a string indicating a single node to center crops around
-                        * a list of skeleton node names to be used as the center of crops
-                        * an int indicating the number of anchors to randomly select
-                    If unavailable then crop around the midpoint between all visible anchors.
-            chunk: whether or not to chunk the dataset into batches
-            clip_length: the number of frames in each chunk
-            mode: `train`, `val`, or `test`. Determines whether this dataset is used for
-                training, validation/testing/inference.
-            handle_missing: how to handle missing single nodes. one of `["drop", "ignore", "centroid"]`.
-                            if "drop" then we dont include instances which are missing the `anchor`.
-                            if "ignore" then we use a mask instead of a crop and nan centroids/bboxes.
-                            if "centroid" then we default to the pose centroid as the node to crop around.
-            augmentations: An optional dict mapping augmentations to parameters. The keys
-                should map directly to augmentation classes in albumentations. Example:
-                    augmentations = {
-                        'Rotate': {'limit': [-90, 90], 'p': 0.5},
-                        'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0, 'p': 0.2},
-                        'RandomContrast': {'limit': 0.2, 'p': 0.6}
-                    }
-            n_chunks: Number of chunks to subsample from.
-                Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
-            seed: set a seed for reproducibility
-            verbose: boolean representing whether to print
+                Args:
+                    slp_files: a list of .slp files storing tracking annotations
+                    video_files: a list of paths to video files
+                    data_dirs: a path, or a list of paths to data directories. If provided, crop_size should be a list of integers
+                        with the same length as data_dirs.
+                    padding: amount of padding around object crops
+                    crop_size: the size of the object crops. Can be either:
+        +                - An integer specifying a single crop size for all objects
+        +                - A list of integers specifying different crop sizes for different data directories
+                    anchors: One of:
+                                * a string indicating a single node to center crops around
+                                * a list of skeleton node names to be used as the center of crops
+                                * an int indicating the number of anchors to randomly select
+                            If unavailable then crop around the midpoint between all visible anchors.
+                    chunk: whether or not to chunk the dataset into batches
+                    clip_length: the number of frames in each chunk
+                    mode: `train`, `val`, or `test`. Determines whether this dataset is used for
+                        training, validation/testing/inference.
+                    handle_missing: how to handle missing single nodes. one of `["drop", "ignore", "centroid"]`.
+                                    if "drop" then we dont include instances which are missing the `anchor`.
+                                    if "ignore" then we use a mask instead of a crop and nan centroids/bboxes.
+                                    if "centroid" then we default to the pose centroid as the node to crop around.
+                    augmentations: An optional dict mapping augmentations to parameters. The keys
+                        should map directly to augmentation classes in albumentations. Example:
+                            augmentations = {
+                                'Rotate': {'limit': [-90, 90], 'p': 0.5},
+                                'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0, 'p': 0.2},
+                                'RandomContrast': {'limit': 0.2, 'p': 0.6}
+                            }
+                    n_chunks: Number of chunks to subsample from.
+                        Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
+                    seed: set a seed for reproducibility
+                    verbose: boolean representing whether to print
         """
         super().__init__(
             slp_files,
@@ -95,6 +99,8 @@ class SleapDataset(BaseDataset):
         self.n_chunks = n_chunks
         self.seed = seed
 
+        if self.data_dirs is None:
+            self.data_dirs = []
         if isinstance(anchors, int):
             self.anchors = anchors
         elif isinstance(anchors, str):
@@ -170,6 +176,8 @@ class SleapDataset(BaseDataset):
                 if Path(data_dir) == video_par_path:
                     crop_size = self.crop_size[j]
                     break
+                else:
+                    crop_size = self.crop_size[0]
         else:
             crop_size = self.crop_size[0]
 

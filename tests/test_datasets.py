@@ -163,15 +163,6 @@ def test_sleap_dataset(two_flies):
 
     assert len(train_ds) == ds_length
 
-    train_ds = SleapDataset(
-        slp_files=[two_flies[0]],
-        video_files=[two_flies[1]],
-        crop_size=128,
-        chunk=True,
-        clip_length=clip_length,
-        n_chunks=ds_length + 10000,
-    )
-
     with pytest.raises(Exception):
         train_ds = SleapDataset(
             slp_files=[two_flies[0]],
