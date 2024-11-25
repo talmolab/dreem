@@ -501,8 +501,19 @@ class Config:
         if "devices" not in trainer_params:
             trainer_params["devices"] = devices
 
+        map_profiler = {
+            "advanced": pl.profilers.AdvancedProfiler,
+            "simple": pl.profilers.SimpleProfiler,
+            "pytorch": pl.profilers.PyTorchProfiler,
+            "passthrough": pl.profilers.PassThroughProfiler,
+            "xla": pl.profilers.XLAProfiler,
+        }
+
         if profiler:
-            profiler = pl.profilers.AdvancedProfiler(filename="profile.txt")
+            if profiler in map_profiler:
+                profiler = map_profiler[profiler](filename="profile")
+            else:
+                raise ValueError(f"Profiler {profiler} not supported! Please use one of {list(map_profiler.keys())}")
 
         return pl.Trainer(
             callbacks=callbacks,
