@@ -4,6 +4,17 @@ model:
     model_name: "resnet18"
     backend: "timm"
     in_chans: 3
+  # below is a sample of the new encoder_cfg structure for different encoder types
+  # encoder_cfg: 
+  #   # based on encoder_type, the relevant settings are selected
+  #   encoder_type: "descriptor"
+  #   resnet:
+  #     model_name: "resnet18"
+  #     in_chans: 3
+  #     backend: "timm"
+  #     pretrained: false
+  #   descriptor:
+  #     source: "skimage"
   d_model: 1024
   nhead: 8
   num_encoder_layers: 1

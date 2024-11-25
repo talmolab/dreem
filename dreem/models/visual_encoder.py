@@ -1,6 +1,6 @@
 """Module for different visual feature extractors."""
 
-from typing import Any
+from typing import Any, Type, Dict
 import torch
 import torchvision
 import timm
@@ -10,6 +10,8 @@ import torch.nn.functional as F
 
 # todo: do we want to make timm a dependency?
 # todo: add named tensor support
+
+ENCODER_REGISTRY: Dict[str, Type[torch.nn.Module]] = {}
 
 
 class VisualEncoder(torch.nn.Module):
@@ -157,3 +159,45 @@ class VisualEncoder(torch.nn.Module):
         # Normalize output feature vectors.
         feats = F.normalize(feats)  # (B, d_model)
         return feats
+
+
+
+class DescriptorVisualEncoder(torch.nn.Module):
+    """Visual Encoder based on image descriptors"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+
+    @torch.no_grad()
+    def forward(self, img: torch.Tensor) -> torch.Tensor:
+        """Forward pass of feature extractor to get feature vector."""
+        return img
+
+
+def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
+    """Register a new encoder type."""
+    if not issubclass(encoder_class, torch.nn.Module):
+        raise ValueError(f"{encoder_class} must be a subclass of torch.nn.Module")
+    ENCODER_REGISTRY[encoder_type] = encoder_class
+
+
+def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
+    """Create a visual encoder based on the specified type."""
+
+    register_encoder("resnet", VisualEncoder)
+    register_encoder("descriptor", DescriptorVisualEncoder)
+    # register any custom encoders here
+
+    # compatibility with configs that don't specify encoder_type; default to resnet
+    if "encoder_type" not in encoder_cfg:
+        encoder_type = "resnet"
+        return ENCODER_REGISTRY[encoder_type](d_model=d_model, **encoder_cfg)
+    else:
+        encoder_type = encoder_cfg.pop("encoder_type")
+
+    if encoder_type in ENCODER_REGISTRY:
+        # choose the relevant encoder configs based on the encoder_type
+        configs = encoder_cfg[encoder_type]
+        return ENCODER_REGISTRY[encoder_type](d_model=d_model, **configs)
+    else:
+        raise ValueError(f"Unknown encoder type: {encoder_type}. Please use one of {list(ENCODER_REGISTRY.keys())}")

@@ -1,7 +1,7 @@
 """Module containing GTR model used for training."""
 
 from dreem.models import Transformer
-from dreem.models import VisualEncoder
+from dreem.models import create_visual_encoder
 import torch
 
 # todo: do we want to handle params with configs already here?
@@ -56,10 +56,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
         """
         super().__init__()
 
-        if encoder_cfg is not None:
-            self.visual_encoder = VisualEncoder(d_model=d_model, **encoder_cfg)
-        else:
-            self.visual_encoder = VisualEncoder(d_model=d_model)
+        self.visual_encoder = create_visual_encoder(d_model=d_model, **encoder_cfg)
 
         self.transformer = Transformer(
             d_model=d_model,
