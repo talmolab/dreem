@@ -122,6 +122,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
         crops = torch.concatenate([instance.crop for instance in instances_to_compute])
 
         features = self.visual_encoder(crops)
+        features = features.to(device=instances_to_compute[0].device)
 
         for i, z_i in enumerate(features):
             instances_to_compute[i].features = z_i

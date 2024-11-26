@@ -182,9 +182,6 @@ class DescriptorVisualEncoder(torch.nn.Module):
     def compute_inertia_tensor(self, img):
         return measure.inertia_tensor(img)
 
-    def compute_intensity_stats(self, img): 
-        return img.mean(), img.std()
-
     @torch.no_grad()
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector."""
@@ -193,10 +190,10 @@ class DescriptorVisualEncoder(torch.nn.Module):
         descriptors = []
 
         for im in img:
-            im = im[0].numpy()
+            im = im[0].cpu().numpy()
 
             inertia_tensor = self.compute_inertia_tensor(im)
-            mean_intensity, std_intensity = self.compute_intensity_stats(im)
+            mean_intensity = im.mean()
             hu_moments = self.compute_hu_moments(im)
 
             # Flatten inertia tensor
@@ -205,7 +202,7 @@ class DescriptorVisualEncoder(torch.nn.Module):
             # Combine all features into a single descriptor
             descriptor = np.concatenate([
                 inertia_tensor_flat,
-                [mean_intensity, std_intensity],
+                [mean_intensity],
                 hu_moments
             ])
 
@@ -227,8 +224,8 @@ class LBPVisualEncoder(torch.nn.Module):
     @torch.no_grad()
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector."""
-        lbp = local_binary_pattern(image, n_points, radius, method="uniform")
-        hist1, _ = np.histogram(lbp, density=True, bins=n_bins, range=(0, n_bins))
+        lbp = local_binary_pattern(img, self.n_points, self.radius, method="uniform")
+        hist1, _ = np.histogram(lbp, density=True, bins=self.n_bins, range=(0, self.n_bins))
 
         return torch.tensor(hist1)
 
