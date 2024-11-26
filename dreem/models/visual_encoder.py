@@ -5,6 +5,9 @@ import torch
 import torchvision
 import timm
 import torch.nn.functional as F
+import skimage.measure as measure
+from skimage.feature import local_binary_pattern
+import numpy as np
 
 # import timm
 
@@ -161,17 +164,74 @@ class VisualEncoder(torch.nn.Module):
         return feats
 
 
-
 class DescriptorVisualEncoder(torch.nn.Module):
     """Visual Encoder based on image descriptors"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__()
+
+    def compute_hu_moments(self, img):
+        mu = measure.moments_central(img)
+        nu = measure.moments_normalized(mu)
+        hu = measure.moments_hu(nu)
+        # log transform hu moments for scale differences
+        hu_log = -np.sign(hu) * np.log(np.abs(hu))
+
+        return hu_log
+
+    def compute_inertia_tensor(self, img):
+        return measure.inertia_tensor(img)
+
+    def compute_intensity_stats(self, img): 
+        return img.mean(), img.std()
 
     @torch.no_grad()
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector."""
-        return img
+        # TODO: vectorize this
+
+        descriptors = []
+
+        for im in img:
+            im = im[0].numpy()
+
+            inertia_tensor = self.compute_inertia_tensor(im)
+            mean_intensity, std_intensity = self.compute_intensity_stats(im)
+            hu_moments = self.compute_hu_moments(im)
+
+            # Flatten inertia tensor
+            inertia_tensor_flat = inertia_tensor.flatten()
+
+            # Combine all features into a single descriptor
+            descriptor = np.concatenate([
+                inertia_tensor_flat,
+                [mean_intensity, std_intensity],
+                hu_moments
+            ])
+
+            descriptors.append(torch.tensor(descriptor, dtype=torch.float32))
+
+        return torch.stack(descriptors)
+
+
+class LBPVisualEncoder(torch.nn.Module):
+    """Visual Encoder based on local binary patterns."""
+
+    def __init__(self, radius=3, n_bins=26, **kwargs):
+        # n_bins is d_model
+        super().__init__()
+        self.radius = radius
+        self.n_bins = n_bins
+        self.n_points = self.n_bins - 2
+
+    @torch.no_grad()
+    def forward(self, img: torch.Tensor) -> torch.Tensor:
+        """Forward pass of feature extractor to get feature vector."""
+        lbp = local_binary_pattern(image, n_points, radius, method="uniform")
+        hist1, _ = np.histogram(lbp, density=True, bins=n_bins, range=(0, n_bins))
+
+        return torch.tensor(hist1)
+
 
 
 def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
@@ -181,11 +241,13 @@ def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
     ENCODER_REGISTRY[encoder_type] = encoder_class
 
 
+
 def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
     """Create a visual encoder based on the specified type."""
 
     register_encoder("resnet", VisualEncoder)
     register_encoder("descriptor", DescriptorVisualEncoder)
+    register_encoder("lbp", LBPVisualEncoder)
     # register any custom encoders here
 
     # compatibility with configs that don't specify encoder_type; default to resnet
