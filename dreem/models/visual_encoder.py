@@ -167,8 +167,9 @@ class VisualEncoder(torch.nn.Module):
 class DescriptorVisualEncoder(torch.nn.Module):
     """Visual Encoder based on image descriptors"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, use_hu_moments: bool = False, **kwargs):
         super().__init__()
+        self.use_hu_moments = use_hu_moments
 
     def compute_hu_moments(self, img):
         mu = measure.moments_central(img)
@@ -194,7 +195,8 @@ class DescriptorVisualEncoder(torch.nn.Module):
 
             inertia_tensor = self.compute_inertia_tensor(im)
             mean_intensity = im.mean()
-            # hu_moments = self.compute_hu_moments(im)
+            if self.use_hu_moments:
+                hu_moments = self.compute_hu_moments(im)
 
             # Flatten inertia tensor
             inertia_tensor_flat = inertia_tensor.flatten()
@@ -204,7 +206,7 @@ class DescriptorVisualEncoder(torch.nn.Module):
                 [
                     inertia_tensor_flat,
                     [mean_intensity],
-                    # hu_moments
+                    hu_moments if self.use_hu_moments else [],
                 ]
             )
 

@@ -14,7 +14,7 @@ model:
   #     backend: "timm"
   #     pretrained: false
   #   descriptor:
-  #     source: "skimage"
+  #     use_hu_moments: false
   d_model: 1024
   nhead: 8
   num_encoder_layers: 1
