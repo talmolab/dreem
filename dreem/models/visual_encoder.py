@@ -165,13 +165,19 @@ class VisualEncoder(torch.nn.Module):
 
 
 class DescriptorVisualEncoder(torch.nn.Module):
-    """Visual Encoder based on image descriptors"""
+    """Visual Encoder based on image descriptors."""
 
     def __init__(self, use_hu_moments: bool = False, **kwargs):
+        """Initialize Descriptor Visual Encoder.
+
+        Args:
+            use_hu_moments: Whether to use Hu moments.
+        """
         super().__init__()
         self.use_hu_moments = use_hu_moments
 
     def compute_hu_moments(self, img):
+        """Compute Hu moments."""
         mu = measure.moments_central(img)
         nu = measure.moments_normalized(mu)
         hu = measure.moments_hu(nu)
@@ -181,13 +187,12 @@ class DescriptorVisualEncoder(torch.nn.Module):
         return hu
 
     def compute_inertia_tensor(self, img):
+        """Compute inertia tensor."""
         return measure.inertia_tensor(img)
 
     @torch.no_grad()
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector."""
-        # TODO: vectorize this
-
         descriptors = []
 
         for im in img:
@@ -224,7 +229,6 @@ def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
 
 def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
     """Create a visual encoder based on the specified type."""
-
     register_encoder("resnet", VisualEncoder)
     register_encoder("descriptor", DescriptorVisualEncoder)
     # register any custom encoders here
