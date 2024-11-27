@@ -219,7 +219,7 @@ class SleapDataset(BaseDataset):
                 )  # convert to grayscale to rgb
 
             if np.issubdtype(img.dtype, np.integer):  # convert int to float
-                img = img.astype(np.float32) / 255
+                img = img.astype(np.float32)# / 255
 
             n_instances_dropped = 0
 
