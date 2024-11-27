@@ -211,9 +211,11 @@ class Transformer(torch.nn.Module):
 
         # apply fourier embeddings if using fourier rope, OR if using descriptor (compact) visual encoder
         if (
-            self.embedding_meta and "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]
+            self.embedding_meta
+            and "use_fourier" in self.embedding_meta
+            and self.embedding_meta["use_fourier"]
         ) or (
-            self.encoder_cfg 
+            self.encoder_cfg
             and "encoder_type" in self.encoder_cfg
             and self.encoder_cfg["encoder_type"] == "descriptor"
         ):
@@ -269,9 +271,11 @@ class Transformer(torch.nn.Module):
 
         # apply fourier embeddings if using fourier rope, OR if using descriptor (compact) visual encoder
         if (
-            self.embedding_meta and "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]
+            self.embedding_meta
+            and "use_fourier" in self.embedding_meta
+            and self.embedding_meta["use_fourier"]
         ) or (
-            self.encoder_cfg 
+            self.encoder_cfg
             and "encoder_type" in self.encoder_cfg
             and self.encoder_cfg["encoder_type"] == "descriptor"
         ):
