@@ -56,6 +56,8 @@ class GlobalTrackingTransformer(torch.nn.Module):
         """
         super().__init__()
 
+        if not encoder_cfg:
+            encoder_cfg = {}
         self.visual_encoder = create_visual_encoder(d_model=d_model, **encoder_cfg)
 
         self.transformer = Transformer(

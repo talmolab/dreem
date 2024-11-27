@@ -234,7 +234,7 @@ def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
     # register any custom encoders here
 
     # compatibility with configs that don't specify encoder_type; default to resnet
-    if "encoder_type" not in encoder_cfg:
+    if not encoder_cfg or"encoder_type" not in encoder_cfg:
         encoder_type = "resnet"
         return ENCODER_REGISTRY[encoder_type](d_model=d_model, **encoder_cfg)
     else:

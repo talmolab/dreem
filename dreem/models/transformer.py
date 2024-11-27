@@ -106,11 +106,13 @@ class Transformer(torch.nn.Module):
 
         encoder_norm = nn.LayerNorm(d_model) if (norm) else None
 
-        self.visual_feat_dim = (
-            self.encoder_cfg["ndim"] if "ndim" in self.encoder_cfg else 5
-        )  # 5 is default for descriptor
-        self.fourier_proj = nn.Linear(self.d_model + self.visual_feat_dim, d_model)
-        self.fourier_norm = nn.LayerNorm(self.d_model)
+        # only used if using descriptor visual encoder; default resnet encoder uses d_model directly
+        if self.encoder_cfg and "encoder_type" in self.encoder_cfg:
+            self.visual_feat_dim = (
+                self.encoder_cfg["ndim"] if "ndim" in self.encoder_cfg else 5
+            )  # 5 is default for descriptor
+            self.fourier_proj = nn.Linear(self.d_model + self.visual_feat_dim, d_model)
+            self.fourier_norm = nn.LayerNorm(self.d_model)
 
         self.encoder = TransformerEncoder(
             encoder_layer, num_encoder_layers, encoder_norm
@@ -209,9 +211,9 @@ class Transformer(torch.nn.Module):
 
         # apply fourier embeddings if using fourier rope, OR if using descriptor (compact) visual encoder
         if (
-            "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]
+            self.embedding_meta and "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]
         ) or (
-            self.encoder_cfg is not None
+            self.encoder_cfg 
             and "encoder_type" in self.encoder_cfg
             and self.encoder_cfg["encoder_type"] == "descriptor"
         ):
@@ -267,9 +269,9 @@ class Transformer(torch.nn.Module):
 
         # apply fourier embeddings if using fourier rope, OR if using descriptor (compact) visual encoder
         if (
-            "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]
+            self.embedding_meta and "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]
         ) or (
-            self.encoder_cfg is not None
+            self.encoder_cfg 
             and "encoder_type" in self.encoder_cfg
             and self.encoder_cfg["encoder_type"] == "descriptor"
         ):
