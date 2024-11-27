@@ -358,8 +358,12 @@ class Embedding(torch.nn.Module):
         return left_ind, right_ind, left_weight, right_weight
 
 
+def _pos_embed_fourier1d_init(cutoff, n):
+    """Create a tensor of shape (1,n) of fourier frequency coefficients"""
+    return torch.exp(torch.linspace(0, -math.log(cutoff), n)).unsqueeze(0)
 
-class FourierPositionalEmbeddings(nn.Module):
+
+class FourierPositionalEmbeddings(torch.nn.Module):
 
     def __init__(
         self,
@@ -372,7 +376,7 @@ class FourierPositionalEmbeddings(nn.Module):
         super().__init__()
         self.d_model = d_model
         self.n_components = n_components
-        self.freq = nn.Parameter(_pos_embed_fourier1d_init(self.d_model, n_components))
+        self.freq = torch.nn.Parameter(_pos_embed_fourier1d_init(self.d_model, n_components))
 
     def forward(self, seq_positions: torch.Tensor):
         """Compute learnable fourier coefficients for each spatial/temporal position.

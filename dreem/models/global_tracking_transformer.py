@@ -72,6 +72,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
             embedding_meta=embedding_meta,
             return_embedding=return_embedding,
             decoder_self_attn=decoder_self_attn,
+            encoder_cfg=encoder_cfg,
         )
 
     def forward(

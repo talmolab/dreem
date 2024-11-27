@@ -42,6 +42,7 @@ class Transformer(torch.nn.Module):
         embedding_meta: dict | None = None,
         return_embedding: bool = False,
         decoder_self_attn: bool = False,
+        encoder_cfg: dict | None = None,
     ) -> None:
         """Initialize Transformer.
 
@@ -74,6 +75,7 @@ class Transformer(torch.nn.Module):
 
         self.embedding_meta = embedding_meta
         self.return_embedding = return_embedding
+        self.encoder_cfg = encoder_cfg
 
         self.pos_emb = Embedding(emb_type="off", mode="off", features=self.d_model)
         self.temp_emb = Embedding(emb_type="off", mode="off", features=self.d_model)
@@ -165,7 +167,7 @@ class Transformer(torch.nn.Module):
         # window_length = len(frames)
         # instances_per_frame = [frame.num_detected for frame in frames]
         total_instances = len(ref_instances)
-        embed_dim = ref_features.shape[-1]
+        embed_dim = self.d_model
         # print(f'T: {window_length}; N: {total_instances}; N_t: {instances_per_frame} n_reid: {reid_features.shape}')
         ref_boxes = get_boxes(ref_instances)  # total_instances, 4
         ref_boxes = torch.nan_to_num(ref_boxes, -1.0)
@@ -188,7 +190,7 @@ class Transformer(torch.nn.Module):
 
         ref_emb = ref_emb.permute(1, 0, 2)  # (total_instances, batch_size, embed_dim)
 
-        batch_size, total_instances, embed_dim = ref_features.shape
+        batch_size, total_instances = ref_features.shape[:-1]
 
         ref_features = ref_features.permute(
             1, 0, 2
@@ -198,14 +200,8 @@ class Transformer(torch.nn.Module):
 
         # apply fourier embeddings if using fourier rope, OR if using descriptor (compact) visual encoder
         if ("use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]) or \
-            ("encoder_type" in self.embedding_meta and self.embedding_meta["encoder_type"] == "descriptor"):
-            fourier_embeddings = self.fourier_embeddings(ref_times)
-            encoder_queries = torch.cat([encoder_queries, fourier_embeddings], dim=-1)
-            # project to d_model
-            proj = nn.Linear(encoder_queries.shape[-1], d_model).to(encoder_queries.device)
-            norm = nn.LayerNorm(d_model).to(encoder_queries.device)
-            encoder_queries = proj(encoder_queries)
-            encoder_queries = norm(encoder_queries)
+            (self.encoder_cfg is not None and "encoder_type" in self.encoder_cfg and self.encoder_cfg["encoder_type"] == "descriptor"):
+            encoder_queries = apply_fourier_embeddings(encoder_queries, ref_times, self.d_model, self.fourier_embeddings)
 
         encoder_features = self.encoder(
             encoder_queries, pos_emb=ref_emb
@@ -241,11 +237,17 @@ class Transformer(torch.nn.Module):
 
         else:
             query_instances = ref_instances
+            query_times = ref_times
 
         if self.return_embedding:
             for i, instance in enumerate(query_instances):
                 instance.add_embedding("pos", query_pos_emb[i])
                 instance.add_embedding("temp", query_temp_emb[i])
+
+        # apply fourier embeddings if using fourier rope, OR if using descriptor (compact) visual encoder
+        if ("use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]) or \
+            (self.encoder_cfg is not None and "encoder_type" in self.encoder_cfg and self.encoder_cfg["encoder_type"] == "descriptor"):
+            query_features = apply_fourier_embeddings(query_features, query_times, self.d_model, self.fourier_embeddings)
 
         decoder_features = self.decoder(
             query_features,
@@ -273,6 +275,21 @@ class Transformer(torch.nn.Module):
         # (L=1, n_query, total_instances)
         return asso_output
 
+def apply_fourier_embeddings(queries: torch.Tensor, 
+    times: torch.Tensor, 
+    d_model: int, 
+    fourier_embeddings: FourierPositionalEmbeddings
+) -> torch.Tensor:
+
+    embs = fourier_embeddings(times).permute(1, 0, 2)
+    cat_queries = torch.cat([queries, embs], dim=-1)
+    # project to d_model
+    proj = nn.Linear(cat_queries.shape[-1], d_model).to(queries.device)
+    norm = nn.LayerNorm(d_model).to(queries.device)
+    cat_queries = proj(cat_queries)
+    cat_queries = norm(cat_queries)
+
+    return cat_queries
 
 class TransformerEncoderLayer(nn.Module):
     """A single transformer encoder layer."""
