@@ -13,7 +13,7 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 
 from dreem.io import AssociationMatrix
 from dreem.models.attention_head import ATTWeightHead
-from dreem.models import Embedding
+from dreem.models import Embedding, FourierPositionalEmbeddings
 from dreem.models.model_utils import get_boxes, get_times
 from torch import nn
 import copy
@@ -91,6 +91,8 @@ class Transformer(torch.nn.Module):
                     self.temp_emb = Embedding(
                         emb_type="temp", features=self.d_model, **temp_emb_cfg
                     )
+
+        self.fourier_embeddings = FourierPositionalEmbeddings(n_components=8, d_model=d_model)
 
         # Transformer Encoder
         encoder_layer = TransformerEncoderLayer(
@@ -193,6 +195,17 @@ class Transformer(torch.nn.Module):
         )  # (total_instances, batch_size, embed_dim)
 
         encoder_queries = ref_features
+
+        # apply fourier embeddings if using fourier rope, OR if using descriptor (compact) visual encoder
+        if ("use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]) or \
+            ("encoder_type" in self.embedding_meta and self.embedding_meta["encoder_type"] == "descriptor"):
+            fourier_embeddings = self.fourier_embeddings(ref_times)
+            encoder_queries = torch.cat([encoder_queries, fourier_embeddings], dim=-1)
+            # project to d_model
+            proj = nn.Linear(encoder_queries.shape[-1], d_model).to(encoder_queries.device)
+            norm = nn.LayerNorm(d_model).to(encoder_queries.device)
+            encoder_queries = proj(encoder_queries)
+            encoder_queries = norm(encoder_queries)
 
         encoder_features = self.encoder(
             encoder_queries, pos_emb=ref_emb

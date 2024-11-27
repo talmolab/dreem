@@ -174,10 +174,10 @@ class DescriptorVisualEncoder(torch.nn.Module):
         mu = measure.moments_central(img)
         nu = measure.moments_normalized(mu)
         hu = measure.moments_hu(nu)
-        # log transform hu moments for scale differences
-        hu_log = -np.sign(hu) * np.log(np.abs(hu))
+        # log transform hu moments for scale differences; switched off; numerically unstable
+        # hu_log = -np.sign(hu) * np.log(np.abs(hu))
 
-        return hu_log
+        return hu
 
     def compute_inertia_tensor(self, img):
         return measure.inertia_tensor(img)
@@ -194,7 +194,7 @@ class DescriptorVisualEncoder(torch.nn.Module):
 
             inertia_tensor = self.compute_inertia_tensor(im)
             mean_intensity = im.mean()
-            hu_moments = self.compute_hu_moments(im)
+            # hu_moments = self.compute_hu_moments(im)
 
             # Flatten inertia tensor
             inertia_tensor_flat = inertia_tensor.flatten()
@@ -203,7 +203,7 @@ class DescriptorVisualEncoder(torch.nn.Module):
             descriptor = np.concatenate([
                 inertia_tensor_flat,
                 [mean_intensity],
-                hu_moments
+                # hu_moments
             ])
 
             descriptors.append(torch.tensor(descriptor, dtype=torch.float32))

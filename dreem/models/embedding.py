@@ -356,3 +356,55 @@ class Embedding(torch.nn.Module):
         right_weight = 1.0 - left_weight
 
         return left_ind, right_ind, left_weight, right_weight
+
+
+
+class FourierPositionalEmbeddings(nn.Module):
+
+    def __init__(
+        self,
+        n_components: int,
+        d_model: int,
+    ):
+        """Positional encoding with given cutoff and number of frequencies for each dimension.
+        number of dimension is inferred from the length of cutoffs and n_pos.
+        """
+        super().__init__()
+        self.d_model = d_model
+        self.n_components = n_components
+        self.freq = nn.Parameter(_pos_embed_fourier1d_init(self.d_model, n_components))
+
+    def forward(self, seq_positions: torch.Tensor):
+        """Compute learnable fourier coefficients for each spatial/temporal position.
+        Args:
+            seq_positions: tensor of shape (num_queries,)
+        Returns:
+            tensor of shape (num_queries, embed_dim)
+        """
+        freq = self.freq.to(seq_positions.device)
+        # seq_positions is of shape (num_queries,) but needs to be (1,num_queries,1)
+        embed = torch.cat(
+            (
+                torch.sin(
+                    0.5 * math.pi * seq_positions.unsqueeze(-1).unsqueeze(0) * freq
+                ),
+                torch.cos(
+                    0.5 * math.pi * seq_positions.unsqueeze(-1).unsqueeze(0) * freq
+                ),
+            ),
+            axis=-1,
+        ) / math.sqrt(
+            len(freq)
+        )  # (B,N,2*n_components)
+
+        if self.d_model % self.n_components != 0:
+            raise ValueError(
+                f"d_model ({self.d_model}) must be divisible by number of Fourier components n_components ({self.n_components})"
+            )
+
+        # tile until shape is (B,N,embed_dim) to multiply with input queries/keys
+        embed = embed.repeat(
+            1, 1, self.d_model // (2 * self.n_components)
+        )  # 2*n_components to account for sin/cos
+
+        return embed
