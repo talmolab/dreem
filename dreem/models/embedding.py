@@ -376,7 +376,9 @@ class FourierPositionalEmbeddings(torch.nn.Module):
         super().__init__()
         self.d_model = d_model
         self.n_components = n_components
-        self.freq = torch.nn.Parameter(_pos_embed_fourier1d_init(self.d_model, n_components))
+        self.freq = torch.nn.Parameter(
+            _pos_embed_fourier1d_init(self.d_model, n_components)
+        )
 
     def forward(self, seq_positions: torch.Tensor):
         """Compute learnable fourier coefficients for each spatial/temporal position.

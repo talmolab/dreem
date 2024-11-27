@@ -200,16 +200,17 @@ class DescriptorVisualEncoder(torch.nn.Module):
             inertia_tensor_flat = inertia_tensor.flatten()
 
             # Combine all features into a single descriptor
-            descriptor = np.concatenate([
-                inertia_tensor_flat,
-                [mean_intensity],
-                # hu_moments
-            ])
+            descriptor = np.concatenate(
+                [
+                    inertia_tensor_flat,
+                    [mean_intensity],
+                    # hu_moments
+                ]
+            )
 
             descriptors.append(torch.tensor(descriptor, dtype=torch.float32))
 
         return torch.stack(descriptors)
-
 
 
 def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
@@ -217,7 +218,6 @@ def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
     if not issubclass(encoder_class, torch.nn.Module):
         raise ValueError(f"{encoder_class} must be a subclass of torch.nn.Module")
     ENCODER_REGISTRY[encoder_type] = encoder_class
-
 
 
 def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
@@ -239,4 +239,6 @@ def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
         configs = encoder_cfg[encoder_type]
         return ENCODER_REGISTRY[encoder_type](d_model=d_model, **configs)
     else:
-        raise ValueError(f"Unknown encoder type: {encoder_type}. Please use one of {list(ENCODER_REGISTRY.keys())}")
+        raise ValueError(
+            f"Unknown encoder type: {encoder_type}. Please use one of {list(ENCODER_REGISTRY.keys())}"
+        )

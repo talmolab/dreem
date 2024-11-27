@@ -268,7 +268,10 @@ class Config:
                 dataset_params["video_files"] = vid_files
 
             dataset_params["data_dirs"] = self.data_dirs
-            if "encoder_type" in self.cfg["model"]["encoder_cfg"] and self.cfg["model"]["encoder_cfg"]["encoder_type"] == "descriptor":
+            if (
+                "encoder_type" in self.cfg["model"]["encoder_cfg"]
+                and self.cfg["model"]["encoder_cfg"]["encoder_type"] == "descriptor"
+            ):
                 dataset_params["normalize_image"] = False
 
             return SleapDataset(**dataset_params)

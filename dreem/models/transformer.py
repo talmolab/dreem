@@ -94,7 +94,9 @@ class Transformer(torch.nn.Module):
                         emb_type="temp", features=self.d_model, **temp_emb_cfg
                     )
 
-        self.fourier_embeddings = FourierPositionalEmbeddings(n_components=8, d_model=d_model)
+        self.fourier_embeddings = FourierPositionalEmbeddings(
+            n_components=8, d_model=d_model
+        )
 
         # Transformer Encoder
         encoder_layer = TransformerEncoderLayer(
@@ -199,9 +201,16 @@ class Transformer(torch.nn.Module):
         encoder_queries = ref_features
 
         # apply fourier embeddings if using fourier rope, OR if using descriptor (compact) visual encoder
-        if ("use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]) or \
-            (self.encoder_cfg is not None and "encoder_type" in self.encoder_cfg and self.encoder_cfg["encoder_type"] == "descriptor"):
-            encoder_queries = apply_fourier_embeddings(encoder_queries, ref_times, self.d_model, self.fourier_embeddings)
+        if (
+            "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]
+        ) or (
+            self.encoder_cfg is not None
+            and "encoder_type" in self.encoder_cfg
+            and self.encoder_cfg["encoder_type"] == "descriptor"
+        ):
+            encoder_queries = apply_fourier_embeddings(
+                encoder_queries, ref_times, self.d_model, self.fourier_embeddings
+            )
 
         encoder_features = self.encoder(
             encoder_queries, pos_emb=ref_emb
@@ -245,9 +254,16 @@ class Transformer(torch.nn.Module):
                 instance.add_embedding("temp", query_temp_emb[i])
 
         # apply fourier embeddings if using fourier rope, OR if using descriptor (compact) visual encoder
-        if ("use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]) or \
-            (self.encoder_cfg is not None and "encoder_type" in self.encoder_cfg and self.encoder_cfg["encoder_type"] == "descriptor"):
-            query_features = apply_fourier_embeddings(query_features, query_times, self.d_model, self.fourier_embeddings)
+        if (
+            "use_fourier" in self.embedding_meta and self.embedding_meta["use_fourier"]
+        ) or (
+            self.encoder_cfg is not None
+            and "encoder_type" in self.encoder_cfg
+            and self.encoder_cfg["encoder_type"] == "descriptor"
+        ):
+            query_features = apply_fourier_embeddings(
+                query_features, query_times, self.d_model, self.fourier_embeddings
+            )
 
         decoder_features = self.decoder(
             query_features,
@@ -275,10 +291,12 @@ class Transformer(torch.nn.Module):
         # (L=1, n_query, total_instances)
         return asso_output
 
-def apply_fourier_embeddings(queries: torch.Tensor, 
-    times: torch.Tensor, 
-    d_model: int, 
-    fourier_embeddings: FourierPositionalEmbeddings
+
+def apply_fourier_embeddings(
+    queries: torch.Tensor,
+    times: torch.Tensor,
+    d_model: int,
+    fourier_embeddings: FourierPositionalEmbeddings,
 ) -> torch.Tensor:
 
     embs = fourier_embeddings(times).permute(1, 0, 2)
@@ -290,6 +308,7 @@ def apply_fourier_embeddings(queries: torch.Tensor,
     cat_queries = norm(cat_queries)
 
     return cat_queries
+
 
 class TransformerEncoderLayer(nn.Module):
     """A single transformer encoder layer."""
