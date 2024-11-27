@@ -211,25 +211,6 @@ class DescriptorVisualEncoder(torch.nn.Module):
         return torch.stack(descriptors)
 
 
-class LBPVisualEncoder(torch.nn.Module):
-    """Visual Encoder based on local binary patterns."""
-
-    def __init__(self, radius=3, n_bins=26, **kwargs):
-        # n_bins is d_model
-        super().__init__()
-        self.radius = radius
-        self.n_bins = n_bins
-        self.n_points = self.n_bins - 2
-
-    @torch.no_grad()
-    def forward(self, img: torch.Tensor) -> torch.Tensor:
-        """Forward pass of feature extractor to get feature vector."""
-        lbp = local_binary_pattern(img, self.n_points, self.radius, method="uniform")
-        hist1, _ = np.histogram(lbp, density=True, bins=self.n_bins, range=(0, self.n_bins))
-
-        return torch.tensor(hist1)
-
-
 
 def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
     """Register a new encoder type."""
@@ -244,7 +225,6 @@ def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
 
     register_encoder("resnet", VisualEncoder)
     register_encoder("descriptor", DescriptorVisualEncoder)
-    register_encoder("lbp", LBPVisualEncoder)
     # register any custom encoders here
 
     # compatibility with configs that don't specify encoder_type; default to resnet
