@@ -35,6 +35,7 @@ class SleapDataset(BaseDataset):
         n_chunks: int | float = 1.0,
         seed: int | None = None,
         verbose: bool = False,
+        normalize_image: bool = True,
     ):
         """Initialize SleapDataset.
 
@@ -71,6 +72,7 @@ class SleapDataset(BaseDataset):
                 Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
             seed: set a seed for reproducibility
             verbose: boolean representing whether to print
+            normalize_image: whether to normalize the image to [0, 1]
         """
         super().__init__(
             slp_files,
@@ -98,7 +100,7 @@ class SleapDataset(BaseDataset):
         self.handle_missing = handle_missing.lower()
         self.n_chunks = n_chunks
         self.seed = seed
-
+        self.normalize_image = normalize_image
         if self.data_dirs is None:
             self.data_dirs = []
         if isinstance(anchors, int):
@@ -219,7 +221,9 @@ class SleapDataset(BaseDataset):
                 )  # convert to grayscale to rgb
 
             if np.issubdtype(img.dtype, np.integer):  # convert int to float
-                img = img.astype(np.float32) / 255
+                img = img.astype(np.float32)
+                if self.normalize_image:
+                    img = img / 255
 
             n_instances_dropped = 0
 

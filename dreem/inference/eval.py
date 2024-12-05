@@ -42,7 +42,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
 
     logging.getLogger().setLevel(level=cfg.get("log_level", "INFO").upper())
 
-    model = GTRRunner.load_from_checkpoint(checkpoint)
+    model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     model.tracker_cfg = eval_cfg.cfg.tracker
     model.tracker = Tracker(**model.tracker_cfg)
     logger.info(f"Using the following tracker:")
