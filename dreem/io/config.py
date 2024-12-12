@@ -226,7 +226,6 @@ class Config:
         mode: str,
         label_files: list[str] | None = None,
         vid_files: list[str | list[str]] = None,
-        callback: callable | None = None
     ) -> "SleapDataset" | "MicroscopyDataset" | "CellTrackingDataset":
         """Getter for datasets.
 
