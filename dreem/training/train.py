@@ -78,6 +78,11 @@ def run(cfg: DictConfig):
 
     run_logger = train_cfg.get_logger()
 
+    if run_logger is not None and isinstance(run_logger, pl.loggers.wandb.WandbLogger):
+        data_paths = train_cfg.data_paths
+        flattened_paths = [[item] for sublist in data_paths.values() for item in sublist]
+        run_logger.log_text("training_files", columns=["data_paths"], data=flattened_paths)
+
     callbacks = []
     _ = callbacks.extend(train_cfg.get_checkpointing())
     _ = callbacks.append(pl.callbacks.LearningRateMonitor())

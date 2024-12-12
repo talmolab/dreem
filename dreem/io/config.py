@@ -42,6 +42,8 @@ class Config:
 
         OmegaConf.set_struct(self.cfg, False)
 
+        self._vid_files = {}
+
     def __repr__(self):
         """Object representation of config class."""
         return f"Config({self.cfg})"
@@ -224,6 +226,7 @@ class Config:
         mode: str,
         label_files: list[str] | None = None,
         vid_files: list[str | list[str]] = None,
+        callback: callable | None = None
     ) -> "SleapDataset" | "MicroscopyDataset" | "CellTrackingDataset":
         """Getter for datasets.
 
@@ -276,6 +279,8 @@ class Config:
                 ):
                     dataset_params["normalize_image"] = False
 
+            self.data_paths = (mode, vid_files)
+
             return SleapDataset(**dataset_params)
 
         elif "tracks" in dataset_params or "source" in dataset_params:
@@ -297,6 +302,22 @@ class Config:
                 "Could not resolve dataset type from Config! Please include \
                 either `slp_files` or `tracks`/`source`"
             )
+
+    @property
+    def data_paths(self):
+        """Get data paths.
+        """
+        return self._vid_files
+    
+    @data_paths.setter
+    def data_paths(self, paths: tuple[str, list[str]]):
+        """Set data paths.
+
+        Args:
+            paths: A tuple containing (mode, vid_files)
+        """
+        mode, vid_files = paths
+        self._vid_files[mode] = vid_files
 
     def get_dataloader(
         self,
