@@ -304,10 +304,9 @@ class Config:
 
     @property
     def data_paths(self):
-        """Get data paths.
-        """
+        """Get data paths."""
         return self._vid_files
-    
+
     @data_paths.setter
     def data_paths(self, paths: tuple[str, list[str]]):
         """Set data paths.
