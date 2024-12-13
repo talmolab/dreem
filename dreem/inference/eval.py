@@ -45,11 +45,9 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     else:
         hparams = {}
 
-    checkpoint = eval_cfg.cfg.ckpt_path
+    logging.getLogger().setLevel(level=cfg.get("log_level", "INFO").upper())
 
-    logger.info(f"Testing model saved at {checkpoint}")
-    model = GTRRunner.load_from_checkpoint(checkpoint)
-
+    model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     model.tracker_cfg = eval_cfg.cfg.tracker
     model.tracker = Tracker(**model.tracker_cfg)
 
@@ -61,7 +59,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         "persistent_tracking", False
     )
     logger.info(f"Computing the following metrics:")
-    logger.info(model.metrics.test)
+    logger.info(model.metrics["test"])
     model.test_results["save_path"] = eval_cfg.cfg.runner.save_path
     logger.info(f"Saving results to {model.test_results['save_path']}")
 
