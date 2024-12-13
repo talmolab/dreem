@@ -26,33 +26,26 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     """
     eval_cfg = Config(cfg)
 
-    # update with parameters for batch train job
-    if "batch_config" in cfg.keys():
+    if "checkpoints" in cfg.keys():
         try:
             index = int(os.environ["POD_INDEX"])
-        except KeyError as e:
-            index = int(
-                input(f"{e}. Assuming single run!\nPlease input task index to run:")
-            )
+        # For testing without deploying a job on runai
+        except KeyError:
+            index = input("Pod Index Not found! Please choose a pod index: ")
 
-        hparams_df = pd.read_csv(cfg.batch_config)
-        hparams = hparams_df.iloc[index].to_dict()
-        _ = hparams.pop("Unnamed: 0", None)
+        logger.info(f"Pod Index: {index}")
 
-        if eval_cfg.set_hparams(hparams):
-            logger.info("Updated the following hparams to the following values")
-            logger.info(hparams)
+        checkpoints = pd.read_csv(cfg.checkpoints)
+        checkpoint = checkpoints.iloc[index]
     else:
-        hparams = {}
+        checkpoint = eval_cfg.cfg.ckpt_path
 
     logging.getLogger().setLevel(level=cfg.get("log_level", "INFO").upper())
 
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     model.tracker_cfg = eval_cfg.cfg.tracker
     model.tracker = Tracker(**model.tracker_cfg)
-
     logger.info(f"Using the following tracker:")
-
     print(model.tracker)
     model.metrics["test"] = eval_cfg.cfg.runner.metrics.test
     model.persistent_tracking["test"] = eval_cfg.cfg.tracker.get(

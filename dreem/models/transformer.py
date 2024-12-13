@@ -286,7 +286,6 @@ class Transformer(torch.nn.Module):
                 self.fourier_norm,
             )
 
-        decoder_features = self.decoder(
         decoder_features, pos_emb_traceback, temp_emb_traceback = self.decoder(
             query_features,
             encoder_features,
