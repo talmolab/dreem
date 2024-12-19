@@ -141,27 +141,27 @@ def filter_max_center_dist(
     """
     if max_center_dist is not None and max_center_dist > 0:
         assert (
-            curr_frame_boxes is not None and prev_frame_boxes is not None and id_inds is not None
+            curr_frame_boxes is not None
+            and prev_frame_boxes is not None
+            and id_inds is not None
         ), "Need `curr_frame_boxes`, `prev_frame_boxes`, and `id_ind` to filter by `max_center_dist`"
 
         k_ct = (curr_frame_boxes[:, :, :2] + curr_frame_boxes[:, :, 2:]) / 2
         # k_s = ((curr_frame_boxes[:, :, 2:] - curr_frame_boxes[:, :, :2]) ** 2).sum(dim=2)  # n_k
         # nonk boxes are only from previous frame rather than entire window
         nonk_ct = (prev_frame_boxes[:, :, :2] + prev_frame_boxes[:, :, 2:]) / 2
-          
+
         # pairwise euclidean distance in units of pixels
-        dist = ((k_ct[:, None, :, :] - nonk_ct[None, :, :, :]) ** 2).sum(
-            dim=-1
-        ) ** (1/2) # n_k x n_nonk
+        dist = ((k_ct[:, None, :, :] - nonk_ct[None, :, :, :]) ** 2).sum(dim=-1) ** (
+            1 / 2
+        )  # n_k x n_nonk
         # norm_dist = dist / (k_s[:, None, :] + 1e-8)
 
         valid = dist.squeeze() < max_center_dist  # n_k x n_nonk
         valid_mult = valid.float().unsqueeze(-1) if valid.ndim == 1 else valid.float()
+        print(dist.shape, valid_mult.shape, id_inds.shape)
         valid_assn = (
-            torch.mm(valid_mult, id_inds.to(valid.device))
-            .clamp_(max=1.0)
-            .long()
-            .bool()
+            torch.mm(valid_mult, id_inds.to(valid.device)).clamp_(max=1.0).long().bool()
         )  # n_k x M
         asso_output_filtered = asso_output.clone()
         asso_output_filtered[~valid_assn] = 0  # n_k x M
