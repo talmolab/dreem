@@ -159,7 +159,7 @@ def filter_max_center_dist(
 
         valid = dist.squeeze() < max_center_dist  # n_k x n_nonk
         valid_mult = valid.float().unsqueeze(-1) if valid.ndim == 1 else valid.float()
-        print(dist.shape, valid_mult.shape, id_inds.shape)
+        # print(dist.shape, valid_mult.shape, id_inds.shape)
         valid_assn = (
             torch.mm(valid_mult, id_inds.to(valid.device)).clamp_(max=1.0).long().bool()
         )  # n_k x M
