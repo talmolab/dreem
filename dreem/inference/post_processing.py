@@ -123,41 +123,42 @@ def weight_iou(
 def filter_max_center_dist(
     asso_output: torch.Tensor,
     max_center_dist: float = 0,
-    k_boxes: torch.Tensor | None = None,
-    nonk_boxes: torch.Tensor | None = None,
     id_inds: torch.Tensor | None = None,
+    curr_frame_boxes: torch.Tensor | None = None,
+    prev_frame_boxes: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Filter trajectory score by distances between objects across frames.
 
     Args:
         asso_output: An N_t x N association matrix
         max_center_dist: The euclidean distance threshold between bboxes
-        k_boxes: The bounding boxes in the current frame
-        nonk_boxes: the boxes not in the current frame
         id_inds: track ids
+        curr_frame_boxes: the raw bbox coords of the current frame instances
+        prev_frame_boxes: the raw bbox coords of the previous frame instances
 
     Returns:
         An N_t x N association matrix
     """
     if max_center_dist is not None and max_center_dist > 0:
         assert (
-            k_boxes is not None and nonk_boxes is not None and id_inds is not None
-        ), "Need `k_boxes`, `nonk_boxes`, and `id_ind` to filter by `max_center_dist`"
-        k_ct = (k_boxes[:, :, :2] + k_boxes[:, :, 2:]) / 2
-        k_s = ((k_boxes[:, :, 2:] - k_boxes[:, :, :2]) ** 2).sum(dim=2)  # n_k
+            curr_frame_boxes is not None and prev_frame_boxes is not None and id_inds is not None
+        ), "Need `curr_frame_boxes`, `prev_frame_boxes`, and `id_ind` to filter by `max_center_dist`"
 
-        nonk_ct = (nonk_boxes[:, :, :2] + nonk_boxes[:, :, 2:]) / 2
-
+        k_ct = (curr_frame_boxes[:, :, :2] + curr_frame_boxes[:, :, 2:]) / 2
+        # k_s = ((curr_frame_boxes[:, :, 2:] - curr_frame_boxes[:, :, :2]) ** 2).sum(dim=2)  # n_k
+        # nonk boxes are only from previous frame rather than entire window
+        nonk_ct = (prev_frame_boxes[:, :, :2] + prev_frame_boxes[:, :, 2:]) / 2
+          
+        # pairwise euclidean distance in units of pixels
         dist = ((k_ct[:, None, :, :] - nonk_ct[None, :, :, :]) ** 2).sum(
             dim=-1
-        )  # n_k x Np
+        ) ** (1/2) # n_k x n_nonk
+        # norm_dist = dist / (k_s[:, None, :] + 1e-8)
 
-        norm_dist = dist / (k_s[:, None, :] + 1e-8)
-        norm_dist = dist.mean(axis=-1)  # n_k x Np
-
-        valid = norm_dist < max_center_dist  # n_k x Np
+        valid = dist.squeeze() < max_center_dist  # n_k x n_nonk
+        valid_mult = valid.float().unsqueeze(-1) if valid.ndim == 1 else valid.float()
         valid_assn = (
-            torch.mm(valid.float(), id_inds.to(valid.device))
+            torch.mm(valid_mult, id_inds.to(valid.device))
             .clamp_(max=1.0)
             .long()
             .bool()
