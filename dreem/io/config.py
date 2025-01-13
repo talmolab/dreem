@@ -302,6 +302,37 @@ class Config:
                 either `slp_files` or `tracks`/`source`"
             )
 
+
+    @property
+    def data_paths(self):
+        """Get data paths."""
+        return self._vid_files
+
+    @data_paths.setter
+    def data_paths(self, paths: tuple[str, list[str]]):
+        """Set data paths.
+
+        Args:
+            paths: A tuple containing (mode, vid_files)
+        """
+        mode, vid_files = paths
+        self._vid_files[mode] = vid_files
+
+    @property
+    def data_paths(self):
+        """Get data paths."""
+        return self._vid_files
+
+    @data_paths.setter
+    def data_paths(self, paths: tuple[str, list[str]]):
+        """Set data paths.
+
+        Args:
+            paths: A tuple containing (mode, vid_files)
+        """
+        mode, vid_files = paths
+        self._vid_files[mode] = vid_files
+
     @property
     def data_paths(self):
         """Get data paths."""
