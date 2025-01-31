@@ -6,6 +6,9 @@ from torch.utils.data import Dataset
 from typing import Union
 import numpy as np
 import torch
+import logging
+
+logger = logging.getLogger("dreem.datasets")
 
 
 class BaseDataset(Dataset):
@@ -110,18 +113,22 @@ class BaseDataset(Dataset):
 
                 self.label_idx = [self.label_idx[i] for i in sample_idx]
 
-            # check for batch with only a single element that correpsonds to the last frame of the video
-            remove_idx = None
+            # workaround for empty batch bug (needs to be changed). Check for batch with with only 1/10 size of clip length. Arbitrary thresholds
+            remove_idx = []
             for i, frame_chunk in enumerate(self.chunked_frame_idx):
-                if len(frame_chunk) == 1 and frame_chunk[0] % self.clip_length == 0:
-                    print(
-                        "Warning: Single frame batch; removing to avoid empty batch possibility with failed frame loading"
+                if (
+                    len(frame_chunk)
+                    <= min(int(self.clip_length / 10), 5)
+                    # and frame_chunk[-1] % self.clip_length == 0
+                ):
+                    logger.warning(
+                        f"Warning: Batch containing frames {frame_chunk} from video {self.vid_files[self.label_idx[i]]} has {len(frame_chunk)} frames. Removing to avoid empty batch possibility with failed frame loading"
                     )
-                    remove_idx = i
-                    break
-            if remove_idx is not None:
-                self.chunked_frame_idx.pop(remove_idx)
-                self.label_idx.pop(remove_idx)
+                    remove_idx.append(i)
+            if len(remove_idx) > 0:
+                for i in sorted(remove_idx, reverse=True):
+                    self.chunked_frame_idx.pop(i)
+                    self.label_idx.pop(i)
 
         else:
             self.chunked_frame_idx = self.frame_idx
@@ -144,7 +151,6 @@ class BaseDataset(Dataset):
         Returns:
             The batch
         """
-
         return batch
 
     def __getitem__(self, idx: int) -> list[Frame]:
