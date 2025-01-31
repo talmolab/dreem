@@ -114,7 +114,9 @@ class BaseDataset(Dataset):
             remove_idx = None
             for i, frame_chunk in enumerate(self.chunked_frame_idx):
                 if len(frame_chunk) == 1 and frame_chunk[0] % self.clip_length == 0:
-                    print("Warning: Single frame batch; removing to avoid empty batch possibility with failed frame loading")
+                    print(
+                        "Warning: Single frame batch; removing to avoid empty batch possibility with failed frame loading"
+                    )
                     remove_idx = i
                     break
             if remove_idx is not None:
