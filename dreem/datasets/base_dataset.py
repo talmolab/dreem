@@ -110,6 +110,17 @@ class BaseDataset(Dataset):
 
                 self.label_idx = [self.label_idx[i] for i in sample_idx]
 
+            # check for batch with only a single element that correpsonds to the last frame of the video
+            remove_idx = None
+            for i, frame_chunk in enumerate(self.chunked_frame_idx):
+                if len(frame_chunk) == 1 and frame_chunk[0] % self.clip_length == 0:
+                    print("Warning: Single frame batch; removing to avoid empty batch possibility with failed frame loading")
+                    remove_idx = i
+                    break
+            if remove_idx is not None:
+                self.chunked_frame_idx.pop(remove_idx)
+                self.label_idx.pop(remove_idx)
+
         else:
             self.chunked_frame_idx = self.frame_idx
             self.label_idx = [i for i in range(len(self.labels))]
@@ -131,6 +142,7 @@ class BaseDataset(Dataset):
         Returns:
             The batch
         """
+
         return batch
 
     def __getitem__(self, idx: int) -> list[Frame]:
