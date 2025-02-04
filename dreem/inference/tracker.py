@@ -95,12 +95,12 @@ class Tracker:
         )
 
     def track(
-        self, model: GlobalTrackingTransformer, frames: list[dict]
+        self, asso_matrix: torch.Tensor, frames: list[Frame]
     ) -> list[Frame]:
         """Run tracker and get predicted trajectories.
 
         Args:
-            model: the pretrained GlobalTrackingTransformer to be used for inference
+            asso_matrix: the association matrix to be used for inference
             frames: data dict to run inference on
 
         Returns:
@@ -108,37 +108,33 @@ class Tracker:
         """
         # Extract feature representations with pre-trained encoder.
 
-        _ = model.eval()
+        # THIS ENTIRE BLOCK IS TO OBTAIN REID FEATURES WHICH WE DO NOT NEE IF THERE IS NO FORWARD PASS IN TRACKER
+        # for frame in frames:
+        #     if frame.has_instances():
+        #         if not self.use_vis_feats:
+        #             for instance in frame.instances:
+        #                 instance.features = torch.zeros(1, model.d_model)
+        #             # frame["features"] = torch.randn(
+        #             #     num_frame_instances, self.model.d_model
+        #             # )
 
-        for frame in frames:
-            if frame.has_instances():
-                if not self.use_vis_feats:
-                    for instance in frame.instances:
-                        instance.features = torch.zeros(1, model.d_model)
-                    # frame["features"] = torch.randn(
-                    #     num_frame_instances, self.model.d_model
-                    # )
+        #         # comment out to turn encoder off
 
-                # comment out to turn encoder off
+        #         # Assuming the encoder is already trained or train encoder jointly.
+        #         elif not frame.has_features():
+        #             with torch.no_grad():
+        #                 crops = frame.get_crops()
+        #                 z = model.visual_encoder(crops)
 
-                # Assuming the encoder is already trained or train encoder jointly.
-                elif not frame.has_features():
-                    with torch.no_grad():
-                        crops = frame.get_crops()
-                        z = model.visual_encoder(crops)
-
-                        for i, z_i in enumerate(z):
-                            frame.instances[i].features = z_i
+        #                 for i, z_i in enumerate(z):
+        #                     frame.instances[i].features = z_i
 
         # I feel like this chunk is unnecessary:
         # reid_features = torch.cat(
         #     [frame["features"] for frame in instances], dim=0
         # ).unsqueeze(0)
 
-        # asso_preds, pred_boxes, pred_time, embeddings = self.model(
-        #     instances, reid_features
-        # )
-        instances_pred = self.sliding_inference(model, frames)
+        instances_pred = self.sliding_inference(asso_matrix, frames)
 
         if not self.persistent_tracking:
             logger.debug(f"Clearing Queue after tracking")
@@ -147,12 +143,12 @@ class Tracker:
         return instances_pred
 
     def sliding_inference(
-        self, model: GlobalTrackingTransformer, frames: list[Frame]
+        self, asso_matrix: torch.Tensor, frames: list[Frame]
     ) -> list[Frame]:
         """Perform sliding inference on the input video (instances) with a given window size.
 
         Args:
-            model: the pretrained GlobalTrackingTransformer to be used for inference
+            asso_matrix: the association matrix to be used for inference
             frames: A list of Frames (See `dreem.io.Frame` for more info).
 
         Returns:
@@ -208,7 +204,7 @@ class Tracker:
                     query_ind = len(frames_to_track) - 1
 
                     frame_to_track = self._run_global_tracker(
-                        model,
+                        asso_matrix,
                         frames_to_track,
                         query_ind=query_ind,
                     )
@@ -222,14 +218,14 @@ class Tracker:
         return frames
 
     def _run_global_tracker(
-        self, model: GlobalTrackingTransformer, frames: list[Frame], query_ind: int
+        self, asso_matrix: torch.Tensor, frames: list[Frame], query_ind: int
     ) -> Frame:
         """Run global tracker performs the actual tracking.
 
         Uses Hungarian algorithm to do track assigning.
 
         Args:
-            model: the pretrained GlobalTrackingTransformer to be used for inference
+            asso_matrix: the association matrix to be used for inference
             frames: A list of Frames containing reid features. See `dreem.io.data_structures` for more info.
             query_ind: An integer for the query frame within the window of instances.
 
@@ -251,8 +247,6 @@ class Tracker:
         # Number of instances in each frame of the window.
         # E.g.: instances_per_frame: [4, 5, 6, 7]; window of length 4 with 4 detected instances in the first frame of the window.
 
-        _ = model.eval()
-
         query_frame = frames[query_ind]
 
         query_instances = query_frame.instances
@@ -273,15 +267,13 @@ class Tracker:
         n_traj = self.track_queue.n_tracks
         curr_track = self.track_queue.curr_track
 
-        reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
-            None
-        ]  # (1, total_instances, D=512)
+        # reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
+        #     None
+        # ]  # (1, total_instances, D=512)
 
-        # (L=1, n_query, total_instances)
-        with torch.no_grad():
-            asso_matrix = model(all_instances, query_instances)
+        # TODO: split the asso_matrix first into query x reference as currently it is reference x reference, and it is expected to be query x reference
 
-        asso_output = asso_matrix[-1].matrix.split(
+        asso_output = asso_matrix.split(
             instances_per_frame, dim=1
         )  # (window_size, n_query, N_i)
         asso_output = model_utils.softmax_asso(
@@ -298,7 +290,7 @@ class Tracker:
         asso_output_df.columns.name = "Instances"
 
         query_frame.add_traj_score("asso_output", asso_output_df)
-        query_frame.asso_output = asso_matrix[-1]
+        query_frame.asso_output = asso_matrix
 
         n_query = (
             query_frame.num_detected
@@ -378,19 +370,20 @@ class Tracker:
 
         # reweighting hyper-parameters for association -> they use 0.9
 
-        traj_score = post_processing.weight_decay_time(
-            asso_nonquery, self.decay_time, reid_features, window_size, query_ind
-        )
+        # TODO: temporarily switched this off as it isn't used anyway. We don't have reid featurues in tracker anymore so need to look into this some more
+        # traj_score = post_processing.weight_decay_time(
+        #     asso_nonquery, self.decay_time, reid_features, window_size, query_ind
+        # )
 
-        if self.decay_time is not None and self.decay_time > 0:
-            decay_time_traj_score = pd.DataFrame(
-                traj_score.clone().numpy(), columns=nonquery_inds
-            )
+        # if self.decay_time is not None and self.decay_time > 0:
+        #     decay_time_traj_score = pd.DataFrame(
+        #         traj_score.clone().numpy(), columns=nonquery_inds
+        #     )
 
-            decay_time_traj_score.index.name = "Query Instances"
-            decay_time_traj_score.columns.name = "Nonquery Instances"
+        #     decay_time_traj_score.index.name = "Query Instances"
+        #     decay_time_traj_score.columns.name = "Nonquery Instances"
 
-            query_frame.add_traj_score("decay_time", decay_time_traj_score)
+        #     query_frame.add_traj_score("decay_time", decay_time_traj_score)
         ################################################################################
 
         # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj

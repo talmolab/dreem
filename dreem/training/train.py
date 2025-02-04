@@ -8,7 +8,7 @@ from dreem.datasets import TrackingDataset
 from dreem.datasets.data_utils import view_training_batch
 from multiprocessing import cpu_count
 from omegaconf import DictConfig
-
+import subprocess
 import os
 import hydra
 import pandas as pd
@@ -18,6 +18,62 @@ import torch.multiprocessing
 import logging
 
 logger = logging.getLogger("training")
+
+class GPUMonitorCallback(pl.Callback):
+    def __init__(self, log_file=None):
+        super().__init__()
+        if log_file is None:
+            from datetime import datetime
+            current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_file = f'gpu_usage_{current_time}.log'
+        self.log_file = log_file
+        
+    def log_gpu_usage(self, phase):
+        # Get memory usage from PyTorch
+        memory_allocated = torch.cuda.memory_allocated()
+        memory_reserved = torch.cuda.memory_reserved()
+        max_memory_allocated = torch.cuda.max_memory_allocated()
+
+        # Get GPU utilization and memory usage using nvidia-smi
+        try:
+            result = subprocess.run(
+                ['nvidia-smi', '--query-gpu=utilization.gpu,memory.used,memory.total', '--format=csv,noheader,nounits'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True
+            )
+            first_gpu_info = result.stdout.decode('utf-8').strip().split('\n')[0]
+            gpu_utilization, memory_used, memory_total = first_gpu_info.split(', ')
+        except subprocess.CalledProcessError as e:
+            gpu_utilization = memory_used = memory_total = "Error retrieving data"
+
+        # Prepare the log message
+        log_message = (
+            f"{phase} Phase:\n"
+            f"PyTorch Memory Allocated: {memory_allocated / (1024 ** 2):.2f} MB\n"
+            f"PyTorch Memory Reserved: {memory_reserved / (1024 ** 2):.2f} MB\n"
+            f"PyTorch Max Memory Allocated: {max_memory_allocated / (1024 ** 2):.2f} MB\n"
+            f"nvidia-smi GPU Utilization: {gpu_utilization} %\n"
+            f"nvidia-smi Memory Used: {memory_used} MB\n"
+            f"nvidia-smi Total Memory: {memory_total} MB\n"
+        )
+
+        # Log to file
+        with open(self.log_file, 'a') as f:
+            f.write(log_message)
+
+    def on_train_epoch_end(self, trainer, pl_module):
+        epoch_info = f"Epoch {trainer.current_epoch + 1}/{trainer.max_epochs} - Training\n"
+        with open(self.log_file, 'a') as f:
+            f.write(epoch_info)
+        self.log_gpu_usage("Training")
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        epoch_info = f"Epoch {trainer.current_epoch + 1}/{trainer.max_epochs} - Validation\n"
+        with open(self.log_file, 'a') as f:
+            f.write(epoch_info)
+        self.log_gpu_usage("Validation")
+
 
 
 @hydra.main(config_path=None, config_name=None, version_base=None)
@@ -90,6 +146,7 @@ def run(cfg: DictConfig):
     callbacks = []
     _ = callbacks.extend(train_cfg.get_checkpointing())
     _ = callbacks.append(pl.callbacks.LearningRateMonitor())
+    _ = callbacks.append(GPUMonitorCallback())
 
     early_stopping = train_cfg.get_early_stopping()
     if early_stopping is not None:
