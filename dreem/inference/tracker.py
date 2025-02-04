@@ -252,6 +252,12 @@ class Tracker:
         query_instances = query_frame.instances
         all_instances = [instance for frame in frames for instance in frame.instances]
 
+        # move data to CPU; hacky, we need a better solution for this
+        for instance in all_instances:
+            instance.to("cpu")
+            
+        asso_matrix.to("cpu")
+
         logger.debug(f"Frame {query_frame.frame_id.item()}")
 
         instances_per_frame = [frame.num_detected for frame in frames]
@@ -271,8 +277,11 @@ class Tracker:
         #     None
         # ]  # (1, total_instances, D=512)
 
-        # TODO: split the asso_matrix first into query x reference as currently it is reference x reference, and it is expected to be query x reference
-
+        # split the asso_matrix first into query x reference as currently it is reference x reference, and it is expected to be query x reference
+        asso_matrix_inds_to_keep = asso_matrix.__getindices__(query_instances, all_instances)
+        asso_output = asso_matrix.matrix.detach().cpu()
+        asso_output = asso_output[asso_matrix_inds_to_keep, :]
+        
         asso_output = asso_matrix.split(
             instances_per_frame, dim=1
         )  # (window_size, n_query, N_i)

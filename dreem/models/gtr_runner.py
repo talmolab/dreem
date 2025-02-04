@@ -191,6 +191,8 @@ class GTRRunner(LightningModule):
             persistent_tracking = self.persistent_tracking[mode]
 
             logits = self(instances)
+            asso = logits[-1]
+
             logits = [asso.matrix for asso in logits]
             loss = self.loss(logits, frames)
 
@@ -198,7 +200,7 @@ class GTRRunner(LightningModule):
             if eval_metrics is not None and len(eval_metrics) > 0:
                 self.tracker.persistent_tracking = persistent_tracking
 
-                frames_pred = self.tracker(logits[-1].detach().cpu(), frames)
+                frames_pred = self.tracker(asso, frames)
 
                 frames_mm = metrics.to_track_eval(frames_pred)
                 clearmot = metrics.get_pymotmetrics(frames_mm, eval_metrics)

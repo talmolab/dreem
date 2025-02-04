@@ -16,6 +16,8 @@ import pytorch_lightning as pl
 import torch
 import torch.multiprocessing
 import logging
+from datetime import datetime
+import pytz
 
 logger = logging.getLogger("training")
 
@@ -23,8 +25,8 @@ class GPUMonitorCallback(pl.Callback):
     def __init__(self, log_file=None):
         super().__init__()
         if log_file is None:
-            from datetime import datetime
-            current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+            pacific = pytz.timezone('US/Pacific')
+            current_time = datetime.now(pacific).strftime("%Y%m%d_%H%M%S")
             log_file = f'gpu_usage_{current_time}.log'
         self.log_file = log_file
         
