@@ -145,7 +145,9 @@ class SleapDataset(BaseDataset):
 
         # note if slp is missing frames, taking last frame idx is safer than len(labels)
         # as there will be fewer labeledframes than actual frames
-        self.frame_idx = [torch.arange(labels[-1].frame_idx + 1) for labels in self.labels]
+        self.frame_idx = [
+            torch.arange(labels[-1].frame_idx + 1) for labels in self.labels
+        ]
         self.skipped_frame_ct = [0 for labels in self.labels]
         # self.frame_idx = [torch.arange(len(labels)) for labels in self.labels]
         # Method in BaseDataset. Creates label_idx and chunked_frame_idx to be
@@ -213,7 +215,6 @@ class SleapDataset(BaseDataset):
                 )
                 self.skipped_frame_ct[label_idx] += 1
                 continue
-
 
             try:
                 img = vid_reader.get_data(int(lf.frame_idx))
