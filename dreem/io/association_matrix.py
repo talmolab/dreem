@@ -5,11 +5,11 @@ import numpy as np
 import pandas as pd
 import attrs
 import logging
+from typing import Self
 
 from dreem.io import Instance
 
 logger = logging.getLogger("dreem.io")
-
 
 @attrs.define
 class AssociationMatrix:
@@ -347,5 +347,5 @@ class AssociationMatrix:
         self.matrix = self.matrix.to(map_location)
         self.ref_instances = [instance.to(map_location) for instance in self.ref_instances]
         self.query_instances = [instance.to(map_location) for instance in self.query_instances]
-        
+
         return self

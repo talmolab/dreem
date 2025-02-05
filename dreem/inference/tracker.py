@@ -63,18 +63,24 @@ class Tracker:
         self.max_tracks = max_tracks
 
     def __call__(
-        self, model: GlobalTrackingTransformer, frames: list[Frame]
+        self, asso_matrix: torch.Tensor, frames: list[Frame]
     ) -> list[Frame]:
         """Wrap around `track` to enable `tracker()` instead of `tracker.track()`.
 
         Args:
-            model: the pretrained GlobalTrackingTransformer to be used for inference
+            asso_matrix: the association matrix to be used for inference
             frames: list of Frames to run inference on
 
         Returns:
             List of frames containing association matrix scores and instances populated with pred track ids.
         """
-        return self.track(model, frames)
+        # tracking should be done on cpu
+        asso_matrix.to("cpu")
+        # frames also contain instances, so this moves everything to cpu
+        for frame in frames:
+            frame.to("cpu")
+
+        return self.track(asso_matrix, frames)
 
     def __repr__(self) -> str:
         """Get string representation of tracker.
@@ -108,7 +114,7 @@ class Tracker:
         """
         # Extract feature representations with pre-trained encoder.
 
-        # THIS ENTIRE BLOCK IS TO OBTAIN REID FEATURES WHICH WE DO NOT NEE IF THERE IS NO FORWARD PASS IN TRACKER
+        # THIS ENTIRE BLOCK IS TO OBTAIN REID FEATURES WHICH WE DO NOT NEED IF THERE IS NO FORWARD PASS IN TRACKER
         # for frame in frames:
         #     if frame.has_instances():
         #         if not self.use_vis_feats:
@@ -161,6 +167,7 @@ class Tracker:
         # W: width.
 
         for batch_idx, frame_to_track in enumerate(frames):
+
             tracked_frames = self.track_queue.collate_tracks(
                 device=frame_to_track.frame_id.device
             )
@@ -252,12 +259,6 @@ class Tracker:
         query_instances = query_frame.instances
         all_instances = [instance for frame in frames for instance in frame.instances]
 
-        # move data to CPU; hacky, we need a better solution for this
-        for instance in all_instances:
-            instance.to("cpu")
-            
-        asso_matrix.to("cpu")
-
         logger.debug(f"Frame {query_frame.frame_id.item()}")
 
         instances_per_frame = [frame.num_detected for frame in frames]
@@ -279,12 +280,12 @@ class Tracker:
 
         # split the asso_matrix first into query x reference as currently it is reference x reference, and it is expected to be query x reference
         asso_matrix_inds_to_keep = asso_matrix.__getindices__(query_instances, all_instances)
-        asso_output = asso_matrix.matrix.detach().cpu()
-        asso_output = asso_output[asso_matrix_inds_to_keep, :]
+        asso_output = asso_matrix.matrix
+        asso_output = [asso_output[asso_matrix_inds_to_keep, :]] # put in a list for softmax_asso function that expects a list
         
-        asso_output = asso_matrix.split(
-            instances_per_frame, dim=1
-        )  # (window_size, n_query, N_i)
+        # asso_output = asso_output.split(
+        #     instances_per_frame, dim=1
+        # )  # (window_size, n_query, N_i)
         asso_output = model_utils.softmax_asso(
             asso_output
         )  # (window_size, n_query, N_i)
@@ -396,7 +397,7 @@ class Tracker:
         ################################################################################
 
         # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj
-        traj_score = torch.mm(traj_score, id_inds.cpu())  # (n_query, n_traj)
+        traj_score = torch.mm(asso_nonquery, id_inds.cpu())  # (n_query, n_traj)
 
         traj_score_df = pd.DataFrame(
             traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()

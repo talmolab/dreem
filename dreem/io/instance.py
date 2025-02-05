@@ -150,6 +150,7 @@ class Instance:
             self._bbox = self._bbox.to(map_location)
             self._crop = self._crop.to(map_location)
             self._features = self._features.to(map_location)
+
             if isinstance(map_location, (str, torch.device)):
                 self.device = map_location
 
