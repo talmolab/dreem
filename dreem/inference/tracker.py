@@ -74,11 +74,11 @@ class Tracker:
         Returns:
             List of frames containing association matrix scores and instances populated with pred track ids.
         """
-        # tracking should be done on cpu
-        asso_matrix.to("cpu")
-        # frames also contain instances, so this moves everything to cpu
-        for frame in frames:
-            frame.to("cpu")
+        with torch.no_grad():
+            # tracking should be done on cpu
+            asso_matrix = asso_matrix.to("cpu")
+            # frames also contain instances, so this moves everything to cpu
+            frames = [frame.to("cpu") for frame in frames]
 
         return self.track(asso_matrix, frames)
 
