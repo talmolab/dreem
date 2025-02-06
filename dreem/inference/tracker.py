@@ -74,13 +74,20 @@ class Tracker:
         Returns:
             List of frames containing association matrix scores and instances populated with pred track ids.
         """
-        with torch.no_grad():
-            # tracking should be done on cpu
-            asso_matrix = asso_matrix.to("cpu")
-            # frames also contain instances, so this moves everything to cpu
-            frames = [frame.to("cpu") for frame in frames]
+        
+        # tracking should be done on cpu
+        asso_matrix = asso_matrix.to("cpu")
+        # frames also contain instances, so this moves everything to cpu
+        frames = [frame.to("cpu") for frame in frames]
 
-        return self.track(asso_matrix, frames)
+        instances_pred = self.sliding_inference(asso_matrix, frames)
+
+        if not self.persistent_tracking:
+            logger.debug(f"Clearing Queue after tracking")
+            self.track_queue.end_tracks()
+
+        return instances_pred
+
 
     def __repr__(self) -> str:
         """Get string representation of tracker.
@@ -99,54 +106,6 @@ class Tracker:
             f"verbose={self.verbose}, "
             f"queue={self.track_queue}"
         )
-
-    def track(
-        self, asso_matrix: torch.Tensor, frames: list[Frame]
-    ) -> list[Frame]:
-        """Run tracker and get predicted trajectories.
-
-        Args:
-            asso_matrix: the association matrix to be used for inference
-            frames: data dict to run inference on
-
-        Returns:
-            List of Frames populated with pred track ids and association matrix scores
-        """
-        # Extract feature representations with pre-trained encoder.
-
-        # THIS ENTIRE BLOCK IS TO OBTAIN REID FEATURES WHICH WE DO NOT NEED IF THERE IS NO FORWARD PASS IN TRACKER
-        # for frame in frames:
-        #     if frame.has_instances():
-        #         if not self.use_vis_feats:
-        #             for instance in frame.instances:
-        #                 instance.features = torch.zeros(1, model.d_model)
-        #             # frame["features"] = torch.randn(
-        #             #     num_frame_instances, self.model.d_model
-        #             # )
-
-        #         # comment out to turn encoder off
-
-        #         # Assuming the encoder is already trained or train encoder jointly.
-        #         elif not frame.has_features():
-        #             with torch.no_grad():
-        #                 crops = frame.get_crops()
-        #                 z = model.visual_encoder(crops)
-
-        #                 for i, z_i in enumerate(z):
-        #                     frame.instances[i].features = z_i
-
-        # I feel like this chunk is unnecessary:
-        # reid_features = torch.cat(
-        #     [frame["features"] for frame in instances], dim=0
-        # ).unsqueeze(0)
-
-        instances_pred = self.sliding_inference(asso_matrix, frames)
-
-        if not self.persistent_tracking:
-            logger.debug(f"Clearing Queue after tracking")
-            self.track_queue.end_tracks()
-
-        return instances_pred
 
     def sliding_inference(
         self, asso_matrix: torch.Tensor, frames: list[Frame]
@@ -168,9 +127,7 @@ class Tracker:
 
         for batch_idx, frame_to_track in enumerate(frames):
 
-            tracked_frames = self.track_queue.collate_tracks(
-                device=frame_to_track.frame_id.device
-            )
+            tracked_frames = self.track_queue.collate_tracks()
             logger.debug(f"Current number of tracks is {self.track_queue.n_tracks}")
 
             if (
@@ -289,7 +246,7 @@ class Tracker:
         asso_output = model_utils.softmax_asso(
             asso_output
         )  # (window_size, n_query, N_i)
-        asso_output = torch.cat(asso_output, dim=1).cpu()  # (n_query, total_instances)
+        asso_output = torch.cat(asso_output, dim=1) # (n_query, total_instances)
 
         asso_output_df = pd.DataFrame(
             asso_output.clone().numpy(),
@@ -397,10 +354,10 @@ class Tracker:
         ################################################################################
 
         # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj
-        traj_score = torch.mm(asso_nonquery, id_inds.cpu())  # (n_query, n_traj)
+        traj_score = torch.mm(asso_nonquery, id_inds)  # (n_query, n_traj)
 
         traj_score_df = pd.DataFrame(
-            traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+            traj_score.clone().numpy(), columns=unique_ids.numpy()
         )
 
         traj_score_df.index.name = "Current Frame Instances"
@@ -415,10 +372,10 @@ class Tracker:
         if id_inds.numel() > 0:
             # this throws error, think we need to slice?
             # last_inds = (id_inds * torch.arange(
-            #    n_nonquery, device=id_inds.device)[:, None]).max(dim=0)[1] # n_traj
+            #    n_nonquery)[:, None]).max(dim=0)[1] # n_traj
 
             last_inds = (
-                id_inds * torch.arange(n_nonquery, device=id_inds.device)[:, None]
+                id_inds * torch.arange(n_nonquery)[:, None]
             ).max(dim=0)[
                 1
             ]  # M
@@ -430,11 +387,11 @@ class Tracker:
         else:
             last_ious = traj_score.new_zeros(traj_score.shape)
 
-        traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious.cpu())
+        traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious)
 
         if self.iou is not None and self.iou != "":
             iou_traj_score = pd.DataFrame(
-                traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+                traj_score.clone().numpy(), columns=unique_ids.numpy()
             )
 
             iou_traj_score.index.name = "Current Frame Instances"
@@ -455,7 +412,7 @@ class Tracker:
 
         if self.max_center_dist is not None and self.max_center_dist > 0:
             max_center_dist_traj_score = pd.DataFrame(
-                traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+                traj_score.clone().numpy(), columns=unique_ids.numpy()
             )
 
             max_center_dist_traj_score.index.name = "Current Frame Instances"
@@ -466,7 +423,7 @@ class Tracker:
         ################################################################################
         scaled_traj_score = torch.softmax(traj_score, dim=1)
         scaled_traj_score_df = pd.DataFrame(
-            scaled_traj_score.numpy(), columns=unique_ids.cpu().numpy()
+            scaled_traj_score.numpy(), columns=unique_ids.numpy()
         )
         scaled_traj_score_df.index.name = "Current Frame Instances"
         scaled_traj_score_df.columns.name = "Unique IDs"
@@ -506,7 +463,7 @@ class Tracker:
             instance.pred_track_id = track_id
 
         final_traj_score = pd.DataFrame(
-            traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+            traj_score.clone().numpy(), columns=unique_ids.numpy()
         )
         final_traj_score.index.name = "Current Frame Instances"
         final_traj_score.columns.name = "Unique IDs"

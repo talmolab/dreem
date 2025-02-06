@@ -2,11 +2,8 @@
 
 from dreem.io import Frame
 from collections import deque
-from torch import device
-
 import logging
 import numpy as np
-from torch import device
 
 logger = logging.getLogger("dreem.inference")
 
@@ -228,15 +225,12 @@ class TrackQueue:
     def collate_tracks(
         self,
         track_ids: list[int] | None = None,
-        device: str | device | None = None,
     ) -> list[Frame]:
         """Merge queues into a single list of Frames containing corresponding instances.
 
         Args:
             track_ids: A list of trajectorys to merge. If None, then merge all
                 queues, otherwise filter queues by track_ids then merge.
-            device: A str representation of the device the frames should be on after merging
-                since all instances in the queue are kept on the cpu.
 
         Returns:
             A sorted list of Frame objects from which each instance came from,
@@ -265,7 +259,7 @@ class TrackQueue:
                     frames[(video_id, frame_id)] = frame
                 else:
                     frames[(video_id, frame_id)].instances.append(instance)
-        return [frames[frame].to(device) for frame in sorted(frames.keys())]
+        return [frames[frame] for frame in sorted(frames.keys())]
 
     def increment_gaps(self, pred_track_ids: list[int]) -> dict[int, bool]:
         """Keep track of number of consecutive frames each trajectory has been missing from the queue.
