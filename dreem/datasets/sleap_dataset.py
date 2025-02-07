@@ -12,9 +12,7 @@ from typing import Union, Optional
 from dreem.io import Instance, Frame
 from dreem.datasets import data_utils, BaseDataset
 from torchvision.transforms import functional as tvf
-
 logger = logging.getLogger("dreem.datasets")
-
 
 class SleapDataset(BaseDataset):
     """Dataset for loading animal behavior data from sleap."""
@@ -36,6 +34,7 @@ class SleapDataset(BaseDataset):
         seed: int | None = None,
         verbose: bool = False,
         normalize_image: bool = True,
+        max_batching_gap: int | None = None,
     ):
         """Initialize SleapDataset.
 
@@ -101,6 +100,7 @@ class SleapDataset(BaseDataset):
         self.n_chunks = n_chunks
         self.seed = seed
         self.normalize_image = normalize_image
+        self.max_batching_gap = max_batching_gap
         if self.data_dirs is None:
             self.data_dirs = []
         if isinstance(anchors, int):
@@ -136,20 +136,18 @@ class SleapDataset(BaseDataset):
 
         # if self.seed is not None:
         #     np.random.seed(self.seed)
-        self.labels = [sio.load_slp(slp_file) for slp_file in self.slp_files]
+
+        # load_slp is a wrapper around sio.load_slp for frame gap checks
+        self.labels = []
+        self.annotated_segments = {}
+        for slp_file in self.slp_files:
+            labels, annotated_segments = data_utils.load_slp(slp_file)
+            self.labels.append(labels)
+            self.annotated_segments[slp_file] = annotated_segments
+
         self.videos = [imageio.get_reader(vid_file) for vid_file in self.vid_files]
         # do we need this? would need to update with sleap-io
 
-        # for label in self.labels:
-        # label.remove_empty_instances(keep_empty_frames=False)
-
-        # note if slp is missing frames, taking last frame idx is safer than len(labels)
-        # as there will be fewer labeledframes than actual frames
-        self.frame_idx = [
-            torch.arange(labels[-1].frame_idx + 1) for labels in self.labels
-        ]
-        self.skipped_frame_ct = [0 for labels in self.labels]
-        # self.frame_idx = [torch.arange(len(labels)) for labels in self.labels]
         # Method in BaseDataset. Creates label_idx and chunked_frame_idx to be
         # used in call to get_instances()
         self.create_chunks()
@@ -162,12 +160,12 @@ class SleapDataset(BaseDataset):
         """
         return self.label_idx[idx], self.chunked_frame_idx[idx]
 
-    def get_instances(self, label_idx: list[int], frame_idx: list[int]) -> list[Frame]:
+    def get_instances(self, label_idx: list[int], frame_idx: torch.Tensor) -> list[Frame]:
         """Get an element of the dataset.
 
         Args:
             label_idx: index of the labels
-            frame_idx: index of the frames
+            frame_idx: indices of the frames to load in to the batch
 
         Returns:
             A list of `dreem.io.Frame` objects containing metadata and instance data for the batch/clip.
@@ -204,20 +202,8 @@ class SleapDataset(BaseDataset):
                 instance_score,
             ) = ([], [], [], [], [], [])
 
-            frame_ind = int(frame_ind)
-
-            # if slp is missing instances in some frames, frame_ind will be smaller than lf.frame_idx
-            lf = video[frame_ind - self.skipped_frame_ct[label_idx]]
-            if frame_ind < lf.frame_idx:
-                logger.warning(
-                    f"Frame index {frame_ind} is trying to access frame {lf.frame_idx} of the slp file {video_name}. "
-                    f"This likely means there are no labelled instances in this frame. Skipping frame."
-                )
-                self.skipped_frame_ct[label_idx] += 1
-                continue
-
             try:
-                img = vid_reader.get_data(int(lf.frame_idx))
+                img = vid_reader.get_data(int(frame_ind))
             except IndexError as e:
                 logger.warning(
                     f"Could not read frame {frame_ind} from {video_name} due to {e}"

@@ -79,6 +79,21 @@ class BaseDataset(Dataset):
         self.labels = None
         self.gt_list = None
 
+    def process_segments(self, i: int, segments_to_stitch: list[torch.Tensor]) -> None:
+        """Process segments to stitch. Modifies state variables chunked_frame_idx and label_idx.
+
+        Args:
+            segments_to_stitch: list of segments to stitch
+            i: index of the video
+
+        Returns: None
+        """
+        stitched_segment = torch.cat(segments_to_stitch)
+        frame_idx_split = torch.split(stitched_segment, self.clip_length)
+        self.chunked_frame_idx.extend(frame_idx_split)
+        self.label_idx.extend(len(frame_idx_split) * [i])
+
+
     def create_chunks(self) -> None:
         """Get indexing for data.
 
@@ -90,10 +105,26 @@ class BaseDataset(Dataset):
         """
         if self.chunk:
             self.chunked_frame_idx, self.label_idx = [], []
-            for i, frame_idx in enumerate(self.frame_idx):
-                frame_idx_split = torch.split(frame_idx, self.clip_length)
-                self.chunked_frame_idx.extend(frame_idx_split)
-                self.label_idx.extend(len(frame_idx_split) * [i])
+            # go through each slp file and create chunks that respect max_batching_gap
+            for i, slp_file in enumerate(self.label_files):
+                annotated_segments = self.annotated_segments[slp_file]
+                segments_to_stitch = []
+                prev_end = annotated_segments[0][1] # end of first segment
+                for start, end in annotated_segments:
+                    # check if the start of current segment is within batching_max_gap of end of previous
+                    if int(start) - int(prev_end) <= self.max_batching_gap: # also takes care of first segment as start < prev_end
+                        segments_to_stitch.append(torch.arange(start, end + 1))
+                        prev_end = end
+                    else:
+                        # stitch previous set of segments before creating a new chunk
+                        self.process_segments(i, segments_to_stitch)
+                        # reset segments_to_stitch as we are starting a new chunk
+                        segments_to_stitch = [torch.arange(start, end + 1)]
+                        prev_end = end
+                # add last chunk after the loop
+                if segments_to_stitch:
+                    self.process_segments(i, segments_to_stitch)
+
 
             if self.n_chunks > 0 and self.n_chunks <= 1.0:
                 n_chunks = int(self.n_chunks * len(self.chunked_frame_idx))
@@ -131,6 +162,7 @@ class BaseDataset(Dataset):
                     self.label_idx.pop(i)
 
         else:
+            # TODO: update this
             self.chunked_frame_idx = self.frame_idx
             self.label_idx = [i for i in range(len(self.labels))]
 

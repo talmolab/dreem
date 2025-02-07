@@ -243,6 +243,12 @@ class Config:
         dataset_params = self.get("dataset")
         if dataset_params is None:
             raise KeyError("`dataset` key is missing from cfg!")
+        
+        # dataset_params will be overwritten by train/val/test dataset params so we need to save max_batching_gap
+        if "max_batching_gap" in dataset_params:
+            self.max_batching_gap = dataset_params["max_batching_gap"]
+        else:
+            self.max_batching_gap = None
 
         if mode.lower() == "train":
             dataset_params = self.get("train_dataset", {}, dataset_params)
@@ -259,6 +265,9 @@ class Config:
             self.data_dirs = dataset_params["dir"]["path"]
         else:
             self.data_dirs = []
+            
+        # now update dataset_params with max_batching_gap
+        dataset_params["max_batching_gap"] = self.max_batching_gap
 
         if label_files is None or vid_files is None:
             label_files, vid_files = self.get_data_paths(dataset_params)
