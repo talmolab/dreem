@@ -215,7 +215,7 @@ def test_sleap_dataset(two_flies):
         clip_length=clip_length,
         n_chunks=30,
     )
-        
+
     train_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
@@ -225,7 +225,7 @@ def test_sleap_dataset(two_flies):
         max_batching_gap=0,
         clip_length=clip_length,
         n_chunks=30,
-        )
+    )
 
     train_ds = SleapDataset(
         slp_files=[two_flies[0]],
@@ -236,7 +236,8 @@ def test_sleap_dataset(two_flies):
         max_batching_gap=10,
         clip_length=clip_length,
         n_chunks=30,
-        )
+    )
+
 
 def test_icy_dataset(ten_icy_particles):
     """Test icy dataset logic.

@@ -123,9 +123,11 @@ class BaseDataset(Dataset):
                     # reset segments_to_stitch as we are starting a new chunk
                     segments_to_stitch = [torch.arange(start, end + 1)]
                     prev_end = end
-                    
+
             if not self.chunk:
-                self.process_segments(i, segments_to_stitch, self.labels[i].video.shape[0])
+                self.process_segments(
+                    i, segments_to_stitch, self.labels[i].video.shape[0]
+                )
             else:
                 # add last chunk after the loop
                 if segments_to_stitch:
