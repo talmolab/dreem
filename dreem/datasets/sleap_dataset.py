@@ -95,7 +95,7 @@ class SleapDataset(BaseDataset):
         self.video_files = video_files
         self.padding = padding
         self.crop_size = crop_size
-        self.chunk = False
+        self.chunk = chunk
         self.clip_length = clip_length
         self.mode = mode.lower()
         self.handle_missing = handle_missing.lower()

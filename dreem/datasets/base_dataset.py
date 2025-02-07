@@ -79,7 +79,9 @@ class BaseDataset(Dataset):
         self.labels = None
         self.gt_list = None
 
-    def process_segments(self, i: int, segments_to_stitch: list[torch.Tensor], clip_length: int) -> None:
+    def process_segments(
+        self, i: int, segments_to_stitch: list[torch.Tensor], clip_length: int
+    ) -> None:
         """Process segments to stitch. Modifies state variables chunked_frame_idx and label_idx.
 
         Args:
@@ -111,8 +113,8 @@ class BaseDataset(Dataset):
             for start, end in annotated_segments:
                 # check if the start of current segment is within batching_max_gap of end of previous
                 if (
-                    (int(start) - int(prev_end) < self.max_batching_gap) or not self.chunk
-                ):  # also takes care of first segment as start < prev_end
+                    int(start) - int(prev_end) < self.max_batching_gap
+                ) or not self.chunk:  # also takes care of first segment as start < prev_end
                     segments_to_stitch.append(torch.arange(start, end + 1))
                     prev_end = end
                 else:
@@ -121,9 +123,13 @@ class BaseDataset(Dataset):
                     # reset segments_to_stitch as we are starting a new chunk
                     segments_to_stitch = [torch.arange(start, end + 1)]
                     prev_end = end
-            # add last chunk after the loop
-            if segments_to_stitch:
-                self.process_segments(i, segments_to_stitch, self.clip_length)
+                    
+            if not self.chunk:
+                self.process_segments(i, segments_to_stitch, self.labels[i].video.shape[0])
+            else:
+                # add last chunk after the loop
+                if segments_to_stitch:
+                    self.process_segments(i, segments_to_stitch, self.clip_length)
 
         if self.n_chunks > 0 and self.n_chunks <= 1.0:
             n_chunks = int(self.n_chunks * len(self.chunked_frame_idx))

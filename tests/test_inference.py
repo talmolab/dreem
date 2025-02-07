@@ -279,7 +279,7 @@ def get_ckpt(ckpt_path: str):
 
     dl = torch.utils.data.DataLoader(DummyDataset())
     model = GTRRunner()
-    trainer = Trainer(max_steps=1, min_steps=1)
+    trainer = Trainer(max_steps=1, min_steps=1, accelerator='cpu')
     trainer.fit(model, dl)
     trainer.save_checkpoint(ckpt_path)
 

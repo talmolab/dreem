@@ -205,6 +205,38 @@ def test_sleap_dataset(two_flies):
         n_chunks=ds_length + 10000,
     )
 
+    train_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs="./data/sleap",
+        crop_size=128,
+        chunk=True,
+        max_batching_gap=10,
+        clip_length=clip_length,
+        n_chunks=30,
+    )
+        
+    train_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs="./data/sleap",
+        crop_size=128,
+        chunk=True,
+        max_batching_gap=0,
+        clip_length=clip_length,
+        n_chunks=30,
+        )
+
+    train_ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs="./data/sleap",
+        crop_size=128,
+        chunk=False,
+        max_batching_gap=10,
+        clip_length=clip_length,
+        n_chunks=30,
+        )
 
 def test_icy_dataset(ten_icy_particles):
     """Test icy dataset logic.
@@ -212,6 +244,7 @@ def test_icy_dataset(ten_icy_particles):
     Args:
         ten_icy_particles: icy fixture used for testing
     """
+
     clip_length = 8
 
     train_ds = MicroscopyDataset(
