@@ -93,7 +93,6 @@ class BaseDataset(Dataset):
         self.chunked_frame_idx.extend(frame_idx_split)
         self.label_idx.extend(len(frame_idx_split) * [i])
 
-
     def create_chunks(self) -> None:
         """Get indexing for data.
 
@@ -109,10 +108,12 @@ class BaseDataset(Dataset):
             for i, slp_file in enumerate(self.label_files):
                 annotated_segments = self.annotated_segments[slp_file]
                 segments_to_stitch = []
-                prev_end = annotated_segments[0][1] # end of first segment
+                prev_end = annotated_segments[0][1]  # end of first segment
                 for start, end in annotated_segments:
                     # check if the start of current segment is within batching_max_gap of end of previous
-                    if int(start) - int(prev_end) <= self.max_batching_gap: # also takes care of first segment as start < prev_end
+                    if (
+                        int(start) - int(prev_end) < self.max_batching_gap
+                    ):  # also takes care of first segment as start < prev_end
                         segments_to_stitch.append(torch.arange(start, end + 1))
                         prev_end = end
                     else:
@@ -124,7 +125,6 @@ class BaseDataset(Dataset):
                 # add last chunk after the loop
                 if segments_to_stitch:
                     self.process_segments(i, segments_to_stitch)
-
 
             if self.n_chunks > 0 and self.n_chunks <= 1.0:
                 n_chunks = int(self.n_chunks * len(self.chunked_frame_idx))

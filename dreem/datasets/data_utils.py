@@ -11,7 +11,17 @@ import numpy as np
 import pandas as pd
 import sleap_io as sio
 import torch
-from sleap_io.io.slp import read_hdf5_attrs, read_tracks, read_videos, read_skeletons, read_points, read_pred_points, read_instances, read_metadata, read_hdf5_dataset
+from sleap_io.io.slp import (
+    read_hdf5_attrs,
+    read_tracks,
+    read_videos,
+    read_skeletons,
+    read_points,
+    read_pred_points,
+    read_instances,
+    read_metadata,
+    read_hdf5_dataset,
+)
 from sleap_io import Labels, LabeledFrame
 
 
@@ -75,7 +85,6 @@ def load_slp(labels_path: str, open_videos: bool = True) -> Labels:
     labels.provenance["filename"] = labels_path
 
     return labels, annotated_segments
-
 
 
 def pad_bbox(bbox: ArrayLike, padding: int = 16) -> torch.Tensor:

@@ -12,7 +12,9 @@ from typing import Union, Optional
 from dreem.io import Instance, Frame
 from dreem.datasets import data_utils, BaseDataset
 from torchvision.transforms import functional as tvf
+
 logger = logging.getLogger("dreem.datasets")
+
 
 class SleapDataset(BaseDataset):
     """Dataset for loading animal behavior data from sleap."""
@@ -34,7 +36,7 @@ class SleapDataset(BaseDataset):
         seed: int | None = None,
         verbose: bool = False,
         normalize_image: bool = True,
-        max_batching_gap: int | None = None,
+        max_batching_gap: int = 15,
     ):
         """Initialize SleapDataset.
 
@@ -160,7 +162,9 @@ class SleapDataset(BaseDataset):
         """
         return self.label_idx[idx], self.chunked_frame_idx[idx]
 
-    def get_instances(self, label_idx: list[int], frame_idx: torch.Tensor) -> list[Frame]:
+    def get_instances(
+        self, label_idx: list[int], frame_idx: torch.Tensor
+    ) -> list[Frame]:
         """Get an element of the dataset.
 
         Args:
@@ -171,7 +175,7 @@ class SleapDataset(BaseDataset):
             A list of `dreem.io.Frame` objects containing metadata and instance data for the batch/clip.
 
         """
-        video = self.labels[label_idx]
+        sleap_labels_obj = self.labels[label_idx]
         video_name = self.video_files[label_idx]
 
         # get the correct crop size based on the video
@@ -187,9 +191,7 @@ class SleapDataset(BaseDataset):
 
         vid_reader = self.videos[label_idx]
 
-        # img = vid_reader.get_data(0)
-
-        skeleton = video.skeletons[-1]
+        skeleton = sleap_labels_obj.skeletons[-1]
 
         frames = []
         for i, frame_ind in enumerate(frame_idx):
@@ -201,6 +203,11 @@ class SleapDataset(BaseDataset):
                 point_scores,
                 instance_score,
             ) = ([], [], [], [], [], [])
+
+            frame_ind = int(frame_ind)
+
+            # sleap-io method for indexing a Labels() object based on the frame's index
+            lf = sleap_labels_obj[(sleap_labels_obj.video, frame_ind)]
 
             try:
                 img = vid_reader.get_data(int(frame_ind))
@@ -239,7 +246,7 @@ class SleapDataset(BaseDataset):
                     continue
 
                 if instance.track is not None:
-                    gt_track_id = video.tracks.index(instance.track)
+                    gt_track_id = sleap_labels_obj.tracks.index(instance.track)
                 else:
                     gt_track_id = -1
                 gt_track_ids.append(gt_track_id)
