@@ -74,6 +74,7 @@ class SleapDataset(BaseDataset):
             seed: set a seed for reproducibility
             verbose: boolean representing whether to print
             normalize_image: whether to normalize the image to [0, 1]
+            max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
         """
         super().__init__(
             slp_files,
@@ -208,6 +209,8 @@ class SleapDataset(BaseDataset):
 
             # sleap-io method for indexing a Labels() object based on the frame's index
             lf = sleap_labels_obj[(sleap_labels_obj.video, frame_ind)]
+            if frame_ind != lf.frame_idx:
+                logger.warning(f"Frame index mismatch: {frame_ind} != {lf.frame_idx}")
 
             try:
                 img = vid_reader.get_data(int(frame_ind))
