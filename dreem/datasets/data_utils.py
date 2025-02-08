@@ -11,6 +11,80 @@ import numpy as np
 import pandas as pd
 import sleap_io as sio
 import torch
+from sleap_io.io.slp import (
+    read_hdf5_attrs,
+    read_tracks,
+    read_videos,
+    read_skeletons,
+    read_points,
+    read_pred_points,
+    read_instances,
+    read_metadata,
+    read_hdf5_dataset,
+)
+from sleap_io import Labels, LabeledFrame
+
+
+def load_slp(labels_path: str, open_videos: bool = True) -> Labels:
+    """Read a SLEAP labels file.
+
+    Args:
+        labels_path: A string path to the SLEAP labels file.
+        open_videos: If `True` (the default), attempt to open the video backend for
+            I/O. If `False`, the backend will not be opened (useful for reading metadata
+            when the video files are not available).
+
+    Returns:
+        The processed `Labels` object.
+    """
+    tracks = read_tracks(labels_path)
+    videos = read_videos(labels_path, open_backend=open_videos)
+    skeletons = read_skeletons(labels_path)
+    points = read_points(labels_path)
+    pred_points = read_pred_points(labels_path)
+    format_id = read_hdf5_attrs(labels_path, "metadata", "format_id")
+    instances = read_instances(
+        labels_path, skeletons, tracks, points, pred_points, format_id
+    )
+    metadata = read_metadata(labels_path)
+    provenance = metadata.get("provenance", dict())
+
+    frames = read_hdf5_dataset(labels_path, "frames")
+    labeled_frames = []
+    annotated_segments = []
+    curr_segment_start = frames[0][2]
+    curr_frame = curr_segment_start
+    # note that frames only contains frames with labelled instances, not all frames
+    for i, video_id, frame_idx, instance_id_start, instance_id_end in frames:
+        labeled_frames.append(
+            LabeledFrame(
+                video=videos[video_id],
+                frame_idx=int(frame_idx),
+                instances=instances[instance_id_start:instance_id_end],
+            )
+        )
+        if frame_idx == curr_frame:
+            pass
+        elif frame_idx == curr_frame + 1:
+            curr_frame = frame_idx
+        elif frame_idx > curr_frame + 1:
+            annotated_segments.append((curr_segment_start, curr_frame))
+            curr_segment_start = frame_idx
+            curr_frame = frame_idx
+
+    # add last segment
+    annotated_segments.append((curr_segment_start, curr_frame))
+
+    labels = Labels(
+        labeled_frames=labeled_frames,
+        videos=videos,
+        skeletons=skeletons,
+        tracks=tracks,
+        provenance=provenance,
+    )
+    labels.provenance["filename"] = labels_path
+
+    return labels, annotated_segments
 
 
 def pad_bbox(bbox: ArrayLike, padding: int = 16) -> torch.Tensor:
