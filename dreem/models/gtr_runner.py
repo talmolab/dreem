@@ -188,29 +188,31 @@ class GTRRunner(LightningModule):
                 return None
 
             eval_metrics = self.metrics[mode]
-            persistent_tracking = self.persistent_tracking[mode]
+            # persistent_tracking = self.persistent_tracking[mode]
 
             logits = self(instances)
             logits = [asso.matrix for asso in logits]
             loss = self.loss(logits, frames)
 
             return_metrics = {"loss": loss}
-            if eval_metrics is not None and len(eval_metrics) > 0:
-                self.tracker.persistent_tracking = persistent_tracking
 
-                frames_pred = self.tracker(self.model, frames)
+            # commenting this out will disable validation tracking (only compute validation loss)
+            # if eval_metrics is not None and len(eval_metrics) > 0:
+            #     self.tracker.persistent_tracking = persistent_tracking
 
-                frames_mm = metrics.to_track_eval(frames_pred)
-                clearmot = metrics.get_pymotmetrics(frames_mm, eval_metrics)
+            #     frames_pred = self.tracker(self.model, frames)
 
-                return_metrics.update(clearmot.to_dict())
+            #     frames_mm = metrics.to_track_eval(frames_pred)
+            #     clearmot = metrics.get_pymotmetrics(frames_mm, eval_metrics)
 
-                if mode == "test":
-                    self.test_results["preds"].append(
-                        [frame.to("cpu") for frame in frames_pred]
-                    )
-                    self.test_results["metrics"].append(return_metrics)
-            return_metrics["batch_size"] = len(frames)
+            #     return_metrics.update(clearmot.to_dict())
+
+            #     if mode == "test":
+            #         self.test_results["preds"].append(
+            #             [frame.to("cpu") for frame in frames_pred]
+            #         )
+            #         self.test_results["metrics"].append(return_metrics)
+            # return_metrics["batch_size"] = len(frames)
         except Exception as e:
             logger.exception(
                 f"Failed on frame {frames[0].frame_id} of video {frames[0].video_id}"

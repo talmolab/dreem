@@ -27,7 +27,7 @@ class Tracker:
         decay_time: float | None = None,
         iou: str | None = None,
         max_center_dist: float | None = None,
-        persistent_tracking: bool = False,
+        persistent_tracking: bool = True,
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
@@ -52,6 +52,8 @@ class Tracker:
         self.track_queue = TrackQueue(
             window_size=window_size, max_gap=max_gap, verbose=verbose
         )
+        self.num_frames_tracked = 0
+        self.window_size = window_size
         self.use_vis_feats = use_vis_feats
         self.overlap_thresh = overlap_thresh
         self.mult_thresh = mult_thresh
@@ -74,40 +76,6 @@ class Tracker:
         Returns:
             List of frames containing association matrix scores and instances populated with pred track ids.
         """
-        return self.track(model, frames)
-
-    def __repr__(self) -> str:
-        """Get string representation of tracker.
-
-        Returns: the string representation of the tracker
-        """
-        return (
-            "Tracker("
-            f"persistent_tracking={self.persistent_tracking}, "
-            f"max_tracks={self.max_tracks}, "
-            f"use_vis_feats={self.use_vis_feats}, "
-            f"overlap_thresh={self.overlap_thresh}, "
-            f"mult_thresh={self.mult_thresh}, "
-            f"decay_time={self.decay_time}, "
-            f"max_center_dist={self.max_center_dist}, "
-            f"verbose={self.verbose}, "
-            f"queue={self.track_queue}"
-        )
-
-    def track(
-        self, model: GlobalTrackingTransformer, frames: list[dict]
-    ) -> list[Frame]:
-        """Run tracker and get predicted trajectories.
-
-        Args:
-            model: the pretrained GlobalTrackingTransformer to be used for inference
-            frames: data dict to run inference on
-
-        Returns:
-            List of Frames populated with pred track ids and association matrix scores
-        """
-        # Extract feature representations with pre-trained encoder.
-
         _ = model.eval()
 
         for frame in frames:
@@ -130,23 +98,74 @@ class Tracker:
                         for i, z_i in enumerate(z):
                             frame.instances[i].features = z_i
 
-        # I feel like this chunk is unnecessary:
-        # reid_features = torch.cat(
-        #     [frame["features"] for frame in instances], dim=0
-        # ).unsqueeze(0)
-
-        # asso_preds, pred_boxes, pred_time, embeddings = self.model(
-        #     instances, reid_features
-        # )
         instances_pred = self.sliding_inference(model, frames)
-
-        if not self.persistent_tracking:
-            logger.debug(f"Clearing Queue after tracking")
-            self.track_queue.end_tracks()
+        # no more persistent tracking. It is on by default
+        # if not self.persistent_tracking:
+        #     logger.debug(f"Clearing Queue after tracking")
+        #     self.track_queue.end_tracks()
 
         return instances_pred
 
+    def __repr__(self) -> str:
+        """Get string representation of tracker.
+
+        Returns: the string representation of the tracker
+        """
+        return (
+            "Tracker("
+            f"persistent_tracking={self.persistent_tracking}, "
+            f"max_tracks={self.max_tracks}, "
+            f"use_vis_feats={self.use_vis_feats}, "
+            f"overlap_thresh={self.overlap_thresh}, "
+            f"mult_thresh={self.mult_thresh}, "
+            f"decay_time={self.decay_time}, "
+            f"max_center_dist={self.max_center_dist}, "
+            f"verbose={self.verbose}, "
+            f"queue={self.track_queue}"
+        )
+
     def sliding_inference(
+        self, model: GlobalTrackingTransformer, frames: list[Frame]
+    ) -> list[Frame]:
+        """Perform sliding inference on the input video (instances) with a given window size.
+
+        Args:
+            model: the pretrained GlobalTrackingTransformer to be used for inference
+            frames: A list of Frames (See `dreem.io.Frame` for more info).
+
+        Returns:
+            frames: A list of Frames populated with pred_track_ids and asso_matrices
+        """
+        # for first batch, or up until context_length number of frames have been tracked, do frame-by-frame tracking
+        batch_num = frames[0].frame_id.item()
+        if batch_num == 0 or self.num_frames_tracked < self.window_size:
+            frames = self.track_by_frame(model, frames)
+        else:
+            frames = self.track_by_batch(model, frames)
+
+        return frames
+
+
+    def track_by_batch(
+        self, model: GlobalTrackingTransformer, frames: list[Frame]
+    ) -> list[Frame]:
+        """Perform sliding inference, on an entire batch of frames, on the input video (instances) with a given context length (window size).
+
+        Args:
+            model: the pretrained GlobalTrackingTransformer to be used for inference
+            frames: A list of Frames (See `dreem.io.Frame` for more info).
+
+        Returns:
+            frames: A list of Frames populated with pred_track_ids and asso_matrices
+        """
+        pass
+        # TODO: when concatenating the ref + batch, drop duplicate instances for case where context > batch and we've already tracked
+        # some of those frames in the batch
+        
+        # TODO: need to refactor run_global_tracker to be able to process multiple frames at once; currently only does one at a time
+    
+
+    def track_by_frame(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
     ) -> list[Frame]:
         """Perform sliding inference on the input video (instances) with a given window size.
@@ -178,7 +197,7 @@ class Tracker:
                 self.track_queue.end_tracks()
 
             """
-            Initialize tracks on first frame where detections appear.
+            Initialize tracks on first frame where detections appear. This is the first frame of the first batch
             """
             if len(self.track_queue) == 0:
                 if frame_to_track.has_instances():
@@ -215,10 +234,12 @@ class Tracker:
 
             if frame_to_track.has_instances():
                 self.track_queue.add_frame(frame_to_track)
+                self.num_frames_tracked += 1
             else:
                 self.track_queue.increment_gaps([])
 
             frames[batch_idx] = frame_to_track
+
         return frames
 
     def _run_global_tracker(
