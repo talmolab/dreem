@@ -212,7 +212,7 @@ class GTRRunner(LightningModule):
             #             [frame.to("cpu") for frame in frames_pred]
             #         )
             #         self.test_results["metrics"].append(return_metrics)
-            # return_metrics["batch_size"] = len(frames)
+            return_metrics["batch_size"] = len(frames)
         except Exception as e:
             logger.exception(
                 f"Failed on frame {frames[0].frame_id} of video {frames[0].video_id}"
