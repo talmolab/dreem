@@ -127,18 +127,16 @@ class Tracker:
     def sliding_inference(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
     ) -> list[Frame]:
-        """Perform sliding inference on the input video (instances) with a given window size.
+        """Perform sliding inference on the input video (instances) with a given window size. This method is called once per batch.
 
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
             frames: A list of Frames (See `dreem.io.Frame` for more info).
-
         Returns:
             frames: A list of Frames populated with pred_track_ids and asso_matrices
         """
-        # for first batch, or up until context_length number of frames have been tracked, do frame-by-frame tracking
-        batch_num = frames[0].frame_id.item()
-        if batch_num == 0 or self.num_frames_tracked < self.window_size:
+        # all batches up until context_length number of frames have been tracked, will be tracked frame-by-frame
+        if self.num_frames_tracked < self.window_size:
             frames = self.track_by_frame(model, frames)
         else:
             frames = self.track_by_batch(model, frames)
@@ -154,16 +152,45 @@ class Tracker:
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
             frames: A list of Frames (See `dreem.io.Frame` for more info).
-
         Returns:
             frames: A list of Frames populated with pred_track_ids and asso_matrices
         """
-        pass
-        # TODO: when concatenating the ref + batch, drop duplicate instances for case where context > batch and we've already tracked
-        # some of those frames in the batch
-        
-        # TODO: need to refactor run_global_tracker to be able to process multiple frames at once; currently only does one at a time
-    
+        first_frame_in_batch_id = frames[0].frame_id.item()
+        # context window starts from last frame just before start of current batch, to window_size frames preceding it
+        # note; can't use last frame of previous batch, because there could be empty frames in between batches that must 
+        # be part of the context window for consistency
+        context_window_frames = self.track_queue.collate_tracks(
+            context_start_frame_id=first_frame_in_batch_id - 1,
+            device=frames[0].frame_id.device
+        )
+
+        context_window_instances = []
+        context_window_instance_frame_ids = []
+        for frame in context_window_frames:
+            context_window_instances.extend(frame.instances)
+            context_window_instance_frame_ids.extend([frame.frame_id] * len(frame.instances))
+            
+        current_batch_instances = []
+        current_batch_instance_frame_ids = []
+        for frame in frames:
+            current_batch_instances.extend(frame.instances)
+            current_batch_instance_frame_ids.extend([frame.frame_id] * len(frame.instances))
+
+        n_query_instances = len(current_batch_instances)
+        # query is current batch instances, key is context window and current batch instances
+        association_matrix = model(context_window_instances + current_batch_instances, current_batch_instances)
+
+        # take association matrix and all instances off GPU
+        association_matrix = association_matrix.to("cpu")
+        # option 1 (currently used): remove current batch instances BEFORE softmax to closer emulate frame-by-frame tracking (suitable for local tracking)
+        # option 2 (not used currently): keep current batch instances in assoc matrix, and remove them after softmax (suitable for global tracking)
+        asso_to_slice = association_matrix[0].matrix[:, :-n_query_instances]
+        for i, frame in enumerate(frames):
+            # get the indices of the instances in the given frame
+            curr_frame_instance_indices = [i for i, frame_id in enumerate(current_batch_instance_frame_ids) if frame_id == frame.frame_id]
+            curr_frame_assoc_matrix = asso_to_slice[curr_frame_instance_indices]
+            # TODO: run global tracker needs to be modified to not do a model forward pass but rather only the softmax and then post processing and LSA
+            frame = self._run_global_tracker(model, frames_to_track, query_ind=query_ind)
 
     def track_by_frame(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -173,7 +200,6 @@ class Tracker:
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
             frames: A list of Frames (See `dreem.io.Frame` for more info).
-
         Returns:
             frames: A list of Frames populated with pred_track_ids and asso_matrices
         """
@@ -184,7 +210,9 @@ class Tracker:
         # W: width.
 
         for batch_idx, frame_to_track in enumerate(frames):
+            # if we're tracking by frame, it means context length of frames hasn't been reached yet, so context start frame id is 0
             tracked_frames = self.track_queue.collate_tracks(
+                context_start_frame_id=0,
                 device=frame_to_track.frame_id.device
             )
             logger.debug(f"Current number of tracks is {self.track_queue.n_tracks}")
