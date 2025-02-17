@@ -98,7 +98,7 @@ class Tracker:
                         for i, z_i in enumerate(z):
                             frame.instances[i].features = z_i
 
-        instances_pred = self.sliding_inference(model, frames)
+        instances_pred = self.track(model, frames)
         # no more persistent tracking. It is on by default
         # if not self.persistent_tracking:
         #     logger.debug(f"Clearing Queue after tracking")
@@ -124,7 +124,7 @@ class Tracker:
             f"queue={self.track_queue}"
         )
 
-    def sliding_inference(
+    def track(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
     ) -> list[Frame]:
         """Perform sliding inference on the input video (instances) with a given window size. This method is called once per batch.
@@ -182,7 +182,7 @@ class Tracker:
 
         # take association matrix and all frames off GPU (frames include instances)
         association_matrix = association_matrix[-1].to("cpu")
-        frames = [frame.to("cpu") for frame in frames_to_track]
+        frames_to_track = [frame.to("cpu") for frame in frames_to_track]
 
         # keep current batch instances in assoc matrix, and remove them after softmax (mirrors the training scheme)
         pred_frames = self._run_batch_tracker(association_matrix.matrix, frames_to_track, batch_start_ind=len(context_window_frames), compute_probs_by_frame=True)
@@ -304,7 +304,7 @@ class Tracker:
             # first, slice the association matrix to only include the query frame instances along the rows; these are the 'detections' to be matched to tracks
             # recall incoming association_matrix is (num_instances_in_batch, num_instances_in_context_window + num_instances_in_batch)
             assoc_curr_frame = association_matrix[query_inds, :]
-            # discard the columns (ref instances) corresponding to frames after the current frame; this means each frame will see previous frames in the batch as well as the context window when linking to tracks
+            # discard the columns (ref instances) corresponding to frames including and after the current frame; this means each frame will see previous frames in the batch as well as the context window when linking to tracks
             # importantly, this means that tracks will be aggregated over a much longer time period than the context window size, making many more tracks visible to each frame to link detections to
             assoc_curr_frame_by_previous_frames = assoc_curr_frame[:, :sum(num_instances_per_frame[:batch_start_ind + query_frame_idx])] # (num_query_instances, num instances in context window + num instances in current batch up till current frame)
             
@@ -324,7 +324,7 @@ class Tracker:
             # proceed with post processing, LSA, and track assignment (duplicated code with frame by frame tracker)
 
             # get raw bbox coords of prev frame instances from frame.instances_per_frame
-            prev_frame = frames_to_track[batch_start_ind + query_frame_idx]
+            prev_frame = frames_to_track[batch_start_ind + query_frame_idx - 1]
             prev_frame_instance_ids = torch.cat(
                 [instance.pred_track_id for instance in prev_frame.instances], dim=0
             )
