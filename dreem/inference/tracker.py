@@ -159,7 +159,7 @@ class Tracker:
         # note; can't use last frame of previous batch, because there could be empty frames in between batches that must 
         # be part of the context window for consistency
         context_window_frames = self.track_queue.collate_tracks(
-            context_start_frame_id=frames[0].frame_id.item() - 1,
+            context_start_frame_id=frames[0].frame_id.item() - 1, # switched off in collate_tracks; there is no cutoff for context, only until the deque gets filled
             device=frames[0].frame_id.device
         )
 
