@@ -256,8 +256,8 @@ class TrackQueue:
         )
         for track, instances in tracks_to_convert.items():
             for video_id, frame_id, vid_name, img_shape, instance in instances:
-                if frame_id < context_start_frame_id - self.window_size:
-                    continue
+                # if frame_id < context_start_frame_id - self.window_size:
+                #     continue
                 if (video_id, frame_id) not in frames.keys():
                     frame = Frame(
                         video_id,
