@@ -211,7 +211,7 @@ class TrackQueue:
 
             if pred_track_id not in self._queues.keys():
                 self._queues[pred_track_id] = deque(
-                    [(*frame_meta, instance)], maxlen=self.window_size - 1
+                    [(*frame_meta, instance)], maxlen=self.window_size
                 )  # dumb work around to retain `img_shape`
                 self.curr_track = pred_track_id
 
@@ -227,12 +227,14 @@ class TrackQueue:
 
     def collate_tracks(
         self,
+        context_start_frame_id: int,
         track_ids: list[int] | None = None,
         device: str | device | None = None,
     ) -> list[Frame]:
         """Merge queues into a single list of Frames containing corresponding instances.
 
         Args:
+            context_start_frame_id: The frame_id of the last frame in the context i.e. just before the start of the current batch
             track_ids: A list of trajectorys to merge. If None, then merge all
                 queues, otherwise filter queues by track_ids then merge.
             device: A str representation of the device the frames should be on after merging
@@ -254,6 +256,8 @@ class TrackQueue:
         )
         for track, instances in tracks_to_convert.items():
             for video_id, frame_id, vid_name, img_shape, instance in instances:
+                # if frame_id < context_start_frame_id - self.window_size:
+                #     continue
                 if (video_id, frame_id) not in frames.keys():
                     frame = Frame(
                         video_id,
