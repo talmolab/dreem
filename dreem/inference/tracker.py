@@ -182,10 +182,11 @@ class Tracker:
 
         # take association matrix and all frames off GPU (frames include instances)
         association_matrix = association_matrix[-1].to("cpu")
-        frames_to_track = [frame.to("cpu") for frame in frames_to_track]
+        context_window_frames = [frame.to("cpu") for frame in context_window_frames]
+        frames = [frame.to("cpu") for frame in frames]
 
         # keep current batch instances in assoc matrix, and remove them after softmax (mirrors the training scheme)
-        pred_frames = self._run_batch_tracker(association_matrix.matrix, frames_to_track, batch_start_ind=len(context_window_frames), compute_probs_by_frame=True)
+        pred_frames = self._run_batch_tracker(association_matrix.matrix, context_window_frames, frames, compute_probs_by_frame=True)
 
         return pred_frames
     
@@ -269,7 +270,7 @@ class Tracker:
 
 
     def _run_batch_tracker(
-            self, association_matrix: torch.Tensor, frames_to_track: list[Frame], batch_start_ind: int, compute_probs_by_frame: bool = True
+            self, association_matrix: torch.Tensor, context_window_frames: list[Frame], frames: list[Frame], compute_probs_by_frame: bool = True
     ) -> Frame:
         """
         Run batch tracker performs track assignment for each frame in the current batch. Supports 2 methods for computing association probabilities.
@@ -280,20 +281,24 @@ class Tracker:
 
         Args:
             association_matrix: the association matrix to be used for tracking
-            frames_to_track: A list of Frames containing reid features. See `dreem.io.data_structures` for more info.
+            :
             batch_start_ind: The index (in frames_to_track) of the first frame in the current batch
             compute_probs_by_frame: Whether to softmax the association matrix logits for each frame in context separately, or globally for the entire context window + current batch
         Returns:
             List of frames populated with pred_track_ids and asso_matrices
         """
         tracked_frames = []
-        num_instances_per_frame = [frame.num_detected for frame in frames_to_track]
+        num_instances_per_frame = [frame.num_detected for frame in context_window_frames + frames]
+        all_frames = context_window_frames + frames
+        batch_start_ind = len(num_instances_per_frame) - len(frames)
         overlap_thresh = self.overlap_thresh
         mult_thresh = self.mult_thresh
         n_traj = self.track_queue.n_tracks
         curr_track = self.track_queue.curr_track
-        
-        for query_frame_idx, frame in enumerate(frames_to_track[batch_start_ind:]): # only track frames in current batch, not in context window
+
+        for query_frame_idx, frame in enumerate(frames): # only track frames in current batch, not in context window
+            all_prev_instances = [instance for frame in context_window_frames + frames[:query_frame_idx] for instance in frame.instances]
+            # indices that will be used to index the rows of the association matrix corresponding to the query frame instances
             query_inds = [
                 x
                 for x in range(
@@ -324,13 +329,14 @@ class Tracker:
             # proceed with post processing, LSA, and track assignment (duplicated code with frame by frame tracker)
 
             # get raw bbox coords of prev frame instances from frame.instances_per_frame
-            prev_frame = frames_to_track[batch_start_ind + query_frame_idx - 1]
+            prev_frame = all_frames[batch_start_ind + query_frame_idx - 1]
             prev_frame_instance_ids = torch.cat(
                 [instance.pred_track_id for instance in prev_frame.instances], dim=0
             )
             prev_frame_boxes = torch.cat(
                 [instance.bbox for instance in prev_frame.instances], dim=0
             )
+            all_prev_frames_boxes = torch.cat([instance.bbox for instance in all_prev_instances], dim=0)
             curr_frame_boxes = torch.cat(
                 [instance.bbox for instance in frame.instances], dim=0
             )
@@ -338,7 +344,7 @@ class Tracker:
             instance_ids = torch.cat(
             [
                 x.get_pred_track_ids()
-                for x in frames_to_track[:batch_start_ind + query_frame_idx]
+                for x in all_frames[:batch_start_ind + query_frame_idx]
             ],
             dim=0,
             ).view(
@@ -346,6 +352,11 @@ class Tracker:
             )  # (n_nonquery,)
 
             unique_ids = torch.unique(instance_ids)  # (n_nonquery,)
+
+            _, h, w = frame.img_shape.flatten()
+            bbox_scaler = torch.tensor([w, h, w, h])
+            query_boxes =  curr_frame_boxes / bbox_scaler # n_k x 4
+            nonquery_boxes = all_prev_frames_boxes / bbox_scaler # n_nonquery x 4
 
             logger.debug(f"Instance IDs: {instance_ids}")
             logger.debug(f"unique ids: {unique_ids}")
@@ -364,6 +375,22 @@ class Tracker:
             traj_score = torch.mm(softmaxed_asso, id_inds.cpu())  # (n_query, n_traj)
 
             # post processing
+            if id_inds.numel() > 0:
+                last_inds = (
+                    id_inds * torch.arange(len(all_prev_instances), device=id_inds.device)[:, None]
+                ).max(dim=0)[
+                    1
+                ]  # M
+
+                last_boxes = nonquery_boxes[last_inds]  # n_traj x 4
+                last_ious = post_processing._pairwise_iou(
+                    Boxes(query_boxes), Boxes(last_boxes)
+                )  # n_k x M
+            else:
+                last_ious = traj_score.new_zeros(traj_score.shape)
+
+            traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious)
+
             # threshold for continuing a tracking or starting a new track -> they use 1.0
             traj_score = post_processing.filter_max_center_dist(
                 traj_score,
