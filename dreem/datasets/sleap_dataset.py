@@ -236,7 +236,15 @@ class SleapDataset(BaseDataset):
 
             n_instances_dropped = 0
 
-            gt_instances = lf.instances
+            gt_instances = []
+            # don't load instances that have been 'greyed out' i.e. all nans for keypoints
+            for inst in lf.instances:
+                pts = np.array([[p.x, p.y] for p in inst.points.values()])
+                if np.isnan(pts).all():
+                    continue
+                else:
+                    gt_instances.append(inst)
+
             if self.mode == "train":
                 np.random.shuffle(gt_instances)
 
