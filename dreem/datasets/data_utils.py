@@ -59,7 +59,7 @@ def load_slp(labels_path: str, open_videos: bool = True) -> Labels:
         # if no instances, don't add this frame to the labeled frames
         if len(instances[instance_id_start:instance_id_end]) == 0:
             continue
-        
+
         labeled_frames.append(
             LabeledFrame(
                 video=videos[video_id],
