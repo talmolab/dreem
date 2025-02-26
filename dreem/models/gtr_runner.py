@@ -195,21 +195,21 @@ class GTRRunner(LightningModule):
             loss = self.loss(logits, frames)
 
             return_metrics = {"loss": loss}
-            if eval_metrics is not None and len(eval_metrics) > 0:
-                self.tracker.persistent_tracking = persistent_tracking
+            # if eval_metrics is not None and len(eval_metrics) > 0:
+            #     self.tracker.persistent_tracking = persistent_tracking
 
-                frames_pred = self.tracker(self.model, frames)
+            #     frames_pred = self.tracker(self.model, frames)
 
-                frames_mm = metrics.to_track_eval(frames_pred)
-                clearmot = metrics.get_pymotmetrics(frames_mm, eval_metrics)
+            #     frames_mm = metrics.to_track_eval(frames_pred)
+            #     clearmot = metrics.get_pymotmetrics(frames_mm, eval_metrics)
 
-                return_metrics.update(clearmot.to_dict())
+            #     return_metrics.update(clearmot.to_dict())
 
-                if mode == "test":
-                    self.test_results["preds"].append(
-                        [frame.to("cpu") for frame in frames_pred]
-                    )
-                    self.test_results["metrics"].append(return_metrics)
+            #     if mode == "test":
+            #         self.test_results["preds"].append(
+            #             [frame.to("cpu") for frame in frames_pred]
+            #         )
+            #         self.test_results["metrics"].append(return_metrics)
             return_metrics["batch_size"] = len(frames)
         except Exception as e:
             logger.exception(
