@@ -6,7 +6,8 @@ from dreem.models import GTRRunner
 from omegaconf import DictConfig
 from pathlib import Path
 from datetime import datetime
-
+import h5py
+import numpy as np
 import hydra
 import os
 import pandas as pd
@@ -14,7 +15,8 @@ import pytorch_lightning as pl
 import torch
 import sleap_io as sio
 import logging
-
+import time
+from tqdm import tqdm
 
 logger = logging.getLogger("dreem.inference")
 
@@ -67,9 +69,35 @@ def export_trajectories(
         save_df.to_csv(save_path, index=False)
     return save_df
 
+def store_frame_metadata(frame: "dreem.io.Frame", h5_path: str):
+    with h5py.File(h5_path, 'a') as h5f:
+        # Create a group for each frame
+        frame_group = h5f.create_group(f'frame_{frame.frame_id.item()}')
+        
+        # Store frame metadata
+        frame_group.create_dataset('frame_id', data=frame.frame_id.item())
+        frame_group.create_dataset('img_shape', data=frame.img_shape.cpu().numpy())
+        frame_group.create_dataset('num_instances', data=len(frame.instances))
+        traj_scores_group = frame_group.create_group('traj_scores')
+        for key, value in frame.get_traj_score().items():
+            traj_scores_group.create_dataset(
+                key, data=value.to_numpy() if value is not None else []
+            )
+        
+        # Store instance data
+        instances_group = frame_group.create_group('instances')
+        for i, instance in enumerate(frame.instances):
+            instance_group = instances_group.create_group(f'instance_{i}')
+            instance_group.create_dataset('crop', data=instance.crop.cpu().numpy())
+            instance_group.create_dataset('gt_track_id', data=instance.gt_track_id.cpu().numpy())
+            instance_group.create_dataset('pred_track_id', data=instance.pred_track_id.cpu().numpy())
+            for key, value in instance.pose.items():
+                instance_group.create_dataset(key, data=np.array(value))
+            instance_group.create_dataset('features', data=instance.features.cpu().numpy())
+
 
 def track(
-    model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader
+    model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader, outdir: str, save_frame_meta: bool,
 ) -> list[pd.DataFrame]:
     """Run Inference.
 
@@ -77,14 +105,22 @@ def track(
         model: GTRRunner model loaded from checkpoint used for inference
         trainer: lighting Trainer object used for handling inference log.
         dataloader: dataloader containing inference data
+        save_frame_meta: whether to save frame meta data
 
     Return:
         List of DataFrames containing prediction results for each video
     """
     preds = trainer.predict(model, dataloader)
+    
+    if save_frame_meta:
+        h5_path = os.path.join(outdir, f'{dataloader.dataset.slp_files[0].split("/")[-1].replace(".slp", "")}_frame_meta.h5')
+        if os.path.exists(h5_path):
+            os.remove(h5_path)
+        with h5py.File(h5_path, 'a') as h5f:
+            h5f.create_dataset('vid_name', data=preds[0][0].vid_name)
     pred_slp = []
     tracks = {}
-    for batch in preds:
+    for batch in tqdm(preds, desc="Saving .slp and frame metadata"):
         for frame in batch:
             if frame.frame_id.item() == 0:
                 video = (
@@ -94,6 +130,8 @@ def track(
                 )
             lf, tracks = frame.to_slp(tracks, video=video)
             pred_slp.append(lf)
+            if save_frame_meta:
+                store_frame_metadata(frame, h5_path)
     pred_slp = sio.Labels(pred_slp)
     print(pred_slp)
     return pred_slp
@@ -136,16 +174,18 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     trainer = pred_cfg.get_trainer()
     outdir = pred_cfg.cfg.outdir if "outdir" in pred_cfg.cfg else "./results"
     os.makedirs(outdir, exist_ok=True)
+    save_frame_meta = pred_cfg.cfg.get("save_frame_meta", False)
 
     for label_file, vid_file in zip(labels_files, vid_files):
         dataset = pred_cfg.get_dataset(
             label_files=[label_file], vid_files=[vid_file], mode="test"
         )
         dataloader = pred_cfg.get_dataloader(dataset, mode="test")
-        preds = track(model, trainer, dataloader)
         outpath = os.path.join(
             outdir, f"{Path(label_file).stem}.dreem_inference.{get_timestamp()}.slp"
         )
+        preds = track(model, trainer, dataloader, outdir, save_frame_meta)
+        
 
         preds.save(outpath)
 
