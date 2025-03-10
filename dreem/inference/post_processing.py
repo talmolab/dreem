@@ -124,8 +124,8 @@ def filter_max_center_dist(
     asso_output: torch.Tensor,
     max_center_dist: float = 0,
     id_inds: torch.Tensor | None = None,
-    curr_frame_boxes: torch.Tensor | None = None,
-    prev_frame_boxes: torch.Tensor | None = None,
+    query_boxes_px: torch.Tensor | None = None,
+    nonquery_boxes_px: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Filter trajectory score by distances between objects across frames.
 
@@ -133,23 +133,22 @@ def filter_max_center_dist(
         asso_output: An N_t x N association matrix
         max_center_dist: The euclidean distance threshold between bboxes
         id_inds: track ids
-        curr_frame_boxes: the raw bbox coords of the current frame instances
-        prev_frame_boxes: the raw bbox coords of the previous frame instances
+        query_boxes_px: the raw bbox coords of the current frame instances
+        nonquery_boxes_px: the raw bbox coords of the instances in the nonquery frames (context window)
 
     Returns:
         An N_t x N association matrix
     """
     if max_center_dist is not None and max_center_dist > 0:
         assert (
-            curr_frame_boxes is not None
-            and prev_frame_boxes is not None
-            and id_inds is not None
-        ), "Need `curr_frame_boxes`, `prev_frame_boxes`, and `id_ind` to filter by `max_center_dist`"
+            query_boxes_px is not None
+            and nonquery_boxes_px is not None
+        ), "Need `query_boxes_px`, and `nonquery_boxes_px` to filter by `max_center_dist`"
 
-        k_ct = (curr_frame_boxes[:, :, :2] + curr_frame_boxes[:, :, 2:]) / 2
+        k_ct = (query_boxes_px[:, :, :2] + query_boxes_px[:, :, 2:]) / 2
         # k_s = ((curr_frame_boxes[:, :, 2:] - curr_frame_boxes[:, :, :2]) ** 2).sum(dim=2)  # n_k
         # nonk boxes are only from previous frame rather than entire window
-        nonk_ct = (prev_frame_boxes[:, :, :2] + prev_frame_boxes[:, :, 2:]) / 2
+        nonk_ct = (nonquery_boxes_px[:, :, :2] + nonquery_boxes_px[:, :, 2:]) / 2
 
         # pairwise euclidean distance in units of pixels
         dist = ((k_ct[:, None, :, :] - nonk_ct[None, :, :, :]) ** 2).sum(dim=-1) ** (

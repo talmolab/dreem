@@ -345,16 +345,11 @@ class Tracker:
         query_frame.add_traj_score("asso_nonquery", asso_nonquery_df)
 
         # get raw bbox coords of prev frame instances from frame.instances_per_frame
-        prev_frame_ind = query_ind - 1
-        prev_frame_instances = frames[prev_frame_ind].instances
-        prev_frame_instance_ids = torch.cat(
-            [instance.pred_track_id for instance in prev_frame_instances], dim=0
-        )
-        prev_frame_boxes = torch.cat(
-            [instance.bbox for instance in prev_frame_instances], dim=0
-        )
-        curr_frame_boxes = torch.cat(
+        query_boxes_px = torch.cat(
             [instance.bbox for instance in query_frame.instances], dim=0
+        )
+        nonquery_boxes_px = torch.cat(
+            [instance.bbox for nonquery_frame in frames if nonquery_frame.frame_id != query_frame.frame_id for instance in nonquery_frame.instances], dim=0
         )
 
         pred_boxes = model_utils.get_boxes(all_instances)
@@ -369,10 +364,6 @@ class Tracker:
         id_inds = (
             unique_ids[None, :] == instance_ids[:, None]
         ).float()  # (n_nonquery, n_traj)
-
-        prev_frame_id_inds = (
-            unique_ids[None, :] == prev_frame_instance_ids[:, None]
-        ).float()  # (n_prev_frame_instances, n_traj)
 
         ################################################################################
 
@@ -445,9 +436,9 @@ class Tracker:
         traj_score = post_processing.filter_max_center_dist(
             traj_score,
             self.max_center_dist,
-            prev_frame_id_inds,
-            curr_frame_boxes,
-            prev_frame_boxes,
+            id_inds,
+            query_boxes_px,
+            nonquery_boxes_px,
         )
 
         if self.max_center_dist is not None and self.max_center_dist > 0:
