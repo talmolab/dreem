@@ -349,7 +349,13 @@ class Tracker:
             [instance.bbox for instance in query_frame.instances], dim=0
         )
         nonquery_boxes_px = torch.cat(
-            [instance.bbox for nonquery_frame in frames if nonquery_frame.frame_id != query_frame.frame_id for instance in nonquery_frame.instances], dim=0
+            [
+                instance.bbox
+                for nonquery_frame in frames
+                if nonquery_frame.frame_id != query_frame.frame_id
+                for instance in nonquery_frame.instances
+            ],
+            dim=0,
         )
 
         pred_boxes = model_utils.get_boxes(all_instances)

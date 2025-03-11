@@ -141,8 +141,7 @@ def filter_max_center_dist(
     """
     if max_center_dist is not None and max_center_dist > 0:
         assert (
-            query_boxes_px is not None
-            and nonquery_boxes_px is not None
+            query_boxes_px is not None and nonquery_boxes_px is not None
         ), "Need `query_boxes_px`, and `nonquery_boxes_px` to filter by `max_center_dist`"
 
         k_ct = (query_boxes_px[:, :, :2] + query_boxes_px[:, :, 2:]) / 2

@@ -213,8 +213,8 @@ def test_post_processing():  # set_default_device
             asso_output=asso_output,
             max_center_dist=0,
             id_inds=id_inds,
-            curr_frame_boxes=k_boxes,
-            prev_frame_boxes=nonk_boxes,
+            query_boxes_px=k_boxes,
+            nonquery_boxes_px=nonk_boxes,
         )
     ).all()
 
@@ -224,8 +224,8 @@ def test_post_processing():  # set_default_device
             asso_output=asso_output,
             max_center_dist=1e-9,
             id_inds=id_inds,
-            curr_frame_boxes=k_boxes,
-            prev_frame_boxes=nonk_boxes,
+            query_boxes_px=k_boxes,
+            nonquery_boxes_px=nonk_boxes,
         )
     ).all()
 
