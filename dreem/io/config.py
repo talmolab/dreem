@@ -492,7 +492,7 @@ class Config:
                 filename=f"{{epoch}}-{{{metric}}}",
                 **checkpoint_params,
             )
-            checkpointer.CHECKPOINT_NAME_LAST = f"{{epoch}}-best-{{{metric}}}"
+            checkpointer.CHECKPOINT_NAME_LAST = f"{{epoch}}-final-{{{metric}}}"
             checkpointers.append(checkpointer)
         return checkpointers
 
