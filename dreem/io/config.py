@@ -486,14 +486,28 @@ class Config:
             )
 
         for metric in monitor:
-            checkpointer = pl.callbacks.ModelCheckpoint(
+            epoch_checkpointer = pl.callbacks.ModelCheckpoint(
                 monitor=metric,
                 dirpath=dirpath,
                 filename=f"{{epoch}}-{{{metric}}}",
                 **checkpoint_params,
             )
-            checkpointer.CHECKPOINT_NAME_LAST = f"{{epoch}}-final-{{{metric}}}"
-            checkpointers.append(checkpointer)
+            epoch_checkpointer.CHECKPOINT_NAME_LAST = f"{{epoch}}-final-{{{metric}}}"
+
+            best_checkpoint_params = {
+                key: val
+                for key, val in checkpoint_params.items()
+                if key != "save_top_k"
+            }
+            best_checkpointer = pl.callbacks.ModelCheckpoint(
+                monitor=metric,
+                dirpath=dirpath,
+                filename=f"{{epoch}}-best-{{{metric}}}",
+                save_top_k=1,
+                **best_checkpoint_params,
+            )
+            checkpointers.append(epoch_checkpointer)
+            checkpointers.append(best_checkpointer)
         return checkpointers
 
     def get_trainer(
