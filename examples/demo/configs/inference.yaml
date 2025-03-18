@@ -1,0 +1,24 @@
+ckpt_path: "../training/models/example/example_train/epoch=0-best-val_sw_cnt=31.06133270263672.ckpt"
+tracker:
+  overlap_thresh: 0.01
+  decay_time: null
+  iou: "mult"
+  max_center_dist: null
+  persistent_tracking: True
+
+dataset:
+  test_dataset:
+    slp_files: ["./data/three_flies.slp"]
+    video_files: ["./data/three_flies.mp4"]
+    chunk: True
+    clip_length: 32
+    anchors: "centroid" # can select this based on the keypoints present in the slp file
+
+dataloader:
+  test_dataloader:
+    shuffle: False
+    num_workers: 0
+trainer:
+  limit_test_batches: 1.0 # fraction of test set to use; set to 1.0 to run inference on the entire dataset
+
+  
