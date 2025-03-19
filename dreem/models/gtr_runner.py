@@ -24,12 +24,12 @@ class GTRRunner(LightningModule):
 
     DEFAULT_METRICS = {
         "train": [],
-        "val": ["num_switches"],
+        "val": [],
         "test": ["num_switches"],
     }
     DEFAULT_TRACKING = {
         "train": False,
-        "val": True,
+        "val": False,
         "test": True,
     }
     DEFAULT_SAVE = {"train": False, "val": False, "test": False}
@@ -188,28 +188,18 @@ class GTRRunner(LightningModule):
                 return None
 
             eval_metrics = self.metrics[mode]
-            persistent_tracking = self.persistent_tracking[mode]
 
             logits = self(instances)
             logits = [asso.matrix for asso in logits]
             loss = self.loss(logits, frames)
 
             return_metrics = {"loss": loss}
-            # if eval_metrics is not None and len(eval_metrics) > 0:
-            #     self.tracker.persistent_tracking = persistent_tracking
-
-            #     frames_pred = self.tracker(self.model, frames)
-
-            #     frames_mm = metrics.to_track_eval(frames_pred)
-            #     clearmot = metrics.get_pymotmetrics(frames_mm, eval_metrics)
-
-            #     return_metrics.update(clearmot.to_dict())
-
-            #     if mode == "test":
-            #         self.test_results["preds"].append(
-            #             [frame.to("cpu") for frame in frames_pred]
-            #         )
-            #         self.test_results["metrics"].append(return_metrics)
+            if mode == "test" and len(eval_metrics) > 0:
+                self.tracker.persistent_tracking = True
+                frames_pred = self.tracker(self.model, frames)
+                self.test_results["preds"].extend(
+                    [frame.to("cpu") for frame in frames_pred]
+                )
             return_metrics["batch_size"] = len(frames)
         except Exception as e:
             logger.exception(
@@ -274,46 +264,55 @@ class GTRRunner(LightningModule):
         gc.collect()
         torch.cuda.empty_cache()
 
-    def on_test_epoch_end(self):
-        """Execute hook for test end.
+    def on_test_end(self):
+        """Run eval pipeline to compute metrics for test set.
 
-        Currently, we save results to an h5py file. and clear the predictions
+        Args:
+            test_results: dict containing predictions and metrics to be filled out in metrics.evaluate
+            metrics: list of metrics to compute
         """
-        fname = self.test_results["save_path"]
-        test_results = {
-            key: val for key, val in self.test_results.items() if key != "save_path"
-        }
-        metrics_dict = [
-            {
-                key: (
-                    val.detach().cpu().numpy() if isinstance(val, torch.Tensor) else val
-                )
-                for key, val in metrics.items()
-            }
-            for metrics in test_results["metrics"]
-        ]
-        results_df = pd.DataFrame(metrics_dict)
-        preds = test_results["preds"]
+        metrics.evaluate(self.test_results, self.metrics["test"])
 
-        with h5py.File(fname, "a") as results_file:
-            for key in results_df.columns:
-                avg_result = results_df[key].mean()
-                results_file.attrs.create(key, avg_result)
-            for i, (metrics, frames) in enumerate(zip(metrics_dict, preds)):
-                vid_name = frames[0].vid_name.split("/")[-1].split(".")[0]
-                vid_group = results_file.require_group(vid_name)
-                clip_group = vid_group.require_group(f"clip_{i}")
-                for key, val in metrics.items():
-                    clip_group.attrs.create(key, val)
-                for frame in frames:
-                    if metrics.get("num_switches", 0) > 0:
-                        _ = frame.to_h5(
-                            clip_group,
-                            frame.get_gt_track_ids().cpu().numpy(),
-                            save={"crop": True, "features": True, "embeddings": True},
-                        )
-                    else:
-                        _ = frame.to_h5(
-                            clip_group, frame.get_gt_track_ids().cpu().numpy()
-                        )
-        self.test_results = {"metrics": [], "preds": [], "save_path": fname}
+    # def on_test_epoch_end(self):
+    #     """Execute hook for test end.
+
+    #     Currently, we save results to an h5py file. and clear the predictions
+    #     """
+    #     fname = self.test_results["save_path"]
+    #     test_results = {
+    #         key: val for key, val in self.test_results.items() if key != "save_path"
+    #     }
+    #     metrics_dict = [
+    #         {
+    #             key: (
+    #                 val.detach().cpu().numpy() if isinstance(val, torch.Tensor) else val
+    #             )
+    #             for key, val in metrics.items()
+    #         }
+    #         for metrics in test_results["metrics"]
+    #     ]
+    #     results_df = pd.DataFrame(metrics_dict)
+    #     preds = test_results["preds"]
+
+    #     with h5py.File(fname, "a") as results_file:
+    #         for key in results_df.columns:
+    #             avg_result = results_df[key].mean()
+    #             results_file.attrs.create(key, avg_result)
+    #         for i, (metrics, frames) in enumerate(zip(metrics_dict, preds)):
+    #             vid_name = frames[0].vid_name.split("/")[-1].split(".")[0]
+    #             vid_group = results_file.require_group(vid_name)
+    #             clip_group = vid_group.require_group(f"clip_{i}")
+    #             for key, val in metrics.items():
+    #                 clip_group.attrs.create(key, val)
+    #             for frame in frames:
+    #                 if metrics.get("num_switches", 0) > 0:
+    #                     _ = frame.to_h5(
+    #                         clip_group,
+    #                         frame.get_gt_track_ids().cpu().numpy(),
+    #                         save={"crop": True, "features": True, "embeddings": True},
+    #                     )
+    #                 else:
+    #                     _ = frame.to_h5(
+    #                         clip_group, frame.get_gt_track_ids().cpu().numpy()
+    #                     )
+    #     self.test_results = {"metrics": [], "preds": [], "save_path": fname}

@@ -106,6 +106,7 @@ def get_switch_count(switches: dict) -> int:
 
 def to_track_eval(frames: list["dreem.io.Frame"]) -> dict:
     """Reformats frames the output from `sliding_inference` to be used by `TrackEval`.
+    Deprecated.
 
     Args:
         frames: A list of Frames. `See dreem.io.data_structures for more info`.
@@ -204,7 +205,7 @@ def to_track_eval(frames: list["dreem.io.Frame"]) -> dict:
 
 def get_track_evals(data: dict, metrics: dict) -> dict:
     """Run track_eval and get mot metrics.
-
+    Deprecated.
     Args:
         data: A dictionary. Example provided below.
         metrics: mot metrics to be computed
@@ -232,74 +233,50 @@ def get_track_evals(data: dict, metrics: dict) -> dict:
         results.update(result)
     return results
 
-
-def get_pymotmetrics(
-    data: dict,
-    metrics: str | tuple = "all",
-    key: str = "tracker_ids",
-    save: str | None = None,
-) -> pd.DataFrame:
-    """Given data and a key, evaluate the predictions.
+def evaluate(test_results, metrics):
+    """Evaluate metrics for a list of frames.
 
     Args:
-        data: A dictionary. Example provided below.
-        key: The key within instances to look for track_ids (can be "gt_ids" or "tracker_ids").
+        test_results: dict containing predictions and metrics to be filled out
+        metrics: list of metrics to compute
+    """
+    preds = test_results["preds"]
+    # create gt/pred df
+    for frame in preds:
+        f = frame
+
+
+def get_pymotmetrics(df):
+    """Get pymotmetrics summary and mot_events.
+
+    Args:
+        df: dataframe with ground truth and predicted centroids matched from match_centroids
 
     Returns:
-        summary: A pandas DataFrame of all the pymot-metrics.
-
-    # --------------------------- An example of data --------------------------- #
-
-    *: number of ids for gt at every frame of the video
-    ^: number of ids for tracker at every frame of the video
-    L: length of video
-
-    data = {
-        "num_gt_ids": total number of unique gt ids,
-        "num_tracker_dets": total number of detections by your detection algorithm,
-        "num_gt_dets": total number of gt detections,
-        "gt_ids": (L, *),  # Ragged np.array
-        "tracker_ids": (L, ^),  # Ragged np.array
-        "similarity_scores": (L, *, ^),  # Ragged np.array
-        "num_timsteps": L,
-    }
+        summary_dreem: Motmetrics summary
+        acc_dreem.mot_events: Frame by frame MOT events log
     """
-    if not isinstance(metrics, str):
-        metrics = [
-            "num_switches" if metric.lower() == "sw_cnt" else metric
-            for metric in metrics
-        ]  # backward compatibility
-    acc = mm.MOTAccumulator(auto_id=True)
+    summary_dreem = {}
+    for frame, framedf in df.groupby('frame_id'):
+        gt_ids = framedf['track_id'].values
+        pred_tracks = framedf['pred_track_id'].values
+        # if no matching preds, fill with nan to let motmetrics handle it
+        if (pred_tracks==-1).all():
+            pred_tracks = np.full(len(gt_ids), np.nan)
 
-    for i in range(len(data["gt_ids"])):
-        acc.update(
-            oids=data["gt_ids"][i],
-            hids=data[key][i],
-            dists=data["similarity_scores"][i],
+        expected_tm_ids = []
+        
+        cost_gt_dreem = np.full((len(gt_ids), len(gt_ids)), np.nan)
+        np.fill_diagonal(cost_gt_dreem, 1)
+        
+        acc_dreem.update(
+            oids=gt_ids,
+            hids=pred_tracks,
+            dists=cost_gt_dreem,
         )
 
+    # get pymotmetrics summary    
     mh = mm.metrics.create()
+    summary_dreem = mh.compute(acc_dreem, name="acc").transpose()
 
-    all_metrics = [
-        metric.split("|")[0] for metric in mh.list_metrics_markdown().split("\n")[2:-1]
-    ]
-
-    if isinstance(metrics, str):
-        metrics_list = all_metrics
-
-    elif isinstance(metrics, Iterable):
-        metrics = [metric.lower() for metric in metrics]
-        metrics_list = [metric for metric in all_metrics if metric.lower() in metrics]
-
-    else:
-        raise TypeError(
-            f"Metrics must either be an iterable of strings or `all` not: {type(metrics)}"
-        )
-
-    summary = mh.compute(acc, metrics=metrics_list, name="acc")
-    summary = summary.transpose()
-
-    if save is not None and save != "":
-        summary.to_csv(save)
-
-    return summary["acc"]
+    return summary_dreem, acc_dreem.mot_events
