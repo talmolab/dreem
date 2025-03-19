@@ -52,7 +52,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     logger.info(f"Computing the following metrics:")
     logger.info(model.metrics["test"])
     model.test_results["save_path"] = eval_cfg.cfg.save_path
-    logger.info(f"Saving results to {model.test_results['save_path']}")
+    logger.info(f"Saving tracking results and metrics to {model.test_results['save_path']}")
 
     labels_files, vid_files = eval_cfg.get_data_paths(eval_cfg.cfg.dataset.test_dataset)
     trainer = eval_cfg.get_trainer()

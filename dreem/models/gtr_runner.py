@@ -11,6 +11,8 @@ from dreem.models import GlobalTrackingTransformer
 from dreem.training.losses import AssoLoss
 from dreem.models.model_utils import init_optimizer, init_scheduler
 from pytorch_lightning import LightningModule
+from datetime import datetime
+from pathlib import Path
 
 
 logger = logging.getLogger("dreem.models")
@@ -56,7 +58,7 @@ class GTRRunner(LightningModule):
             scheduler_cfg: hyperparameters for lr_scheduler used to overwrite `configure_optimizer
             metrics: a dict containing the metrics to be computed during train, val, and test.
             persistent_tracking: a dict containing whether to use persistent tracking during train, val and test inference.
-            test_save_path: path to an .h5 file to save the test results to
+            test_save_path: path to a directory to save the eval and tracking results to
         """
         super().__init__()
         self.save_hyperparameters()
@@ -271,13 +273,32 @@ class GTRRunner(LightningModule):
             test_results: dict containing predictions and metrics to be filled out in metrics.evaluate
             metrics: list of metrics to compute
         """
-        metrics = self.metrics["test"] # list of metrics to compute, or "all"
-        if metrics == "all":
-            metrics = ["num_switches", "global_tracking_accuuracy"]
-        test_metrics = metrics.evaluate(self.test_results, metrics)
-        # test_metrics is a dict with key being the metric, and value being the metric value computed.
-        self.test_results["metrics"] = test_metrics
-        # save the results to an hdf5 file
+        metrics_to_compute = self.metrics["test"] # list of metrics to compute, or "all"
+        if metrics_to_compute == "all":
+            metrics_to_compute = ["num_switches", "global_tracking_accuracy"]
+
+        results = metrics.evaluate(self.test_results["preds"], metrics_to_compute)
+        # results is a dict with key being the metric, and value being the metric value computed
+        self.test_results["metrics"] = results
+
+        # TODO: save the results to an hdf5 file
+
+        pred_slp = []
+        # save the tracking results to a slp file
+        for frame in self.test_results["preds"]:
+            if frame.frame_id.item() == 0:
+                video = (
+                    sio.Video(frame.video)
+                    if isinstance(frame.video, str)
+                    else sio.Video
+                )
+            lf, tracks = frame.to_slp(tracks, video=video)
+            pred_slp.append(lf)
+        pred_slp = sio.Labels(pred_slp)
+        outpath = os.path.join(
+            self.test_results["save_path"], f"{Path(vid_name).stem}.dreem_inference.{datetime.now().strftime("%m-%d-%Y-%H-%M-%S")}.slp"
+        )
+        pred_slp.save(outpath)
 
 
     # def on_test_epoch_end(self):

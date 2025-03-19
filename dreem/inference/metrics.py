@@ -233,11 +233,11 @@ def get_track_evals(data: dict, metrics: dict) -> dict:
         results.update(result)
     return results
 
-def evaluate(test_results, metrics):
+def evaluate(preds, metrics):
     """Evaluate metrics for a list of frames.
 
     Args:
-        test_results: dict containing predictions and metrics to be filled out
+        preds: list of Frame objects with gt and pred track ids
         metrics: list of metrics to compute
 
     Returns:
@@ -247,17 +247,17 @@ def evaluate(test_results, metrics):
         "num_switches": compute_motmetrics,
         "global_tracking_accuracy": compute_global_tracking_accuracy,
     }
-    preds = test_results["preds"]
     list_frame_info = []
+    test_results = {}
 
     # create gt/pred df
     for frame in preds:
         for instance in frame.instances:
-            centroid = np.nanmean(instance.numpy(), axis=0).round()
+            centroid = instance.centroid["centroid"]
             list_frame_info.append({
-                "frame_id": frame.frame_id,
-                "gt_track_id": instance.track_id,
-                "pred_track_id": instance.pred_track_id,
+                "frame_id": frame.frame_id.item(),
+                "gt_track_id": instance.gt_track_id.item(),
+                "pred_track_id": instance.pred_track_id.item(),
                 "centroid_x": centroid[0],
                 "centroid_y": centroid[1]
             })
@@ -266,7 +266,7 @@ def evaluate(test_results, metrics):
 
     for metric in metrics:
         result = metric_fcn_map[metric](df)
-        test_results["metrics"][metric] = result
+        test_results[metric] = result
     
     return test_results
 
@@ -277,23 +277,24 @@ def compute_motmetrics(df):
     Args:
         df: dataframe with ground truth and predicted centroids matched from match_centroids
 
-    Returns:
+    Returns: 
+        Tuple containing:
         summary_dreem: Motmetrics summary
         acc_dreem.mot_events: Frame by frame MOT events log
     """
     summary_dreem = {}
+    acc_dreem = mm.MOTAccumulator(auto_id=True)
+
     for frame, framedf in df.groupby('frame_id'):
-        gt_ids = framedf['track_id'].values
+        gt_ids = framedf['gt_track_id'].values
         pred_tracks = framedf['pred_track_id'].values
         # if no matching preds, fill with nan to let motmetrics handle it
         if (pred_tracks==-1).all():
             pred_tracks = np.full(len(gt_ids), np.nan)
 
         expected_tm_ids = []
-        
         cost_gt_dreem = np.full((len(gt_ids), len(gt_ids)), np.nan)
         np.fill_diagonal(cost_gt_dreem, 1)
-        
         acc_dreem.update(
             oids=gt_ids,
             hids=pred_tracks,
@@ -318,15 +319,16 @@ def compute_global_tracking_accuracy(df):
     """
     # sometimes some gt ids are skipped so track_id.max() > track_id.unique()
     # track_ids are 1-indexed
-    track_confusion_matrix = np.zeros((df.track_id.max() + 1, df.pred_track_id.max() + 1))
+    track_confusion_matrix = np.zeros((df.gt_track_id.max() + 1, df.pred_track_id.max() + 1))
     gt_track_len = {i: 0 for i in range(track_confusion_matrix.shape[0])} # same shape as gt track ids
-    gt_track_len.update(df.track_id.value_counts().to_dict())
+    gt_track_len.update(df.gt_track_id.value_counts().to_dict())
+    gt_track_len_values = list(gt_track_len.values())
     for idx, row in df.iterrows():
         if ~np.isnan(row['gt_track_id']) and ~np.isnan(row['pred_track_id']): 
-            track_confusion_matrix[row['gt_track_id'], row['pred_track_id']] += 1
+            track_confusion_matrix[int(row['gt_track_id']), int(row['pred_track_id'])] += 1
     
-    gta_by_gt_track = (100 * track_confusion_matrix.max(axis=1) / gt_track_len)
+    gta_by_gt_track = (100 * track_confusion_matrix.max(axis=1) / gt_track_len_values)
     # Filter out rows that are all null; this is when gt tracks aren't consecutive but the track confusion matrix still has those rows
-    gta_by_gt_track_filt = gta_by_gt_track[~np.isnan(gta_by_gt_track).all(axis=1)]
+    gta_by_gt_track_filt = gta_by_gt_track[~np.isnan(gta_by_gt_track)]
                         
     return gta_by_gt_track_filt
