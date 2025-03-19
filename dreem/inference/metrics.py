@@ -239,14 +239,39 @@ def evaluate(test_results, metrics):
     Args:
         test_results: dict containing predictions and metrics to be filled out
         metrics: list of metrics to compute
+
+    Returns:
+        A dict of metrics with key being the metric, and value being the metric value computed.
     """
+    metric_fcn_map = {
+        "num_switches": compute_motmetrics,
+        "global_tracking_accuracy": compute_global_tracking_accuracy,
+    }
     preds = test_results["preds"]
+    list_frame_info = []
+
     # create gt/pred df
     for frame in preds:
-        f = frame
+        for instance in frame.instances:
+            centroid = np.nanmean(instance.numpy(), axis=0).round()
+            list_frame_info.append({
+                "frame_id": frame.frame_id,
+                "gt_track_id": instance.track_id,
+                "pred_track_id": instance.pred_track_id,
+                "centroid_x": centroid[0],
+                "centroid_y": centroid[1]
+            })
+
+    df = pd.DataFrame(list_frame_info)
+
+    for metric in metrics:
+        result = metric_fcn_map[metric](df)
+        test_results["metrics"][metric] = result
+    
+    return test_results
 
 
-def get_pymotmetrics(df):
+def compute_motmetrics(df):
     """Get pymotmetrics summary and mot_events.
 
     Args:
@@ -280,3 +305,28 @@ def get_pymotmetrics(df):
     summary_dreem = mh.compute(acc_dreem, name="acc").transpose()
 
     return summary_dreem, acc_dreem.mot_events
+
+
+def compute_global_tracking_accuracy(df):
+    """Compute global tracking accuracy for each ground truth track. Average the results to get overall accuracy.
+
+    Args:
+        df: dataframe with ground truth and predicted centroids and track ids
+
+    Returns:
+        gta_by_gt_track_filt: global tracking accuracy for each ground truth track
+    """
+    # sometimes some gt ids are skipped so track_id.max() > track_id.unique()
+    # track_ids are 1-indexed
+    track_confusion_matrix = np.zeros((df.track_id.max() + 1, df.pred_track_id.max() + 1))
+    gt_track_len = {i: 0 for i in range(track_confusion_matrix.shape[0])} # same shape as gt track ids
+    gt_track_len.update(df.track_id.value_counts().to_dict())
+    for idx, row in df.iterrows():
+        if ~np.isnan(row['gt_track_id']) and ~np.isnan(row['pred_track_id']): 
+            track_confusion_matrix[row['gt_track_id'], row['pred_track_id']] += 1
+    
+    gta_by_gt_track = (100 * track_confusion_matrix.max(axis=1) / gt_track_len)
+    # Filter out rows that are all null; this is when gt tracks aren't consecutive but the track confusion matrix still has those rows
+    gta_by_gt_track_filt = gta_by_gt_track[~np.isnan(gta_by_gt_track).all(axis=1)]
+                        
+    return gta_by_gt_track_filt

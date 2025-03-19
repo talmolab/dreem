@@ -78,7 +78,7 @@ class GTRRunner(LightningModule):
             if persistent_tracking is not None
             else self.DEFAULT_TRACKING
         )
-        self.test_results = {"metrics": [], "preds": [], "save_path": test_save_path}
+        self.test_results = {"metrics": {}, "preds": [], "save_path": test_save_path}
 
     def forward(
         self,
@@ -271,7 +271,14 @@ class GTRRunner(LightningModule):
             test_results: dict containing predictions and metrics to be filled out in metrics.evaluate
             metrics: list of metrics to compute
         """
-        metrics.evaluate(self.test_results, self.metrics["test"])
+        metrics = self.metrics["test"] # list of metrics to compute, or "all"
+        if metrics == "all":
+            metrics = ["num_switches", "global_tracking_accuuracy"]
+        test_metrics = metrics.evaluate(self.test_results, metrics)
+        # test_metrics is a dict with key being the metric, and value being the metric value computed.
+        self.test_results["metrics"] = test_metrics
+        # save the results to an hdf5 file
+
 
     # def on_test_epoch_end(self):
     #     """Execute hook for test end.
