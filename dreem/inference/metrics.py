@@ -284,7 +284,7 @@ def compute_motmetrics(df):
     """
     summary_dreem = {}
     acc_dreem = mm.MOTAccumulator(auto_id=True)
-
+    frame_switch_map = {}
     for frame, framedf in df.groupby('frame_id'):
         gt_ids = framedf['gt_track_id'].values
         pred_tracks = framedf['pred_track_id'].values
@@ -304,8 +304,14 @@ def compute_motmetrics(df):
     # get pymotmetrics summary    
     mh = mm.metrics.create()
     summary_dreem = mh.compute(acc_dreem, name="acc").transpose()
+    
+    for row in acc_dreem.mot_events.iterrows():
+        if row['event'] == 'SWITCH':
+            frame_switch_map[int(row['frame_id'])] = True
+        else:
+            frame_switch_map[int(row['frame_id'])] = False
 
-    return summary_dreem, acc_dreem.mot_events
+    return summary_dreem, acc_dreem.mot_events, frame_switch_map
 
 
 def compute_global_tracking_accuracy(df):

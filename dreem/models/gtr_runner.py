@@ -5,6 +5,7 @@ import gc
 import logging
 import pandas as pd
 import h5py
+import os
 from dreem.inference import Tracker
 from dreem.inference import metrics
 from dreem.models import GlobalTrackingTransformer
@@ -267,7 +268,7 @@ class GTRRunner(LightningModule):
         torch.cuda.empty_cache()
 
     def on_test_end(self):
-        """Run eval pipeline to compute metrics for test set.
+        """Run inference and metrics pipeline to compute metrics for test set.
 
         Args:
             test_results: dict containing predictions and metrics to be filled out in metrics.evaluate
@@ -276,16 +277,57 @@ class GTRRunner(LightningModule):
         metrics_to_compute = self.metrics["test"] # list of metrics to compute, or "all"
         if metrics_to_compute == "all":
             metrics_to_compute = ["num_switches", "global_tracking_accuracy"]
+        preds = self.test_results["preds"]
 
-        results = metrics.evaluate(self.test_results["preds"], metrics_to_compute)
-        # results is a dict with key being the metric, and value being the metric value computed
-        self.test_results["metrics"] = results
+        # results is a dict with key being the metric name, and value being the metric value computed
+        results = metrics.evaluate(preds, metrics_to_compute)
+        
+        # Get the video name from the first frame
+        vid_name = preds[0].vid_name
+        # save the results to an hdf5 file
+        fname = os.path.join(
+            self.test_results["save_path"], f"{Path(vid_name).stem}.dreem_metrics.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.h5"
+        )
+        print(f"Saving metrics to {fname}")
+        with h5py.File(fname, "a") as results_file:
+            # Create a group for this video
+            vid_group = results_file.require_group(vid_name)
+            
+            # Save each metric
+            for metric_name, value in results.items():
+                if metric_name == "num_switches":
+                    # For num_switches, save mot_summary and mot_events separately
+                    mot_summary = value[0]
+                    mot_events = value[1]
+                    frame_switch_map = value[2]
+                    # Convert DataFrames to format that can be stored in h5
+                    vid_group.create_dataset("mot_summary", data=mot_summary.to_records())
+                    vid_group.create_dataset("mot_events", data=mot_events.to_records())
+                    # save extra metadata for frames in which there is a switch
+                    for frame_id, switch in frame_switch_map.items():
+                        frame = preds[frame_id]
+                        if switch:
+                            _ = frame.to_h5(
+                                vid_group,
+                                frame.get_gt_track_ids().cpu().numpy(),
+                                save={"crop": True, "features": True, "embeddings": True},
+                            )
+                        else:
+                            _ = frame.to_h5(
+                                vid_group, frame.get_gt_track_ids().cpu().numpy()
+                            )
 
-        # TODO: save the results to an hdf5 file
+                elif metric_name == "global_tracking_accuracy":
+                    # For global_tracking_accuracy, save the numpy array directly
+                    vid_group.create_dataset("global_tracking_accuracy", data=value)
 
         pred_slp = []
+        outpath = os.path.join(
+            self.test_results["save_path"], f"{Path(vid_name).stem}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp"
+        )
+        print(f"Saving inference results to {outpath}")
         # save the tracking results to a slp file
-        for frame in self.test_results["preds"]:
+        for frame in preds:
             if frame.frame_id.item() == 0:
                 video = (
                     sio.Video(frame.video)
@@ -295,9 +337,7 @@ class GTRRunner(LightningModule):
             lf, tracks = frame.to_slp(tracks, video=video)
             pred_slp.append(lf)
         pred_slp = sio.Labels(pred_slp)
-        outpath = os.path.join(
-            self.test_results["save_path"], f"{Path(vid_name).stem}.dreem_inference.{datetime.now().strftime("%m-%d-%Y-%H-%M-%S")}.slp"
-        )
+        
         pred_slp.save(outpath)
 
 
