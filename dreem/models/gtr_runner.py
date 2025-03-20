@@ -380,47 +380,4 @@ class GTRRunner(LightningModule):
         pred_slp = sio.Labels(pred_slp)
 
         pred_slp.save(outpath)
-
-    # def on_test_epoch_end(self):
-    #     """Execute hook for test end.
-
-    #     Currently, we save results to an h5py file. and clear the predictions
-    #     """
-    #     fname = self.test_results["save_path"]
-    #     test_results = {
-    #         key: val for key, val in self.test_results.items() if key != "save_path"
-    #     }
-    #     metrics_dict = [
-    #         {
-    #             key: (
-    #                 val.detach().cpu().numpy() if isinstance(val, torch.Tensor) else val
-    #             )
-    #             for key, val in metrics.items()
-    #         }
-    #         for metrics in test_results["metrics"]
-    #     ]
-    #     results_df = pd.DataFrame(metrics_dict)
-    #     preds = test_results["preds"]
-
-    #     with h5py.File(fname, "a") as results_file:
-    #         for key in results_df.columns:
-    #             avg_result = results_df[key].mean()
-    #             results_file.attrs.create(key, avg_result)
-    #         for i, (metrics, frames) in enumerate(zip(metrics_dict, preds)):
-    #             vid_name = frames[0].vid_name.split("/")[-1].split(".")[0]
-    #             vid_group = results_file.require_group(vid_name)
-    #             clip_group = vid_group.require_group(f"clip_{i}")
-    #             for key, val in metrics.items():
-    #                 clip_group.attrs.create(key, val)
-    #             for frame in frames:
-    #                 if metrics.get("num_switches", 0) > 0:
-    #                     _ = frame.to_h5(
-    #                         clip_group,
-    #                         frame.get_gt_track_ids().cpu().numpy(),
-    #                         save={"crop": True, "features": True, "embeddings": True},
-    #                     )
-    #                 else:
-    #                     _ = frame.to_h5(
-    #                         clip_group, frame.get_gt_track_ids().cpu().numpy()
-    #                     )
-    #     self.test_results = {"metrics": [], "preds": [], "save_path": fname}
+        
