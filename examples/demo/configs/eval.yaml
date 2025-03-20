@@ -1,0 +1,26 @@
+ckpt_path:
+tracker:
+  overlap_thresh: 0.01
+  decay_time: null
+  iou: "mult"
+  max_tracks: 2
+  max_center_dist: null
+  persistent_tracking: True
+save_path: "./eval"
+metrics:
+    test: "all" # possible values are "all", or a list of metrics to compute out of ["motmetrics", "global_tracking_accuracy"]
+dataset:
+  test_dataset:
+    slp_files: ["./data/test/GT_190719_090330_wt_18159206_rig1.2@15000-17560.slp"]
+    video_files: ["./data/test/190719_090330_wt_18159206_rig1.2@15000-17560.mp4"]
+    chunk: True
+    clip_length: 32
+    anchors: "centroid" # can select this based on the keypoints present in the slp file
+    mode: "test"
+dataloader:
+  test_dataloader:
+    shuffle: False
+    num_workers: 0
+trainer:
+    limit_test_batches: 1.0
+  
