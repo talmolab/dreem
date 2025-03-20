@@ -233,6 +233,7 @@ def get_track_evals(data: dict, metrics: dict) -> dict:
         results.update(result)
     return results
 
+
 def evaluate(preds, metrics):
     """Evaluate metrics for a list of frames.
 
@@ -254,20 +255,22 @@ def evaluate(preds, metrics):
     for frame in preds:
         for instance in frame.instances:
             centroid = instance.centroid["centroid"]
-            list_frame_info.append({
-                "frame_id": frame.frame_id.item(),
-                "gt_track_id": instance.gt_track_id.item(),
-                "pred_track_id": instance.pred_track_id.item(),
-                "centroid_x": centroid[0],
-                "centroid_y": centroid[1]
-            })
+            list_frame_info.append(
+                {
+                    "frame_id": frame.frame_id.item(),
+                    "gt_track_id": instance.gt_track_id.item(),
+                    "pred_track_id": instance.pred_track_id.item(),
+                    "centroid_x": centroid[0],
+                    "centroid_y": centroid[1],
+                }
+            )
 
     df = pd.DataFrame(list_frame_info)
 
     for metric in metrics:
         result = metric_fcn_map[metric](df)
         test_results[metric] = result
-    
+
     return test_results
 
 
@@ -277,7 +280,7 @@ def compute_motmetrics(df):
     Args:
         df: dataframe with ground truth and predicted centroids matched from match_centroids
 
-    Returns: 
+    Returns:
         Tuple containing:
         summary_dreem: Motmetrics summary
         acc_dreem.mot_events: Frame by frame MOT events log
@@ -285,11 +288,11 @@ def compute_motmetrics(df):
     summary_dreem = {}
     acc_dreem = mm.MOTAccumulator(auto_id=True)
     frame_switch_map = {}
-    for frame, framedf in df.groupby('frame_id'):
-        gt_ids = framedf['gt_track_id'].values
-        pred_tracks = framedf['pred_track_id'].values
+    for frame, framedf in df.groupby("frame_id"):
+        gt_ids = framedf["gt_track_id"].values
+        pred_tracks = framedf["pred_track_id"].values
         # if no matching preds, fill with nan to let motmetrics handle it
-        if (pred_tracks==-1).all():
+        if (pred_tracks == -1).all():
             pred_tracks = np.full(len(gt_ids), np.nan)
 
         expected_tm_ids = []
@@ -301,15 +304,15 @@ def compute_motmetrics(df):
             dists=cost_gt_dreem,
         )
 
-    # get pymotmetrics summary    
+    # get pymotmetrics summary
     mh = mm.metrics.create()
     summary_dreem = mh.compute(acc_dreem, name="acc").transpose()
     motevents = acc_dreem.mot_events.reset_index()
     for idx, row in motevents.iterrows():
-        if row['Type'] == 'SWITCH':
-            frame_switch_map[int(row['FrameId'])] = True
+        if row["Type"] == "SWITCH":
+            frame_switch_map[int(row["FrameId"])] = True
         else:
-            frame_switch_map[int(row['FrameId'])] = False
+            frame_switch_map[int(row["FrameId"])] = False
 
     return summary_dreem, motevents, frame_switch_map
 
@@ -323,23 +326,25 @@ def compute_global_tracking_accuracy(df):
     Returns:
         gta_by_gt_track_filt: global tracking accuracy for each ground truth track
     """
-    # sometimes some gt ids are skipped so track_id.max() > track_id.unique()
-    # track_ids are 1-indexed
     track_confusion_dict = {i: [] for i in df.gt_track_id.unique()}
     gt_track_len = df.gt_track_id.value_counts().to_dict()
     gta_by_gt_track = {}
-    
+
     for idx, row in df.iterrows():
-        if ~np.isnan(row['gt_track_id']) and ~np.isnan(row['pred_track_id']): 
-            track_confusion_dict[int(row['gt_track_id'])].append(int(row['pred_track_id']))
-    
+        if ~np.isnan(row["gt_track_id"]) and ~np.isnan(row["pred_track_id"]):
+            track_confusion_dict[int(row["gt_track_id"])].append(
+                int(row["pred_track_id"])
+            )
+
     for gt_track_id, pred_track_ids in track_confusion_dict.items():
         # Use numpy's mode function to find the most common predicted track ID
         if pred_track_ids:
             # Get the most frequent prediction using numpy's mode
             most_common_pred, count = np.unique(pred_track_ids, return_counts=True)
-            gta_by_gt_track[gt_track_id] = np.max(count) / float(gt_track_len[gt_track_id])
+            gta_by_gt_track[gt_track_id] = np.max(count) / float(
+                gt_track_len[gt_track_id]
+            )
         else:
             gta_by_gt_track[gt_track_id] = 0
-                        
+
     return gta_by_gt_track

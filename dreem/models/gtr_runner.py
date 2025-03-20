@@ -18,6 +18,7 @@ import sleap_io as sio
 
 logger = logging.getLogger("dreem.models")
 
+
 class GTRRunner(LightningModule):
     """A lightning wrapper around GTR model.
 
@@ -274,14 +275,18 @@ class GTRRunner(LightningModule):
             metrics: list of metrics to compute
         """
         # input validation
-        metrics_to_compute = self.metrics["test"] # list of metrics to compute, or "all"
+        metrics_to_compute = self.metrics[
+            "test"
+        ]  # list of metrics to compute, or "all"
         if metrics_to_compute == "all":
             metrics_to_compute = ["num_switches", "global_tracking_accuracy"]
         if isinstance(metrics_to_compute, str):
             metrics_to_compute = [metrics_to_compute]
         for metric in metrics_to_compute:
             if metric not in ["num_switches", "global_tracking_accuracy"]:
-                raise ValueError(f"Metric {metric} not supported. Please select from 'num_switches' or 'global_tracking_accuracy'")
+                raise ValueError(
+                    f"Metric {metric} not supported. Please select from 'num_switches' or 'global_tracking_accuracy'"
+                )
 
         preds = self.test_results["preds"]
 
@@ -289,7 +294,7 @@ class GTRRunner(LightningModule):
         results = metrics.evaluate(preds, metrics_to_compute)
 
         # save metrics and frame metadata to hdf5
-        
+
         # Get the video name from the first frame
         vid_name = Path(preds[0].vid_name).stem
         # save the results to an hdf5 file
@@ -302,8 +307,10 @@ class GTRRunner(LightningModule):
         original_fname = fname
         while os.path.exists(fname):
             suffix_counter += 1
-            fname = original_fname.replace(".dreem_metrics.h5", f"_{suffix_counter}.dreem_metrics.h5")
-        
+            fname = original_fname.replace(
+                ".dreem_metrics.h5", f"_{suffix_counter}.dreem_metrics.h5"
+            )
+
         if suffix_counter > 0:
             print(f"File already exists. Saving to {fname} instead")
 
@@ -328,14 +335,20 @@ class GTRRunner(LightningModule):
                             _ = frame.to_h5(
                                 vid_group,
                                 frame.get_gt_track_ids().cpu().numpy(),
-                                save={"crop": True, "features": True, "embeddings": True},
+                                save={
+                                    "crop": True,
+                                    "features": True,
+                                    "embeddings": True,
+                                },
                             )
                         else:
                             _ = frame.to_h5(
                                 vid_group, frame.get_gt_track_ids().cpu().numpy()
                             )
                     # save motevents log to csv
-                    motevents_path = os.path.join(self.test_results["save_path"], f"{vid_name}.motevents.csv")
+                    motevents_path = os.path.join(
+                        self.test_results["save_path"], f"{vid_name}.motevents.csv"
+                    )
                     print(f"Saving motevents log to {motevents_path}")
                     mot_events.to_csv(motevents_path, index=False)
 
@@ -345,11 +358,12 @@ class GTRRunner(LightningModule):
                     # save as a key value pair with gt track id: gta
                     for gt_track_id, gta in gta_by_gt_track.items():
                         gta_group.attrs[f"track_{gt_track_id}"] = gta
-        
+
         # save the tracking results to a slp file
         pred_slp = []
         outpath = os.path.join(
-            self.test_results["save_path"], f"{vid_name}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp"
+            self.test_results["save_path"],
+            f"{vid_name}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp",
         )
         print(f"Saving inference results to {outpath}")
         # save the tracking results to a slp file
@@ -364,9 +378,8 @@ class GTRRunner(LightningModule):
             lf, tracks = frame.to_slp(tracks, video=video)
             pred_slp.append(lf)
         pred_slp = sio.Labels(pred_slp)
-        
-        pred_slp.save(outpath)
 
+        pred_slp.save(outpath)
 
     # def on_test_epoch_end(self):
     #     """Execute hook for test end.
