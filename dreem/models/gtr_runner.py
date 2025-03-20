@@ -5,15 +5,21 @@ import gc
 import logging
 import pandas as pd
 import h5py
+import os
 from dreem.inference import Tracker
 from dreem.inference import metrics
 from dreem.models import GlobalTrackingTransformer
 from dreem.training.losses import AssoLoss
 from dreem.models.model_utils import init_optimizer, init_scheduler
 from pytorch_lightning import LightningModule
-
+from datetime import datetime
+from pathlib import Path
+import sleap_io as sio
 
 logger = logging.getLogger("dreem.models")
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    logger.addHandler(handler)
 
 
 class GTRRunner(LightningModule):
@@ -24,12 +30,12 @@ class GTRRunner(LightningModule):
 
     DEFAULT_METRICS = {
         "train": [],
-        "val": ["num_switches"],
-        "test": ["num_switches"],
+        "val": [],
+        "test": ["num_switches", "global_tracking_accuracy"],
     }
     DEFAULT_TRACKING = {
         "train": False,
-        "val": True,
+        "val": False,
         "test": True,
     }
     DEFAULT_SAVE = {"train": False, "val": False, "test": False}
@@ -56,7 +62,7 @@ class GTRRunner(LightningModule):
             scheduler_cfg: hyperparameters for lr_scheduler used to overwrite `configure_optimizer
             metrics: a dict containing the metrics to be computed during train, val, and test.
             persistent_tracking: a dict containing whether to use persistent tracking during train, val and test inference.
-            test_save_path: path to an .h5 file to save the test results to
+            test_save_path: path to a directory to save the eval and tracking results to
         """
         super().__init__()
         self.save_hyperparameters()
@@ -78,7 +84,7 @@ class GTRRunner(LightningModule):
             if persistent_tracking is not None
             else self.DEFAULT_TRACKING
         )
-        self.test_results = {"metrics": [], "preds": [], "save_path": test_save_path}
+        self.test_results = {"preds": [], "save_path": test_save_path}
 
     def forward(
         self,
@@ -188,28 +194,18 @@ class GTRRunner(LightningModule):
                 return None
 
             eval_metrics = self.metrics[mode]
-            persistent_tracking = self.persistent_tracking[mode]
 
             logits = self(instances)
             logits = [asso.matrix for asso in logits]
             loss = self.loss(logits, frames)
 
             return_metrics = {"loss": loss}
-            # if eval_metrics is not None and len(eval_metrics) > 0:
-            #     self.tracker.persistent_tracking = persistent_tracking
-
-            #     frames_pred = self.tracker(self.model, frames)
-
-            #     frames_mm = metrics.to_track_eval(frames_pred)
-            #     clearmot = metrics.get_pymotmetrics(frames_mm, eval_metrics)
-
-            #     return_metrics.update(clearmot.to_dict())
-
-            #     if mode == "test":
-            #         self.test_results["preds"].append(
-            #             [frame.to("cpu") for frame in frames_pred]
-            #         )
-            #         self.test_results["metrics"].append(return_metrics)
+            if mode == "test":
+                self.tracker.persistent_tracking = True
+                frames_pred = self.tracker(self.model, frames)
+                self.test_results["preds"].extend(
+                    [frame.to("cpu") for frame in frames_pred]
+                )
             return_metrics["batch_size"] = len(frames)
         except Exception as e:
             logger.exception(
@@ -274,46 +270,118 @@ class GTRRunner(LightningModule):
         gc.collect()
         torch.cuda.empty_cache()
 
-    def on_test_epoch_end(self):
-        """Execute hook for test end.
+    def on_test_end(self):
+        """Run inference and metrics pipeline to compute metrics for test set.
 
-        Currently, we save results to an h5py file. and clear the predictions
+        Args:
+            test_results: dict containing predictions and metrics to be filled out in metrics.evaluate
+            metrics: list of metrics to compute
         """
-        fname = self.test_results["save_path"]
-        test_results = {
-            key: val for key, val in self.test_results.items() if key != "save_path"
-        }
-        metrics_dict = [
-            {
-                key: (
-                    val.detach().cpu().numpy() if isinstance(val, torch.Tensor) else val
+        # input validation
+        metrics_to_compute = self.metrics[
+            "test"
+        ]  # list of metrics to compute, or "all"
+        if metrics_to_compute == "all":
+            metrics_to_compute = ["motmetrics", "global_tracking_accuracy"]
+        if isinstance(metrics_to_compute, str):
+            metrics_to_compute = [metrics_to_compute]
+        for metric in metrics_to_compute:
+            if metric not in ["motmetrics", "global_tracking_accuracy"]:
+                raise ValueError(
+                    f"Metric {metric} not supported. Please select from 'motmetrics' or 'global_tracking_accuracy'"
                 )
-                for key, val in metrics.items()
-            }
-            for metrics in test_results["metrics"]
-        ]
-        results_df = pd.DataFrame(metrics_dict)
-        preds = test_results["preds"]
+
+        preds = self.test_results["preds"]
+
+        # results is a dict with key being the metric name, and value being the metric value computed
+        results = metrics.evaluate(preds, metrics_to_compute)
+
+        # save metrics and frame metadata to hdf5
+
+        # Get the video name from the first frame
+        vid_name = Path(preds[0].vid_name).stem
+        # save the results to an hdf5 file
+        fname = os.path.join(
+            self.test_results["save_path"], f"{vid_name}.dreem_metrics.h5"
+        )
+        logger.info(f"Saving metrics to {fname}")
+        # Check if the h5 file exists and add a suffix to prevent name collision
+        suffix_counter = 0
+        original_fname = fname
+        while os.path.exists(fname):
+            suffix_counter += 1
+            fname = original_fname.replace(
+                ".dreem_metrics.h5", f"_{suffix_counter}.dreem_metrics.h5"
+            )
+
+        if suffix_counter > 0:
+            logger.info(f"File already exists. Saving to {fname} instead")
 
         with h5py.File(fname, "a") as results_file:
-            for key in results_df.columns:
-                avg_result = results_df[key].mean()
-                results_file.attrs.create(key, avg_result)
-            for i, (metrics, frames) in enumerate(zip(metrics_dict, preds)):
-                vid_name = frames[0].vid_name.split("/")[-1].split(".")[0]
-                vid_group = results_file.require_group(vid_name)
-                clip_group = vid_group.require_group(f"clip_{i}")
-                for key, val in metrics.items():
-                    clip_group.attrs.create(key, val)
-                for frame in frames:
-                    if metrics.get("num_switches", 0) > 0:
-                        _ = frame.to_h5(
-                            clip_group,
-                            frame.get_gt_track_ids().cpu().numpy(),
-                            save={"crop": True, "features": True, "embeddings": True},
-                        )
-                    else:
-                        _ = frame.to_h5(
-                            clip_group, frame.get_gt_track_ids().cpu().numpy()
-                        )
-        self.test_results = {"metrics": [], "preds": [], "save_path": fname}
+            # Create a group for this video
+            vid_group = results_file.require_group(vid_name)
+            # Save each metric
+            for metric_name, value in results.items():
+                if metric_name == "motmetrics":
+                    # For num_switches, save mot_summary and mot_events separately
+                    mot_summary = value[0]
+                    mot_events = value[1]
+                    frame_switch_map = value[2]
+                    mot_summary_group = vid_group.require_group("mot_summary")
+                    # Loop through each row in mot_summary and save as attributes
+                    for _, row in mot_summary.iterrows():
+                        mot_summary_group.attrs[row.name] = row["acc"]
+                    # save extra metadata for frames in which there is a switch
+                    for frame_id, switch in frame_switch_map.items():
+                        frame = preds[frame_id]
+                        if switch:
+                            _ = frame.to_h5(
+                                vid_group,
+                                frame.get_gt_track_ids().cpu().numpy(),
+                                save={
+                                    "crop": True,
+                                    "features": True,
+                                    "embeddings": True,
+                                },
+                            )
+                        else:
+                            _ = frame.to_h5(
+                                vid_group, frame.get_gt_track_ids().cpu().numpy()
+                            )
+                    # save motevents log to csv
+                    motevents_path = os.path.join(
+                        self.test_results["save_path"], f"{vid_name}.motevents.csv"
+                    )
+                    logger.info(f"Saving motevents log to {motevents_path}")
+                    mot_events.to_csv(motevents_path, index=False)
+
+                elif metric_name == "global_tracking_accuracy":
+                    gta_by_gt_track = value
+                    gta_group = vid_group.require_group("global_tracking_accuracy")
+                    # save as a key value pair with gt track id: gta
+                    for gt_track_id, gta in gta_by_gt_track.items():
+                        gta_group.attrs[f"track_{gt_track_id}"] = gta
+
+        # save the tracking results to a slp file
+        pred_slp = []
+        outpath = os.path.join(
+            self.test_results["save_path"],
+            f"{vid_name}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp",
+        )
+        logger.info(f"Saving inference results to {outpath}")
+        # save the tracking results to a slp file
+        tracks = {}
+        for frame in preds:
+            if frame.frame_id.item() == 0:
+                video = (
+                    sio.Video(frame.video)
+                    if isinstance(frame.video, str)
+                    else sio.Video
+                )
+            lf, tracks = frame.to_slp(tracks, video=video)
+            pred_slp.append(lf)
+        pred_slp = sio.Labels(pred_slp)
+
+        pred_slp.save(outpath)
+        # clear the preds
+        self.test_results["preds"] = []

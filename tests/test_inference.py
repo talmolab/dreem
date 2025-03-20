@@ -234,36 +234,30 @@ def test_metrics():
     """Test basic GTR Runner."""
     num_frames = 3
     num_detected = 3
-    n_batches = 1
-    batches = []
+    metrics_to_compute = ["motmetrics", "global_tracking_accuracy"]
 
-    for i in range(n_batches):
-        frames_pred = []
-        for j in range(num_frames):
-            instances_pred = []
-            for k in range(num_detected):
-                bboxes = torch.tensor(np.random.uniform(size=(num_detected, 4)))
-                bboxes[:, -2:] += 1
-                instances_pred.append(
-                    Instance(gt_track_id=k, pred_track_id=k, bbox=torch.randn((1, 4)))
-                )
-            frames_pred.append(Frame(video_id=0, frame_id=j, instances=instances_pred))
-        batches.append(frames_pred)
+    frames_pred = []
+    for i in range(num_frames):
+        instances_pred = []
+        for k in range(num_detected):
+            bboxes = torch.tensor(np.random.uniform(size=(num_detected, 4)))
+            bboxes[:, -2:] += 1
+            instances_pred.append(
+                Instance(gt_track_id=k, pred_track_id=k, bbox=torch.randn((1, 4)))
+            )
+        frames_pred.append(Frame(video_id=0, frame_id=i, instances=instances_pred))
 
-    for batch in batches:
-        instances_mm = metrics.to_track_eval(batch)
-        clear_mot = metrics.get_pymotmetrics(instances_mm)
+    results = metrics.evaluate(frames_pred, metrics_to_compute)
+    for metric_name, value in results.items():
+        if metric_name == "motmetrics":
+            mot_summary = value[0]
+            switch_count = mot_summary.loc["num_switches"].values[0]
+        elif metric_name == "global_tracking_accuracy":
+            gta_by_gt_track = value
+            overall_gta = np.mean(np.array(list(gta_by_gt_track.values())))
 
-        matches, indices, _ = metrics.get_matches(batch)
-
-        switches = metrics.get_switches(matches, indices)
-
-        sw_cnt = metrics.get_switch_count(switches)
-
-        assert sw_cnt == clear_mot["num_switches"] == 0, (
-            sw_cnt,
-            clear_mot["num_switches"],
-        )
+    assert switch_count == 0
+    assert 0 < overall_gta <= 1
 
 
 def get_ckpt(ckpt_path: str):

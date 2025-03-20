@@ -9,12 +9,9 @@ from typing import Iterable
 
 logger = logging.getLogger("dreem.inference")
 
-# from dreem.inference.post_processing import _pairwise_iou
-# from dreem.inference.boxes import Boxes
-
 
 def get_matches(frames: list["dreem.io.Frame"]) -> tuple[dict, list, int]:
-    """Get comparison between predicted and gt trajectory labels.
+    """Get comparison between predicted and gt trajectory labels. Deprecated.
 
     Args:
         frames: a list of Frames containing the video_id, frame_id,
@@ -48,7 +45,7 @@ def get_matches(frames: list["dreem.io.Frame"]) -> tuple[dict, list, int]:
 
 
 def get_switches(matches: dict, indices: list) -> dict:
-    """Get misassigned predicted trajectory labels.
+    """Get misassigned predicted trajectory labels. Deprecated.
 
     Args:
         matches: a dict containing the gt and predicted labels
@@ -90,7 +87,7 @@ def get_switches(matches: dict, indices: list) -> dict:
 
 
 def get_switch_count(switches: dict) -> int:
-    """Get the number of mislabeled predicted trajectories.
+    """Get the number of mislabeled predicted trajectories. Deprecated.
 
     Args:
         switches: a dict of dicts containing the mislabeled trajectories
@@ -104,202 +101,117 @@ def get_switch_count(switches: dict) -> int:
     return sw_cnt
 
 
-def to_track_eval(frames: list["dreem.io.Frame"]) -> dict:
-    """Reformats frames the output from `sliding_inference` to be used by `TrackEval`.
+def evaluate(preds, metrics):
+    """Evaluate metrics for a list of frames.
 
     Args:
-        frames: A list of Frames. `See dreem.io.data_structures for more info`.
+        preds: list of Frame objects with gt and pred track ids
+        metrics: list of metrics to compute
 
     Returns:
-        data: A dictionary. Example provided below.
-
-    # --------------------------- An example of data --------------------------- #
-
-    *: number of ids for gt at every frame of the video
-    ^: number of ids for tracker at every frame of the video
-    L: length of video
-
-    data = {
-        "num_gt_ids": total number of unique gt ids,
-        "num_tracker_dets": total number of detections by your detection algorithm,
-        "num_gt_dets": total number of gt detections,
-        "gt_ids": (L, *),  # Ragged np.array
-        "tracker_ids": (L, ^),  # Ragged np.array
-        "similarity_scores": (L, *, ^),  # Ragged np.array
-        "num_timesteps": L,
-    }
+        A dict of metrics with key being the metric, and value being the metric value computed.
     """
-    unique_gt_ids = []
-    num_tracker_dets = 0
-    num_gt_dets = 0
-    gt_ids = []
-    track_ids = []
-    similarity_scores = []
+    metric_fcn_map = {
+        "motmetrics": compute_motmetrics,
+        "global_tracking_accuracy": compute_global_tracking_accuracy,
+    }
+    list_frame_info = []
+    test_results = {}
 
-    data = {}
-    cos_sim = torch.nn.CosineSimilarity()
+    # create gt/pred df
+    for frame in preds:
+        for instance in frame.instances:
+            centroid = instance.centroid["centroid"]
+            list_frame_info.append(
+                {
+                    "frame_id": frame.frame_id.item(),
+                    "gt_track_id": instance.gt_track_id.item(),
+                    "pred_track_id": instance.pred_track_id.item(),
+                    "centroid_x": centroid[0],
+                    "centroid_y": centroid[1],
+                }
+            )
 
-    for fidx, frame in enumerate(frames):
-        gt_track_ids = frame.get_gt_track_ids().cpu().numpy().tolist()
-        pred_track_ids = frame.get_pred_track_ids().cpu().numpy().tolist()
-        # boxes = Boxes(frame.get_bboxes().cpu())
+    df = pd.DataFrame(list_frame_info)
 
-        gt_ids.append(np.array(gt_track_ids))
-        track_ids.append(np.array(pred_track_ids))
+    for metric in metrics:
+        result = metric_fcn_map[metric](df)
+        test_results[metric] = result
 
-        num_tracker_dets += len(pred_track_ids)
-        num_gt_dets += len(gt_track_ids)
-
-        if not set(gt_track_ids).issubset(set(unique_gt_ids)):
-            unique_gt_ids.extend(list(set(gt_track_ids).difference(set(unique_gt_ids))))
-
-        # eval_matrix = _pairwise_iou(boxes, boxes)
-        eval_matrix = np.full((len(gt_track_ids), len(pred_track_ids)), np.nan)
-
-        for i, feature_i in enumerate(frame.get_features()):
-            for j, feature_j in enumerate(frame.get_features()):
-                eval_matrix[i][j] = cos_sim(
-                    feature_i.unsqueeze(0), feature_j.unsqueeze(0)
-                )
-
-        # eval_matrix
-        #                      pred_track_ids
-        #                            0        1
-        #  gt_track_ids    1        ...      ...
-        #                  0        ...      ...
-        #
-        # Since the order of both gt_track_ids and pred_track_ids matter (maps from pred to gt),
-        # we know the diagonal is the important part. E.g. gt_track_ids=1 maps to pred_track_ids=0
-        # and gt_track_ids=0 maps to pred_track_ids=1 because they are ordered in that way.
-
-        # Based on assumption that eval_matrix is always a square matrix.
-        # This is true because we are using ground-truth detections.
-        #
-        # - The number of predicted tracks for a frame will always be the same number
-        # of ground truth tracks for a frame.
-        # - The number of predicted and ground truth detections will always be the same
-        # for any frame.
-        # - Because we map detections to features one-to-one, there will always be the same
-        # number of features for both predicted and ground truth for any frame.
-
-        # Mask upper and lower triangles of the square matrix (set to 0).
-        eval_matrix = np.triu(np.tril(eval_matrix))
-
-        # Replace the 0s with np.nans.
-        i, j = np.where(eval_matrix == 0)
-        eval_matrix[i, j] = np.nan
-
-        similarity_scores.append(eval_matrix)
-
-    data["num_gt_ids"] = len(unique_gt_ids)
-    data["num_tracker_dets"] = num_tracker_dets
-    data["num_gt_dets"] = num_gt_dets
-    data["gt_ids"] = gt_ids
-    data["tracker_ids"] = track_ids
-    data["similarity_scores"] = similarity_scores
-    data["num_timesteps"] = len(frames)
-
-    return data
+    return test_results
 
 
-def get_track_evals(data: dict, metrics: dict) -> dict:
-    """Run track_eval and get mot metrics.
+def compute_motmetrics(df):
+    """Get pymotmetrics summary and mot_events.
 
     Args:
-        data: A dictionary. Example provided below.
-        metrics: mot metrics to be computed
-    Returns:
-        A dictionary with key being the metric, and value being the metric value computed.
-    # --------------------------- An example of data --------------------------- #
-
-    *: number of ids for gt at every frame of the video
-    ^: number of ids for tracker at every frame of the video
-    L: length of video
-
-    data = {
-        "num_gt_ids": total number of unique gt ids,
-        "num_tracker_dets": total number of detections by your detection algorithm,
-        "num_gt_dets": total number of gt detections,
-        "gt_ids": (L, *),  # Ragged np.array
-        "tracker_ids": (L, ^),  # Ragged np.array
-        "similarity_scores": (L, *, ^),  # Ragged np.array
-        "num_timsteps": L,
-    }
-    """
-    results = {}
-    for metric_name, metric in metrics.items():
-        result = metric.eval_sequence(data)
-        results.update(result)
-    return results
-
-
-def get_pymotmetrics(
-    data: dict,
-    metrics: str | tuple = "all",
-    key: str = "tracker_ids",
-    save: str | None = None,
-) -> pd.DataFrame:
-    """Given data and a key, evaluate the predictions.
-
-    Args:
-        data: A dictionary. Example provided below.
-        key: The key within instances to look for track_ids (can be "gt_ids" or "tracker_ids").
+        df: dataframe with ground truth and predicted centroids matched from match_centroids
 
     Returns:
-        summary: A pandas DataFrame of all the pymot-metrics.
-
-    # --------------------------- An example of data --------------------------- #
-
-    *: number of ids for gt at every frame of the video
-    ^: number of ids for tracker at every frame of the video
-    L: length of video
-
-    data = {
-        "num_gt_ids": total number of unique gt ids,
-        "num_tracker_dets": total number of detections by your detection algorithm,
-        "num_gt_dets": total number of gt detections,
-        "gt_ids": (L, *),  # Ragged np.array
-        "tracker_ids": (L, ^),  # Ragged np.array
-        "similarity_scores": (L, *, ^),  # Ragged np.array
-        "num_timsteps": L,
-    }
+        Tuple containing:
+        summary_dreem: Motmetrics summary
+        acc_dreem.mot_events: Frame by frame MOT events log
     """
-    if not isinstance(metrics, str):
-        metrics = [
-            "num_switches" if metric.lower() == "sw_cnt" else metric
-            for metric in metrics
-        ]  # backward compatibility
-    acc = mm.MOTAccumulator(auto_id=True)
+    summary_dreem = {}
+    acc_dreem = mm.MOTAccumulator(auto_id=True)
+    frame_switch_map = {}
+    for frame, framedf in df.groupby("frame_id"):
+        gt_ids = framedf["gt_track_id"].values
+        pred_tracks = framedf["pred_track_id"].values
+        # if no matching preds, fill with nan to let motmetrics handle it
+        if (pred_tracks == -1).all():
+            pred_tracks = np.full(len(gt_ids), np.nan)
 
-    for i in range(len(data["gt_ids"])):
-        acc.update(
-            oids=data["gt_ids"][i],
-            hids=data[key][i],
-            dists=data["similarity_scores"][i],
+        expected_tm_ids = []
+        cost_gt_dreem = np.full((len(gt_ids), len(gt_ids)), np.nan)
+        np.fill_diagonal(cost_gt_dreem, 1)
+        acc_dreem.update(
+            oids=gt_ids,
+            hids=pred_tracks,
+            dists=cost_gt_dreem,
         )
 
+    # get pymotmetrics summary
     mh = mm.metrics.create()
+    summary_dreem = mh.compute(acc_dreem, name="acc").transpose()
+    motevents = acc_dreem.mot_events.reset_index()
+    for idx, row in motevents.iterrows():
+        if row["Type"] == "SWITCH":
+            frame_switch_map[int(row["FrameId"])] = True
+        else:
+            frame_switch_map[int(row["FrameId"])] = False
 
-    all_metrics = [
-        metric.split("|")[0] for metric in mh.list_metrics_markdown().split("\n")[2:-1]
-    ]
+    return summary_dreem, motevents, frame_switch_map
 
-    if isinstance(metrics, str):
-        metrics_list = all_metrics
 
-    elif isinstance(metrics, Iterable):
-        metrics = [metric.lower() for metric in metrics]
-        metrics_list = [metric for metric in all_metrics if metric.lower() in metrics]
+def compute_global_tracking_accuracy(df):
+    """Compute global tracking accuracy for each ground truth track. Average the results to get overall accuracy.
 
-    else:
-        raise TypeError(
-            f"Metrics must either be an iterable of strings or `all` not: {type(metrics)}"
-        )
+    Args:
+        df: dataframe with ground truth and predicted centroids and track ids
 
-    summary = mh.compute(acc, metrics=metrics_list, name="acc")
-    summary = summary.transpose()
+    Returns:
+        gta_by_gt_track_filt: global tracking accuracy for each ground truth track
+    """
+    track_confusion_dict = {i: [] for i in df.gt_track_id.unique()}
+    gt_track_len = df.gt_track_id.value_counts().to_dict()
+    gta_by_gt_track = {}
 
-    if save is not None and save != "":
-        summary.to_csv(save)
+    for idx, row in df.iterrows():
+        if ~np.isnan(row["gt_track_id"]) and ~np.isnan(row["pred_track_id"]):
+            track_confusion_dict[int(row["gt_track_id"])].append(
+                int(row["pred_track_id"])
+            )
 
-    return summary["acc"]
+    for gt_track_id, pred_track_ids in track_confusion_dict.items():
+        # Use numpy's mode function to find the most common predicted track ID
+        if pred_track_ids:
+            # Get the most frequent prediction using numpy's mode
+            most_common_pred, count = np.unique(pred_track_ids, return_counts=True)
+            gta_by_gt_track[gt_track_id] = np.max(count) / float(
+                gt_track_len[gt_track_id]
+            )
+        else:
+            gta_by_gt_track[gt_track_id] = 0
+
+    return gta_by_gt_track

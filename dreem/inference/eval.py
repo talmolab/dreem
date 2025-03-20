@@ -15,6 +15,9 @@ import sleap_io as sio
 import logging
 
 logger = logging.getLogger("dreem.inference")
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    logger.addHandler(handler)
 
 
 @hydra.main(config_path=None, config_name=None, version_base=None)
@@ -38,7 +41,9 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         checkpoints = pd.read_csv(cfg.checkpoints)
         checkpoint = checkpoints.iloc[index]
     else:
-        checkpoint = eval_cfg.cfg.ckpt_path
+        checkpoint = eval_cfg.get("ckpt_path", None)
+        if checkpoint is None:
+            raise ValueError("Checkpoint path not found in config")
 
     logging.getLogger().setLevel(level=cfg.get("log_level", "INFO").upper())
 
@@ -47,14 +52,14 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     model.tracker = Tracker(**model.tracker_cfg)
     logger.info(f"Using the following tracker:")
     print(model.tracker)
-    model.metrics["test"] = eval_cfg.cfg.runner.metrics.test
-    model.persistent_tracking["test"] = eval_cfg.cfg.tracker.get(
-        "persistent_tracking", False
-    )
+    model.metrics["test"] = eval_cfg.get("metrics", {}).get("test", "all")
+    model.persistent_tracking["test"] = True
     logger.info(f"Computing the following metrics:")
     logger.info(model.metrics["test"])
-    model.test_results["save_path"] = eval_cfg.cfg.runner.save_path
-    logger.info(f"Saving results to {model.test_results['save_path']}")
+    model.test_results["save_path"] = eval_cfg.get("save_path", ".")
+    logger.info(
+        f"Saving tracking results and metrics to {model.test_results['save_path']}"
+    )
 
     labels_files, vid_files = eval_cfg.get_data_paths(eval_cfg.cfg.dataset.test_dataset)
     trainer = eval_cfg.get_trainer()
