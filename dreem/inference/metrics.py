@@ -11,8 +11,7 @@ logger = logging.getLogger("dreem.inference")
 
 
 def get_matches(frames: list["dreem.io.Frame"]) -> tuple[dict, list, int]:
-    """Get comparison between predicted and gt trajectory labels.
-    Deprecated.
+    """Get comparison between predicted and gt trajectory labels. Deprecated.
 
     Args:
         frames: a list of Frames containing the video_id, frame_id,
@@ -46,8 +45,7 @@ def get_matches(frames: list["dreem.io.Frame"]) -> tuple[dict, list, int]:
 
 
 def get_switches(matches: dict, indices: list) -> dict:
-    """Get misassigned predicted trajectory labels.
-    Deprecated.
+    """Get misassigned predicted trajectory labels. Deprecated.
 
     Args:
         matches: a dict containing the gt and predicted labels
@@ -89,8 +87,7 @@ def get_switches(matches: dict, indices: list) -> dict:
 
 
 def get_switch_count(switches: dict) -> int:
-    """Get the number of mislabeled predicted trajectories.
-    Deprecated.
+    """Get the number of mislabeled predicted trajectories. Deprecated.
 
     Args:
         switches: a dict of dicts containing the mislabeled trajectories
@@ -115,7 +112,7 @@ def evaluate(preds, metrics):
         A dict of metrics with key being the metric, and value being the metric value computed.
     """
     metric_fcn_map = {
-        "num_switches": compute_motmetrics,
+        "motmetrics": compute_motmetrics,
         "global_tracking_accuracy": compute_global_tracking_accuracy,
     }
     list_frame_info = []

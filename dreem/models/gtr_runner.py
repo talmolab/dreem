@@ -17,6 +17,9 @@ from pathlib import Path
 import sleap_io as sio
 
 logger = logging.getLogger("dreem.models")
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    logger.addHandler(handler)
 
 
 class GTRRunner(LightningModule):
@@ -81,7 +84,7 @@ class GTRRunner(LightningModule):
             if persistent_tracking is not None
             else self.DEFAULT_TRACKING
         )
-        self.test_results = {"metrics": {}, "preds": [], "save_path": test_save_path}
+        self.test_results = {"preds": [], "save_path": test_save_path}
 
     def forward(
         self,
@@ -197,7 +200,7 @@ class GTRRunner(LightningModule):
             loss = self.loss(logits, frames)
 
             return_metrics = {"loss": loss}
-            if mode == "test" and len(eval_metrics) > 0:
+            if mode == "test":
                 self.tracker.persistent_tracking = True
                 frames_pred = self.tracker(self.model, frames)
                 self.test_results["preds"].extend(
@@ -279,13 +282,13 @@ class GTRRunner(LightningModule):
             "test"
         ]  # list of metrics to compute, or "all"
         if metrics_to_compute == "all":
-            metrics_to_compute = ["num_switches", "global_tracking_accuracy"]
+            metrics_to_compute = ["motmetrics", "global_tracking_accuracy"]
         if isinstance(metrics_to_compute, str):
             metrics_to_compute = [metrics_to_compute]
         for metric in metrics_to_compute:
-            if metric not in ["num_switches", "global_tracking_accuracy"]:
+            if metric not in ["motmetrics", "global_tracking_accuracy"]:
                 raise ValueError(
-                    f"Metric {metric} not supported. Please select from 'num_switches' or 'global_tracking_accuracy'"
+                    f"Metric {metric} not supported. Please select from 'motmetrics' or 'global_tracking_accuracy'"
                 )
 
         preds = self.test_results["preds"]
@@ -301,7 +304,7 @@ class GTRRunner(LightningModule):
         fname = os.path.join(
             self.test_results["save_path"], f"{vid_name}.dreem_metrics.h5"
         )
-        print(f"Saving metrics to {fname}")
+        logger.info(f"Saving metrics to {fname}")
         # Check if the h5 file exists and add a suffix to prevent name collision
         suffix_counter = 0
         original_fname = fname
@@ -312,21 +315,21 @@ class GTRRunner(LightningModule):
             )
 
         if suffix_counter > 0:
-            print(f"File already exists. Saving to {fname} instead")
+            logger.info(f"File already exists. Saving to {fname} instead")
 
         with h5py.File(fname, "a") as results_file:
             # Create a group for this video
             vid_group = results_file.require_group(vid_name)
             # Save each metric
             for metric_name, value in results.items():
-                if metric_name == "num_switches":
+                if metric_name == "motmetrics":
                     # For num_switches, save mot_summary and mot_events separately
                     mot_summary = value[0]
                     mot_events = value[1]
                     frame_switch_map = value[2]
                     mot_summary_group = vid_group.require_group("mot_summary")
                     # Loop through each row in mot_summary and save as attributes
-                    for idx, row in mot_summary.iterrows():
+                    for _, row in mot_summary.iterrows():
                         mot_summary_group.attrs[row.name] = row["acc"]
                     # save extra metadata for frames in which there is a switch
                     for frame_id, switch in frame_switch_map.items():
@@ -349,7 +352,7 @@ class GTRRunner(LightningModule):
                     motevents_path = os.path.join(
                         self.test_results["save_path"], f"{vid_name}.motevents.csv"
                     )
-                    print(f"Saving motevents log to {motevents_path}")
+                    logger.info(f"Saving motevents log to {motevents_path}")
                     mot_events.to_csv(motevents_path, index=False)
 
                 elif metric_name == "global_tracking_accuracy":
@@ -365,7 +368,7 @@ class GTRRunner(LightningModule):
             self.test_results["save_path"],
             f"{vid_name}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp",
         )
-        print(f"Saving inference results to {outpath}")
+        logger.info(f"Saving inference results to {outpath}")
         # save the tracking results to a slp file
         tracks = {}
         for frame in preds:
@@ -380,4 +383,5 @@ class GTRRunner(LightningModule):
         pred_slp = sio.Labels(pred_slp)
 
         pred_slp.save(outpath)
-        
+        # clear the preds
+        self.test_results["preds"] = []
