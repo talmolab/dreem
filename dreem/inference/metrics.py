@@ -304,14 +304,14 @@ def compute_motmetrics(df):
     # get pymotmetrics summary    
     mh = mm.metrics.create()
     summary_dreem = mh.compute(acc_dreem, name="acc").transpose()
-    
-    for row in acc_dreem.mot_events.iterrows():
-        if row['event'] == 'SWITCH':
-            frame_switch_map[int(row['frame_id'])] = True
+    motevents = acc_dreem.mot_events.reset_index()
+    for idx, row in motevents.iterrows():
+        if row['Type'] == 'SWITCH':
+            frame_switch_map[int(row['FrameId'])] = True
         else:
-            frame_switch_map[int(row['frame_id'])] = False
+            frame_switch_map[int(row['FrameId'])] = False
 
-    return summary_dreem, acc_dreem.mot_events, frame_switch_map
+    return summary_dreem, motevents, frame_switch_map
 
 
 def compute_global_tracking_accuracy(df):
@@ -325,16 +325,21 @@ def compute_global_tracking_accuracy(df):
     """
     # sometimes some gt ids are skipped so track_id.max() > track_id.unique()
     # track_ids are 1-indexed
-    track_confusion_matrix = np.zeros((df.gt_track_id.max() + 1, df.pred_track_id.max() + 1))
-    gt_track_len = {i: 0 for i in range(track_confusion_matrix.shape[0])} # same shape as gt track ids
-    gt_track_len.update(df.gt_track_id.value_counts().to_dict())
-    gt_track_len_values = list(gt_track_len.values())
+    track_confusion_dict = {i: [] for i in df.gt_track_id.unique()}
+    gt_track_len = df.gt_track_id.value_counts().to_dict()
+    gta_by_gt_track = {}
+    
     for idx, row in df.iterrows():
         if ~np.isnan(row['gt_track_id']) and ~np.isnan(row['pred_track_id']): 
-            track_confusion_matrix[int(row['gt_track_id']), int(row['pred_track_id'])] += 1
+            track_confusion_dict[int(row['gt_track_id'])].append(int(row['pred_track_id']))
     
-    gta_by_gt_track = (100 * track_confusion_matrix.max(axis=1) / gt_track_len_values)
-    # Filter out rows that are all null; this is when gt tracks aren't consecutive but the track confusion matrix still has those rows
-    gta_by_gt_track_filt = gta_by_gt_track[~np.isnan(gta_by_gt_track)]
+    for gt_track_id, pred_track_ids in track_confusion_dict.items():
+        # Use numpy's mode function to find the most common predicted track ID
+        if pred_track_ids:
+            # Get the most frequent prediction using numpy's mode
+            most_common_pred, count = np.unique(pred_track_ids, return_counts=True)
+            gta_by_gt_track[gt_track_id] = np.max(count) / float(gt_track_len[gt_track_id])
+        else:
+            gta_by_gt_track[gt_track_id] = 0
                         
-    return gta_by_gt_track_filt
+    return gta_by_gt_track
