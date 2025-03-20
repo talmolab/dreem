@@ -234,7 +234,7 @@ def test_metrics():
     """Test basic GTR Runner."""
     num_frames = 3
     num_detected = 3
-    metrics_to_compute = ["num_switches", "global_tracking_accuracy"]
+    metrics_to_compute = ["motmetrics", "global_tracking_accuracy"]
 
     frames_pred = []
     for i in range(num_frames):
@@ -249,7 +249,7 @@ def test_metrics():
 
     results = metrics.evaluate(frames_pred, metrics_to_compute)
     for metric_name, value in results.items():
-        if metric_name == "num_switches":
+        if metric_name == "motmetrics":
             mot_summary = value[0]
             switch_count = mot_summary.loc["num_switches"].values[0]
         elif metric_name == "global_tracking_accuracy":
