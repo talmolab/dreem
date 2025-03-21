@@ -121,14 +121,21 @@ def evaluate(preds, metrics):
     # create gt/pred df
     for frame in preds:
         for instance in frame.instances:
-            centroid = instance.centroid["centroid"]
+            anchor = instance.anchor[0]
+            if anchor in instance.centroid:
+                centroid = instance.centroid[anchor]
+            else: #if for some reason the anchor is not in the centroid dict, use the first key-value pair
+                for key, value in instance.centroid.items():
+                    centroid = value
+                    break
+            centroid_x, centroid_y = centroid[0], centroid[1]
             list_frame_info.append(
                 {
                     "frame_id": frame.frame_id.item(),
                     "gt_track_id": instance.gt_track_id.item(),
                     "pred_track_id": instance.pred_track_id.item(),
-                    "centroid_x": centroid[0],
-                    "centroid_y": centroid[1],
+                    "centroid_x": centroid_x,
+                    "centroid_y": centroid_y,
                 }
             )
 
