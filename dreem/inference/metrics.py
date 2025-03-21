@@ -124,7 +124,7 @@ def evaluate(preds, metrics):
             anchor = instance.anchor[0]
             if anchor in instance.centroid:
                 centroid = instance.centroid[anchor]
-            else: #if for some reason the anchor is not in the centroid dict, use the first key-value pair
+            else:  # if for some reason the anchor is not in the centroid dict, use the first key-value pair
                 for key, value in instance.centroid.items():
                     centroid = value
                     break
