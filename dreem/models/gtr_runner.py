@@ -334,6 +334,7 @@ class GTRRunner(LightningModule):
                     # save extra metadata for frames in which there is a switch
                     for frame_id, switch in frame_switch_map.items():
                         frame = preds[frame_id]
+                        frame = frame.to("cpu")
                         if switch:
                             _ = frame.to_h5(
                                 vid_group,
