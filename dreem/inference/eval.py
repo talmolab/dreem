@@ -56,7 +56,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     model.persistent_tracking["test"] = True
     logger.info(f"Computing the following metrics:")
     logger.info(model.metrics["test"])
-    model.test_results["save_path"] = eval_cfg.get("save_path", ".")
+    model.test_results["save_path"] = eval_cfg.get("outdir", ".")
     logger.info(
         f"Saving tracking results and metrics to {model.test_results['save_path']}"
     )
