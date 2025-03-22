@@ -37,6 +37,7 @@ class SleapDataset(BaseDataset):
         verbose: bool = False,
         normalize_image: bool = True,
         max_batching_gap: int = 15,
+        use_tight_bbox: bool = False,
     ):
         """Initialize SleapDataset.
 
@@ -104,6 +105,7 @@ class SleapDataset(BaseDataset):
         self.seed = seed
         self.normalize_image = normalize_image
         self.max_batching_gap = max_batching_gap
+        self.use_tight_bbox = use_tight_bbox
         if self.data_dirs is None:
             self.data_dirs = []
         if isinstance(anchors, int):
@@ -195,6 +197,7 @@ class SleapDataset(BaseDataset):
         skeleton = sleap_labels_obj.skeletons[-1]
 
         frames = []
+        max_crop_h, max_crop_w = 0, 0
         for i, frame_ind in enumerate(frame_idx):
             (
                 instances,
@@ -376,11 +379,17 @@ class SleapDataset(BaseDataset):
                         bbox = torch.tensor([np.nan, np.nan, np.nan, np.nan])
 
                     else:
-                        bbox = data_utils.pad_bbox(
-                            data_utils.get_bbox(centroid, crop_size),
-                            padding=self.padding,
-                        )
-
+                        if not self.use_tight_bbox:
+                            bbox = data_utils.pad_bbox(
+                                data_utils.get_bbox(centroid, crop_size),
+                                padding=self.padding,
+                            )
+                        else:
+                            # tight bbox
+                            arr_pose = np.array(list(pose.values()))
+                            # note bbox will be a different size for each instance; padded at the end of the loop
+                            bbox = data_utils.get_tight_bbox(arr_pose)
+                  
                     if bbox.isnan().all():
                         crop = torch.zeros(
                             c,
@@ -392,6 +401,13 @@ class SleapDataset(BaseDataset):
                         crop = data_utils.crop_bbox(img, bbox)
 
                     crops.append(crop)
+                    # get max h,w for padding for tight bboxes
+                    c,h,w = crop.shape
+                    if h > max_crop_h:
+                        max_crop_h = h
+                    if w > max_crop_w:
+                        max_crop_w = w
+
                     centroids[anchor] = centroid
                     boxes.append(bbox)
 
@@ -426,6 +442,13 @@ class SleapDataset(BaseDataset):
                 instances=instances,
             )
             frames.append(frame)
+
+        # pad bbox to max size
+        if self.use_tight_bbox:
+            # gather all the crops
+            for frame in frames:
+                for instance in frame.instances:
+                    data_utils.pad_variable_size_crops(instance, (max_crop_h, max_crop_w))
 
         return frames
 

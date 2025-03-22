@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import sleap_io as sio
 import torch
+from dreem.io import Instance
 from sleap_io.io.slp import (
     read_hdf5_attrs,
     read_tracks,
@@ -129,6 +130,36 @@ def crop_bbox(img: torch.Tensor, bbox: ArrayLike) -> torch.Tensor:
 
     return crop
 
+def pad_variable_size_crops(instance: Instance, target_size: tuple[int, int]) -> None:
+    """Pad variable size crops to the max size. Modifies instance in place.
+
+    Args:
+        instance: an instance of the Instance class
+        target_size: a tuple of the target (height, width) of the crop
+    """
+
+    _,c,h,w = instance.crop.shape
+    pad_w = target_size[1] - w
+    pad_h = target_size[0] - h
+
+    if pad_w % 2 == 0:
+        pad_w_left = pad_w // 2
+        pad_w_right = pad_w // 2
+    else:
+        pad_w_left = pad_w // 2
+        pad_w_right = pad_w // 2 + 1
+
+    if pad_h % 2 == 0:
+        pad_h_top = pad_h // 2
+        pad_h_bottom = pad_h // 2
+    else:
+        pad_h_top = pad_h // 2
+        pad_h_bottom = pad_h // 2 + 1
+        
+    instance.crop = tvf.pad(instance.crop, (pad_w_left, pad_h_top, pad_w_right, pad_h_bottom), 0, "constant")
+
+    return
+
 
 def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:
     """Get a square bbox around a centroid coordinates.
@@ -150,6 +181,25 @@ def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:
     x2 = size[0] // 2 + cx if x1 != 0 else size[0]
     bbox = torch.Tensor([y1, x1, y2, x2])
 
+    return bbox
+
+def get_tight_bbox(pose: ArrayLike) -> torch.Tensor:
+    """Get a tight bbox around an instance.
+
+    Args:
+        poses: array of keypoints around which to create the tight bbox
+
+    Returns: 
+        A torch tensor in form y1, x1, y2, x2 representing the tight bbox
+    """
+    x_coords = pose[:, 0]
+    y_coords = pose[:, 1]
+    x1 = np.min(x_coords)
+    x2 = np.max(x_coords)
+    y1 = np.min(y_coords)
+    y2 = np.max(y_coords)
+    bbox = torch.Tensor([y1, x1, y2, x2])
+    
     return bbox
 
 
