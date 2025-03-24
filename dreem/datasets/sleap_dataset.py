@@ -445,6 +445,9 @@ class SleapDataset(BaseDataset):
 
         # pad bbox to max size
         if self.use_tight_bbox:
+            # bound the max crop size to the user defined crop size
+            max_crop_h = min(max_crop_h, crop_size)
+            max_crop_w = min(max_crop_w, crop_size)
             # gather all the crops
             for frame in frames:
                 for instance in frame.instances:
