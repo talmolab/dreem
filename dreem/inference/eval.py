@@ -57,6 +57,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     logger.info(f"Computing the following metrics:")
     logger.info(model.metrics["test"])
     model.test_results["save_path"] = eval_cfg.get("outdir", ".")
+    os.makedirs(model.test_results["save_path"], exist_ok=True)
     logger.info(
         f"Saving tracking results and metrics to {model.test_results['save_path']}"
     )
