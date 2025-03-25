@@ -446,13 +446,13 @@ class SleapDataset(BaseDataset):
         # pad bbox to max size
         if self.use_tight_bbox:
             # bound the max crop size to the user defined crop size
-            max_crop_h = min(max_crop_h, crop_size)
-            max_crop_w = min(max_crop_w, crop_size)
+            max_crop_h = crop_size if max_crop_h == 0 else min(max_crop_h, crop_size)
+            max_crop_w = crop_size if max_crop_w == 0 else min(max_crop_w, crop_size)
             # gather all the crops
             for frame in frames:
                 for instance in frame.instances:
                     data_utils.pad_variable_size_crops(instance, (max_crop_h, max_crop_w))
-
+        print("Target size: ", (max_crop_h, max_crop_w))
         return frames
 
     def __del__(self):

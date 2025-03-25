@@ -130,35 +130,46 @@ def crop_bbox(img: torch.Tensor, bbox: ArrayLike) -> torch.Tensor:
 
     return crop
 
-def pad_variable_size_crops(instance: Instance, target_size: tuple[int, int]) -> None:
-    """Pad variable size crops to the max size. Modifies instance in place.
-
-    Args:
-        instance: an instance of the Instance class
-        target_size: a tuple of the target (height, width) of the crop
+def pad_variable_size_crops(instance, target_size):
     """
-
-    _,c,h,w = instance.crop.shape
-    pad_w = target_size[1] - w
-    pad_h = target_size[0] - h
-
-    if pad_w % 2 == 0:
-        pad_w_left = pad_w // 2
-        pad_w_right = pad_w // 2
-    else:
-        pad_w_left = pad_w // 2
-        pad_w_right = pad_w // 2 + 1
-
-    if pad_h % 2 == 0:
-        pad_h_top = pad_h // 2
-        pad_h_bottom = pad_h // 2
-    else:
-        pad_h_top = pad_h // 2
-        pad_h_bottom = pad_h // 2 + 1
+    Pad or crop an instance's crop to the target size.
+    
+    Args:
+        instance: Instance object with a crop attribute
+        target_size: Tuple of (height, width) for the target size
+    
+    Returns:
+        The instance with modified crop
+    """
+    _, c, h, w = instance.crop.shape
+    target_h, target_w = target_size
+    
+    # Crop the image further if target_size is smaller than current crop size
+    if h > target_h or w > target_w:
+        instance.crop = tvf.center_crop(instance.crop, (min(h, target_h), min(w, target_w)))
+    
+    _, c, h, w = instance.crop.shape
+    
+    if h < target_h or w < target_w:
+        # If height or width is smaller than target size, pad the image to target_size
+        pad_w = max(0, target_w - w)
+        pad_h = max(0, target_h - h)
         
-    instance.crop = tvf.pad(instance.crop, (pad_w_left, pad_h_top, pad_w_right, pad_h_bottom), 0, "constant")
-
-    return
+        pad_w_left = pad_w // 2
+        pad_w_right = pad_w - pad_w_left
+        
+        pad_h_top = pad_h // 2
+        pad_h_bottom = pad_h - pad_h_top
+        
+        # Apply padding
+        instance.crop = tvf.pad(
+            instance.crop, 
+            (pad_w_left, pad_h_top, pad_w_right, pad_h_bottom), 
+            0, 
+            "constant"
+        )
+    
+    return instance
 
 
 def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:
