@@ -76,6 +76,7 @@ class SleapDataset(BaseDataset):
             verbose: boolean representing whether to print
             normalize_image: whether to normalize the image to [0, 1]
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
+            use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
         """
         super().__init__(
             slp_files,
@@ -389,7 +390,7 @@ class SleapDataset(BaseDataset):
                             arr_pose = np.array(list(pose.values()))
                             # note bbox will be a different size for each instance; padded at the end of the loop
                             bbox = data_utils.get_tight_bbox(arr_pose)
-                  
+
                     if bbox.isnan().all():
                         crop = torch.zeros(
                             c,
@@ -402,7 +403,7 @@ class SleapDataset(BaseDataset):
 
                     crops.append(crop)
                     # get max h,w for padding for tight bboxes
-                    c,h,w = crop.shape
+                    c, h, w = crop.shape
                     if h > max_crop_h:
                         max_crop_h = h
                     if w > max_crop_w:
@@ -451,8 +452,9 @@ class SleapDataset(BaseDataset):
             # gather all the crops
             for frame in frames:
                 for instance in frame.instances:
-                    data_utils.pad_variable_size_crops(instance, (max_crop_h, max_crop_w))
-        print("Target size: ", (max_crop_h, max_crop_w))
+                    data_utils.pad_variable_size_crops(
+                        instance, (max_crop_h, max_crop_w)
+                    )
         return frames
 
     def __del__(self):

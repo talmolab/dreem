@@ -25,5 +25,4 @@ def params_config(config_dir):
 @pytest.fixture
 def inference_config(config_dir):
     """Get the full path to the inference params config."""
-
     return os.path.join(config_dir, "inference.yaml")
