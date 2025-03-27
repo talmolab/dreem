@@ -380,16 +380,18 @@ class SleapDataset(BaseDataset):
                         bbox = torch.tensor([np.nan, np.nan, np.nan, np.nan])
 
                     else:
-                        if not self.use_tight_bbox:
+                        if self.use_tight_bbox and len(pose) > 1:
+                            # tight bbox
+                            # dont allow this for centroid-only poses!
+                            arr_pose = np.array(list(pose.values()))
+                            # note bbox will be a different size for each instance; padded at the end of the loop
+                            bbox = data_utils.get_tight_bbox(arr_pose)
+
+                        else:
                             bbox = data_utils.pad_bbox(
                                 data_utils.get_bbox(centroid, crop_size),
                                 padding=self.padding,
                             )
-                        else:
-                            # tight bbox
-                            arr_pose = np.array(list(pose.values()))
-                            # note bbox will be a different size for each instance; padded at the end of the loop
-                            bbox = data_utils.get_tight_bbox(arr_pose)
 
                     if bbox.isnan().all():
                         crop = torch.zeros(
