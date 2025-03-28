@@ -18,6 +18,7 @@ class CellTrackingDataset(BaseDataset):
         self,
         raw_images: list[list[str]],
         gt_images: list[list[str]],
+        data_dirs: Optional[list[str]] = None,
         padding: int = 5,
         crop_size: int = 20,
         chunk: bool = False,
@@ -27,14 +28,20 @@ class CellTrackingDataset(BaseDataset):
         n_chunks: int | float = 1.0,
         seed: int | None = None,
         gt_list: list[str] | None = None,
+        max_batching_gap: int = 15,
+        use_tight_bbox: bool = False,
+        **kwargs,
     ):
         """Initialize CellTrackingDataset.
 
         Args:
             raw_images: paths to raw microscopy images
             gt_images: paths to gt label images
+            data_dirs: paths to data directories
             padding: amount of padding around object crops
-            crop_size: the size of the object crops
+            crop_size: the size of the object crops. Can be either:
+                - An integer specifying a single crop size for all objects
+                - A list of integers specifying different crop sizes for different data directories
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
             mode: `train` or `val`. Determines whether this dataset is used for
@@ -52,6 +59,8 @@ class CellTrackingDataset(BaseDataset):
             gt_list: An optional path to .txt file containing gt ids stored in cell
                 tracking challenge format: "track_id", "start_frame",
                 "end_frame", "parent_id"
+            max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
+            use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
         """
         super().__init__(
             gt_images,
@@ -69,6 +78,7 @@ class CellTrackingDataset(BaseDataset):
 
         self.videos = raw_images
         self.labels = gt_images
+        self.data_dirs = data_dirs
         self.chunk = chunk
         self.clip_length = clip_length
         self.crop_size = crop_size
@@ -76,6 +86,25 @@ class CellTrackingDataset(BaseDataset):
         self.mode = mode.lower()
         self.n_chunks = n_chunks
         self.seed = seed
+        self.max_batching_gap = max_batching_gap
+        self.use_tight_bbox = use_tight_bbox
+
+        if not isinstance(self.data_dirs, list):
+            self.data_dirs = [self.data_dirs]
+
+        if not isinstance(self.crop_size, list):
+            # make a list so its handled consistently if multiple crops are used
+            if len(self.data_dirs) > 0:  # for test mode, data_dirs is []
+                self.crop_size = [self.crop_size] * len(self.data_dirs)
+            else:
+                self.crop_size = [self.crop_size]
+
+        if len(self.data_dirs) > 0 and len(self.crop_size) != len(self.data_dirs):
+            raise ValueError(
+                f"If a list of crop sizes or data directories are given,"
+                f"they must have the same length but got {len(self.crop_size)} "
+                f"and {len(self.data_dirs)}"
+            )
 
         # if self.seed is not None:
         #     np.random.seed(self.seed)
