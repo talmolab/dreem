@@ -216,6 +216,22 @@ def get_tight_bbox(pose: ArrayLike) -> torch.Tensor:
 
     return bbox
 
+def get_tight_bbox_masks(mask: ArrayLike) -> torch.Tensor:
+    """Get a tight bbox around an instance.
+
+    Args:
+        mask: mask of the instance
+
+    Returns:
+        A torch tensor in form y1, x1, y2, x2 representing the tight bbox
+    """
+    max_x = np.asarray(mask != 0).nonzero()[1].max()
+    max_y = np.asarray(mask != 0).nonzero()[0].max()
+    min_x = np.asarray(mask != 0).nonzero()[1].min()
+    min_y = np.asarray(mask != 0).nonzero()[0].min()
+    bbox = torch.Tensor([min_y, min_x, max_y, max_x])
+    
+    return bbox
 
 def centroid_bbox(points: ArrayLike, anchors: list, crop_size: int) -> torch.Tensor:
     """Calculate bbox around instance centroid.

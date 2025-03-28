@@ -95,13 +95,6 @@ class BaseDataset(Dataset):
         self.chunked_frame_idx.extend(frame_idx_split)
         self.label_idx.extend(len(frame_idx_split) * [i])
 
-    def create_chunks(self) -> None:
-        """Factory method to create chunks."""
-        if type(self).__name__ == "SleapDataset":
-            self.create_chunks_slp()
-        else:
-            self.create_chunks_other()
-
     def create_chunks_slp(self) -> None:
         """Get indexing for data.
 
@@ -176,7 +169,7 @@ class BaseDataset(Dataset):
                 self.label_idx.pop(i)
 
     def create_chunks_other(self) -> None:
-        """Get indexing for data.
+        """Legacy chunking logic. Does not support unannotated segments.
 
         Creates both indexes for selecting dataset (label_idx) and frame in
         dataset (chunked_frame_idx). If chunking is false, we index directly
