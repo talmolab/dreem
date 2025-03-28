@@ -7,6 +7,7 @@ from typing import Iterable
 from pathlib import Path
 import logging
 import glob
+import os
 import pytorch_lightning as pl
 import torch
 
@@ -173,7 +174,7 @@ class Config:
         return model
 
     def get_data_paths(self, data_cfg: dict) -> tuple[list[str], list[str]]:
-        """Get file paths from directory.
+        """Get file paths from directory. Only for SLEAP datasets.
 
         Args:
             data_cfg: Config for the dataset containing "dir" key.
@@ -181,43 +182,22 @@ class Config:
         Returns:
             lists of labels file paths and video file paths respectively
         """
-        dir_cfg = data_cfg.pop("dir", None)
-        label_files = vid_files = None
+        dir_cfg = data_cfg.get("dir", None)
+        list_dir_path = dir_cfg.get("path", ".")
+        if not isinstance(list_dir_path, list):
+            list_dir_path = [list_dir_path]
+        label_files = []
+        vid_files = []
+        for dir_path in list_dir_path:
+            logger.debug(f"Searching `{dir_path}` directory")
+            labels_path = f"{dir_path}/*{labels_suff}"
+            vid_path = f"{dir_path}/*{vid_suff}"
+            logger.debug(f"Searching for labels matching {labels_path}")
+            label_files.extend(glob.glob(labels_path))
+            logger.debug(f"Searching for videos matching {vid_path}")
+            vid_files.extend(glob.glob(vid_path))
 
-        if dir_cfg:
-            labels_suff = dir_cfg.get("labels_suffix")
-            vid_suff = dir_cfg.get("vid_suffix")
-            if labels_suff is None or vid_suff is None:
-                raise KeyError(
-                    f"Must provide a labels suffix and vid suffix to search for but found {labels_suff} and {vid_suff}!"
-                )
-            list_dir_path = dir_cfg.get("path", ".")
-            if not isinstance(list_dir_path, list):
-                list_dir_path = [list_dir_path]
-            label_files = []
-            vid_files = []
-            for dir_path in list_dir_path:
-                logger.debug(f"Searching `{dir_path}` directory")
-
-                labels_path = f"{dir_path}/*{labels_suff}"
-                vid_path = f"{dir_path}/*{vid_suff}"
-                logger.debug(f"Searching for labels matching {labels_path}")
-                label_files.extend(glob.glob(labels_path))
-                logger.debug(f"Searching for videos matching {vid_path}")
-                vid_files.extend(glob.glob(vid_path))
-
-            logger.debug(f"Found {len(label_files)} labels and {len(vid_files)} videos")
-
-        else:
-            if "slp_files" in data_cfg:
-                label_files = data_cfg["slp_files"]
-                vid_files = data_cfg["video_files"]
-            elif "tracks" in data_cfg or "source" in data_cfg:
-                label_files = data_cfg["tracks"]
-                vid_files = data_cfg["videos"]
-            elif "raw_images" in data_cfg:
-                label_files = data_cfg["gt_images"]
-                vid_files = data_cfg["raw_images"]
+        logger.debug(f"Found {len(label_files)} labels and {len(vid_files)} videos")
 
         return label_files, vid_files
 
@@ -226,7 +206,7 @@ class Config:
         mode: str,
         label_files: list[str] | None = None,
         vid_files: list[str | list[str]] = None,
-    ) -> "SleapDataset" | "MicroscopyDataset" | "CellTrackingDataset":
+    ) -> "SleapDataset" | "CellTrackingDataset":
         """Getter for datasets.
 
         Args:
@@ -236,9 +216,9 @@ class Config:
             vid_files: path to vid_files for override
 
         Returns:
-            Either a `SleapDataset` or `MicroscopyDataset` with params indicated by cfg
+            Either a `SleapDataset` or `CellTrackingDataset` with params indicated by cfg
         """
-        from dreem.datasets import MicroscopyDataset, SleapDataset, CellTrackingDataset
+        from dreem.datasets import SleapDataset, CellTrackingDataset
 
         dataset_params = self.get("dataset")
         if dataset_params is None:
@@ -255,51 +235,62 @@ class Config:
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
 
-        if "dir" in dataset_params:
-            self.data_dirs = dataset_params["dir"]["path"]
-        else:
-            self.data_dirs = []
+        # input validation
+        self.data_dirs = dataset_params.get("dir", {}).get("path", None)
+        self.labels_suff = dataset_params.get("dir", {}).get("labels_suffix")
+        self.vid_suff = dataset_params.get("dir", {}).get("vid_suffix")
+        if self.data_dirs is None:
+            raise ValueError("`dir` is missing from dataset config. Please provide a path to the directory containing the labels and videos.")
+        if self.labels_suff is None or self.vid_suff is None:
+            raise KeyError(
+                f"Must provide a labels suffix and vid suffix to search for but found {self.labels_suff} and {self.vid_suff}"
+            )
 
-        if label_files is None or vid_files is None:
-            label_files, vid_files = self.get_data_paths(dataset_params)
-        # todo: handle this better
-        if "slp_files" in dataset_params:
-            if label_files is not None:
-                dataset_params["slp_files"] = label_files
-            if vid_files is not None:
-                dataset_params["video_files"] = vid_files
+        # TODO: handle this better!
+        if "model" in self.cfg:
+            if (
+                "encoder_type" in self.cfg["model"]["encoder_cfg"]
+                and self.cfg["model"]["encoder_cfg"]["encoder_type"] == "descriptor"
+            ):
+                dataset_params["normalize_image"] = False
 
+        # infer dataset type from the user provided suffix
+        if dataset_params["dir"]["labels_suffix"] == ".slp":
+            # during training, multiple files can be used at once, so label_files is not passed in
+            # during inference, a single label_files string is passed in, hence the check
+            if label_files is None or vid_files is None:
+                label_files, vid_files = self.get_data_paths(dataset_params)
+            dataset_params["slp_files"] = label_files
+            dataset_params["video_files"] = vid_files
             dataset_params["data_dirs"] = self.data_dirs
-            # TODO: handle this better!
-            if "model" in self.cfg:
-                if (
-                    "encoder_type" in self.cfg["model"]["encoder_cfg"]
-                    and self.cfg["model"]["encoder_cfg"]["encoder_type"] == "descriptor"
-                ):
-                    dataset_params["normalize_image"] = False
-
             self.data_paths = (mode, vid_files)
 
             return SleapDataset(**dataset_params)
 
-        elif "tracks" in dataset_params or "source" in dataset_params:
-            if label_files is not None:
-                dataset_params["tracks"] = label_files
-            if vid_files is not None:
-                dataset_params["videos"] = vid_files
-            return MicroscopyDataset(**dataset_params)
-
-        elif "raw_images" in dataset_params:
-            if label_files is not None:
-                dataset_params["gt_images"] = label_files
-            if vid_files is not None:
-                dataset_params["raw_images"] = vid_files
+        elif dataset_params["dir"]["labels_suffix"] == ".tif":
+            # for CTC datasets, pass in a list of gt and raw image directories, eaech of which contain tifs
+            gt_dirs = []
+            raw_img_dirs = []
+            list_dir_path = self.data_dirs # don't modify self.data_dirs
+            if not isinstance(list_dir_path, list):
+                list_dir_path = [list_dir_path]
+            # user can specify a list of directories, each of which can contain several subdirectories that come in pairs of (dset_name, dset_name_GT/TRA)
+            for dir_path in list_dir_path:
+                for subdir in os.listdir(dir_path):
+                    if subdir.endswith("_GT"):
+                        gt_dirs.append(os.path.join(dir_path, subdir, "TRA"))
+                        raw_img_dirs.append(os.path.join(dir_path, subdir.replace("_GT", "")))
+                    else:
+                        continue
+            dataset_params["data_dirs"] = self.data_dirs
+            dataset_params["gt_dirs"] = gt_dirs
+            dataset_params["raw_img_dirs"] = raw_img_dirs
+            
             return CellTrackingDataset(**dataset_params)
 
         else:
             raise ValueError(
-                "Could not resolve dataset type from Config! Please include \
-                either `slp_files` or `tracks`/`source`"
+                "Could not resolve dataset type from Config! Only .slp (SLEAP) and .tif (Cell Tracking Challenge) data formats are supported."
             )
 
     @property
