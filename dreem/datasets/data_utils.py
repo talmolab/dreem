@@ -259,6 +259,7 @@ def get_tight_bbox(pose: ArrayLike) -> torch.Tensor:
 
     return bbox
 
+
 def get_tight_bbox_masks(mask: ArrayLike) -> torch.Tensor:
     """Get a tight bbox around an instance.
 
@@ -273,7 +274,7 @@ def get_tight_bbox_masks(mask: ArrayLike) -> torch.Tensor:
     min_x = np.asarray(mask != 0).nonzero()[1].min()
     min_y = np.asarray(mask != 0).nonzero()[0].min()
     bbox = torch.Tensor([min_y, min_x, max_y, max_x])
-    
+
     return bbox
 
 def get_tight_bbox(pose: ArrayLike) -> torch.Tensor:

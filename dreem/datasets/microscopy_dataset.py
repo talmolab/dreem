@@ -109,7 +109,7 @@ class MicroscopyDataset(BaseDataset):
 
         # Method in BaseDataset. Creates label_idx and chunked_frame_idx to be
         # used in call to get_instances()
-        self.create_chunks()
+        self.create_chunks_other()
 
     def get_indices(self, idx: int) -> tuple:
         """Retrieve label and frame indices given batch index.

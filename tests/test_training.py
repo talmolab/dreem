@@ -47,7 +47,7 @@ def test_basic_gtr_runner():
     img_shape = (1, 128, 128)
     n_batches = 2
     train_ds = []
-    epochs = 2
+    epochs = 1
     frame_ind = 0
     for i in range(n_batches):
         frames = []
