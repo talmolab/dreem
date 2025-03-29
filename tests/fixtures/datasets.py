@@ -2,6 +2,8 @@
 
 import pytest
 from pathlib import Path
+import glob
+import os
 
 
 @pytest.fixture
@@ -103,7 +105,13 @@ def trackmate_lysosomes(trackmate_data_dir):
 @pytest.fixture
 def cell_tracking(cell_tracking_data_dir):
     """Cell tracking challenge tif and gt txt file paths."""
-    image = sorted((Path(cell_tracking_data_dir) / "raw_images").glob("*.tif"))
-    gt = sorted((Path(cell_tracking_data_dir) / "gt_images").glob("*.tif"))
-    gt_list = str(Path(cell_tracking_data_dir) / "man_track.txt")
-    return [image, gt, gt_list]
+    gt_list = []
+    raw_img_list = []
+    gt_path = Path(cell_tracking_data_dir) / "test_0_GT/TRA"
+    raw_img_path = Path(cell_tracking_data_dir) / "test_0"
+    gt_list.append(glob.glob(os.path.join(gt_path, "*.tif")))
+    # get filepaths for all tif files in raw_img_path
+    raw_img_list.append(glob.glob(os.path.join(raw_img_path, "*.tif")))
+    man_track_file = glob.glob(os.path.join(gt_path, "man_track.txt"))
+
+    return (raw_img_list, gt_list, man_track_file, str(cell_tracking_data_dir))

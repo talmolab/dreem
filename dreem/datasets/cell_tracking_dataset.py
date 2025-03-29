@@ -12,6 +12,7 @@ import torch
 from typing import Union, Optional
 from pathlib import Path
 
+
 class CellTrackingDataset(BaseDataset):
     """Dataset for loading cell tracking challenge data."""
 
@@ -165,7 +166,7 @@ class CellTrackingDataset(BaseDataset):
             df_track_meta = None
 
         # get the correct crop size based on the video
-        video_par_path = Path(image_paths[0]).parent
+        video_par_path = Path(image_paths[0]).parent.parent
         if len(self.data_dirs) > 0:
             crop_size = self.crop_size[0]
             for j, data_dir in enumerate(self.data_dirs):
@@ -195,7 +196,7 @@ class CellTrackingDataset(BaseDataset):
             # if df_track_meta is None:
             unique_instances = np.unique(gt_sec)
             # else:
-                # unique_instances = df_track_meta["track_id"].unique()
+            # unique_instances = df_track_meta["track_id"].unique()
 
             for instance in unique_instances:
                 # not all instances are in the frame, and they also label the
@@ -211,7 +212,7 @@ class CellTrackingDataset(BaseDataset):
                         bbox = data_utils.get_tight_bbox_masks(mask)
                     else:
                         bbox = data_utils.pad_bbox(
-                            data_utils.get_bbox([int(x), int(y)], self.crop_size),
+                            data_utils.get_bbox([int(x), int(y)], crop_size),
                             padding=self.padding,
                         )
 

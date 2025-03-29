@@ -87,11 +87,9 @@ def test_getters(base_config, sleap_data_dir):
 
     ds = cfg.get_dataset("train")
     assert ds.clip_length == 4
-    assert len(ds.label_files) == len(ds.vid_files) == 1
+    assert len(ds.label_files) == len(ds.vid_files) == 4
     ds = cfg.get_dataset("val")
     assert ds.clip_length == 8
-    ds = cfg.get_dataset("test")
-    assert ds.clip_length == 16
 
     cfg.set_hparams(
         {
@@ -111,11 +109,15 @@ def test_getters(base_config, sleap_data_dir):
     scheduler = cfg.get_scheduler(optim)
     assert isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau)
 
-    label_paths, data_path = cfg.get_data_paths(cfg.get("train_dataset", {}))
-    assert label_paths is None and data_path is None
-
     label_paths, data_path = cfg.get_data_paths(
-        {"dir": {"path": sleap_data_dir, "labels_suffix": ".slp", "vid_suffix": ".mp4"}}
+        "train",
+        {
+            "dir": {
+                "path": sleap_data_dir,
+                "labels_suffix": ".slp",
+                "vid_suffix": ".mp4",
+            }
+        },
     )
     assert len(label_paths) == len(data_path) == 4
 

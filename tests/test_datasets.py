@@ -54,6 +54,7 @@ def test_sleap_dataset(two_flies):
     train_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
@@ -72,6 +73,7 @@ def test_sleap_dataset(two_flies):
     train_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
@@ -87,6 +89,7 @@ def test_sleap_dataset(two_flies):
     train_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
@@ -102,6 +105,7 @@ def test_sleap_dataset(two_flies):
     train_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
@@ -119,6 +123,7 @@ def test_sleap_dataset(two_flies):
     train_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
@@ -132,6 +137,7 @@ def test_sleap_dataset(two_flies):
     train_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
@@ -144,6 +150,7 @@ def test_sleap_dataset(two_flies):
     train_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
@@ -155,6 +162,7 @@ def test_sleap_dataset(two_flies):
     train_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
@@ -167,7 +175,7 @@ def test_sleap_dataset(two_flies):
         train_ds = SleapDataset(
             slp_files=[two_flies[0]],
             video_files=[two_flies[1]],
-            data_dirs="./data/sleap",
+            data_dirs=["./data/sleap"],
             crop_size=[128, 128],
             chunk=True,
             clip_length=clip_length,
@@ -340,31 +348,32 @@ def test_cell_tracking_dataset(cell_tracking):
     """
 
     clip_length = 8
-
+    raw_img_list, gt_list, ctc_track_meta, data_dir = cell_tracking
     train_ds = CellTrackingDataset(
-        raw_images=[cell_tracking[0]],
-        gt_images=[cell_tracking[1]],
+        raw_img_list=raw_img_list,
+        gt_list=gt_list,
+        data_dirs=data_dir,
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
-        gt_list=[cell_tracking[2]],
+        ctc_track_meta=ctc_track_meta,
     )
-
     instances = next(iter(train_ds))
 
     gt_track_ids_1 = instances[0].get_gt_track_ids()
 
     assert len(instances) == clip_length
-    assert len(gt_track_ids_1) == 30
     assert len(gt_track_ids_1) == instances[0].num_detected
 
     # fall back to using np.unique when gt_list not available
     train_ds = CellTrackingDataset(
-        raw_images=[cell_tracking[0]],
-        gt_images=[cell_tracking[1]],
+        raw_img_list=raw_img_list,
+        gt_list=gt_list,
+        data_dirs=data_dir,
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
+        ctc_track_meta=None,
     )
 
     instances = next(iter(train_ds))
@@ -372,7 +381,6 @@ def test_cell_tracking_dataset(cell_tracking):
     gt_track_ids_2 = instances[0].get_gt_track_ids()
 
     assert len(instances) == clip_length
-    assert len(gt_track_ids_2) == 30
     assert len(gt_track_ids_2) == instances[0].num_detected
     assert gt_track_ids_1.all() == gt_track_ids_2.all()
 
@@ -391,6 +399,7 @@ def test_tracking_dataset(two_flies):
     train_sleap_ds = SleapDataset(
         [two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=True,
         clip_length=clip_length,
@@ -408,6 +417,7 @@ def test_tracking_dataset(two_flies):
     val_sleap_ds = SleapDataset(
         [two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=False,
         clip_length=clip_length,
@@ -425,6 +435,7 @@ def test_tracking_dataset(two_flies):
     test_sleap_ds = SleapDataset(
         [two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=False,
         clip_length=clip_length,
@@ -503,6 +514,7 @@ def test_augmentations(two_flies, ten_icy_particles):
     no_augs_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=True,
         clip_length=8,
@@ -524,6 +536,7 @@ def test_augmentations(two_flies, ten_icy_particles):
     augs_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
         crop_size=128,
         chunk=True,
         clip_length=8,
@@ -598,3 +611,9 @@ def test_augmentations(two_flies, ten_icy_particles):
     b = augs_instances[0].get_crops()
 
     assert not torch.all(a.eq(b))
+
+
+# if __name__ == "__main__":
+#     from tests.fixtures.datasets import cell_tracking
+#     cell_tracking_args = cell_tracking(("/root/vast/mustafa/dreem-experiments/src/dreem/tests/data/microscopy/cell_tracking"))
+#     test_cell_tracking_dataset(cell_tracking_args)

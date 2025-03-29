@@ -106,7 +106,7 @@ class SleapDataset(BaseDataset):
         self.normalize_image = normalize_image
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
-        
+
         if isinstance(anchors, int):
             self.anchors = anchors
         elif isinstance(anchors, str):

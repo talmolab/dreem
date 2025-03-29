@@ -132,7 +132,9 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     logger.info(f"Using the following tracker:")
     logger.info(model.tracker)
 
-    labels_files, vid_files = pred_cfg.get_data_paths(pred_cfg.cfg.dataset.test_dataset)
+    labels_files, vid_files = pred_cfg.get_data_paths(
+        "test", pred_cfg.cfg.dataset.test_dataset
+    )
     trainer = pred_cfg.get_trainer()
     outdir = pred_cfg.cfg.outdir if "outdir" in pred_cfg.cfg else "./results"
     os.makedirs(outdir, exist_ok=True)
