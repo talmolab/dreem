@@ -11,6 +11,7 @@ import random
 import torch
 from typing import Union, Optional
 from pathlib import Path
+import sleap_io as sio
 
 
 class CellTrackingDataset(BaseDataset):
@@ -89,7 +90,7 @@ class CellTrackingDataset(BaseDataset):
         self.seed = seed
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
-
+        self.skeleton = sio.Skeleton(nodes=["centroid"])
         if not isinstance(self.data_dirs, list):
             self.data_dirs = [self.data_dirs]
 
@@ -179,7 +180,7 @@ class CellTrackingDataset(BaseDataset):
         frames = []
         max_crop_h, max_crop_w = 0, 0
         for i in frame_idx:
-            instances, gt_track_ids, centroids, bboxes = [], [], [], []
+            instances, gt_track_ids, centroids, bboxes = [], [], {}, []
 
             i = int(i)
 
@@ -217,7 +218,7 @@ class CellTrackingDataset(BaseDataset):
                         )
 
                     gt_track_ids.append(int(instance))
-                    centroids.append([x, y])
+                    centroids[int(instance)] = [x, y]
                     bboxes.append(bbox)
 
             # albumentations wants (spatial, channels), ensure correct dims
@@ -237,6 +238,8 @@ class CellTrackingDataset(BaseDataset):
             img = torch.Tensor(img).unsqueeze(0)
 
             for j in range(len(gt_track_ids)):
+                dict_centroids = {"centroid": np.array(centroids[gt_track_ids[j]])}
+                pose = {"centroid": centroids[gt_track_ids[j]]}
                 crop = data_utils.crop_bbox(img, bboxes[j])
                 c, h, w = crop.shape
                 if h > max_crop_h:
@@ -248,6 +251,11 @@ class CellTrackingDataset(BaseDataset):
                     Instance(
                         gt_track_id=gt_track_ids[j],
                         pred_track_id=-1,
+                        centroid=dict_centroids,
+                        skeleton=self.skeleton,
+                        point_scores=np.array([1.0]),
+                        instance_score=np.array([1.0]),
+                        pose=pose,
                         bbox=bboxes[j],
                         crop=crop,
                     )
@@ -260,6 +268,7 @@ class CellTrackingDataset(BaseDataset):
                 Frame(
                     video_id=label_idx,
                     frame_id=i,
+                    vid_file=Path(image_paths[0]).parent.name,
                     img_shape=img.shape,
                     instances=instances,
                 )
