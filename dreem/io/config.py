@@ -173,6 +173,42 @@ class Config:
 
         return model
 
+    def get_ctc_paths(
+        self, list_dir_path: list[str]
+    ) -> tuple[list[str], list[str], list[str]]:
+        """Get file paths from directory. Only for CTC datasets.
+
+        Args:
+            list_dir_path: list of directories to search for labels and videos
+
+        Returns:
+            lists of labels file paths and video file paths
+        """
+        gt_list = []
+        raw_img_list = []
+        ctc_track_meta = []
+        # user can specify a list of directories, each of which can contain several subdirectories that come in pairs of (dset_name, dset_name_GT/TRA)
+        for dir_path in list_dir_path:
+            for subdir in os.listdir(dir_path):
+                if subdir.endswith("_GT"):
+                    gt_path = os.path.join(dir_path, subdir, "TRA")
+                    raw_img_path = os.path.join(dir_path, subdir.replace("_GT", ""))
+                    # get filepaths for all tif files in gt_path
+                    gt_list.append(glob.glob(os.path.join(gt_path, "*.tif")))
+                    # get filepaths for all tif files in raw_img_path
+                    raw_img_list.append(glob.glob(os.path.join(raw_img_path, "*.tif")))
+                    man_track_file = glob.glob(os.path.join(gt_path, "man_track.txt"))
+                    if len(man_track_file) > 0:
+                        ctc_track_meta.append(man_track_file[0])
+                    else:
+                        logger.debug(
+                            f"No man_track.txt file found in {gt_path}. Continuing..."
+                        )
+                else:
+                    continue
+
+        return gt_list, raw_img_list, ctc_track_meta
+
     def get_data_paths(self, mode: str, data_cfg: dict) -> tuple[list[str], list[str]]:
         """Get file paths from directory. Only for SLEAP datasets.
 
@@ -198,16 +234,21 @@ class Config:
             list_dir_path = self.data_dirs
         if not isinstance(list_dir_path, list):
             list_dir_path = [list_dir_path]
-        label_files = []
-        vid_files = []
-        for dir_path in list_dir_path:
-            logger.debug(f"Searching `{dir_path}` directory")
-            labels_path = f"{dir_path}/*{self.labels_suffix}"
-            vid_path = f"{dir_path}/*{self.vid_suffix}"
-            logger.debug(f"Searching for labels matching {labels_path}")
-            label_files.extend(glob.glob(labels_path))
-            logger.debug(f"Searching for videos matching {vid_path}")
-            vid_files.extend(glob.glob(vid_path))
+
+        if self.labels_suffix == ".slp":
+            label_files = []
+            vid_files = []
+            for dir_path in list_dir_path:
+                logger.debug(f"Searching `{dir_path}` directory")
+                labels_path = f"{dir_path}/*{self.labels_suffix}"
+                vid_path = f"{dir_path}/*{self.vid_suffix}"
+                logger.debug(f"Searching for labels matching {labels_path}")
+                label_files.extend(glob.glob(labels_path))
+                logger.debug(f"Searching for videos matching {vid_path}")
+                vid_files.extend(glob.glob(vid_path))
+
+        elif self.labels_suffix == ".tif":
+            label_files, vid_files, ctc_track_meta = self.get_ctc_paths(list_dir_path)
 
         logger.debug(f"Found {len(label_files)} labels and {len(vid_files)} videos")
 
@@ -271,7 +312,7 @@ class Config:
         # infer dataset type from the user provided suffix
         if self.labels_suffix == ".slp":
             # during training, multiple files can be used at once, so label_files is not passed in
-            # during inference, a single label_files string can be passed in as get_data_paths is 
+            # during inference, a single label_files string can be passed in as get_data_paths is
             # called before get_dataset, hence the check
             if label_files is None or vid_files is None:
                 label_files, vid_files = self.get_data_paths(mode, dataset_params)
@@ -284,39 +325,18 @@ class Config:
 
         elif self.labels_suffix == ".tif":
             # for CTC datasets, pass in a list of gt and raw image directories, eaech of which contain tifs
-            gt_list = []
-            raw_img_list = []
-            ctc_track_meta = []
+            ctc_track_meta = None
             list_dir_path = self.data_dirs  # don't modify self.data_dirs
             if not isinstance(list_dir_path, list):
                 list_dir_path = [list_dir_path]
-            # user can specify a list of directories, each of which can contain several subdirectories that come in pairs of (dset_name, dset_name_GT/TRA)
-            for dir_path in list_dir_path:
-                for subdir in os.listdir(dir_path):
-                    if subdir.endswith("_GT"):
-                        gt_path = os.path.join(dir_path, subdir, "TRA")
-                        raw_img_path = os.path.join(dir_path, subdir.replace("_GT", ""))
-                        # get filepaths for all tif files in gt_path
-                        gt_list.append(glob.glob(os.path.join(gt_path, "*.tif")))
-                        # get filepaths for all tif files in raw_img_path
-                        raw_img_list.append(
-                            glob.glob(os.path.join(raw_img_path, "*.tif"))
-                        )
-                        man_track_file = glob.glob(
-                            os.path.join(gt_path, "man_track.txt")
-                        )
-                        if len(man_track_file) > 0:
-                            ctc_track_meta.append(man_track_file[0])
-                        else:
-                            logger.debug(
-                                f"No man_track.txt file found in {gt_path}. Continuing..."
-                            )
-                    else:
-                        continue
+            if label_files is None or vid_files is None:
+                label_files, vid_files, ctc_track_meta = self.get_ctc_paths(
+                    list_dir_path
+                )
             dataset_params["data_dirs"] = self.data_dirs
             # extract filepaths of all raw images and gt images (i.e. labelled masks)
-            dataset_params["gt_list"] = gt_list
-            dataset_params["raw_img_list"] = raw_img_list
+            dataset_params["gt_list"] = label_files
+            dataset_params["raw_img_list"] = vid_files
             dataset_params["ctc_track_meta"] = ctc_track_meta
 
             return CellTrackingDataset(**dataset_params)
