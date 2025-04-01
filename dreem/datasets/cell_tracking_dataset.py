@@ -180,7 +180,13 @@ class CellTrackingDataset(BaseDataset):
         frames = []
         max_crop_h, max_crop_w = 0, 0
         for i in frame_idx:
-            instances, gt_track_ids, centroids, bboxes = [], [], {}, []
+            instances, gt_track_ids, centroids, dict_centroids, bboxes = (
+                [],
+                [],
+                [],
+                {},
+                [],
+            )
 
             i = int(i)
 
@@ -218,7 +224,8 @@ class CellTrackingDataset(BaseDataset):
                         )
 
                     gt_track_ids.append(int(instance))
-                    centroids[int(instance)] = [x, y]
+                    centroids.append([x, y])
+                    dict_centroids[int(instance)] = [x, y]
                     bboxes.append(bbox)
 
             # albumentations wants (spatial, channels), ensure correct dims
@@ -238,8 +245,11 @@ class CellTrackingDataset(BaseDataset):
             img = torch.Tensor(img).unsqueeze(0)
 
             for j in range(len(gt_track_ids)):
-                dict_centroids = {"centroid": np.array(centroids[gt_track_ids[j]])}
-                pose = {"centroid": centroids[gt_track_ids[j]]}
+                # just formatting for compatibility with Instance class
+                instance_centroid = {
+                    "centroid": np.array(dict_centroids[gt_track_ids[j]])
+                }
+                pose = {"centroid": dict_centroids[gt_track_ids[j]]}  # more formatting
                 crop = data_utils.crop_bbox(img, bboxes[j])
                 c, h, w = crop.shape
                 if h > max_crop_h:
@@ -251,7 +261,7 @@ class CellTrackingDataset(BaseDataset):
                     Instance(
                         gt_track_id=gt_track_ids[j],
                         pred_track_id=-1,
-                        centroid=dict_centroids,
+                        centroid=instance_centroid,
                         skeleton=self.skeleton,
                         point_scores=np.array([1.0]),
                         instance_score=np.array([1.0]),
