@@ -8,8 +8,10 @@ tracker:
 
 dataset:
   test_dataset:
-    slp_files: ['tests/data/sleap/two_flies.slp', 'tests/data/sleap/two_flies.slp']
-    video_files: ['tests/data/sleap/two_flies.mp4', 'tests/data/sleap/two_flies.mp4']
+    dir:
+      path: "tests/data/sleap-test"
+      labels_suffix: ".slp"
+      vid_suffix: ".mp4"
     clip_length: 32
     anchors: "centroid"
     mode: "test"

@@ -54,18 +54,14 @@ def run(cfg: DictConfig):
     logger.info(f"Final train config: {train_cfg}")
 
     model = train_cfg.get_model()
+
     train_dataset = train_cfg.get_dataset(mode="train")
     train_dataloader = train_cfg.get_dataloader(train_dataset, mode="train")
 
     val_dataset = train_cfg.get_dataset(mode="val")
     val_dataloader = train_cfg.get_dataloader(val_dataset, mode="val")
 
-    test_dataset = train_cfg.get_dataset(mode="test")
-    test_dataloader = train_cfg.get_dataloader(test_dataset, mode="test")
-
-    dataset = TrackingDataset(
-        train_dl=train_dataloader, val_dl=val_dataloader, test_dl=test_dataloader
-    )
+    dataset = TrackingDataset(train_dl=train_dataloader, val_dl=val_dataloader)
 
     if cfg.view_batch.enable:
         instances = next(iter(train_dataset))

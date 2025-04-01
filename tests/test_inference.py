@@ -10,6 +10,7 @@ from dreem.models import GTRRunner, GlobalTrackingTransformer
 from dreem.inference import Tracker, post_processing, metrics
 from dreem.inference.track_queue import TrackQueue
 from dreem.inference.track import run
+import os
 
 
 def test_track_queue():
@@ -294,4 +295,8 @@ def test_track(tmp_path, inference_config):
     cfg.set_hparams({"ckpt_path": ckpt_path, "outdir": out_dir})
 
     run(cfg.cfg)
-    assert len(list(out_dir.iterdir())) == len(cfg.cfg.dataset.test_dataset.video_files)
+    # the test file path should contain pairs of slp/mp4, so there will be half as many slp files as total files in the directory
+    assert (
+        len(list(out_dir.iterdir()))
+        == len(os.listdir(cfg.cfg.dataset.test_dataset.dir.path)) / 2
+    )

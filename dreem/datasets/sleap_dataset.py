@@ -38,6 +38,7 @@ class SleapDataset(BaseDataset):
         normalize_image: bool = True,
         max_batching_gap: int = 15,
         use_tight_bbox: bool = False,
+        **kwargs,
     ):
         """Initialize SleapDataset.
 
@@ -92,9 +93,7 @@ class SleapDataset(BaseDataset):
         )
 
         self.slp_files = slp_files
-        self.data_dirs = (
-            data_dirs  # empty list, list of paths, or string of single path
-        )
+        self.data_dirs = data_dirs
         self.video_files = video_files
         self.padding = padding
         self.crop_size = crop_size
@@ -107,8 +106,7 @@ class SleapDataset(BaseDataset):
         self.normalize_image = normalize_image
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
-        if self.data_dirs is None:
-            self.data_dirs = []
+
         if isinstance(anchors, int):
             self.anchors = anchors
         elif isinstance(anchors, str):
@@ -156,7 +154,7 @@ class SleapDataset(BaseDataset):
 
         # Method in BaseDataset. Creates label_idx and chunked_frame_idx to be
         # used in call to get_instances()
-        self.create_chunks()
+        self.create_chunks_slp()
 
     def get_indices(self, idx: int) -> tuple:
         """Retrieve label and frame indices given batch index.
