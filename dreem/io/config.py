@@ -301,14 +301,6 @@ class Config:
                 f"Must provide a labels suffix and vid suffix to search for but found {self.labels_suffix} and {self.vid_suffix}"
             )
 
-        # TODO: handle this better!
-        if "model" in self.cfg:
-            if (
-                "encoder_type" in self.cfg["model"]["encoder_cfg"]
-                and self.cfg["model"]["encoder_cfg"]["encoder_type"] == "descriptor"
-            ):
-                dataset_params["normalize_image"] = False
-
         # infer dataset type from the user provided suffix
         if self.labels_suffix == ".slp":
             # during training, multiple files can be used at once, so label_files is not passed in
