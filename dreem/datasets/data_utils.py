@@ -12,6 +12,7 @@ import pandas as pd
 import sleap_io as sio
 import torch
 from dreem.io import Instance
+from dreem.io import Instance
 from sleap_io.io.slp import (
     read_hdf5_attrs,
     read_tracks,
@@ -174,49 +175,6 @@ def pad_variable_size_crops(instance, target_size):
     return instance
 
 
-def pad_variable_size_crops(instance, target_size):
-    """Pad or crop an instance's crop to the target size.
-
-    Args:
-        instance: Instance object with a crop attribute
-        target_size: Tuple of (height, width) for the target size
-
-    Returns:
-        The instance with modified crop
-    """
-    _, c, h, w = instance.crop.shape
-    target_h, target_w = target_size
-
-    # Crop the image further if target_size is smaller than current crop size
-    if h > target_h or w > target_w:
-        instance.crop = tvf.center_crop(
-            instance.crop, (min(h, target_h), min(w, target_w))
-        )
-
-    _, c, h, w = instance.crop.shape
-
-    if h < target_h or w < target_w:
-        # If height or width is smaller than target size, pad the image to target_size
-        pad_w = max(0, target_w - w)
-        pad_h = max(0, target_h - h)
-
-        pad_w_left = pad_w // 2
-        pad_w_right = pad_w - pad_w_left
-
-        pad_h_top = pad_h // 2
-        pad_h_bottom = pad_h - pad_h_top
-
-        # Apply padding
-        instance.crop = tvf.pad(
-            instance.crop,
-            (pad_w_left, pad_h_top, pad_w_right, pad_h_bottom),
-            0,
-            "constant",
-        )
-
-    return instance
-
-
 def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:
     """Get a square bbox around a centroid coordinates.
 
@@ -274,25 +232,6 @@ def get_tight_bbox_masks(mask: ArrayLike) -> torch.Tensor:
     min_x = np.asarray(mask != 0).nonzero()[1].min()
     min_y = np.asarray(mask != 0).nonzero()[0].min()
     bbox = torch.Tensor([min_y, min_x, max_y, max_x])
-
-    return bbox
-
-def get_tight_bbox(pose: ArrayLike) -> torch.Tensor:
-    """Get a tight bbox around an instance.
-
-    Args:
-        poses: array of keypoints around which to create the tight bbox
-
-    Returns:
-        A torch tensor in form y1, x1, y2, x2 representing the tight bbox
-    """
-    x_coords = pose[:, 0]
-    y_coords = pose[:, 1]
-    x1 = np.min(x_coords)
-    x2 = np.max(x_coords)
-    y1 = np.min(y_coords)
-    y2 = np.max(y_coords)
-    bbox = torch.Tensor([y1, x1, y2, x2])
 
     return bbox
 
