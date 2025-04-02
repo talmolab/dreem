@@ -3,7 +3,7 @@
 from dreem.io import Config
 from dreem.inference import Tracker
 from dreem.models import GTRRunner
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from pathlib import Path
 from datetime import datetime
 
@@ -14,6 +14,7 @@ import pytorch_lightning as pl
 import torch
 import sleap_io as sio
 import logging
+import yaml
 
 
 logger = logging.getLogger("dreem.inference")
@@ -151,6 +152,10 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         )
 
         preds.save(outpath)
+    # Save pred_cfg to a yaml file in outdir
+    config_outpath = os.path.join(outdir, "pred_cfg.yaml")
+    with open(config_outpath, "w") as f:
+        yaml.dump(OmegaConf.to_container(pred_cfg.cfg, resolve=True), f)
 
     return preds
 
