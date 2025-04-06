@@ -247,6 +247,22 @@ class SleapDataset(BaseDataset):
                 else:
                     gt_instances.append(inst)
 
+            dict_instances = {}
+            for instance in gt_instances:
+                if instance.track is not None:
+                    gt_track_id = sleap_labels_obj.tracks.index(instance.track)
+                    if gt_track_id not in dict_instances:
+                        dict_instances[gt_track_id] = instance
+                    else:
+                        existing_instance = dict_instances[gt_track_id]
+                        # if existing is PredictedInstance and current is not, then current is a UserInstance and should be used
+                        if isinstance(
+                            existing_instance, sio.PredictedInstance
+                        ) and not isinstance(instance, sio.PredictedInstance):
+                            dict_instances[gt_track_id] = instance
+
+            gt_instances = list(dict_instances.values())
+
             if self.mode == "train":
                 np.random.shuffle(gt_instances)
 
