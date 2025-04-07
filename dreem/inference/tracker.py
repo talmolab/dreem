@@ -143,7 +143,6 @@ class Tracker:
 
         return frames
 
-
     def track_by_batch(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
     ) -> list[Frame]:
@@ -156,29 +155,36 @@ class Tracker:
             frames: A list of Frames populated with pred_track_ids and asso_matrices
         """
         # context window starts from last frame just before start of current batch, to window_size frames preceding it
-        # note; can't use last frame of previous batch, because there could be empty frames in between batches that must 
+        # note; can't use last frame of previous batch, because there could be empty frames in between batches that must
         # be part of the context window for consistency
         context_window_frames = self.track_queue.collate_tracks(
-            context_start_frame_id=frames[0].frame_id.item() - 1, # switched off in collate_tracks; there is no cutoff for context, only until the deque gets filled
-            device=frames[0].frame_id.device
+            context_start_frame_id=frames[0].frame_id.item()
+            - 1,  # switched off in collate_tracks; there is no cutoff for context, only until the deque gets filled
+            device=frames[0].frame_id.device,
         )
 
         context_window_instances = []
         context_window_instance_frame_ids = []
         for frame in context_window_frames:
             context_window_instances.extend(frame.instances)
-            context_window_instance_frame_ids.extend([frame.frame_id] * len(frame.instances))
-            
+            context_window_instance_frame_ids.extend(
+                [frame.frame_id] * len(frame.instances)
+            )
+
         current_batch_instances = []
         current_batch_instance_frame_ids = []
         for frame in frames:
             current_batch_instances.extend(frame.instances)
-            current_batch_instance_frame_ids.extend([frame.frame_id] * len(frame.instances))
-        
+            current_batch_instance_frame_ids.extend(
+                [frame.frame_id] * len(frame.instances)
+            )
+
         frames_to_track = context_window_frames + frames
 
         # query is current batch instances, key is context window and current batch instances
-        association_matrix = model(context_window_instances + current_batch_instances, current_batch_instances)
+        association_matrix = model(
+            context_window_instances + current_batch_instances, current_batch_instances
+        )
 
         # take association matrix and all frames off GPU (frames include instances)
         association_matrix = association_matrix[-1].to("cpu")
@@ -186,10 +192,14 @@ class Tracker:
         frames = [frame.to("cpu") for frame in frames]
 
         # keep current batch instances in assoc matrix, and remove them after softmax (mirrors the training scheme)
-        pred_frames = self._run_batch_tracker(association_matrix.matrix, context_window_frames, frames, compute_probs_by_frame=True)
+        pred_frames = self._run_batch_tracker(
+            association_matrix.matrix,
+            context_window_frames,
+            frames,
+            compute_probs_by_frame=True,
+        )
 
         return pred_frames
-    
 
     def track_by_frame(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -211,8 +221,7 @@ class Tracker:
         for batch_idx, frame_to_track in enumerate(frames):
             # if we're tracking by frame, it means context length of frames hasn't been reached yet, so context start frame id is 0
             context_window_frames = self.track_queue.collate_tracks(
-                context_start_frame_id=0,
-                device=frame_to_track.frame_id.device
+                context_start_frame_id=0, device=frame_to_track.frame_id.device
             )
             logger.debug(f"Current number of tracks is {self.track_queue.n_tracks}")
 
@@ -268,15 +277,18 @@ class Tracker:
 
         return frames
 
-
     def _run_batch_tracker(
-            self, association_matrix: torch.Tensor, context_window_frames: list[Frame], frames: list[Frame], compute_probs_by_frame: bool = True
+        self,
+        association_matrix: torch.Tensor,
+        context_window_frames: list[Frame],
+        frames: list[Frame],
+        compute_probs_by_frame: bool = True,
     ) -> Frame:
         """
         Run batch tracker performs track assignment for each frame in the current batch. Supports 2 methods for computing association probabilities.
         First is to softmax each query instance in each query frame in the batch, with only 1 frame at a time from the context window. This is the default method
         and only supports local track linking.
-        Second is to softmax the entire context + curr batch, then index. This enables global track linking via e.g. ILP. 
+        Second is to softmax the entire context + curr batch, then index. This enables global track linking via e.g. ILP.
         In this case, prob values will be smaller and the overlap thresh should be decreased
 
         Args:
@@ -288,7 +300,9 @@ class Tracker:
             List of frames populated with pred_track_ids and asso_matrices
         """
         tracked_frames = []
-        num_instances_per_frame = [frame.num_detected for frame in context_window_frames + frames]
+        num_instances_per_frame = [
+            frame.num_detected for frame in context_window_frames + frames
+        ]
         all_frames = context_window_frames + frames
         batch_start_ind = len(num_instances_per_frame) - len(frames)
         overlap_thresh = self.overlap_thresh
@@ -296,14 +310,28 @@ class Tracker:
         n_traj = self.track_queue.n_tracks
         curr_track = self.track_queue.curr_track
 
-        for query_frame_idx, frame in enumerate(frames): # only track frames in current batch, not in context window
-            all_prev_instances = [instance for frame in context_window_frames + frames[:query_frame_idx] for instance in frame.instances]
+        for query_frame_idx, frame in enumerate(
+            frames
+        ):  # only track frames in current batch, not in context window
+            all_prev_instances = [
+                instance
+                for frame in context_window_frames + frames[:query_frame_idx]
+                for instance in frame.instances
+            ]
             # indices that will be used to index the rows of the association matrix corresponding to the query frame instances
             query_inds = [
                 x
                 for x in range(
-                    sum(num_instances_per_frame[batch_start_ind:batch_start_ind + query_frame_idx]),
-                    sum(num_instances_per_frame[batch_start_ind:batch_start_ind + query_frame_idx + 1]),
+                    sum(
+                        num_instances_per_frame[
+                            batch_start_ind : batch_start_ind + query_frame_idx
+                        ]
+                    ),
+                    sum(
+                        num_instances_per_frame[
+                            batch_start_ind : batch_start_ind + query_frame_idx + 1
+                        ]
+                    ),
                 )
             ]
             # first, slice the association matrix to only include the query frame instances along the rows; these are the 'detections' to be matched to tracks
@@ -311,12 +339,16 @@ class Tracker:
             assoc_curr_frame = association_matrix[query_inds, :]
             # discard the columns (ref instances) corresponding to frames including and after the current frame; this means each frame will see previous frames in the batch as well as the context window when linking to tracks
             # importantly, this means that tracks will be aggregated over a much longer time period than the context window size, making many more tracks visible to each frame to link detections to
-            assoc_curr_frame_by_previous_frames = assoc_curr_frame[:, :sum(num_instances_per_frame[:batch_start_ind + query_frame_idx])] # (num_query_instances, num instances in context window + num instances in current batch up till current frame)
-            
+            assoc_curr_frame_by_previous_frames = assoc_curr_frame[
+                :, : sum(num_instances_per_frame[: batch_start_ind + query_frame_idx])
+            ]  # (num_query_instances, num instances in context window + num instances in current batch up till current frame)
+
             # method 1
             if compute_probs_by_frame:
                 # for each frame in the context window, split the assoc matrix columns by frame
-                split_assos = assoc_curr_frame_by_previous_frames.split(num_instances_per_frame[:batch_start_ind + query_frame_idx], dim=1)
+                split_assos = assoc_curr_frame_by_previous_frames.split(
+                    num_instances_per_frame[: batch_start_ind + query_frame_idx], dim=1
+                )
                 # compute softmax per-frame
                 softmaxed_asso = model_utils.softmax_asso(split_assos)
                 # merge the softmaxed assoc matrices back together to get (num_query_instances, num_instances_in_context_window)
@@ -324,7 +356,9 @@ class Tracker:
             # method 2
             else:
                 # compute softmax across the entire context window and current batch frames
-                softmaxed_asso = model_utils.softmax_asso(assoc_curr_frame_by_previous_frames)[0]
+                softmaxed_asso = model_utils.softmax_asso(
+                    assoc_curr_frame_by_previous_frames
+                )[0]
 
             # proceed with post processing, LSA, and track assignment (duplicated code with frame by frame tracker)
 
@@ -336,27 +370,29 @@ class Tracker:
             prev_frame_boxes = torch.cat(
                 [instance.bbox for instance in prev_frame.instances], dim=0
             )
-            all_prev_frames_boxes = torch.cat([instance.bbox for instance in all_prev_instances], dim=0)
+            all_prev_frames_boxes = torch.cat(
+                [instance.bbox for instance in all_prev_instances], dim=0
+            )
             curr_frame_boxes = torch.cat(
                 [instance.bbox for instance in frame.instances], dim=0
             )
             # get the pred track ids for all instances up until the current frame
             instance_ids = torch.cat(
-            [
-                x.get_pred_track_ids()
-                for x in all_frames[:batch_start_ind + query_frame_idx]
-            ],
-            dim=0,
+                [
+                    x.get_pred_track_ids()
+                    for x in all_frames[: batch_start_ind + query_frame_idx]
+                ],
+                dim=0,
             ).view(
-                sum(num_instances_per_frame[:batch_start_ind + query_frame_idx])
+                sum(num_instances_per_frame[: batch_start_ind + query_frame_idx])
             )  # (n_nonquery,)
 
             unique_ids = torch.unique(instance_ids)  # (n_nonquery,)
 
             _, h, w = frame.img_shape.flatten()
             bbox_scaler = torch.tensor([w, h, w, h])
-            query_boxes =  curr_frame_boxes / bbox_scaler # n_k x 4
-            nonquery_boxes = all_prev_frames_boxes / bbox_scaler # n_nonquery x 4
+            query_boxes = curr_frame_boxes / bbox_scaler  # n_k x 4
+            nonquery_boxes = all_prev_frames_boxes / bbox_scaler  # n_nonquery x 4
 
             logger.debug(f"Instance IDs: {instance_ids}")
             logger.debug(f"unique ids: {unique_ids}")
@@ -377,7 +413,10 @@ class Tracker:
             # post processing
             if id_inds.numel() > 0:
                 last_inds = (
-                    id_inds * torch.arange(len(all_prev_instances), device=id_inds.device)[:, None]
+                    id_inds
+                    * torch.arange(len(all_prev_instances), device=id_inds.device)[
+                        :, None
+                    ]
                 ).max(dim=0)[
                     1
                 ]  # M
@@ -411,7 +450,9 @@ class Tracker:
                 # to an existing track if that track has already been matched several times.
                 # So if an existing track in the window has been matched a lot, it gets harder to match to that track.
                 thresh = (
-                    overlap_thresh * id_inds[:, j].sum() if mult_thresh else overlap_thresh
+                    overlap_thresh * id_inds[:, j].sum()
+                    if mult_thresh
+                    else overlap_thresh
                 )
                 if n_traj >= self.max_tracks or traj_score[i, j] > thresh:
                     logger.debug(
@@ -440,7 +481,6 @@ class Tracker:
                 self.track_queue.increment_gaps([])
 
         return tracked_frames
-    
 
     def _run_frame_by_frame_tracker(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
