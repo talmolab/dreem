@@ -337,8 +337,10 @@ class AssociationMatrix:
 
     def to(self, map_location: str | torch.device) -> Self:
         """Move instance to different device or change dtype. (See `torch.to` for more info).
+
         Args:
             map_location: Either the device or dtype for the instance to be moved.
+
         Returns:
             self: reference to the instance moved to correct device/dtype.
         """

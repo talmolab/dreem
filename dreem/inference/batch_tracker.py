@@ -133,6 +133,7 @@ class BatchTracker:
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
             frames: A list of Frames (See `dreem.io.Frame` for more info).
+
         Returns:
             frames: A list of Frames populated with pred_track_ids and asso_matrices
         """
@@ -152,6 +153,7 @@ class BatchTracker:
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
             frames: A list of Frames (See `dreem.io.Frame` for more info).
+
         Returns:
             frames: A list of Frames populated with pred_track_ids and asso_matrices
         """
@@ -210,6 +212,7 @@ class BatchTracker:
         Args:
             model: the pretrained GlobalTrackingTransformer to be used for inference
             frames: A list of Frames (See `dreem.io.Frame` for more info).
+
         Returns:
             frames: A list of Frames populated with pred_track_ids and asso_matrices
         """
@@ -285,18 +288,18 @@ class BatchTracker:
         frames: list[Frame],
         compute_probs_by_frame: bool = True,
     ) -> Frame:
-        """
-        Run batch tracker performs track assignment for each frame in the current batch. Supports 2 methods for computing association probabilities.
-        First is to softmax each query instance in each query frame in the batch, with only 1 frame at a time from the context window. This is the default method
-        and only supports local track linking.
-        Second is to softmax the entire context + curr batch, then index. This enables global track linking via e.g. ILP.
-        In this case, prob values will be smaller and the overlap thresh should be decreased
+        """Run batch tracker performs track assignment for each frame in the current batch.
+
+        Supports 2 methods for computing association probabilities. First is to softmax each query instance in each query frame in the batch, with only 1 frame at a time from the context window.
+        This is the default method and only supports local track linking.
+        Second is to softmax the entire context + curr batch, then index. This enables global track linking via e.g. ILP. In this case, prob values will be smaller and the overlap thresh should be decreased
 
         Args:
             association_matrix: the association matrix to be used for tracking
-            :
-            batch_start_ind: The index (in frames_to_track) of the first frame in the current batch
+            context_window_frames: list of frames in the context window
+            frames: list of frames in the current batch
             compute_probs_by_frame: Whether to softmax the association matrix logits for each frame in context separately, or globally for the entire context window + current batch
+
         Returns:
             List of frames populated with pred_track_ids and asso_matrices
         """
