@@ -31,6 +31,7 @@ class Tracker:
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
+        **kwargs,
     ):
         """Initialize a tracker to run inference.
 

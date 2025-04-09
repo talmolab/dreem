@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import attrs
 import logging
-
+from typing import Self
 from dreem.io import Instance
 
 logger = logging.getLogger("dreem.io")
@@ -334,3 +334,20 @@ class AssociationMatrix:
             raise ValueError(f"Unsupported label '{label}'. Expected 'pred' or 'gt'.")
 
         return traj
+
+    def to(self, map_location: str | torch.device) -> Self:
+        """Move instance to different device or change dtype. (See `torch.to` for more info).
+        Args:
+            map_location: Either the device or dtype for the instance to be moved.
+        Returns:
+            self: reference to the instance moved to correct device/dtype.
+        """
+        self.matrix = self.matrix.to(map_location)
+        self.ref_instances = [
+            instance.to(map_location) for instance in self.ref_instances
+        ]
+        self.query_instances = [
+            instance.to(map_location) for instance in self.query_instances
+        ]
+
+        return self

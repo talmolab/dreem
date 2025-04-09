@@ -227,7 +227,7 @@ class TrackQueue:
 
     def collate_tracks(
         self,
-        context_start_frame_id: int,
+        context_start_frame_id: int | None = None,
         track_ids: list[int] | None = None,
         device: str | device | None = None,
     ) -> list[Frame]:
