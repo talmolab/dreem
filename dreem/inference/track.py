@@ -1,7 +1,7 @@
 """Script to run inference and get out tracks."""
 
 from dreem.io import Config
-from dreem.inference import Tracker
+from dreem.inference import Tracker, BatchTracker
 from dreem.models import GTRRunner
 from omegaconf import DictConfig
 from pathlib import Path
@@ -128,7 +128,10 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     tracker_cfg = pred_cfg.get_tracker_cfg()
     logger.info("Updating tracker hparams")
     model.tracker_cfg = tracker_cfg
-    model.tracker = Tracker(**model.tracker_cfg)
+    if model.tracker_cfg.get("use_batch_tracker", False):
+        model.tracker = BatchTracker(**model.tracker_cfg)
+    else:
+        model.tracker = Tracker(**model.tracker_cfg)
     logger.info(f"Using the following tracker:")
     logger.info(model.tracker)
 
