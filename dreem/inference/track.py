@@ -150,7 +150,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         preds = track(model, trainer, dataloader)
         outpath = os.path.join(
             outdir,
-            f"{Path(vid_file[0]).parent.name}.dreem_inference.{get_timestamp()}.slp",
+            f"{Path(vid_file).stem}.dreem_inference.{get_timestamp()}.slp",
         )
 
         preds.save(outpath)
