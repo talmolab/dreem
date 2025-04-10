@@ -2,7 +2,7 @@
 
 from dreem.io import Config
 from dreem.models import GTRRunner
-from dreem.inference import Tracker
+from dreem.inference import Tracker, BatchTracker
 from omegaconf import DictConfig
 from pathlib import Path
 
@@ -49,7 +49,10 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
 
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     model.tracker_cfg = eval_cfg.cfg.tracker
-    model.tracker = Tracker(**model.tracker_cfg)
+    if model.tracker_cfg.get("use_batch_tracker", False):
+        model.tracker = BatchTracker(**model.tracker_cfg)
+    else:
+        model.tracker = Tracker(**model.tracker_cfg)
     logger.info(f"Using the following tracker:")
     print(model.tracker)
     model.metrics["test"] = eval_cfg.get("metrics", {}).get("test", "all")
