@@ -252,6 +252,16 @@ class Config:
 
         logger.debug(f"Found {len(label_files)} labels and {len(vid_files)} videos")
 
+        # backdoor to set label files directly in the configs (i.e. bypass dir.path)
+        if data_cfg.get("slp_files", None):
+            logger.debug("Overriding label files with user provided list")
+            slp_files = data_cfg.get("slp_files")
+            if len(slp_files) > 0:
+                label_files = slp_files
+        if data_cfg.get("video_files", None):
+            individual_video_files = data_cfg.get("video_files")
+            if len(individual_video_files) > 0:
+                vid_files = individual_video_files
         return label_files, vid_files
 
     def get_dataset(
