@@ -7,7 +7,7 @@ from pytorch_lightning import Trainer
 from omegaconf import OmegaConf, DictConfig
 from dreem.io import Frame, Instance, Config
 from dreem.models import GTRRunner, GlobalTrackingTransformer
-from dreem.inference import Tracker, post_processing, metrics
+from dreem.inference import Tracker, post_processing, metrics, BatchTracker
 from dreem.inference.track_queue import TrackQueue
 from dreem.inference.track import run
 import os

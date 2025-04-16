@@ -1,5 +1,6 @@
 ckpt_path: null
 tracker:
+  tracker_type: "batch" # frame by frame tracker is "standard"
   overlap_thresh: 0.01
   decay_time: 0.9
   iou: "mult"

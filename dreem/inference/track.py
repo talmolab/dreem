@@ -128,7 +128,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     tracker_cfg = pred_cfg.get_tracker_cfg()
     logger.info("Updating tracker hparams")
     model.tracker_cfg = tracker_cfg
-    if model.tracker_cfg.get("use_batch_tracker", False):
+    if model.tracker_cfg.get("tracker_type", "standard") == "batch":
         model.tracker = BatchTracker(**model.tracker_cfg)
     else:
         model.tracker = Tracker(**model.tracker_cfg)

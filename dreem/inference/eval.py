@@ -49,12 +49,12 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
 
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     model.tracker_cfg = eval_cfg.cfg.tracker
-    if model.tracker_cfg.get("use_batch_tracker", False):
+    if model.tracker_cfg.get("tracker_type", "standard") == "batch":
         model.tracker = BatchTracker(**model.tracker_cfg)
     else:
         model.tracker = Tracker(**model.tracker_cfg)
     logger.info(f"Using the following tracker:")
-    print(model.tracker)
+    logger.info(model.tracker)
     model.metrics["test"] = eval_cfg.get("metrics", {}).get("test", "all")
     model.persistent_tracking["test"] = True
     logger.info(f"Computing the following metrics:")

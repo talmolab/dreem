@@ -73,8 +73,8 @@ class GTRRunner(LightningModule):
 
         self.model = GlobalTrackingTransformer(**self.model_cfg)
         self.loss = AssoLoss(**self.loss_cfg)
-        if self.tracker_cfg.get("use_batch_tracker", False):
-            self.batch_tracker = BatchTracker(**self.tracker_cfg)
+        if self.tracker_cfg.get("tracker_type", "standard") == "batch":
+            self.tracker = BatchTracker(**self.tracker_cfg)
         else:
             self.tracker = Tracker(**self.tracker_cfg)
         self.optimizer_cfg = optimizer_cfg
