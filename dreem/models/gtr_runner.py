@@ -6,7 +6,7 @@ import logging
 import pandas as pd
 import h5py
 import os
-from dreem.inference import Tracker
+from dreem.inference import Tracker, BatchTracker
 from dreem.inference import metrics
 from dreem.models import GlobalTrackingTransformer
 from dreem.training.losses import AssoLoss
@@ -73,8 +73,10 @@ class GTRRunner(LightningModule):
 
         self.model = GlobalTrackingTransformer(**self.model_cfg)
         self.loss = AssoLoss(**self.loss_cfg)
-        self.tracker = Tracker(**self.tracker_cfg)
-
+        if self.tracker_cfg.get("tracker_type", "standard") == "batch":
+            self.tracker = BatchTracker(**self.tracker_cfg)
+        else:
+            self.tracker = Tracker(**self.tracker_cfg)
         self.optimizer_cfg = optimizer_cfg
         self.scheduler_cfg = scheduler_cfg
 

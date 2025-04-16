@@ -7,7 +7,7 @@ from pytorch_lightning import Trainer
 from omegaconf import OmegaConf, DictConfig
 from dreem.io import Frame, Instance, Config
 from dreem.models import GTRRunner, GlobalTrackingTransformer
-from dreem.inference import Tracker, post_processing, metrics
+from dreem.inference import Tracker, post_processing, metrics, BatchTracker
 from dreem.inference.track_queue import TrackQueue
 from dreem.inference.track import run
 import os
@@ -33,10 +33,10 @@ def test_track_queue():
 
         tq.add_frame(frame)
 
-    assert len(tq) == sum(n_instances_per_frame[1:])
+    assert len(tq) == sum(n_instances_per_frame)
     assert tq.n_tracks == max(n_instances_per_frame)
     assert tq.tracks == [i for i in range(max(n_instances_per_frame))]
-    assert len(tq.collate_tracks()) == window_size - 1
+    assert len(tq.collate_tracks()) == window_size
     assert all([gap == 0 for gap in tq._curr_gap.values()])
     assert tq.curr_track == max(n_instances_per_frame) - 1
 
@@ -49,7 +49,7 @@ def test_track_queue():
         )
     )
 
-    assert len(tq._queues[0]) == window_size - 1
+    assert len(tq._queues[0]) == window_size
     assert tq._curr_gap[0] == 0
     assert tq._curr_gap[max(n_instances_per_frame) - 1] == 1
 
