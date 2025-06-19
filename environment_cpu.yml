@@ -29,3 +29,4 @@ dependencies:
     - seaborn
     - wandb
     - timm
+    - gdown
