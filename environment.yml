@@ -31,3 +31,4 @@ dependencies:
     - wandb
     - timm
     - gdown
+    - "huggingface_hub[cli]"
