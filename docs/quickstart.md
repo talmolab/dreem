@@ -7,13 +7,13 @@ DREEM operations can be performed either through the command-line interface or t
 In this example we will track a social interaction between two flies from [sleap's fly32 dataset](https://sleap.ai/datasets.html#fly32) using a pretrained model. This example assumes that you have a conda environment installed with the dreem package. Please see [the installation guide](./index.md#installation) if you haven't installed it yet.
 
 ### Get data
-First, we need at least one video and a set of corresponding detections to work with. For this example, we provide a video and a `.slp` file with pose keypoints for the video. This dataset can be downloaded using [`gdown`](https://github.com/wkentaro/gdown). First make sure you have `gdown` installed (it should be installed in the conda env already if you followed the installation guide):
-
-Let's first move into our home directory via 
+First, we need at least one video and a set of corresponding detections to work with. For this example, we provide a video and a `.slp` file with pose keypoints for the video. This dataset can be downloaded using [`gdown`](https://github.com/wkentaro/gdown). First, let's first move into our home directory via 
 
 ```bash
 cd ~
 ```
+
+Next, make sure you have `gdown` installed (it should be installed in the conda env already if you followed the installation guide):
 
 ```bash
 pip install gdown
@@ -30,15 +30,19 @@ This should download a `.zip` file called `demo-assets.zip` to your current work
 ```bash
 ls demo-assets.zip
 ```
+
 which should output `demo-assets.zip`. Now, we just need to unzip the folder with 
 
 ```bash
 unzip demo-assets.zip
 ```
+
 To confirm everything is correct, you can run
+
 ```bash
 ls -R demo-assets
 ```
+
 which will output:
 ```
 base.yaml               inference.yaml          val
@@ -57,20 +61,22 @@ demo-assets/val:
 GT_two_flies.slp        two_flies.mp4
 ```
 
-To summarize this into one set of commands, we simply need to run:
-```bash
-pip install gdown # make sure `gdown` is installed
-gdown --fuzzy https://drive.google.com/file/d/1grmoUH8ugDIF3z9djbDfu0sx8ylwPErB/view #download zip file
-unzip demo-assets.zip # unzip compressed version
-```
-
 We'll also use this as our working directory so let's move into it.
 ```bash
 cd demo-assets
 ```
 
+To summarize this into one set of commands, we simply need to run:
+```bash
+cd ~ # move to home directory
+pip install gdown # make sure `gdown` is installed
+gdown --fuzzy https://drive.google.com/file/d/1grmoUH8ugDIF3z9djbDfu0sx8ylwPErB/view #download zip file
+unzip demo-assets.zip # unzip compressed version
+cd demo-assets # move into demo assets as working directory
+```
+
 ### Get model checkpoint.
-Now we'll pull a pretrained model checkpoint trained on flies in order to run inference from [huggingface](https://huggingface.co/talmolab/animals-pretrained). First make sure you have the hugging face CLI installed (once again it should be installed in your conda environment already)
+Now we'll pull a pretrained model checkpoint trained on flies in order to run inference from [`huggingface`](https://huggingface.co/talmolab/animals-pretrained). First make sure you have [the `huggingface` CLI](https://huggingface.co/docs/huggingface_hub/en/guides/cli) installed (once again it should be installed in your conda environment already)
 
 ```bash
 pip install "huggingface_hub[cli]"
@@ -91,11 +97,18 @@ which should output
 animals-pretrained.ckpt
 ```
 
+To summarize, run:
+```bash
+pip install "huggingface_hub[cli]" # make sure hugging-face cli is installed
+huggingface-cli download talmolab/animals-pretrained animals-pretrained.ckpt --local-dir=. #download checkpoint
+ls animals-pretrained.ckpt #confirm checkpoint is downloaded
+```
+
 ### Run Tracking
 
 Finally, we can run tracking quite easily via
 
-```
+```bash
 dreem-track --config-dir=. --config-name=eval ckpt_path=./animals-pretrained.ckpt  #TODO: make sure ckpt file is correct 
 ```
 
@@ -107,7 +120,6 @@ ls eval/GT_190719_090330_wt_18159206_rig1.2@15000-17560.dreem_inference.slp
 ```
 
 ## What's next?
-
 ### Visualize Results
 First, we recommend visualizing the outputs of the tracks you just made. You can do so by first installing sleap via [its installation guide](https://sleap.ai/#quick-install) and then running
 
