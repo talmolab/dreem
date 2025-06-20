@@ -150,9 +150,17 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         preds = track(model, trainer, dataloader)
         outpath = os.path.join(
             outdir,
-            f"{Path(vid_file).stem}.dreem_inference.{get_timestamp()}.slp",
+            f"{Path(vid_file).stem}.dreem_inference.slp",
         )
-
+        if os.path.exists(outpath):
+            outpath_og = outpath
+            outpath = outpath = os.path.join(
+                outdir,
+                f"{Path(vid_file).stem}.dreem_inference.{get_timestamp()}.slp",
+            )
+            logger.warning(
+                f"Output file {outpath_og} already exists. Saving to {outpath} instead."
+            )
         preds.save(outpath)
 
     return preds
