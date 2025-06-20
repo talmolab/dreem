@@ -9,6 +9,12 @@ In this example we will track a social interaction between two flies from [sleap
 ### Get data
 First, we need at least one video and a set of corresponding detections to work with. For this example, we provide a video and a `.slp` file with pose keypoints for the video. This dataset can be downloaded using [`gdown`](https://github.com/wkentaro/gdown). First make sure you have `gdown` installed (it should be installed in the conda env already if you followed the installation guide):
 
+Let's first move into our home directory via 
+
+```bash
+cd ~
+```
+
 ```bash
 pip install gdown
 ```
@@ -58,23 +64,31 @@ gdown --fuzzy https://drive.google.com/file/d/1grmoUH8ugDIF3z9djbDfu0sx8ylwPErB/
 unzip demo-assets.zip # unzip compressed version
 ```
 
+We'll also use this as our working directory so let's move into it.
+```bash
+cd demo-assets
+```
+
 ### Get model checkpoint.
-Now we'll pull a pretrained model checkpoint trained on flies in order to run inference from [huggingface](https://huggingface.co/talmolab/animals-pretrained) via the following command
+Now we'll pull a pretrained model checkpoint trained on flies in order to run inference from [huggingface](https://huggingface.co/talmolab/animals-pretrained). First make sure you have the hugging face CLI installed (once again it should be installed in your conda environment already)
 
 ```bash
-git lfs install ## Make sure git-lfs is installed (https://git-lfs.com)
-git clone https://huggingface.co/talmolab/animals-pretrained
+pip install "huggingface_hub[cli]"
+```
+
+Now we download the pretrained animal tracking model via
+```bash
+huggingface-cli download talmolab/animals-pretrained animals-pretrained.ckpt --local-dir=.
 ```
 
 To confirm this downloaded properly you can once again run
 ```bash
-ls animals-pretrained
+ls animals-pretrained.ckpt
 ```
 which should output
 
 ```bash
-animals-base.yaml               sample-eval-animals.yaml
-animals-override.yaml
+animals-pretrained.ckpt
 ```
 
 ### Run Tracking
@@ -82,35 +96,40 @@ animals-override.yaml
 Finally, we can run tracking quite easily via
 
 ```
-dreem-track --config-dir=. --config-name=eval ckpt_path=./animals-pretrained/pretrained-animals.ckpt  #TODO: make sure ckpt file is correct 
+dreem-track --config-dir=. --config-name=eval ckpt_path=./animals-pretrained.ckpt  #TODO: make sure ckpt file is correct 
 ```
 
-Once completed, it should output a file called `GT_190719_090330_wt_18159206_rig1.2@15000-17560.dreem_inference.slp`
+Once completed, it should output a file in the `eval` folder called `GT_190719_090330_wt_18159206_rig1.2@15000-17560.dreem_inference.slp`
 which you can confirm by running
 
 ```bash
-ls GT_190719_090330_wt_18159206_rig1.2@15000-17560.dreem_inference.slp
+ls eval/GT_190719_090330_wt_18159206_rig1.2@15000-17560.dreem_inference.slp
 ```
-
-### Visualize Tracks
-
-Finally, we can visualize the output of dreem via `dreem-visualize` by running the following command:
-
-```bash
-dreem-visualize +labels_path=./GT_190719_090330_wt_18159206_rig1.2@15000-17560.dreem_inference.slp +save_path=./demo_annotation.mp4
-```
-
-This will output an mp4 file of the animal behavior video annotated by the bounding box which have been colored by track id.
 
 ## What's next?
-First, we recommend checking out the full usage guide and try to run through the whole work flow of 
+
+### Visualize Results
+First, we recommend visualizing the outputs of the tracks you just made. You can do so by first installing sleap via [its installation guide](https://sleap.ai/#quick-install) and then running
+
+```bash
+sleap-label eval/GT_190719_090330_wt_18159206_rig1.2@15000-17560.dreem_inference.slp
+```
+
+### Run through full workflow 
+Next, We recommend checking out [the full usage guide](./usage.md) and try to run through the whole work flow of
+
 1. Training a model
 2. Evaluating the model on held out data
 3. Running inference on another held out video
 4. Visualizing the results.
 
+This will get you very comfortable with configuring custom training jobs, evaluating your models, tracking your own data and visualizing the results.
 
+### (Optional) Try out API Demo
 If you're comfortable with python (more specifically pytorch), You can also check out our demo notebook for how to use the API to work through the above workflow instead. This will enable you to do more custom things with DREEM!.
 
-Now, get some SLEAP and sweet DREEMs!
+
+### Get some SLEAP and sweet DREEMs!
+
+The animal checkpoint we used above was actually pretrained on a wide variety of animals from mice, to flies, to zebrafish. Thus, you can actually just generate some detection data via SLEAP and then use our pretrained model as we just did to run tracking!
 
