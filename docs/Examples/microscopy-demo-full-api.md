@@ -1,13 +1,16 @@
-# DREEM demo for microscopy - from raw tiff stacks to tracked identities
+## DREEM workflow for microscopy - detailed API usage
+### From raw tiff stacks to tracked identities
 
-This notebook will walk you through the typical workflow for microscopy identity tracking. We start with a raw tiff stack, pass it through an off-the-shelf detection model, and feed those detections into DREEM. 
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/main/docs/Examples/microscopy-demo-full-api.ipynb)
 
-This notebook uses a simple entrypoint into the tracking code. You only need to specify a configuration file, and a few lines of code!
 
-To run this demo, we have provided sample data, model checkpoints, and configurations. The data used in this demo is small enough to be run on a CPU
+This notebook will walk you through the typical workflow for microscopy identity tracking. We start with an off-the-shelf detection model, and feed those results into DREEM. 
+Here, we'll use the API, but we also provide a CLI interface for convenience.
 
-#### Directory structure: (data, models and configs will be downloaded)
-```
+To run this demo, we have provided sample data, model checkpoints, and configurations. The data used in this demo is small enough to be run on a single machine, though a GPU is recommended. 
+
+#### Directory structure (data, models and configs will be downloaded)
+```bash
 ./data
     /dynamicnuclearnet
         /test_1
@@ -16,10 +19,12 @@ To run this demo, we have provided sample data, model checkpoints, and configura
         /7-2
         /7-2_GT
         /mp4-for-visualization
- ./configs
-     eval.yaml
- microscopy-demo-simple.ipynb
- ```
+./configs
+    eval.yaml
+./models
+    pretrained_microscopy.ckpt
+ microscopy-demo-full-api.ipynb
+```
 
 #### Install huggingface hub to access models and data
 
@@ -32,14 +37,21 @@ To run this demo, we have provided sample data, model checkpoints, and configura
 
 
 ```python
-import os
 import torch
-import numpy as np
-from omegaconf import OmegaConf
-from dreem.inference import track
-import matplotlib.pyplot as plt
-from pathlib import Path
 import pandas as pd
+import numpy as np
+import os
+from pathlib import Path
+from datetime import datetime
+import pytorch_lightning as pl
+from omegaconf import OmegaConf
+from dreem.io import Config
+from dreem.datasets import TrackingDataset
+from dreem.models import GTRRunner
+from dreem.inference import Tracker
+import sleap_io as sio
+import matplotlib.pyplot as plt
+import h5py
 from huggingface_hub import hf_hub_download
 ```
 
@@ -57,7 +69,7 @@ os.makedirs(model_save_dir, exist_ok=True)
 
 
 ```python
-model_path = hf_hub_download(repo_id="talmolab/microscopy-pretrained", filename="pretrained-microscopy",
+model_path = hf_hub_download(repo_id="talmolab/microscopy-pretrained", filename="pretrained-microscopy.ckpt",
 local_dir=model_save_dir)
 
 config_path = hf_hub_download(repo_id="talmolab/microscopy-pretrained", filename="sample-eval-microscopy.yaml",
@@ -66,11 +78,7 @@ local_dir=config_save_dir)
 
 
 ```python
-data_path_dnn = hf_hub_download(repo_id="talmolab/microscopy-demo", filename="dynamicnuclearnet",
-local_dir=data_save_dir, repo_type="dataset")
-
-data_path_lysosomes = hf_hub_download(repo_id="talmolab/microscopy-demo", filename="lysosomes",
-local_dir=data_save_dir, repo_type="dataset")
+!huggingface-cli download talmolab/microscopy-demo --repo-type dataset --local-dir ./data
 ```
 
 #### Verify that the model loads properly
@@ -101,7 +109,7 @@ torch.set_float32_matmul_precision("medium")
 
 ## Detection
 
-Here we use CellPose to create segmentation masks for our instances. **If you want to skip this stage**, we have provided segmentation masks for the lysosomes dataset located at ./data/lysosomes. You can enter this path in the configuration file provided, under dataset.test_dataset.dir.path, and then skip straight ahead to the section labelled DREEM Inference below
+Here we use CellPose to create segmentation masks for our instances. If you want to skip this stage, we have provided segmentation masks for the lysosomes dataset located at ./data/lysosomes. You can enter this path in the configuration file provided, under dataset.test_dataset.dir.path, and then skip straight ahead to the section labelled DREEM Inference below
 
 #### Install CellPose
 
@@ -178,16 +186,76 @@ plt.show()
 ```
 
 ## DREEM Inference
+In this section, we demonstrate the standard DREEM inference pipeline using the API
 
 
 ```python
-pred_cfg_path = "./configs/eval.yaml"
-pred_cfg = OmegaConf.load(pred_cfg_path)
+model = GTRRunner.load_from_checkpoint(model_path, strict=False)
 ```
 
+### Setup inference configs
+#### NOTE: We can only specify 1 directory at a time when running inference. To test a different dataset, just enter the path to the directory containing the dataset. See the config for an example
+
 
 ```python
-preds = track.run(pred_cfg)
+pred_cfg_path = "./configs/sample-eval-microscopy.yaml"
+# use OmegaConf to load the config
+pred_cfg = OmegaConf.load(pred_cfg_path)
+pred_cfg = Config(pred_cfg)
+```
+
+Get the tracker settings from the config and initialize the tracker
+
+
+```python
+tracker_cfg = pred_cfg.get_tracker_cfg()
+model.tracker_cfg = tracker_cfg
+model.tracker = Tracker(**model.tracker_cfg)
+trainer = pred_cfg.get_trainer()
+# inference results will be saved here
+outdir = "./results"
+os.makedirs(outdir, exist_ok=True)
+```
+
+### Prepare data and run inference
+
+
+```python
+labels_files, vid_files = pred_cfg.get_data_paths(mode="test", data_cfg=pred_cfg.cfg.dataset.test_dataset)
+
+for label_file, vid_file in zip(labels_files, vid_files):
+    dataset = pred_cfg.get_dataset(
+        label_files=[label_file], vid_files=[vid_file], mode="test"
+    )
+    dataloader = pred_cfg.get_dataloader(dataset, mode="test")
+    
+    # the actual inference is done here
+    preds = trainer.predict(model, dataloader)
+
+    # convert the predictions to sleap format
+    pred_slp = []
+    tracks = {}
+    for batch in preds:
+        for frame in batch:
+            if frame.frame_id.item() == 0:
+                video = (
+                    sio.Video(frame.video)
+                    if isinstance(frame.video, str)
+                    else sio.Video
+                )
+            lf, tracks = frame.to_slp(tracks, video=video)
+            pred_slp.append(lf)
+    pred_slp = sio.Labels(pred_slp)
+    # save the predictions to disk (requires sleap-io)
+    if isinstance(vid_file, list):
+        save_file_name = vid_file[0].split("/")[-2]
+    else:
+        save_file_name = vid_file
+    outpath = os.path.join(
+        outdir,
+        f"{Path(save_file_name).stem}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp",
+    )
+    pred_slp.save(outpath)
 ```
 
 ## Visualize the results
@@ -341,7 +409,7 @@ Load the predictions into a dataframe to make an animation
 
 ```python
 list_frames = []
-for lf in preds:
+for lf in pred_slp:
     for instance in lf.instances:
         centroid = np.nanmean(instance.numpy(), axis=0)
         track_id = int(instance.track.name)
@@ -353,9 +421,9 @@ Create and display the animation in the notebook
 
 
 ```python
-for file in os.listdir(os.path.join(pred_cfg.dataset.test_dataset['dir']['path'], "mp4-for-visualization")):
+for file in os.listdir(os.path.join(pred_cfg.cfg.dataset.test_dataset['dir']['path'], 'mp4-for-visualization')):
     if file.endswith('.mp4'):
-        video_path = os.path.join(pred_cfg.dataset.test_dataset['dir']['path'], "mp4-for-visualization", file)
+        video_path = os.path.join(pred_cfg.cfg.dataset.test_dataset['dir']['path'], 'mp4-for-visualization', file)
 
 anim = create_tracking_animation(
     video_path=video_path,
@@ -363,9 +431,106 @@ anim = create_tracking_animation(
     fps=15,
     text_size=5,
     marker_size=8,
-    max_frames=200
+    max_frames=300
 )
 
 # save the animation
 video = save_animation(anim, f"./tracking_vis-{video_path.split('/')[-1]}")
+```
+
+## Evaluate the tracking results
+In this section, we evaluate metrics on a ground truth labelled test set. Note that in this example, the test set we used to demonstrate the inference pipeline is the same as the one we use here. To verify that
+we do not in fact use any ground truth information during tracking, go to our full dreem-demo notebook, where we use de-labelled data to verify this
+
+
+```python
+pred_cfg_path = "./configs/eval.yaml"
+# use OmegaConf to load the config
+eval_cfg = OmegaConf.load(pred_cfg_path)
+eval_cfg = Config(eval_cfg)
+```
+
+
+```python
+model.metrics["test"] = eval_cfg.get("metrics", {}).get("test", "all")
+model.test_results["save_path"] = eval_cfg.get("outdir", "./eval")
+os.makedirs(model.test_results["save_path"], exist_ok=True)
+```
+
+Run evaluation pipeline. Note how we use trainer.test() to run evaluation whereas earlier, we used trainer.predict() to run inference
+
+
+```python
+labels_files, vid_files = eval_cfg.get_data_paths(mode="test", data_cfg=eval_cfg.cfg.dataset.test_dataset)
+trainer = eval_cfg.get_trainer()
+for label_file, vid_file in zip(labels_files, vid_files):
+    dataset = eval_cfg.get_dataset(
+        label_files=[label_file], vid_files=[vid_file], mode="test"
+    )
+    dataloader = eval_cfg.get_dataloader(dataset, mode="test")
+    metrics = trainer.test(model, dataloader)
+```
+
+### Extract the results and view key metrics
+The results get saved to an HDF5 file in the directory specified in the config
+
+
+```python
+for file in os.listdir(model.test_results["save_path"]):
+    if file.endswith(".h5"):
+        h5_path = os.path.join(model.test_results["save_path"], file)
+```
+
+
+```python
+dict_vid_motmetrics = {}
+dict_vid_gta = {}
+dict_vid_switch_frame_crops = {}
+
+with h5py.File(h5_path, "r") as results_file:
+    # Iterate through all video groups
+    for vid_name in results_file.keys():
+        print("Extracting metrics and crops for video: ", vid_name)
+        vid_group = results_file[vid_name]
+        # Load MOT summary
+        if "mot_summary" in vid_group:
+            mot_summary_keys = list(vid_group["mot_summary"].attrs)
+            mot_summary_values = [vid_group["mot_summary"].attrs[key] for key in mot_summary_keys]
+            df_motmetrics = pd.DataFrame(list(zip(mot_summary_keys, mot_summary_values)), columns=["metric", "value"])
+            dict_vid_motmetrics[vid_name] = df_motmetrics
+        # Load global tracking accuracy if available
+        if "global_tracking_accuracy" in vid_group:
+            gta_keys = list(vid_group["global_tracking_accuracy"].attrs)
+            gta_values = [vid_group["global_tracking_accuracy"].attrs[key] for key in gta_keys]
+            df_gta = pd.DataFrame(list(zip(gta_keys, gta_values)), columns=["metric", "value"])
+            dict_vid_gta[vid_name] = df_gta
+        # Find all frames with switches and save the crops
+        frame_crop_dict = {}
+        for key in vid_group.keys():
+            if key.startswith("frame_"):
+                frame = vid_group[key]
+                frame_id = frame.attrs["frame_id"]
+                for key in frame.keys():
+                    if key.startswith("instance_"):
+                        instance = frame[key]
+                        if "crop" in instance.keys():
+                            frame_crop_dict[frame_id] = instance["crop"][:].squeeze().transpose(1,2,0)
+        dict_vid_switch_frame_crops[vid_name] = frame_crop_dict
+```
+
+Check the switch count (and other mot metrics) for the whole video
+
+
+```python
+motmetrics = list(dict_vid_motmetrics.values())[0]
+# motmetrics.loc[motmetrics['metric'] == 'num_switches']
+motmetrics
+```
+
+Check global tracking accuracy. This represents the percentage of frames where the tracker correctly maintained identities for each instance.
+
+
+```python
+gta = list(dict_vid_gta.values())[0]
+gta
 ```

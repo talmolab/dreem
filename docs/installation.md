@@ -1,11 +1,8 @@
-## Installation
-
 <!-- ### Basic
 ```bash
 pip install dreem
 ```  
 -->
-
 #### Clone the repository:
 ```bash
 git clone https://github.com/talmolab/dreem && cd dreem
@@ -22,7 +19,7 @@ conda env create -f environment_cpu.yml && conda activate dreem
 ```
 #### OSX (Apple Silicon)
 ```bash
-conda env create -f environment_osx-arm.yml && conda activate dreem
+conda env create -f environment_osx-arm64.yml && conda activate dreem
 ```
 ### Uninstall
 ```

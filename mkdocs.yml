@@ -150,14 +150,16 @@ copyright: >
   <a href="#__consent">Change cookie settings</a>
 nav:
   - Overview: index.md
+  - Installation: installation.md
+  - Quickstart: quickstart.md
   - Usage: usage.md
-  - Changelog: https://github.com/talmolab/dreem/releases
   - Examples:
-    - Microscopy - Beginner: Examples/microscopy_based.md
-    - Microscopy - Advanced: Examples/microscopy_full_api.md
+    - Microscopy - Beginner: Examples/microscopy-demo-simple.md
+    - Microscopy - Advanced: Examples/microscopy-demo-full-api.md
   - Core API:
     - i/o: io/
     - models: models/
     - configs: configs/
     - cli: cli.md
   - Full API: reference/
+  - Changelog: https://github.com/talmolab/dreem/releases

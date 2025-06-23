@@ -26,3 +26,4 @@ dependencies:
     - seaborn
     - wandb
     - timm
+    - "huggingface_hub[cli]"
