@@ -148,9 +148,13 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         )
         dataloader = pred_cfg.get_dataloader(dataset, mode="test")
         preds = track(model, trainer, dataloader)
+        if isinstance(vid_file, list):
+            save_file_name = vid_file[0].split("/")[-2]
+        else:
+            save_file_name = vid_file
         outpath = os.path.join(
             outdir,
-            f"{Path(vid_file).stem}.dreem_inference.{get_timestamp()}.slp",
+            f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.slp",
         )
 
         preds.save(outpath)

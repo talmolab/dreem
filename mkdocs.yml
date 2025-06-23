@@ -152,6 +152,9 @@ nav:
   - Overview: index.md
   - Usage: usage.md
   - Changelog: https://github.com/talmolab/dreem/releases
+  - Examples:
+    - Microscopy - Beginner: Examples/microscopy_based.md
+    - Microscopy - Advanced: Examples/microscopy_full_api.md
   - Core API:
     - i/o: io/
     - models: models/

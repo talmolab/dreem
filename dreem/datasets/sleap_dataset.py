@@ -28,7 +28,7 @@ class SleapDataset(BaseDataset):
         crop_size: Union[int, list[int]] = 128,
         anchors: int | list[str] | str = "",
         chunk: bool = True,
-        clip_length: int = 500,
+        clip_length: int = 16,
         mode: str = "train",
         handle_missing: str = "centroid",
         augmentations: dict | None = None,
