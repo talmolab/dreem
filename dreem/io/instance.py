@@ -231,10 +231,10 @@ class Instance:
 
             return (
                 sio.PredictedInstance.from_numpy(
-                    points=np.array(list(self.pose.values())),
+                    points_data=np.array(list(self.pose.values())),
                     skeleton=self.skeleton,
                     point_scores=self.point_scores,
-                    instance_score=self.instance_score,
+                    score=self.instance_score,
                     tracking_score=self.track_score,
                     track=track,
                 ),

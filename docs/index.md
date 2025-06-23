@@ -8,7 +8,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dreem) -->
 
 
-Welcome to the documentation for **DREEM** – an open-source tool for multiple object tracking. DREEM is a framework that enables you to train your own models, run inference on new data, and evaluate your results. DREEM supports a variety of detection types, including keypoints, bounding boxes, and segmentation masks. You can use any detection model you want, convert the output to a format DREEM can use, and then run tracking.
+Welcome to the documentation for **DREEM** – an open-source tool for multiple object tracking. DREEM is a framework that enables you to train your own models, run inference on new data, and evaluate your results. DREEM supports a variety of detection types, including keypoints, bounding boxes, and segmentation masks. You can use any detection model you want, convert the output to a format DREEM can use, and train a model or run inference using a pretrained model.
 
 
 
@@ -45,15 +45,15 @@ Explore the Examples section for notebooks that walk you through the DREEM pipel
 - [Installation](./installation.md)
 - [Quickstart](./quickstart.md)
 - [Usage Guide](./usage.md)
-- [Examples](./Examples)
+- Examples
 - [API Reference](https://dreem.sleap.ai/reference/dreem/)
 
 ## Get Help
 
 - **Questions?** Open an issue on [GitHub](https://github.com/talmolab/dreem/issues).
-<!-- - **Contributions:** We welcome contributions! See our [Contributing Guide](./contributing.md) for details. -->
+- **Contributions:** We welcome contributions! See our [Contributing Guide](#) for details (link to be added).
 
 
-## Citing DREEM
+<!-- ## Citing DREEM
 
-If you use DREEM in your research, please cite our [paper](#) (link to be added).
+If you use DREEM in your research, please cite our [paper](#) (link to be added). -->
