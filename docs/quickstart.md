@@ -38,23 +38,22 @@ ls animals-pretrained.ckpt
 Your directory structure should look like this:
 ```bash
 ./data
-    /sample-flies
-        /test
-            190719_090330_wt_18159206_rig1.2@15000-17560.mp4
-            GT_190719_090330_wt_18159206_rig1.2@15000-17560.slp
-        /train
-            190612_110405_wt_18159111_rig2.2@4427.mp4
-            GT_190612_110405_wt_18159111_rig2.2@4427.slp
-        /val
-            two_flies.mp4
-            GT_two_flies.slp
-        /inference
-            190719_090330_wt_18159206_rig1.2@15000-17560.mp4
-            190719_090330_wt_18159206_rig1.2@15000-17560.slp
-        /configs
-            inference.yaml
-            base.yaml
-            eval.yaml
+    /test
+        190719_090330_wt_18159206_rig1.2@15000-17560.mp4
+        GT_190719_090330_wt_18159206_rig1.2@15000-17560.slp
+    /train
+        190612_110405_wt_18159111_rig2.2@4427.mp4
+        GT_190612_110405_wt_18159111_rig2.2@4427.slp
+    /val
+        two_flies.mp4
+        GT_two_flies.slp
+    /inference
+        190719_090330_wt_18159206_rig1.2@15000-17560.mp4
+        190719_090330_wt_18159206_rig1.2@15000-17560.slp
+    /configs
+        inference.yaml
+        base.yaml
+        eval.yaml
 ./models
     animals-pretrained.ckpt
 ```

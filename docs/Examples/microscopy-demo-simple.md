@@ -1,7 +1,6 @@
-## DREEM workflow for microscopy - basic API usage
 ### From raw tiff stacks to tracked identities
 
-[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/main/docs/Examples/microscopy-demo-simple.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/main/docs/Examples/microscopy-demo-simple.ipynb)
 
 This notebook will walk you through the typical workflow for microscopy identity tracking. We start with a raw tiff stack, pass it through an off-the-shelf detection model, and feed those detections into DREEM. 
 
@@ -182,7 +181,7 @@ plt.show()
 
 
 ```python
-pred_cfg_path = "./configs/eval.yaml"
+pred_cfg_path = "./configs/sample-eval-microscopy.yaml"
 pred_cfg = OmegaConf.load(pred_cfg_path)
 ```
 

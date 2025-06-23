@@ -1,38 +1,29 @@
-### From raw tiff stacks to tracked identities
+# End-to-end demo
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/main/docs/Examples/microscopy-demo-full-api.ipynb)
+This notebook will walk you through the DREEM pipeline end to end, from obtaining data to training a model, evaluating on a held-out dataset, and visualizing the results. Here, we'll use the API, but we also provide a CLI interface for convenience.
 
+To run this demo, we have provided sample data and configurations. The data used in this demo is small enough to be run on a single machine, though a GPU is recommended. 
 
-This notebook will walk you through the typical workflow for microscopy identity tracking. We start with an off-the-shelf detection model, and feed those results into DREEM. 
-Here, we'll use the API, but we also provide a CLI interface for convenience.
-
-To run this demo, we have provided sample data, model checkpoints, and configurations. The data used in this demo is small enough to be run on a single machine, though a GPU is recommended. 
-
-#### Directory structure (data, models and configs will be downloaded)
+#### Directory structure after downloading data:
 ```bash
 ./data
-    /dynamicnuclearnet
-        /test_1
-        /mp4-for-visualization
-    /lysosomes
-        /7-2
-        /7-2_GT
-        /mp4-for-visualization
-./configs
-    sample-eval-microscopy.yaml
-./models
-    pretrained_microscopy.ckpt
- microscopy-demo-full-api.ipynb
+    /test
+        190719_090330_wt_18159206_rig1.2@15000-17560.mp4
+        GT_190719_090330_wt_18159206_rig1.2@15000-17560.slp
+    /train
+        190612_110405_wt_18159111_rig2.2@4427.mp4
+        GT_190612_110405_wt_18159111_rig2.2@4427.slp
+    /val
+        two_flies.mp4
+        GT_two_flies.slp
+    /inference
+        190719_090330_wt_18159206_rig1.2@15000-17560.mp4
+        190719_090330_wt_18159206_rig1.2@15000-17560.slp
+    /configs
+        inference.yaml
+        base.yaml
+        eval.yaml
 ```
-
-#### Install huggingface hub to access models and data
-
-
-```python
-!pip install huggingface_hub
-```
-
-#### Import necessary packages
 
 
 ```python
@@ -51,40 +42,6 @@ from dreem.inference import Tracker
 import sleap_io as sio
 import matplotlib.pyplot as plt
 import h5py
-from huggingface_hub import hf_hub_download
-```
-
-#### Download a pretrained model, configs and some data
-
-
-```python
-model_save_dir = "./models"
-config_save_dir = "./configs"
-data_save_dir = "./data"
-os.makedirs(config_save_dir, exist_ok=True)
-os.makedirs(data_save_dir, exist_ok=True)
-os.makedirs(model_save_dir, exist_ok=True)
-```
-
-
-```python
-model_path = hf_hub_download(repo_id="talmolab/microscopy-pretrained", filename="pretrained-microscopy.ckpt",
-local_dir=model_save_dir)
-
-config_path = hf_hub_download(repo_id="talmolab/microscopy-pretrained", filename="sample-eval-microscopy.yaml",
-local_dir=config_save_dir)
-```
-
-
-```python
-!huggingface-cli download talmolab/microscopy-demo --repo-type dataset --local-dir ./data
-```
-
-#### Verify that the model loads properly
-
-
-```python
-m = GTRRunner.load_from_checkpoint(model_path, strict=False)
 ```
 
 Check if a GPU is available. For Apple silicon users, you can run on MPS, but ensure your version of PyTorch is compatible with MPS, and that you have installed the correct version of DREEM. You can also run without a GPU. The demo has been tested on an M3 Macbook Air running only on a CPU.
@@ -106,98 +63,203 @@ print("Using device: ", accelerator)
 torch.set_float32_matmul_precision("medium")
 ```
 
-## Detection
-
-Here we use CellPose to create segmentation masks for our instances. If you want to skip this stage, we have provided segmentation masks for the lysosomes dataset located at ./data/lysosomes. You can enter this path in the configuration file provided, under dataset.test_dataset.dir.path, and then skip straight ahead to the section labelled DREEM Inference below
-
-#### Install CellPose
+## Download data and configs
 
 
 ```python
-!pip install git+https://www.github.com/mouseland/cellpose.git
+!huggingface-cli download talmolab/sample-flies --repo-type dataset --local-dir ./data
+```
+
+## Training
+
+#### Setup configs
+The configs provided are good defaults. You can change them as you see fit.
+
+
+```python
+config_path = "./data/configs/base.yaml"
+# use OmegaConf to load the config
+cfg = OmegaConf.load(config_path)
+train_cfg = Config(cfg)
+```
+
+#### Create a model
+The model is a Lightning wrapper around our model. Lightning simplifies training, validation, logging, and checkpointing.
+
+
+```python
+model = train_cfg.get_gtr_runner()
+```
+
+#### Prepare torch datasets and dataloader
+Note: We use a batch size of 1 - we handle the batching ourselves since we are dealing with video data and associated labels in .slp format. The default clip length is set to 32 frames.
+
+
+```python
+train_dataset = train_cfg.get_dataset(mode="train")
+train_dataloader = train_cfg.get_dataloader(train_dataset, mode="train")
+
+val_dataset = train_cfg.get_dataset(mode="val")
+val_dataloader = train_cfg.get_dataloader(val_dataset, mode="val")
+
+# wrap the dataloaders
+dataset = TrackingDataset(train_dl=train_dataloader, val_dl=val_dataloader)
+```
+
+#### Visualize the input data
+The input data to the model is a set of crops taken around a particular keypoint on the instance. For animals, this can be any keypoint, and for microscopy, this is often the centroid. Augmentations are also applied. Since we shuffle the data, the frame ids you get may not be the first frames of the video.
+
+
+```python
+# load a batch of data in
+viewer = iter(train_dataloader)
+batch = next(viewer)
+# save the crops for all frames in the batch
+crops = {}
+for frame in batch[0]:
+    crops[frame.frame_id.item()] = []
+    for instance in frame.instances:
+        crops[frame.frame_id.item()].append(instance.crop.squeeze().permute(1,2,0).numpy())
+```
+
+Plot the crops for all frames in the batch
+
+
+```python
+total_crops = sum(len(crops) for crops in crops.items())
+
+# Determine a grid size
+n_cols = int(np.ceil(np.sqrt(total_crops)))
+n_rows = int(np.ceil(total_crops / n_cols))
+
+# Create figure and axes
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(25,25))
+fig.suptitle(f"Video: {frame.video}, Frames: {min(crops.keys())} to {max(crops.keys())}", fontsize=16)
+
+# Ensure axes is always a 2D array
+if n_rows == 1 and n_cols == 1: axes = np.array([[axes]])
+elif n_rows == 1: axes = axes.reshape(1, -1)
+elif n_cols == 1: axes = axes.reshape(-1, 1)
+
+# Flatten for easier indexing
+axes_flat = axes.flatten()
+
+# Plot each crop
+ax_idx = 0
+for frame_id, vid_crops in sorted(crops.items()):
+    for i, crop in enumerate(vid_crops):
+        if ax_idx < len(axes_flat):
+            ax = axes_flat[ax_idx]
+            
+            # Handle both RGB and grayscale images
+            if crop.ndim == 3:
+                # Normalize if needed
+                if crop.max() > 1.0:
+                    crop = crop / 255.0
+                ax.imshow(crop)
+            else:
+                ax.imshow(crop, cmap='gray')
+            
+            ax.set_title(f"Frame {frame_id}, Inst {i}")
+            ax.axis('off')
+            ax_idx += 1
+
+# Hide unused subplots
+for i in range(ax_idx, len(axes_flat)):
+    axes_flat[i].axis('off')
+
+# Adjust layout to minimize whitespace
+plt.tight_layout()
+plt.subplots_adjust(top=0.95) 
+```
+
+#### Train the model
+First setup various training features such as loss curve plotting, early stopping and more, through Lightning's callbacks, then setup the Trainer and train the model.
+
+
+```python
+# to plot loss curves 
+class NotebookPlotCallback(pl.Callback):
+    def __init__(self):
+        super().__init__()
+        self.train_losses = []
+        self.val_losses = []
+        self.epochs = []
+        
+    def on_train_epoch_end(self, trainer, pl_module):
+        train_loss = trainer.callback_metrics.get('train_loss')
+        self.train_losses.append(train_loss.item())
+        self.epochs.append(trainer.current_epoch)
+    
+    def on_validation_epoch_end(self, trainer, pl_module):
+        val_loss = trainer.callback_metrics.get('val_loss')
+        self.val_losses.append(val_loss.item())
+
+notebook_plot_callback = NotebookPlotCallback()
 ```
 
 
 ```python
-import tifffile
-from cellpose import models
+callbacks = []
+_ = callbacks.extend(train_cfg.get_checkpointing())
+_ = callbacks.append(pl.callbacks.LearningRateMonitor())
+early_stopping = train_cfg.get_early_stopping()
+if early_stopping is not None:
+    callbacks.append(early_stopping)
+callbacks.append(notebook_plot_callback)
 ```
+
+The default maximum epochs is set to 4 in the provided config. You can change this in the trainer section of the config.
 
 
 ```python
-data_path = "./data/dynamicnuclearnet/test_1"
-segmented_path = "./data/dynamicnuclearnet/test_1_GT/TRA"
-os.makedirs(segmented_path, exist_ok=True)
+# setup Lightning Trainer
+trainer = train_cfg.get_trainer(
+    callbacks,
+    accelerator=accelerator,
+    devices=1
+)
+# train the model
+trainer.fit(model, dataset)
 ```
 
-Set the approximate diameter (in pixels) of the instances you want to segment
+#### Visualize the train and validation loss curves
 
 
 ```python
-diam_px = 25
-```
-
-#### Run detection model
-
-
-```python
-tiff_files = [f for f in os.listdir(data_path) if f.endswith('.tif') or f.endswith('.tiff')]
-stack = np.stack([tifffile.imread(os.path.join(data_path, f)) for f in tiff_files])
-frames, Y, X = stack.shape
-
-channels = [0, 0]
-# use builtin latest model
-model = models.CellposeModel(gpu=True)
-all_masks = np.zeros_like(stack)
-for i, img in enumerate(stack):
-    masks, flows, styles = model.eval(
-        img,
-        diameter=diam_px,
-        cellprob_threshold=0.0,
-        channels=channels,
-        z_axis=None,
-    )
-    all_masks[i] = masks
-```
-
-#### Save the segmentation masks
-
-
-```python
-os.makedirs(segmented_path, exist_ok=True)
-for i, (mask, filename) in enumerate(zip(all_masks, tiff_files)):
-    new_tiff_path = os.path.join(segmented_path, f"{os.path.splitext(filename)[0]}.tif")
-    print(f"exporting frame {i} to tiff at {new_tiff_path}")
-    tifffile.imwrite(new_tiff_path, mask)
-```
-
-### View the segmentation result and original image 
-
-
-```python
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
-ax1.imshow(all_masks[0])
-ax1.set_title('Segmentation Mask')
-ax2.imshow(stack[0])
-ax2.set_title('Original Image')
+plt.figure(figsize=(6,4))
+plt.plot(notebook_plot_callback.epochs, notebook_plot_callback.train_losses, label='Train Loss', marker='o')
+plt.plot(notebook_plot_callback.epochs, notebook_plot_callback.val_losses[1:], label='Validation Loss', marker='x')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Training and Validation Loss')
+plt.legend()
+plt.grid(True, linestyle='--', alpha=0.7)
 plt.tight_layout()
 plt.show()
 ```
 
-## DREEM Inference
-In this section, we demonstrate the standard DREEM inference pipeline using the API
+## Inference
+### Here we run inference on a video with **no** ground truth labels
 
 
 ```python
-model = GTRRunner.load_from_checkpoint(model_path, strict=False)
+# get the model from the directory it saves to 
+# (see logging.name in the config)
+ckpt_dir = "./models/example_train"
+ckpts = os.listdir(ckpt_dir)
+for ckpt in ckpts:
+    if "final" in ckpt: # assumes the final checkpoint is the best one
+        best_checkpoint_path = os.path.join(ckpt_dir, ckpt)
+        break
+model = GTRRunner.load_from_checkpoint(best_checkpoint_path)
 ```
 
 ### Setup inference configs
-#### NOTE: We can only specify 1 directory at a time when running inference. To test a different dataset, just enter the path to the directory containing the dataset. See the config for an example
 
 
 ```python
-pred_cfg_path = "./configs/sample-eval-microscopy.yaml"
+pred_cfg_path = "./data/configs/inference.yaml"
 # use OmegaConf to load the config
 pred_cfg = OmegaConf.load(pred_cfg_path)
 pred_cfg = Config(pred_cfg)
@@ -246,13 +308,8 @@ for label_file, vid_file in zip(labels_files, vid_files):
             pred_slp.append(lf)
     pred_slp = sio.Labels(pred_slp)
     # save the predictions to disk (requires sleap-io)
-    if isinstance(vid_file, list):
-        save_file_name = vid_file[0].split("/")[-2]
-    else:
-        save_file_name = vid_file
     outpath = os.path.join(
-        outdir,
-        f"{Path(save_file_name).stem}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp",
+        outdir, f"{Path(label_file).stem}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp"
     )
     pred_slp.save(outpath)
 ```
@@ -271,7 +328,7 @@ import io
 import base64
 from IPython.display import Video
 
-def create_tracking_animation(video_path, metadata_df, 
+def create_animal_tracking_animation_notebook(video_path, metadata_df, 
                                              fps=30, text_size=8, marker_size=20,
                                              max_frames=None, display_width=800):
     """
@@ -306,7 +363,7 @@ def create_tracking_animation(video_path, metadata_df,
     
     # Create a colormap for track IDs
     unique_ids = metadata_df['track_id'].unique()
-    cmap = cm.get_cmap('viridis', len(unique_ids))  # Using 'hsv' for bright, distinct colors
+    cmap = cm.get_cmap('tab10', len(unique_ids))  # Using 'hsv' for bright, distinct colors
     id_to_color = {id_val: cmap(i) for i, id_val in enumerate(unique_ids)}
     
     # Set up the figure and axis with the correct aspect ratio
@@ -359,7 +416,7 @@ def create_tracking_animation(video_path, metadata_df,
             color = id_to_color[track_id]
             
             # Add circle marker
-            circle = Circle((x, y), marker_size, color=color, alpha=0.3)
+            circle = Circle((x, y), marker_size, color=color, alpha=0.7)
             markers.append(ax.add_patch(circle))
             
             # Add ID text
@@ -420,30 +477,30 @@ Create and display the animation in the notebook
 
 
 ```python
-for file in os.listdir(os.path.join(pred_cfg.cfg.dataset.test_dataset['dir']['path'], 'mp4-for-visualization')):
+for file in os.listdir(pred_cfg.cfg.dataset.test_dataset['dir']['path']):
     if file.endswith('.mp4'):
-        video_path = os.path.join(pred_cfg.cfg.dataset.test_dataset['dir']['path'], 'mp4-for-visualization', file)
+        video_path = os.path.join(pred_cfg.cfg.dataset.test_dataset['dir']['path'], file)
 
-anim = create_tracking_animation(
+anim = create_animal_tracking_animation_notebook(
     video_path=video_path,
     metadata_df=df,
     fps=15,
-    text_size=5,
-    marker_size=8,
+    text_size=8,
+    marker_size=20,
     max_frames=300
 )
 
 # save the animation
-video = save_animation(anim, f"./tracking_vis-{video_path.split('/')[-1]}")
+video = save_animation(anim, f"./animal_tracking_vis-{video_path.split('/')[-1]}")
 ```
 
 ## Evaluate the tracking results
-In this section, we evaluate metrics on a ground truth labelled test set. Note that in this example, the test set we used to demonstrate the inference pipeline is the same as the one we use here. To verify that
-we do not in fact use any ground truth information during tracking, go to our full dreem-demo notebook, where we use de-labelled data to verify this
+### Here we run inference on a video **with** ground truth labels. Then we will compute metrics for our tracking results. 
+Note that we are only using separate configs for inference and evaluation so you can verify that the test file has no ground truth in it for inference, and that it does for evaluation. For eval, the slp file should have a "GT_" prefix to indicate that it is a ground truth file. For eval, you can also specify the metrics you want to compute. We offer a CLI interface for both evaluation and inference.
 
 
 ```python
-pred_cfg_path = "./configs/eval.yaml"
+pred_cfg_path = "./data/configs/eval.yaml"
 # use OmegaConf to load the config
 eval_cfg = OmegaConf.load(pred_cfg_path)
 eval_cfg = Config(eval_cfg)
@@ -517,7 +574,7 @@ with h5py.File(h5_path, "r") as results_file:
         dict_vid_switch_frame_crops[vid_name] = frame_crop_dict
 ```
 
-Check the switch count (and other mot metrics) for the whole video
+Check the switch count (and other mot metrics) for the whole video. You should see 0 switches. This means that the tracker consistently maintained identities across the video.
 
 
 ```python
@@ -526,7 +583,7 @@ motmetrics = list(dict_vid_motmetrics.values())[0]
 motmetrics
 ```
 
-Check global tracking accuracy. This represents the percentage of frames where the tracker correctly maintained identities for each instance.
+Check global tracking accuracy. This represents the percentage of frames where the tracker correctly maintained identities for each instance. In this case, since there were no switches, the global tracking accuracy is 100% for all instances.
 
 
 ```python

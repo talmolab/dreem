@@ -154,9 +154,9 @@ nav:
   - Quickstart: quickstart.md
   - Usage: usage.md
   - Examples:
-    - Microscopy - Beginner: Examples/microscopy-demo-simple.md
-    - Microscopy - Advanced: Examples/microscopy-demo-full-api.md
-    - End-to-end: Examples/end-to-end-demo.md
+    - Microscopy: Examples/microscopy-demo-simple.md
+    - Microscopy - in-depth API usage: Examples/microscopy-demo-full-api.md
+    - End-to-end: Examples/dreem-demo.md
   - Core API:
     - i/o: io/
     - models: models/
