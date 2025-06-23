@@ -156,6 +156,7 @@ nav:
   - Examples:
     - Microscopy - Beginner: Examples/microscopy-demo-simple.md
     - Microscopy - Advanced: Examples/microscopy-demo-full-api.md
+    - End-to-end: Examples/end-to-end-demo.md
   - Core API:
     - i/o: io/
     - models: models/

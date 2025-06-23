@@ -9,7 +9,7 @@ To quickly test your installation and familiarize yourself with DREEM, you can f
 In this example we will track a social interaction between two flies from the SLEAP [fly32 dataset](https://sleap.ai/datasets.html#fly32) using a pretrained model. This example assumes that you have a conda environment installed with the dreem package. Please see [the installation guide](./index.md#installation) if you haven't installed it yet.
 
 ### Download the data
-First, we need at least one video and a set of corresponding detections to work with. For this example, we provide a video and a `.slp` file with pose keypoints for the video. This dataset can be downloaded from Hugging Face. 
+First, we need at least one video and a set of corresponding detections to work with. For this example, we provide a video and a `.slp` file with pose keypoints for the video. This dataset can be downloaded from Hugging Face. The dataset includes configuration files needed for running inference.
 
 First, make sure you have `huggingface-hub` installed (it should already be installed in your environment if you installed using the commands on the [installation page](./installation.md)):
 
@@ -23,16 +23,11 @@ Download the dataset. The ```--local-dir``` flag allows you to specify the downl
 huggingface-cli download talmolab/sample-flies --repo-type dataset --local-dir ./data
 ```
 
-### Download a model and configs
-Now we'll pull a pretrained model trained on various animal data in order to run inference. We'll also need a configuration file that specifies inference parameters.
+### Download a model
+Now we'll pull a pretrained model trained on various animal data in order to run inference.
 
 ```bash
 huggingface-cli download talmolab/animals-pretrained animals-pretrained.ckpt --local-dir=./models
-```
-
-Download the configuration file
-```bash
-huggingface-cli download talmolab/animals-pretrained sample-eval-animals.yaml --local-dir=./configs
 ```
 
 To confirm this downloaded properly you can run
@@ -53,26 +48,26 @@ Your directory structure should look like this:
         /val
             two_flies.mp4
             GT_two_flies.slp
-./configs
-    sample-eval-animals.yaml
+        /inference
+            190719_090330_wt_18159206_rig1.2@15000-17560.mp4
+            190719_090330_wt_18159206_rig1.2@15000-17560.slp
+        /configs
+            inference.yaml
+            base.yaml
+            eval.yaml
 ./models
     animals-pretrained.ckpt
 ```
 
 ### Run Tracking
 
-Tracking is easy to run using the CLI
+Tracking is easy to run using the CLI. Simply specify the path to the directory containing ```inference.yaml``` and the path to the model checkpoint.
 
 ```bash
-dreem-track --config-dir=./configs --config-name=sample-eval-animals ckpt_path=./models/animals-pretrained.ckpt
+dreem-track --config-dir=./data/sample-flies/configs --config-name=inference ckpt_path=./models/animals-pretrained.ckpt
 ```
 
-Once completed, it should output a file in the `eval` folder called `GT_190719_090330_wt_18159206_rig1.2@15000-17560.dreem_inference.slp`
-which you can confirm by running
-
-```bash
-ls eval/GT_190719_090330_wt_18159206_rig1.2@15000-17560.dreem_inference.slp
-```
+Once completed, it should output a file in a new `results` folder called `GT_190719_090330_wt_18159206_rig1.2@15000-17560.<timestamp>dreem_inference.slp`
 
 ### Visualize Results
 First, we recommend visualizing the outputs of the tracks you just made. You can do so by first installing sleap via [its installation guide](https://sleap.ai/#quick-install) and then running
