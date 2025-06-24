@@ -305,7 +305,7 @@ class SleapDataset(BaseDataset):
                     np.array(
                         [
                             (
-                                1.0 # point scores not reliably available in sleap io PredictedPointsArray
+                                1.0  # point scores not reliably available in sleap io PredictedPointsArray
                                 # point.score
                                 # if isinstance(point, sio.PredictedPoint)
                                 # else 1.0

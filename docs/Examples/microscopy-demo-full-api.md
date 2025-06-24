@@ -1,8 +1,5 @@
 ### From raw tiff stacks to tracked identities
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/main/docs/Examples/microscopy-demo-full-api.ipynb)
-
-
 This notebook will walk you through the typical workflow for microscopy identity tracking. We start with an off-the-shelf detection model, and feed those results into DREEM. 
 Here, we'll use the API, but we also provide a CLI interface for convenience.
 
