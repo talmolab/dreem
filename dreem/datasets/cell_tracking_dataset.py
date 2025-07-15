@@ -12,7 +12,7 @@ import torch
 from typing import Union, Optional
 from pathlib import Path
 import sleap_io as sio
-
+import matplotlib.pyplot as plt
 
 class CellTrackingDataset(BaseDataset):
     """Dataset for loading cell tracking challenge data."""
@@ -237,20 +237,37 @@ class CellTrackingDataset(BaseDataset):
 
                 augmented = self.augmentations(
                     image=img,
+                    mask=gt_sec, # albumentations ensures geometric transformations are synced between image and mask
                     keypoints=np.vstack(centroids),
                 )
-
-                img, centroids = augmented["image"], augmented["keypoints"]
+                # plt.imsave("./orig_img.png", img)
+                # plt.imsave("./orig_mask.png", gt_sec)
+                img, aug_mask, centroids = augmented["image"], augmented['mask'], augmented["keypoints"]
+                # plt.imsave("./aug_mask.png", aug_mask)
+                aug_mask = torch.Tensor(aug_mask).unsqueeze(0)
 
             img = torch.Tensor(img).unsqueeze(0)
-
+            # plt.imsave("./aug_img.png", img.squeeze(0).numpy())
+        
             for j in range(len(gt_track_ids)):
                 # just formatting for compatibility with Instance class
                 instance_centroid = {
                     "centroid": np.array(dict_centroids[gt_track_ids[j]])
                 }
                 pose = {"centroid": dict_centroids[gt_track_ids[j]]}  # more formatting
-                crop = data_utils.crop_bbox(img, bboxes[j])
+                crop_raw = data_utils.crop_bbox(img, bboxes[j])
+                # plt.imsave(f"./cropped_img_{j}.png", crop_raw.squeeze(0).numpy())
+                if self.augmentations is not None: # TODO: change this to a flag that the user passes in apply_mask_to_crop
+                    cropped_mask = data_utils.crop_bbox(aug_mask, bboxes[j])
+                    # filter for the instance of interest
+                    cropped_mask[cropped_mask != gt_track_ids[j]] = 0
+                    cropped_mask[cropped_mask != 0] = 1
+                    # apply mask to crop
+                    crop = crop_raw * cropped_mask
+                    # plt.imsave(f"./cropped_mask_{j}.png", cropped_mask.squeeze(0).numpy())
+                    # plt.imsave(f"./img_masked_{j}.png", crop.squeeze(0).numpy())
+                else:
+                    crop = crop_raw
                 c, h, w = crop.shape
                 if h > max_crop_h:
                     max_crop_h = h
