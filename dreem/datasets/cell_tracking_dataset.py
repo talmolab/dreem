@@ -14,6 +14,7 @@ from pathlib import Path
 import sleap_io as sio
 import matplotlib.pyplot as plt
 
+
 class CellTrackingDataset(BaseDataset):
     """Dataset for loading cell tracking challenge data."""
 
@@ -237,18 +238,22 @@ class CellTrackingDataset(BaseDataset):
 
                 augmented = self.augmentations(
                     image=img,
-                    mask=gt_sec, # albumentations ensures geometric transformations are synced between image and mask
+                    mask=gt_sec,  # albumentations ensures geometric transformations are synced between image and mask
                     keypoints=np.vstack(centroids),
                 )
                 # plt.imsave("./orig_img.png", img)
                 # plt.imsave("./orig_mask.png", gt_sec)
-                img, aug_mask, centroids = augmented["image"], augmented['mask'], augmented["keypoints"]
+                img, aug_mask, centroids = (
+                    augmented["image"],
+                    augmented["mask"],
+                    augmented["keypoints"],
+                )
                 # plt.imsave("./aug_mask.png", aug_mask)
                 aug_mask = torch.Tensor(aug_mask).unsqueeze(0)
 
             img = torch.Tensor(img).unsqueeze(0)
             # plt.imsave("./aug_img.png", img.squeeze(0).numpy())
-        
+
             for j in range(len(gt_track_ids)):
                 # just formatting for compatibility with Instance class
                 instance_centroid = {
@@ -257,7 +262,9 @@ class CellTrackingDataset(BaseDataset):
                 pose = {"centroid": dict_centroids[gt_track_ids[j]]}  # more formatting
                 crop_raw = data_utils.crop_bbox(img, bboxes[j])
                 # plt.imsave(f"./cropped_img_{j}.png", crop_raw.squeeze(0).numpy())
-                if self.augmentations is not None: # TODO: change this to a flag that the user passes in apply_mask_to_crop
+                if (
+                    self.augmentations is not None
+                ):  # TODO: change this to a flag that the user passes in apply_mask_to_crop
                     cropped_mask = data_utils.crop_bbox(aug_mask, bboxes[j])
                     # filter for the instance of interest
                     cropped_mask[cropped_mask != gt_track_ids[j]] = 0
