@@ -3,6 +3,7 @@
 from dreem.io import Config
 from dreem.inference import Tracker, BatchTracker
 from dreem.models import GTRRunner
+from dreem.datasets import CellTrackingDataset
 from omegaconf import DictConfig
 from pathlib import Path
 from datetime import datetime
@@ -14,7 +15,8 @@ import pytorch_lightning as pl
 import torch
 import sleap_io as sio
 import logging
-
+import numpy as np
+import tifffile
 
 logger = logging.getLogger("dreem.inference")
 
@@ -67,6 +69,42 @@ def export_trajectories(
         save_df.to_csv(save_path, index=False)
     return save_df
 
+def create_circular_mask(shape, centroid, diam, track_id):
+    _, h, w = shape
+    Y, X = np.meshgrid(np.arange(h), np.arange(w))
+    distances = np.sqrt((X - centroid[0])**2 + (Y-centroid[1])**2)
+    mask = distances < diam//2
+    mask = mask * track_id
+    return mask
+
+def combine_masks(masks: np.ndarray):
+    return np.max(masks, axis=0)
+
+def track_ctc(
+    model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader
+) -> list[pd.DataFrame]:
+    """Run Inference.
+
+    Args:
+        model: GTRRunner model loaded from checkpoint used for inference
+        trainer: lighting Trainer object used for handling inference log.
+        dataloader: dataloader containing inference data
+    """
+    crop_size = dataloader.dataset.crop_size[0]
+    preds = trainer.predict(model, dataloader)
+    pred_imgs = []
+    img_size = preds[0][0].img_shape
+    for batch in preds:
+        for frame in batch:
+            frame_masks = []
+            for instance in frame.instances:
+                centroid = instance.centroid['centroid']
+                mask = create_circular_mask(img_size, centroid, crop_size, instance.pred_track_id.cpu().numpy().item())
+                frame_masks.append(mask)
+            frame_mask = combine_masks(frame_masks)
+            pred_imgs.append(frame_mask)
+    pred_imgs = np.stack(pred_imgs)
+    return pred_imgs
 
 def track(
     model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader
@@ -147,17 +185,24 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
             label_files=[label_file], vid_files=[vid_file], mode="test"
         )
         dataloader = pred_cfg.get_dataloader(dataset, mode="test")
-        preds = track(model, trainer, dataloader)
+        preds = track_ctc(model, trainer, dataloader)
         if isinstance(vid_file, list):
             save_file_name = vid_file[0].split("/")[-2]
         else:
             save_file_name = vid_file
-        outpath = os.path.join(
-            outdir,
-            f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.slp",
-        )
-
-        preds.save(outpath)
+        
+        if isinstance(dataset, CellTrackingDataset):
+            outpath = os.path.join(
+                outdir,
+                f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.tif",
+            )
+            tifffile.imwrite(outpath, preds.astype(np.uint16))
+        else:
+            outpath = os.path.join(
+                outdir,
+                f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.slp",
+            )
+            preds.save(outpath)
 
     return preds
 
