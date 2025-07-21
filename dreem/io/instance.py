@@ -92,6 +92,9 @@ class Instance:
     _instance_score: float = attrs.field(alias="instance_score", default=-1.0)
     _point_scores: ArrayLike | None = attrs.field(alias="point_scores", default=None)
     _skeleton: sio.Skeleton | None = attrs.field(alias="skeleton", default=None)
+    _mask: ArrayLike | None = attrs.field(
+        alias="mask", converter=_to_tensor, default=None
+    )
     _pose: dict[str, ArrayLike] = attrs.field(alias="pose", factory=dict)
     _device: str | torch.device | None = attrs.field(alias="device", default=None)
     _frame: "Frame" = None
@@ -445,6 +448,30 @@ class Instance:
         if self.centroid:
             return list(self.centroid.keys())
         return ""
+
+    @property
+    def mask(self) -> torch.Tensor:
+        """The mask of the instance.
+
+        Returns:
+            A (h, w) tensor containing the mask of the instance.
+        """
+        return self._mask
+
+    @mask.setter
+    def mask(self, mask: ArrayLike) -> None:
+        """Set the mask of the instance.
+
+        Args:
+            mask: an arraylike object containing the mask of the instance.
+        """
+        if mask is None or len(mask) == 0:
+            self._mask = torch.tensor([])
+        else:
+            if not isinstance(mask, torch.Tensor):
+                self._mask = torch.tensor(mask)
+            else:
+                self._mask = mask
 
     @property
     def crop(self) -> torch.Tensor:

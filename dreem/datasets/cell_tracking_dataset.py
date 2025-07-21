@@ -181,11 +181,12 @@ class CellTrackingDataset(BaseDataset):
         frames = []
         max_crop_h, max_crop_w = 0, 0
         for i in frame_idx:
-            instances, gt_track_ids, centroids, dict_centroids, bboxes = (
+            instances, gt_track_ids, centroids, dict_centroids, bboxes, masks = (
                 [],
                 [],
                 [],
                 {},
+                [],
                 [],
             )
 
@@ -223,11 +224,13 @@ class CellTrackingDataset(BaseDataset):
                             data_utils.get_bbox([int(x), int(y)], crop_size),
                             padding=self.padding,
                         )
+                    mask = torch.as_tensor(mask)
 
                     gt_track_ids.append(int(instance))
                     centroids.append([x, y])
                     dict_centroids[int(instance)] = [x, y]
                     bboxes.append(bbox)
+                    masks.append(mask)
 
             # albumentations wants (spatial, channels), ensure correct dims
             if self.augmentations is not None:
@@ -268,13 +271,15 @@ class CellTrackingDataset(BaseDataset):
                     cropped_mask = data_utils.crop_bbox(aug_mask, bboxes[j])
                     # filter for the instance of interest
                     cropped_mask[cropped_mask != gt_track_ids[j]] = 0
-                    cropped_mask[cropped_mask != 0] = 1
-                    # apply mask to crop
-                    crop = crop_raw * cropped_mask
-                    # plt.imsave(f"./cropped_mask_{j}.png", cropped_mask.squeeze(0).numpy())
-                    # plt.imsave(f"./img_masked_{j}.png", crop.squeeze(0).numpy())
                 else:
-                    crop = crop_raw
+                    # masks[j] is already filtered for the instance of interest
+                    cropped_mask = data_utils.crop_bbox(masks[j], bboxes[j])
+
+                cropped_mask[cropped_mask != 0] = 1
+                # apply mask to crop
+                crop = crop_raw * cropped_mask
+                # plt.imsave(f"./cropped_mask_{j}.png", cropped_mask.squeeze(0).numpy())
+                # plt.imsave(f"./img_masked_{j}.png", crop.squeeze(0).numpy())
                 c, h, w = crop.shape
                 if h > max_crop_h:
                     max_crop_h = h
@@ -292,6 +297,7 @@ class CellTrackingDataset(BaseDataset):
                         pose=pose,
                         bbox=bboxes[j],
                         crop=crop,
+                        mask=masks[j],
                     )
                 )
 

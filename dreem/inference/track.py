@@ -70,15 +70,6 @@ def export_trajectories(
     return save_df
 
 
-def create_circular_mask(shape, centroid, diam, track_id):
-    _, h, w = shape
-    Y, X = np.meshgrid(np.arange(h), np.arange(w))
-    distances = np.sqrt((X - centroid[0]) ** 2 + (Y - centroid[1]) ** 2)
-    mask = distances < diam // 2
-    mask = mask * track_id
-    return mask
-
-
 def combine_masks(masks: np.ndarray):
     return np.max(masks, axis=0)
 
@@ -93,21 +84,17 @@ def track_ctc(
         trainer: lighting Trainer object used for handling inference log.
         dataloader: dataloader containing inference data
     """
-    crop_size = dataloader.dataset.crop_size[0]
     preds = trainer.predict(model, dataloader)
     pred_imgs = []
-    img_size = preds[0][0].img_shape
     for batch in preds:
         for frame in batch:
             frame_masks = []
             for instance in frame.instances:
                 centroid = instance.centroid["centroid"]
-                mask = create_circular_mask(
-                    img_size,
-                    centroid,
-                    crop_size,
-                    instance.pred_track_id.cpu().numpy().item(),
-                )
+                mask = instance.mask.cpu().numpy()
+                track_id = instance.pred_track_id.cpu().numpy().item()
+                mask = mask.astype(np.uint8)
+                mask[mask != 0] = track_id  # label the mask with the track id
                 frame_masks.append(mask)
             frame_mask = combine_masks(frame_masks)
             pred_imgs.append(frame_mask)
