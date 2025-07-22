@@ -70,10 +70,6 @@ def export_trajectories(
     return save_df
 
 
-def combine_masks(masks: np.ndarray):
-    return np.max(masks, axis=0)
-
-
 def track_ctc(
     model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader
 ) -> list[pd.DataFrame]:
@@ -96,7 +92,8 @@ def track_ctc(
                 mask = mask.astype(np.uint8)
                 mask[mask != 0] = track_id  # label the mask with the track id
                 frame_masks.append(mask)
-            frame_mask = combine_masks(frame_masks)
+                # combine masks by merging into single mask using max; this will cause overlap
+            frame_mask = np.max(frame_masks, axis=0)
             pred_imgs.append(frame_mask)
     pred_imgs = np.stack(pred_imgs)
     return pred_imgs

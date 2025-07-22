@@ -9,12 +9,15 @@ import os
 from dreem.inference import Tracker, BatchTracker
 from dreem.inference import metrics
 from dreem.models import GlobalTrackingTransformer
+from dreem.datasets import CellTrackingDataset
 from dreem.training.losses import AssoLoss
 from dreem.models.model_utils import init_optimizer, init_scheduler
 from pytorch_lightning import LightningModule
 from datetime import datetime
 from pathlib import Path
 import sleap_io as sio
+import numpy as np
+import tifffile
 
 logger = logging.getLogger("dreem.models")
 if not logger.handlers:
@@ -365,26 +368,48 @@ class GTRRunner(LightningModule):
                     for gt_track_id, gta in gta_by_gt_track.items():
                         gta_group.attrs[f"track_{gt_track_id}"] = gta
 
-        # save the tracking results to a slp file
-        pred_slp = []
-        outpath = os.path.join(
-            self.test_results["save_path"],
-            f"{vid_name}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp",
-        )
-        logger.info(f"Saving inference results to {outpath}")
-        # save the tracking results to a slp file
-        tracks = {}
-        for frame in preds:
-            if frame.frame_id.item() == 0:
-                video = (
-                    sio.Video(frame.video)
-                    if isinstance(frame.video, str)
-                    else sio.Video
-                )
-            lf, tracks = frame.to_slp(tracks, video=video)
-            pred_slp.append(lf)
-        pred_slp = sio.Labels(pred_slp)
+        # save the tracking results to a slp/labelled masks file
+        if isinstance(self.trainer.test_dataloaders.dataset, CellTrackingDataset):
+            outpath = os.path.join(
+                self.test_results["save_path"],
+                f"{vid_name}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.tif",
+            )
+            pred_imgs = []
+            for frame in preds:
+                frame_masks = []
+                for instance in frame.instances:
+                    centroid = instance.centroid["centroid"]
+                    mask = instance.mask.cpu().numpy()
+                    track_id = instance.pred_track_id.cpu().numpy().item()
+                    mask = mask.astype(np.uint8)
+                    mask[mask != 0] = track_id  # label the mask with the track id
+                    frame_masks.append(mask)
+                frame_mask = np.max(frame_masks, axis=0)
+                pred_imgs.append(frame_mask)
+            pred_imgs = np.stack(pred_imgs)
+            tifffile.imwrite(outpath, pred_imgs.astype(np.uint16))
+        else:
+            outpath = os.path.join(
+                self.test_results["save_path"],
+                f"{vid_name}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp",
+            )
+            pred_slp = []
 
-        pred_slp.save(outpath)
+            logger.info(f"Saving inference results to {outpath}")
+            # save the tracking results to a slp file
+            tracks = {}
+            for frame in preds:
+                if frame.frame_id.item() == 0:
+                    video = (
+                        sio.Video(frame.video)
+                        if isinstance(frame.video, str)
+                        else sio.Video
+                    )
+                lf, tracks = frame.to_slp(tracks, video=video)
+                pred_slp.append(lf)
+            pred_slp = sio.Labels(pred_slp)
+
+            pred_slp.save(outpath)
+
         # clear the preds
         self.test_results["preds"] = []
