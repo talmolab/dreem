@@ -1,12 +1,15 @@
 """Module containing model helper functions."""
 
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 import torch
 from pytorch_lightning import loggers
 
+if TYPE_CHECKING:
+    from dreem.io import Instance
 
-def get_boxes(instances: list["dreem.io.Instance"]) -> torch.Tensor:
+
+def get_boxes(instances: list[Instance]) -> torch.Tensor:
     """Extract the bounding boxes from the input list of instances.
 
     Args:
@@ -30,8 +33,8 @@ def get_boxes(instances: list["dreem.io.Instance"]) -> torch.Tensor:
 
 
 def get_times(
-    ref_instances: list["dreem.io.Instance"],
-    query_instances: list["dreem.io.Instance"] | None = None,
+    ref_instances: list[Instance],
+    query_instances: list[Instance] | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Extract the time indices of each instance relative to the window length.
 

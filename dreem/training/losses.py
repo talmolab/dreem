@@ -1,11 +1,16 @@
 """Module containing different loss functions to be optimized."""
 
+from typing import TYPE_CHECKING
+
 import torch
 import torch.nn.functional as F
 import torchvision
 from torch import nn
 
 from dreem.models.model_utils import get_boxes, get_times
+
+if TYPE_CHECKING:
+    from dreem.io import Frame
 
 # todo: use named tensors
 # todo: clean up names, comments
@@ -34,7 +39,7 @@ class AssoLoss(nn.Module):
         self.asso_weight = asso_weight
 
     def forward(
-        self, asso_preds: list[torch.Tensor], frames: list["Frame"]
+        self, asso_preds: list[torch.Tensor], frames: list[Frame]
     ) -> torch.Tensor:
         """Calculate association loss.
 

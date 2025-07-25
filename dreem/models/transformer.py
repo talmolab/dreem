@@ -17,7 +17,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from dreem.io import AssociationMatrix
+from dreem.io import AssociationMatrix, Instance
 from dreem.models.attention_head import ATTWeightHead
 from dreem.models.embedding import Embedding, FourierPositionalEmbeddings
 from dreem.models.model_utils import get_boxes, get_times
@@ -158,8 +158,8 @@ class Transformer(torch.nn.Module):
 
     def forward(
         self,
-        ref_instances: list["dreem.io.Instance"],
-        query_instances: list["dreem.io.Instance"] | None = None,
+        ref_instances: list[Instance],
+        query_instances: list[Instance] | None = None,
     ) -> list[AssociationMatrix]:
         """Execute a forward pass through the transformer and attention head.
 
