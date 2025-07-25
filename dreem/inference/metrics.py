@@ -51,7 +51,7 @@ def get_switches(matches: dict, indices: list) -> dict:
         indices: a list of frame indices being used
 
     Returns:
-        A dict of dicts containing the frame at which the switch occured
+        A dict of dicts containing the frame at which the switch occurred
         and the change in labels
     """
     track, switches = {}, {}

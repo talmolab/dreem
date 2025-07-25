@@ -116,7 +116,7 @@ dataset:
         clip_length: 32
         anchors: ["node1", "node2", ..."node_n"]
         handle_missing: "drop"
-        ... # we don't include augmentations bc usually you shouldnt use augmentations during val/test
+        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
 ...
 ```
 #### [`MicroscopyDataset`](../../datasets/microscopy_dataset.py)
@@ -130,7 +130,7 @@ dataset:
         crop_size: 128 
         chunk: True
         clip_length: 32
-        ... # we don't include augmentations bc usually you shouldnt use augmentations during val/test
+        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
 ```
 
 ## [dataloader](inference.yaml#L18-21)

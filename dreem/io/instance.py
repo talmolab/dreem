@@ -681,7 +681,7 @@ class Instance:
     def point_scores(self) -> ArrayLike:
         """Get the point scores associated with the pose prediction.
 
-        Returns: a vector of shape n containing the point scores outputed from sleap associated with pose predictions.
+        Returns: a vector of shape n containing the point scores outputted from sleap associated with pose predictions.
         """
         return self._point_scores
 

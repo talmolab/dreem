@@ -23,7 +23,7 @@ def fill_missing(data: np.ndarray, kind: str = "linear") -> np.ndarray:
 
     Args:
         data: the array for which to fill missing value
-        kind: How to interpolate missing values using `scipy.interpoloate.interp1d`
+        kind: How to interpolate missing values using `scipy.interpolate.interp1d`
 
     Returns:
         The array with missing values filled in

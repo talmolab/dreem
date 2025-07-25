@@ -124,7 +124,7 @@ def init_optimizer(params: Iterable, config: dict) -> torch.optim.Optimizer:
             optimizer_class = getattr(torch.optim, optimizer.lower().capitalize())
         if optimizer_class is None:
             print(
-                f"Couldnt instantiate {optimizer} with capitalization, Final attempt with all caps"
+                f"Couldn't instantiate {optimizer} with capitalization, Final attempt with all caps"
             )
             optimizer_class = getattr(torch.optim, optimizer.upper(), None)
 
@@ -186,7 +186,7 @@ def init_scheduler(
             )
         if scheduler_class is None:
             print(
-                f"Couldnt instantiate {scheduler} with capitalization, Final attempt with all caps"
+                f"Couldn't instantiate {scheduler} with capitalization, Final attempt with all caps"
             )
             scheduler_class = getattr(torch.optim.lr_scheduler, scheduler.upper(), None)
 

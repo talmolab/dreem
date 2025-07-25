@@ -62,7 +62,7 @@ Next run:
 ```bash
 conda env create -y -f environment.yml && conda activate dreem
 ```
-This will create a conda environment called `dreem` which will have `dreem` installed as well as any other dependcies needed to run.
+This will create a conda environment called `dreem` which will have `dreem` installed as well as any other dependencies needed to run.
 #### Step 3. Activate the `dreem` environment
 Finally run:
 ```bash
@@ -95,10 +95,10 @@ Once you have your labels file containing the detections and tracks, you'll want
 2. Good detections. Because the input to the model is a crop centered around each detection, we want to make sure the coordinates we crop around are as accurate as possible. This is a bit more arbitrary and up to the user to determine what is a "good" detection. A general rule of thumb is to avoid having detection coordinates be hard to distinguish. For instance, with animal pose estimation, we want to avoid having the key points on two instances. For segmentation, the boundaries should be as tight as possible. This may be unavoidable however, in cases of occlusion and overlap. See below for example cases of good and bad detections.
 //TODO add example good vs bad detection.
 
-We recommend using the [`sleap-label` gui](https://sleap.ai/guides/gui.html) for [proofreading](https://sleap.ai/guides/proofreading.html#id1). This is because SLEAP's in-built gui provides useful. functionality for visualizing detections, moving them, and reassigning tracks. It also provides some nice heuristics for flagging where switches may have occured. 
+We recommend using the [`sleap-label` gui](https://sleap.ai/guides/gui.html) for [proofreading](https://sleap.ai/guides/proofreading.html#id1). This is because SLEAP's in-built gui provides useful. functionality for visualizing detections, moving them, and reassigning tracks. It also provides some nice heuristics for flagging where switches may have occurred. 
 
 ###### Converting data to a SLEAP compatible format.
-In order to use the SLEAP gui you'll need to have your labels and videos in a SLEAP comptabile format. Check out [the sleap-io docs](https://io.sleap.ai/latest/formats/) for available formats. The easiest way to ensure your labels are compatible with sleap is to convert them to a `.slp` file. For animal tracking, if you used SLEAP, this is already how SLEAP saves your labesl so you can start proofreading right away. Otherwise if you used a different system (e.g DeepLabCut) check out [`sleap.io.convert`](https://sleap.ai/api/sleap.io.convert.html#module-sleap.io.convert) for available converters. With microscopy, we highly recommend starting out with TrackMate and then proofread in SLEAP's gui. Here is [a converter from trackmate's output to a `.slp`](https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e) file. In general, you can use [`sleap-io`](https://io.sleap.ai/latest/) to write a custom converter to `.slp` if you'd like to use the sleap-gui for proofreading. Once you've ensured that your labels files have no identity switches and your detections are as good as you're willing to make them, they're ready to use for training.
+In order to use the SLEAP gui you'll need to have your labels and videos in a SLEAP compatible format. Check out [the sleap-io docs](https://io.sleap.ai/latest/formats/) for available formats. The easiest way to ensure your labels are compatible with sleap is to convert them to a `.slp` file. For animal tracking, if you used SLEAP, this is already how SLEAP saves your labesl so you can start proofreading right away. Otherwise if you used a different system (e.g DeepLabCut) check out [`sleap.io.convert`](https://sleap.ai/api/sleap.io.convert.html#module-sleap.io.convert) for available converters. With microscopy, we highly recommend starting out with TrackMate and then proofread in SLEAP's gui. Here is [a converter from trackmate's output to a `.slp`](https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e) file. In general, you can use [`sleap-io`](https://io.sleap.ai/latest/) to write a custom converter to `.slp` if you'd like to use the sleap-gui for proofreading. Once you've ensured that your labels files have no identity switches and your detections are as good as you're willing to make them, they're ready to use for training.
 
 ##### Step 1.3 Organize data.
 
@@ -162,7 +162,7 @@ dreem-train --config-base=/home/aaprasad/dreem_configs --config-name=base
 
 ###### Overriding Arguments
 Instead of changing the `base.yaml` file every time you want to run a different config, `hydra` enables us to either 
-1. provide another `.yaml` file with a subset of the parameters to overide
+1. provide another `.yaml` file with a subset of the parameters to override
 2. provide the args to the cli directly
 
 ###### File-based override
@@ -254,7 +254,7 @@ Similar to training, we need to set up a config file that specifies
 3. a `Tracker` config
 4. a `dataset` config with a `test_dataset` subsection containing dataset params.
 
-Please see the [README](dreem/inference/configs/inference.yaml) in `dreem/inference/configs` for a walk through of the inference params as well as how to set up an inference conifg and see [`dreem/inference/configs/inference.yaml`](dreem/inference/configs/inference.yaml) for an example inference config file.
+Please see the [README](dreem/inference/configs/inference.yaml) in `dreem/inference/configs` for a walk through of the inference params as well as how to set up an inference config and see [`dreem/inference/configs/inference.yaml`](dreem/inference/configs/inference.yaml) for an example inference config file.
 
 #### Step 3 Run Inference
 

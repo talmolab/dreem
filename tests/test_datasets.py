@@ -469,7 +469,7 @@ def test_tracking_dataset(two_flies):
         and tracking_ds.test_dataloader().batch_size == 2
     )
 
-    # test using overrided dls over defaults
+    # test using overridden dls over defaults
     tracking_ds = TrackingDataset(
         train_ds=train_sleap_ds,
         train_dl=train_sleap_dl,
@@ -484,7 +484,7 @@ def test_tracking_dataset(two_flies):
         and tracking_ds.val_dataloader().batch_size == 2
         and tracking_ds.test_dataloader().batch_size == 2
     )
-    # test using overrided dls over defaults with combinations
+    # test using overridden dls over defaults with combinations
     tracking_ds = TrackingDataset(
         train_ds=train_sleap_ds,
         val_ds=val_sleap_ds,

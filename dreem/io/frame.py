@@ -411,7 +411,7 @@ class Frame:
 
     @property
     def asso_output(self) -> "AssociationMatrix":
-        """The association matrix between instances outputed directly by transformer.
+        """The association matrix between instances outputted directly by transformer.
 
         Returns:
             An arraylike (n_query, n_nonquery) association matrix between instances.
@@ -439,7 +439,7 @@ class Frame:
 
     @property
     def matches(self) -> tuple:
-        """Matches between frame instances and availabel trajectories.
+        """Matches between frame instances and available trajectories.
 
         Returns:
             A tuple containing the instance idx and trajectory idx for the matched instance.

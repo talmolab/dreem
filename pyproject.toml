@@ -86,5 +86,5 @@ select = [
 convention = "google"
 
 [tool.codespell]
-skip = "*.po,*.ts,./docs/_build,./docs/venv,./site,*.ipynb,.git,__pycache__"
+skip = "*.po,*.ts,./docs/_build,./docs/venv,./site,*.ipynb,.git,__pycache__,*.csv"
 ignore-words-list = "te,sleeap,thinc,mot,MOT"

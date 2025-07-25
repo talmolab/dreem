@@ -50,7 +50,7 @@ class Transformer(torch.nn.Module):
 
         Args:
             d_model: The number of features in the encoder/decoder inputs.
-            nhead: The number of heads in the transfomer encoder/decoder.
+            nhead: The number of heads in the transformer encoder/decoder.
             num_encoder_layers: The number of encoder-layers in the encoder.
             num_decoder_layers: The number of decoder-layers in the decoder.
             dropout: Dropout value applied to the output of transformer layers.
@@ -332,7 +332,7 @@ def apply_fourier_embeddings(
         times: The times index tensor of shape (n_query,).
         d_model: Model dimension.
         fourier_embeddings: The Fourier positional embeddings object.
-        proj: Linear projection layer that projects concantenated feature vector to model dimension.
+        proj: Linear projection layer that projects concatenated feature vector to model dimension.
         norm: The normalization layer.
 
     Returns:
