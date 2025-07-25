@@ -40,6 +40,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "ruff",
+    "codespell",
     "toml",
     "twine",
     "build",
@@ -83,3 +84,7 @@ select = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.codespell]
+skip = "*.po,*.ts,./docs/_build,./docs/venv,./site,*.ipynb,.git,__pycache__"
+ignore-words-list = "te,sleeap,thinc,mot,MOT"
