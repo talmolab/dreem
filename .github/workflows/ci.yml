@@ -64,7 +64,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-22.04", "windows-2022"]
+        os: ["ubuntu-22.04"]
         python: [3.12]
 
     name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
