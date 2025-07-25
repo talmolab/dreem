@@ -33,8 +33,8 @@ class BaseDataset(Dataset):
         """Initialize Dataset.
 
         Args:
-            label_files: a list of paths to label files.
-                should at least contain detections for inference, detections + tracks for training.
+            label_files: a list of paths to label files. Should at least contain
+                detections for inference, detections + tracks for training.
             vid_files: list of paths to video files.
             padding: amount of padding around object crops
             crop_size: the size of the object crops
@@ -84,7 +84,9 @@ class BaseDataset(Dataset):
     def process_segments(
         self, i: int, segments_to_stitch: list[torch.Tensor], clip_length: int
     ) -> None:
-        """Process segments to stitch. Modifies state variables chunked_frame_idx and label_idx.
+        """Process segments to stitch.
+        
+        Modifies state variables chunked_frame_idx and label_idx.
 
         Args:
             segments_to_stitch: list of segments to stitch
@@ -162,7 +164,9 @@ class BaseDataset(Dataset):
                 # and frame_chunk[-1] % self.clip_length == 0
             ):
                 logger.warning(
-                    f"Warning: Batch containing frames {frame_chunk} from video {self.vid_files[self.label_idx[i]]} has {len(frame_chunk)} frames. Removing to avoid empty batch possibility with failed frame loading"
+                    f"Warning: Batch containing frames {frame_chunk} from video "
+                    f"{self.vid_files[self.label_idx[i]]} has {len(frame_chunk)} frames. "
+                    f"Removing to avoid empty batch possibility with failed frame loading"
                 )
                 remove_idx.append(i)
         if len(remove_idx) > 0:

@@ -41,8 +41,10 @@ class CellTrackingDataset(BaseDataset):
         """Initialize CellTrackingDataset.
 
         Args:
-            gt_list: filepaths of gt label images in a list of lists (each list corresponds to a dataset)
-            raw_img_list: filepaths of original tif images in a list of lists (each list corresponds to a dataset)
+            gt_list: filepaths of gt label images in a list of lists (each list
+                corresponds to a dataset)
+            raw_img_list: filepaths of original tif images in a list of lists
+                (each list corresponds to a dataset)
             data_dirs: paths to data directories
             padding: amount of padding around object crops
             crop_size: the size of the object crops. Can be either:
@@ -62,9 +64,12 @@ class CellTrackingDataset(BaseDataset):
             n_chunks: Number of chunks to subsample from.
                 Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
             seed: set a seed for reproducibility
-            max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
-            use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
-            ctc_track_meta: filepaths of man_track.txt files in a list of lists (each list corresponds to a dataset)
+            max_batching_gap: the max number of frames that can be unlabelled
+                before starting a new batch
+            use_tight_bbox: whether to use tight bounding box (around keypoints)
+                instead of the default square bounding box
+            ctc_track_meta: filepaths of man_track.txt files in a list of lists
+                (each list corresponds to a dataset)
             apply_mask_to_crop: whether to apply the mask to the crop
         """
         super().__init__(
