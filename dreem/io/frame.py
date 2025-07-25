@@ -146,7 +146,7 @@ class Frame:
         Returns:
             A dreem.io.Frame object
         """
-        from dreem.io import Instance
+        from dreem.io.instance import Instance
 
         img_shape = lf.image.shape
         if len(img_shape) == 2:

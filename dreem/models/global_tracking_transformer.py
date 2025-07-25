@@ -2,7 +2,8 @@
 
 import torch
 
-from dreem.models import Transformer, create_visual_encoder
+from dreem.models.transformer import Transformer
+from dreem.models.visual_encoder import create_visual_encoder
 
 # todo: do we want to handle params with configs already here?
 

@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from dreem.io import Instance
+from dreem.io.instance import Instance
 
 logger = logging.getLogger("dreem.io")
 

@@ -14,8 +14,8 @@ import torch
 from pytorch_lightning import LightningModule
 
 from dreem.datasets import CellTrackingDataset
-from dreem.inference import BatchTracker, Tracker, metrics
-from dreem.models import GlobalTrackingTransformer
+from dreem.inference import metrics
+from dreem.models.global_tracking_transformer import GlobalTrackingTransformer
 from dreem.models.model_utils import init_optimizer, init_scheduler
 from dreem.training.losses import AssoLoss
 
@@ -77,8 +77,10 @@ class GTRRunner(LightningModule):
         self.model = GlobalTrackingTransformer(**self.model_cfg)
         self.loss = AssoLoss(**self.loss_cfg)
         if self.tracker_cfg.get("tracker_type", "standard") == "batch":
+            from dreem.inference.batch_tracker import BatchTracker
             self.tracker = BatchTracker(**self.tracker_cfg)
         else:
+            from dreem.inference.tracker import Tracker
             self.tracker = Tracker(**self.tracker_cfg)
         self.optimizer_cfg = optimizer_cfg
         self.scheduler_cfg = scheduler_cfg

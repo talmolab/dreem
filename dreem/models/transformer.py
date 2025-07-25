@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from torch import nn
 
 from dreem.io import AssociationMatrix
-from dreem.models import Embedding, FourierPositionalEmbeddings
+from dreem.models.embedding import Embedding, FourierPositionalEmbeddings
 from dreem.models.attention_head import ATTWeightHead
 from dreem.models.model_utils import get_boxes, get_times
 
