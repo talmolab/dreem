@@ -78,9 +78,11 @@ class GTRRunner(LightningModule):
         self.loss = AssoLoss(**self.loss_cfg)
         if self.tracker_cfg.get("tracker_type", "standard") == "batch":
             from dreem.inference.batch_tracker import BatchTracker
+
             self.tracker = BatchTracker(**self.tracker_cfg)
         else:
             from dreem.inference.tracker import Tracker
+
             self.tracker = Tracker(**self.tracker_cfg)
         self.optimizer_cfg = optimizer_cfg
         self.scheduler_cfg = scheduler_cfg
