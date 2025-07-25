@@ -73,6 +73,7 @@ class CellTrackingDataset(BaseDataset):
             ctc_track_meta: filepaths of man_track.txt files in a list of lists
                 (each list corresponds to a dataset)
             apply_mask_to_crop: whether to apply the mask to the crop
+            **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
             gt_list,

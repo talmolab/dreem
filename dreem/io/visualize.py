@@ -88,7 +88,9 @@ def annotate_video(
         names: Whether or not to annotate with name
         centroids: The size of the centroid. If centroid size <= 0 or None then it is not added
         poses: Whether or not to annotate with poses
+        save_path: The path to save the annotated video.
         fps: The frame rate of the generated video
+        track_scores: Minimum track score threshold for displaying tracks
         alpha: The opacity of the annotations.
 
     Returns:

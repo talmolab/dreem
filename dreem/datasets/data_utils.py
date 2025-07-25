@@ -201,7 +201,7 @@ def get_tight_bbox(pose: ArrayLike) -> torch.Tensor:
     """Get a tight bbox around an instance.
 
     Args:
-        poses: array of keypoints around which to create the tight bbox
+        pose: array of keypoints around which to create the tight bbox
 
     Returns:
         A torch tensor in form y1, x1, y2, x2 representing the tight bbox
@@ -661,6 +661,7 @@ def view_training_batch(
         instances: A list of training instances, where each instance is a
             dictionary containing the object crops.
         num_frames: The number of frames to display per instance.
+        cmap: Optional colormap to use for displaying images.
 
     Returns:
         None

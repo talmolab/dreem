@@ -49,7 +49,8 @@ def _pairwise_intersection(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     The box order must be (xmin, ymin, xmax, ymax)
 
     Args:
-        boxes1,boxes2 (Boxes): two `Boxes`. Contains N & M boxes, respectively.
+        boxes1: First set of boxes (Boxes object containing N boxes).
+        boxes2: Second set of boxes (Boxes object containing M boxes).
 
     Returns:
         Tensor: intersection, sized [N,M].
@@ -71,7 +72,8 @@ def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     The box order must be (xmin, ymin, xmax, ymax).
 
     Args:
-        boxes1,boxes2 (Boxes): two `Boxes`. Contains N & M boxes, respectively.
+        boxes1: First set of boxes (Boxes object containing N boxes).
+        boxes2: Second set of boxes (Boxes object containing M boxes).
 
     Returns:
         Tensor: IoU, sized [N,M].

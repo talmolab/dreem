@@ -172,6 +172,7 @@ class DescriptorVisualEncoder(torch.nn.Module):
 
         Args:
             use_hu_moments: Whether to use Hu moments.
+            **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         super().__init__()
         self.use_hu_moments = use_hu_moments

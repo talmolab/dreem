@@ -42,6 +42,7 @@ def _expand_to_rank(
 
     Args:
         arr: an n-dimensional array (either np.ndarray or torch.Tensor).
+        new_rank: The target rank (number of dimensions) for the array.
 
     Returns:
         The array expanded to the correct dimensions.

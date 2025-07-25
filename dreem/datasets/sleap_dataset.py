@@ -80,6 +80,7 @@ class SleapDataset(BaseDataset):
             normalize_image: whether to normalize the image to [0, 1]
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
+            **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
             slp_files,

@@ -145,6 +145,9 @@ class Frame:
 
         Args:
             lf: A sio.LabeledFrame object
+            video_id: The ID of the video containing this frame.
+            device: The device to use for tensor operations.
+            **kwargs: Additional keyword arguments passed to Instance creation.
 
         Returns:
             A dreem.io.Frame object
