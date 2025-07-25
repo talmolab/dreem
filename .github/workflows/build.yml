@@ -13,6 +13,8 @@ jobs:
   pypi:
     name: PyPI Wheel
     runs-on: "ubuntu-22.04"
+    permissions:
+      id-token: write
     steps:
 
     - name: Checkout repo
@@ -38,8 +40,5 @@ jobs:
         uv build --no-sources
         twine check dist/*
     
-    - name: Upload
-      env:
-        PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      run: |
-        twine upload -u __token__ -p "$PYPI_TOKEN" dist/* --non-interactive --skip-existing --disable-progress-bar
+    - name: Upload to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
