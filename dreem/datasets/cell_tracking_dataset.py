@@ -49,12 +49,14 @@ class CellTrackingDataset(BaseDataset):
             padding: amount of padding around object crops
             crop_size: the size of the object crops. Can be either:
                 - An integer specifying a single crop size for all objects
-                - A list of integers specifying different crop sizes for different data directories
+                - A list of integers specifying different crop sizes for
+                  different data directories
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
             mode: `train` or `val`. Determines whether this dataset is used for
                 training or validation. Currently doesn't affect dataset logic
-            augmentations: An optional dict mapping augmentations to parameters. The keys
+            augmentations: An optional dict mapping augmentations to parameters.
+                The keys
                 should map directly to augmentation classes in albumentations. Example:
                     augs = {
                         'Rotate': {'limit': [-90, 90]},

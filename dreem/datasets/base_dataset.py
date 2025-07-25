@@ -115,7 +115,8 @@ class BaseDataset(Dataset):
             segments_to_stitch = []
             prev_end = annotated_segments[0][1]  # end of first segment
             for start, end in annotated_segments:
-                # check if the start of current segment is within batching_max_gap of end of previous
+                # check if the start of current segment is within
+                # batching_max_gap of end of previous
                 if (
                     (int(start) - int(prev_end) < self.max_batching_gap)
                     or not self.chunk
@@ -156,7 +157,9 @@ class BaseDataset(Dataset):
 
             self.label_idx = [self.label_idx[i] for i in sample_idx]
 
-        # workaround for empty batch bug (needs to be changed). Check for batch with with only 1/10 size of clip length. Arbitrary thresholds
+        # workaround for empty batch bug (needs to be changed).
+        # Check for batch with with only 1/10 size of clip length.
+        # Arbitrary thresholds
         remove_idx = []
         for i, frame_chunk in enumerate(self.chunked_frame_idx):
             if (
@@ -208,7 +211,9 @@ class BaseDataset(Dataset):
 
                 self.label_idx = [self.label_idx[i] for i in sample_idx]
 
-            # workaround for empty batch bug (needs to be changed). Check for batch with with only 1/10 size of clip length. Arbitrary thresholds
+            # workaround for empty batch bug (needs to be changed).
+            # Check for batch with with only 1/10 size of clip length.
+            # Arbitrary thresholds
             remove_idx = []
             for i, frame_chunk in enumerate(self.chunked_frame_idx):
                 if (

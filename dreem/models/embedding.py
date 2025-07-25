@@ -45,18 +45,25 @@ class Embedding(torch.nn.Module):
         """Initialize embeddings.
 
         Args:
-            emb_type: The type of embedding to compute. Must be one of `{"temp", "pos", "off"}`
+            emb_type: The type of embedding to compute.
+                Must be one of `{"temp", "pos", "off"}`
             mode: The mode or function used to map positions to vector embeddings.
                   Must be one of `{"fixed", "learned", "off"}`
             features: The embedding dimensions. Must match the dimension of the
                       input vectors for the transformer model.
             n_points: the number of points that will be embedded.
-            emb_num: the number of embeddings in the `self.lookup` table (Only used in learned embeddings).
-            over_boxes: Whether to compute the position embedding for each bbox coordinate (y1x1y2x2) or the centroid + bbox size (yxwh).
-            temperature: the temperature constant to be used when computing the sinusoidal position embedding
-            normalize: whether or not to normalize the positions (Only used in fixed embeddings).
-            scale: factor by which to scale the positions after normalizing (Only used in fixed embeddings).
-            mlp_cfg: A dictionary of mlp hyperparameters for projecting embedding to correct space.
+            emb_num: the number of embeddings in the `self.lookup` table
+                (Only used in learned embeddings).
+            over_boxes: Whether to compute the position embedding for each bbox
+                coordinate (y1x1y2x2) or the centroid + bbox size (yxwh).
+            temperature: the temperature constant to be used when computing
+                the sinusoidal position embedding
+            normalize: whether or not to normalize the positions
+                (Only used in fixed embeddings).
+            scale: factor by which to scale the positions after normalizing
+                (Only used in fixed embeddings).
+            mlp_cfg: A dictionary of mlp hyperparameters for projecting
+                embedding to correct space.
                     Example: {"hidden_dims": 256, "num_layers":3, "dropout": 0.3}
         """
         self._check_init_args(emb_type, mode)
