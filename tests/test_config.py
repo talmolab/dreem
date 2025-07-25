@@ -1,6 +1,5 @@
 """Tests for `config.py`"""
 
-
 import torch
 from omegaconf import OmegaConf, open_dict
 
