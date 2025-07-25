@@ -1,0 +1,45 @@
+name: Build
+
+on:
+  release:
+    types:
+      - published
+  # # Modify and uncomment below to manually trigger build:
+  # push:
+  #   branches:
+  #     - main
+
+jobs:
+  pypi:
+    name: PyPI Wheel
+    runs-on: "ubuntu-22.04"
+    steps:
+
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "pyproject.toml"
+
+    - name: Install dependencies
+      run: |
+        uv pip install --system build twine
+
+    - name: Build wheel
+      run: |
+        uv build --no-sources
+        twine check dist/*
+    
+    - name: Upload
+      env:
+        PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      run: |
+        twine upload -u __token__ -p "$PYPI_TOKEN" dist/* --non-interactive --skip-existing --disable-progress-bar
