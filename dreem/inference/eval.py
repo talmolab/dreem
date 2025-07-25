@@ -72,7 +72,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
             label_files=[label_file], vid_files=[vid_file], mode="test"
         )
         dataloader = eval_cfg.get_dataloader(dataset, mode="test")
-        metrics = trainer.test(model, dataloader)
+        _ = trainer.test(model, dataloader)
 
 
 if __name__ == "__main__":

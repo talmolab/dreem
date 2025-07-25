@@ -168,7 +168,7 @@ def compute_motmetrics(df):
         if (pred_tracks == -1).all():
             pred_tracks = np.full(len(gt_ids), np.nan)
 
-        expected_tm_ids = []
+        # expected_tm_ids = []  # Currently unused but may be needed for future TRA metric calculations
         cost_gt_dreem = np.full((len(gt_ids), len(gt_ids)), np.nan)
         np.fill_diagonal(cost_gt_dreem, 1)
         acc_dreem.update(

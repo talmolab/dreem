@@ -166,10 +166,11 @@ class CellTrackingDataset(BaseDataset):
         image_paths = self.raw_img_list[label_idx]
         gt_paths = self.gt_list[label_idx]
 
-        if self.list_df_track_meta is not None:
-            df_track_meta = self.list_df_track_meta[label_idx]
-        else:
-            df_track_meta = None
+        # df_track_meta is currently unused but may be needed for future track metadata processing
+        # if self.list_df_track_meta is not None:
+        #     df_track_meta = self.list_df_track_meta[label_idx]
+        # else:
+        #     df_track_meta = None
 
         # get the correct crop size based on the video
         video_par_path = Path(image_paths[0]).parent.parent

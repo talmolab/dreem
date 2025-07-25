@@ -202,7 +202,7 @@ class GTRRunner(LightningModule):
             if len(instances) == 0:
                 return None
 
-            eval_metrics = self.metrics[mode]
+            # eval_metrics = self.metrics[mode]  # Currently unused but available for future metric computation
 
             logits = self(instances)
             logits = [asso.matrix for asso in logits]
@@ -382,7 +382,7 @@ class GTRRunner(LightningModule):
             for frame in preds:
                 frame_masks = []
                 for instance in frame.instances:
-                    centroid = instance.centroid["centroid"]
+                    # centroid = instance.centroid["centroid"]  # Currently unused but available if needed
                     mask = instance.mask.cpu().numpy()
                     track_id = instance.pred_track_id.cpu().numpy().item()
                     mask = mask.astype(np.uint8)

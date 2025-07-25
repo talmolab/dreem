@@ -186,7 +186,7 @@ class Transformer(torch.nn.Module):
         ref_boxes = torch.nan_to_num(ref_boxes, -1.0)
         ref_times, query_times = get_times(ref_instances, query_instances)
 
-        window_length = len(ref_times.unique())
+        # window_length = len(ref_times.unique())  # Currently unused but may be useful for debugging
 
         ref_temp_emb = self.temp_emb(ref_times)
 

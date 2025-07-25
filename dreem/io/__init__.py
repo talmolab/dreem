@@ -5,3 +5,11 @@ from dreem.io.config import Config
 from dreem.io.frame import Frame
 from dreem.io.instance import Instance
 from dreem.io.track import Track
+
+__all__ = [
+    "AssociationMatrix",
+    "Config",
+    "Frame",
+    "Instance",
+    "Track",
+]

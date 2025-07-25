@@ -87,7 +87,7 @@ def track_ctc(
         for frame in batch:
             frame_masks = []
             for instance in frame.instances:
-                centroid = instance.centroid["centroid"]
+                # centroid = instance.centroid["centroid"]  # Currently unused but available if needed
                 mask = instance.mask.cpu().numpy()
                 track_id = instance.pred_track_id.cpu().numpy().item()
                 mask = mask.astype(np.uint8)

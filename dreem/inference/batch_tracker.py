@@ -183,8 +183,6 @@ class BatchTracker:
                 [frame.frame_id] * len(frame.instances)
             )
 
-        frames_to_track = context_window_frames + frames
-
         # query is current batch instances, key is context window and current batch instances
         association_matrix = model(
             context_window_instances + current_batch_instances, current_batch_instances
@@ -260,8 +258,6 @@ class BatchTracker:
                     frames_to_track = context_window_frames + [
                         frame_to_track
                     ]  # better var name?
-
-                    query_ind = len(frames_to_track) - 1
 
                     frame_to_track = self._run_frame_by_frame_tracker(
                         model,

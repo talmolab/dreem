@@ -1,7 +1,5 @@
 """Top-level package for dreem."""
 
-import logging.config
-
 # from .training import run
 from dreem.inference.tracker import Tracker
 from dreem.io.association_matrix import AssociationMatrix
@@ -15,10 +13,25 @@ from dreem.models.transformer import Transformer
 from dreem.models.visual_encoder import VisualEncoder
 from dreem.version import __version__
 
+__all__ = [
+    "Tracker",
+    "AssociationMatrix",
+    "Config",
+    "Frame",
+    "Instance",
+    "annotate_video",
+    "GlobalTrackingTransformer",
+    "GTRRunner",
+    "Transformer",
+    "VisualEncoder",
+    "__version__",
+]
+
 
 def setup_logging():
     """Setup logging based on `logging.yaml`."""
     import logging
+    import logging.config
     import os
 
     import yaml
@@ -29,4 +42,3 @@ def setup_logging():
         logging_cfg = yaml.load(stream, Loader=yaml.FullLoader)
 
     logging.config.dictConfig(logging_cfg)
-    logger = logging.getLogger("dreem")
