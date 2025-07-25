@@ -601,7 +601,7 @@ class Instance:
         self._embeddings[emb_type] = embedding
 
     @property
-    def frame(self) -> Frame:
+    def frame(self) -> "Frame":
         """Get the frame the instance belongs to.
 
         Returns:
@@ -610,7 +610,7 @@ class Instance:
         return self._frame
 
     @frame.setter
-    def frame(self, frame: Frame) -> None:
+    def frame(self, frame: "Frame") -> None:
         """Set the back reference to the `Frame` that this `Instance` belongs to.
 
         This field is set when instances are added to `Frame` object.

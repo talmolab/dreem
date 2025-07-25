@@ -39,7 +39,7 @@ class AssoLoss(nn.Module):
         self.asso_weight = asso_weight
 
     def forward(
-        self, asso_preds: list[torch.Tensor], frames: list[Frame]
+        self, asso_preds: list[torch.Tensor], frames: list["Frame"]
     ) -> torch.Tensor:
         """Calculate association loss.
 

@@ -84,8 +84,8 @@ class GlobalTrackingTransformer(torch.nn.Module):
         )
 
     def forward(
-        self, ref_instances: list[Instance], query_instances: list[Instance] = None
-    ) -> list[AssociationMatrix]:
+        self, ref_instances: list["Instance"], query_instances: list["Instance"] = None
+    ) -> list["AssociationMatrix"]:
         """Execute forward pass of GTR Model to get asso matrix.
 
         Args:
@@ -106,7 +106,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
         return asso_preds
 
     def extract_features(
-        self, instances: list[Instance], force_recompute: bool = False
+        self, instances: list["Instance"], force_recompute: bool = False
     ) -> None:
         """Extract features from instances using visual encoder backbone.
 

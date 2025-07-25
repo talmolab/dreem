@@ -64,7 +64,7 @@ class Frame:
         alias="img_shape", converter=_to_tensor, factory=list
     )
 
-    _instances: list[Instance] = attrs.field(alias="instances", factory=list)
+    _instances: list["Instance"] = attrs.field(alias="instances", factory=list)
     _asso_output: AssociationMatrix | None = attrs.field(
         alias="asso_output", default=None
     )
@@ -377,7 +377,7 @@ class Frame:
         self._img_shape = _to_tensor(img_shape)
 
     @property
-    def instances(self) -> list[Instance]:
+    def instances(self) -> list["Instance"]:
         """A list of instances in the frame.
 
         Returns:
@@ -386,7 +386,7 @@ class Frame:
         return self._instances
 
     @instances.setter
-    def instances(self, instances: list[Instance]) -> None:
+    def instances(self, instances: list["Instance"]) -> None:
         """Set the frame's instance.
 
         Args:
