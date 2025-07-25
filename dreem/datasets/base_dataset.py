@@ -85,7 +85,7 @@ class BaseDataset(Dataset):
         self, i: int, segments_to_stitch: list[torch.Tensor], clip_length: int
     ) -> None:
         """Process segments to stitch.
-        
+
         Modifies state variables chunked_frame_idx and label_idx.
 
         Args:

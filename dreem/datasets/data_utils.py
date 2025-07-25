@@ -544,7 +544,7 @@ def parse_synthetic(xml_path: str, source: str = "icy") -> pd.DataFrame:
 
         try:
             ids_map[track_element.attrib["id"]] = track_id
-        except:
+        except KeyError:
             pass
 
         for detection_element in track_element:
