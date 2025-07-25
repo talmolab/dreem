@@ -1,23 +1,27 @@
 """Module containing training, validation and inference logic."""
 
-import torch
 import gc
 import logging
-import pandas as pd
-import h5py
 import os
-from dreem.inference import Tracker, BatchTracker
-from dreem.inference import metrics
-from dreem.models import GlobalTrackingTransformer
-from dreem.datasets import CellTrackingDataset
-from dreem.training.losses import AssoLoss
-from dreem.models.model_utils import init_optimizer, init_scheduler
-from pytorch_lightning import LightningModule
 from datetime import datetime
 from pathlib import Path
-import sleap_io as sio
+from typing import TYPE_CHECKING
+
+import h5py
 import numpy as np
+import sleap_io as sio
 import tifffile
+import torch
+from pytorch_lightning import LightningModule
+
+from dreem.datasets import CellTrackingDataset
+from dreem.inference import metrics
+from dreem.models.global_tracking_transformer import GlobalTrackingTransformer
+from dreem.models.model_utils import init_optimizer, init_scheduler
+from dreem.training.losses import AssoLoss
+
+if TYPE_CHECKING:
+    from dreem.io import AssociationMatrix, Frame, Instance
 
 logger = logging.getLogger("dreem.models")
 if not logger.handlers:
@@ -77,8 +81,12 @@ class GTRRunner(LightningModule):
         self.model = GlobalTrackingTransformer(**self.model_cfg)
         self.loss = AssoLoss(**self.loss_cfg)
         if self.tracker_cfg.get("tracker_type", "standard") == "batch":
+            from dreem.inference.batch_tracker import BatchTracker
+
             self.tracker = BatchTracker(**self.tracker_cfg)
         else:
+            from dreem.inference.tracker import Tracker
+
             self.tracker = Tracker(**self.tracker_cfg)
         self.optimizer_cfg = optimizer_cfg
         self.scheduler_cfg = scheduler_cfg
@@ -93,8 +101,8 @@ class GTRRunner(LightningModule):
 
     def forward(
         self,
-        ref_instances: list["dreem.io.Instance"],
-        query_instances: list["dreem.io.Instance"] | None = None,
+        ref_instances: list["Instance"],
+        query_instances: list["Instance"] | None = None,
     ) -> list["AssociationMatrix"]:
         """Execute forward pass of the lightning module.
 
@@ -109,7 +117,7 @@ class GTRRunner(LightningModule):
         return asso_preds
 
     def training_step(
-        self, train_batch: list[list["dreem.io.Frame"]], batch_idx: int
+        self, train_batch: list[list["Frame"]], batch_idx: int
     ) -> dict[str, float]:
         """Execute single training step for model.
 
@@ -127,7 +135,7 @@ class GTRRunner(LightningModule):
         return result
 
     def validation_step(
-        self, val_batch: list[list["dreem.io.Frame"]], batch_idx: int
+        self, val_batch: list[list["Frame"]], batch_idx: int
     ) -> dict[str, float]:
         """Execute single val step for model.
 
@@ -145,7 +153,7 @@ class GTRRunner(LightningModule):
         return result
 
     def test_step(
-        self, test_batch: list[list["dreem.io.Frame"]], batch_idx: int
+        self, test_batch: list[list["Frame"]], batch_idx: int
     ) -> dict[str, float]:
         """Execute single test step for model.
 
@@ -162,9 +170,7 @@ class GTRRunner(LightningModule):
 
         return result
 
-    def predict_step(
-        self, batch: list[list["dreem.io.Frame"]], batch_idx: int
-    ) -> list["dreem.io.Frame"]:
+    def predict_step(self, batch: list[list["Frame"]], batch_idx: int) -> list["Frame"]:
         """Run inference for model.
 
         Computes association + assignment.
@@ -180,9 +186,7 @@ class GTRRunner(LightningModule):
         frames_pred = self.tracker(self.model, batch[0])
         return frames_pred
 
-    def _shared_eval_step(
-        self, frames: list["dreem.io.Frame"], mode: str
-    ) -> dict[str, float]:
+    def _shared_eval_step(self, frames: list["Frame"], mode: str) -> dict[str, float]:
         """Run evaluation used by train, test, and val steps.
 
         Args:
@@ -198,7 +202,7 @@ class GTRRunner(LightningModule):
             if len(instances) == 0:
                 return None
 
-            eval_metrics = self.metrics[mode]
+            # eval_metrics = self.metrics[mode]  # Currently unused but available for future metric computation
 
             logits = self(instances)
             logits = [asso.matrix for asso in logits]
@@ -378,7 +382,7 @@ class GTRRunner(LightningModule):
             for frame in preds:
                 frame_masks = []
                 for instance in frame.instances:
-                    centroid = instance.centroid["centroid"]
+                    # centroid = instance.centroid["centroid"]  # Currently unused but available if needed
                     mask = instance.mask.cpu().numpy()
                     track_id = instance.pred_track_id.cpu().numpy().item()
                     mask = mask.astype(np.uint8)

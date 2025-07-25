@@ -1,6 +1,7 @@
 """Module containing different components of multi-head attention heads."""
 
 import torch
+
 from dreem.models.mlp import MLP
 
 # todo: add named tensors
@@ -39,7 +40,8 @@ class ATTWeightHead(torch.nn.Module):
             key: Input tensor of shape (batch_size, num_window_instances, feature_dim).
 
         Returns:
-            Output tensor of shape (batch_size, num_frame_instances, num_window_instances).
+            Output tensor of shape
+            (batch_size, num_frame_instances, num_window_instances).
         """
         k = self.k_proj(key)
         q = self.q_proj(query)

@@ -1,18 +1,16 @@
 """Script to evaluate model."""
 
-from dreem.io import Config
-from dreem.models import GTRRunner
-from dreem.inference import Tracker, BatchTracker
-from omegaconf import DictConfig
-from pathlib import Path
+import logging
+import os
 
 import hydra
-import os
 import pandas as pd
-import pytorch_lightning as pl
-import torch
 import sleap_io as sio
-import logging
+from omegaconf import DictConfig
+
+from dreem.inference import BatchTracker, Tracker
+from dreem.io import Config
+from dreem.models import GTRRunner
 
 logger = logging.getLogger("dreem.inference")
 if not logger.handlers:
@@ -53,11 +51,11 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         model.tracker = BatchTracker(**model.tracker_cfg)
     else:
         model.tracker = Tracker(**model.tracker_cfg)
-    logger.info(f"Using the following tracker:")
+    logger.info("Using the following tracker:")
     logger.info(model.tracker)
     model.metrics["test"] = eval_cfg.get("metrics", {}).get("test", "all")
     model.persistent_tracking["test"] = True
-    logger.info(f"Computing the following metrics:")
+    logger.info("Computing the following metrics:")
     logger.info(model.metrics["test"])
     model.test_results["save_path"] = eval_cfg.get("outdir", ".")
     os.makedirs(model.test_results["save_path"], exist_ok=True)
@@ -74,7 +72,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
             label_files=[label_file], vid_files=[vid_file], mode="test"
         )
         dataloader = eval_cfg.get_dataloader(dataset, mode="test")
-        metrics = trainer.test(model, dataloader)
+        _ = trainer.test(model, dataloader)
 
 
 if __name__ == "__main__":

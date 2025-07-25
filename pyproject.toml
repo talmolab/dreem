@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dreem"
+name = "dreem-tracker"
 authors = [
     {name = "Arlo Sheridan", email = "asheridan@salk.edu"},
     {name = "Aaditya Prasad", email = "aprasad@salk.edu"},
@@ -12,14 +12,11 @@ authors = [
     {name = "Talmo Pereira", email = "talmo@salk.edu"},
 ]
 description = "Global Tracking Transformers for biological multi-object tracking."
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 keywords = ["gtr", "mot"]
 license = {text = "BSD-3-Clause"}
 classifiers = [
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
     "torch >= 2.0.0",
@@ -42,8 +39,8 @@ readme = {file = ["README.md"]}
 dev = [
     "pytest",
     "pytest-cov",
-    "black",
-    "pydocstyle",
+    "ruff",
+    "codespell",
     "toml",
     "twine",
     "build",
@@ -51,7 +48,9 @@ dev = [
     "mkdocs-jupyter",
     "mkdocstrings[python]>=0.18",
     "mkdocs-gen-files",
-    "mkdocs-literate-nav"
+    "mkdocs-literate-nav",
+    "mike",
+    "mkdocs-section-index"
 ]
 
 [project.scripts]
@@ -70,3 +69,23 @@ line-length = 88
 [pydocstyle]
 convention = "google"
 match-dir = "sleap_roots"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "D",    # pydocstyle
+    "I",    # isort
+]
+ignore = ["E501"]  # Line too long - let formatter handle this
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.codespell]
+skip = "*.po,*.ts,./docs/_build,./docs/venv,./site,*.ipynb,.git,__pycache__,*.csv"
+ignore-words-list = "te,sleeap,thinc,mot,MOT"

@@ -11,14 +11,16 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
     * added fixed embeddings over boxes
 """
 
-from dreem.io import AssociationMatrix
-from dreem.models.attention_head import ATTWeightHead
-from dreem.models import Embedding, FourierPositionalEmbeddings
-from dreem.models.model_utils import get_boxes, get_times
-from torch import nn
 import copy
+
 import torch
 import torch.nn.functional as F
+from torch import nn
+
+from dreem.io import AssociationMatrix, Instance
+from dreem.models.attention_head import ATTWeightHead
+from dreem.models.embedding import Embedding, FourierPositionalEmbeddings
+from dreem.models.model_utils import get_boxes, get_times
 
 # todo: add named tensors
 # todo: add flash attention
@@ -48,7 +50,7 @@ class Transformer(torch.nn.Module):
 
         Args:
             d_model: The number of features in the encoder/decoder inputs.
-            nhead: The number of heads in the transfomer encoder/decoder.
+            nhead: The number of heads in the transformer encoder/decoder.
             num_encoder_layers: The number of encoder-layers in the encoder.
             num_decoder_layers: The number of decoder-layers in the decoder.
             dropout: Dropout value applied to the output of transformer layers.
@@ -156,8 +158,8 @@ class Transformer(torch.nn.Module):
 
     def forward(
         self,
-        ref_instances: list["dreem.io.Instance"],
-        query_instances: list["dreem.io.Instance"] | None = None,
+        ref_instances: list[Instance],
+        query_instances: list[Instance] | None = None,
     ) -> list[AssociationMatrix]:
         """Execute a forward pass through the transformer and attention head.
 
@@ -184,7 +186,7 @@ class Transformer(torch.nn.Module):
         ref_boxes = torch.nan_to_num(ref_boxes, -1.0)
         ref_times, query_times = get_times(ref_instances, query_instances)
 
-        window_length = len(ref_times.unique())
+        # window_length = len(ref_times.unique())  # Currently unused but may be useful for debugging
 
         ref_temp_emb = self.temp_emb(ref_times)
 
@@ -330,7 +332,7 @@ def apply_fourier_embeddings(
         times: The times index tensor of shape (n_query,).
         d_model: Model dimension.
         fourier_embeddings: The Fourier positional embeddings object.
-        proj: Linear projection layer that projects concantenated feature vector to model dimension.
+        proj: Linear projection layer that projects concatenated feature vector to model dimension.
         norm: The normalization layer.
 
     Returns:
@@ -499,9 +501,7 @@ class TransformerDecoderLayer(nn.Module):
             query=decoder_queries,  # (n_query, batch_size, embed_dim)
             key=encoder_features,  # (total_instances, batch_size, embed_dim)
             value=encoder_features,  # (total_instances, batch_size, embed_dim)
-        )[
-            0
-        ]  # (n_query, batch_size, embed_dim)
+        )[0]  # (n_query, batch_size, embed_dim)
 
         decoder_queries = decoder_queries + self.dropout2(
             x_attn_features

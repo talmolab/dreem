@@ -1,11 +1,15 @@
 """Module containing model helper functions."""
 
-from typing import Iterable
-from pytorch_lightning import loggers
+from typing import TYPE_CHECKING, Iterable
+
 import torch
+from pytorch_lightning import loggers
+
+if TYPE_CHECKING:
+    from dreem.io import Instance
 
 
-def get_boxes(instances: list["dreem.io.Instance"]) -> torch.Tensor:
+def get_boxes(instances: list["Instance"]) -> torch.Tensor:
     """Extract the bounding boxes from the input list of instances.
 
     Args:
@@ -29,8 +33,8 @@ def get_boxes(instances: list["dreem.io.Instance"]) -> torch.Tensor:
 
 
 def get_times(
-    ref_instances: list["dreem.io.Instance"],
-    query_instances: list["dreem.io.Instance"] | None = None,
+    ref_instances: list["Instance"],
+    query_instances: list["Instance"] | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Extract the time indices of each instance relative to the window length.
 
@@ -123,7 +127,7 @@ def init_optimizer(params: Iterable, config: dict) -> torch.optim.Optimizer:
             optimizer_class = getattr(torch.optim, optimizer.lower().capitalize())
         if optimizer_class is None:
             print(
-                f"Couldnt instantiate {optimizer} with capitalization, Final attempt with all caps"
+                f"Couldn't instantiate {optimizer} with capitalization, Final attempt with all caps"
             )
             optimizer_class = getattr(torch.optim, optimizer.upper(), None)
 
@@ -185,7 +189,7 @@ def init_scheduler(
             )
         if scheduler_class is None:
             print(
-                f"Couldnt instantiate {scheduler} with capitalization, Final attempt with all caps"
+                f"Couldn't instantiate {scheduler} with capitalization, Final attempt with all caps"
             )
             scheduler_class = getattr(torch.optim.lr_scheduler, scheduler.upper(), None)
 

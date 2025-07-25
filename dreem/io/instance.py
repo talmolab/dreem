@@ -1,13 +1,17 @@
 """Module containing data class for storing detections."""
 
-import torch
-import sleap_io as sio
-import numpy as np
-import attrs
 import logging
+from typing import TYPE_CHECKING, Any, Optional, Self
+
+import attrs
 import h5py
+import numpy as np
+import sleap_io as sio
+import torch
 from numpy.typing import ArrayLike
-from typing import Self, Any
+
+if TYPE_CHECKING:
+    from dreem.io import Frame
 
 logger = logging.getLogger("dreem.io")
 
@@ -38,6 +42,7 @@ def _expand_to_rank(
 
     Args:
         arr: an n-dimensional array (either np.ndarray or torch.Tensor).
+        new_rank: The target rank (number of dimensions) for the array.
 
     Returns:
         The array expanded to the correct dimensions.
@@ -97,7 +102,7 @@ class Instance:
     )
     _pose: dict[str, ArrayLike] = attrs.field(alias="pose", factory=dict)
     _device: str | torch.device | None = attrs.field(alias="device", default=None)
-    _frame: "Frame" = None
+    _frame: Optional["Frame"] = None
 
     def __attrs_post_init__(self) -> None:
         """Handle dimensionality and more intricate default initializations post-init."""
@@ -271,7 +276,7 @@ class Instance:
             The h5 group representing this instance.
         """
         if label is None:
-            if pred_track_id != -1:
+            if self.pred_track_id != -1:
                 label = f"instance_{self.pred_track_id.item()}"
             else:
                 label = f"instance_{self.gt_track_id.item()}"
@@ -680,7 +685,7 @@ class Instance:
     def point_scores(self) -> ArrayLike:
         """Get the point scores associated with the pose prediction.
 
-        Returns: a vector of shape n containing the point scores outputed from sleap associated with pose predictions.
+        Returns: a vector of shape n containing the point scores outputted from sleap associated with pose predictions.
         """
         return self._point_scores
 

@@ -1,17 +1,17 @@
 """Test dataset logic."""
 
-from dreem.datasets import (
-    BaseDataset,
-    MicroscopyDataset,
-    SleapDataset,
-    CellTrackingDataset,
-    TrackingDataset,
-)
-from dreem.datasets.data_utils import get_max_padding, NodeDropout
-from dreem.models.model_utils import get_device
-from torch.utils.data import DataLoader
 import pytest
 import torch
+from torch.utils.data import DataLoader
+
+from dreem.datasets import (
+    BaseDataset,
+    CellTrackingDataset,
+    MicroscopyDataset,
+    SleapDataset,
+    TrackingDataset,
+)
+from dreem.datasets.data_utils import NodeDropout, get_max_padding
 
 
 def test_base_dataset():
@@ -268,7 +268,6 @@ def test_icy_dataset(ten_icy_particles):
     Args:
         ten_icy_particles: icy fixture used for testing
     """
-
     clip_length = 8
 
     train_ds = MicroscopyDataset(
@@ -318,7 +317,6 @@ def test_isbi_dataset(isbi_microtubules, isbi_receptors):
         isbi_microtubules: isbi microtubules fixture used for testing
         isbi_receptors: isbi receptors fixture used for testing
     """
-
     clip_length = 8
 
     for ds in [isbi_microtubules, isbi_receptors]:
@@ -346,7 +344,6 @@ def test_cell_tracking_dataset(cell_tracking):
     Args:
         cell_tracking: HL60 nuclei fixture used for testing
     """
-
     clip_length = 8
     raw_img_list, gt_list, ctc_track_meta, data_dir = cell_tracking
     train_ds = CellTrackingDataset(
@@ -472,7 +469,7 @@ def test_tracking_dataset(two_flies):
         and tracking_ds.test_dataloader().batch_size == 2
     )
 
-    # test using overrided dls over defaults
+    # test using overridden dls over defaults
     tracking_ds = TrackingDataset(
         train_ds=train_sleap_ds,
         train_dl=train_sleap_dl,
@@ -487,7 +484,7 @@ def test_tracking_dataset(two_flies):
         and tracking_ds.val_dataloader().batch_size == 2
         and tracking_ds.test_dataloader().batch_size == 2
     )
-    # test using overrided dls over defaults with combinations
+    # test using overridden dls over defaults with combinations
     tracking_ds = TrackingDataset(
         train_ds=train_sleap_ds,
         val_ds=val_sleap_ds,
@@ -510,7 +507,6 @@ def test_augmentations(two_flies, ten_icy_particles):
         two_flies: flies fixture used for testing
         ten_icy_particles: icy fixture used for testing
     """
-
     no_augs_ds = SleapDataset(
         slp_files=[two_flies[0]],
         video_files=[two_flies[1]],
@@ -554,16 +550,15 @@ def test_augmentations(two_flies, ten_icy_particles):
 
     for p in [0, 1]:
         for n in [0, 1, len(nodes)]:
-
             node_dropout = NodeDropout(p=p, n=n)
             dropped_nodes = node_dropout(nodes)
 
             if p == 0:
                 assert len(dropped_nodes) == 0
             else:
-                assert (
-                    len(dropped_nodes) == n
-                ), f"p={node_dropout.p}, n={node_dropout.n},n_dropped={len(dropped_nodes)}"
+                assert len(dropped_nodes) == n, (
+                    f"p={node_dropout.p}, n={node_dropout.n},n_dropped={len(dropped_nodes)}"
+                )
 
     no_augs_ds = MicroscopyDataset(
         videos=[ten_icy_particles[0]],

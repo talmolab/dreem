@@ -16,7 +16,7 @@ Head over to the [installation guide](./installation.md) to get started.
 
 ## Training
 
-DREEM enables you to train your own model based on your own annotated data. This can be useful when the pretrained models, or traditional approches to tracking don't work well for your data.
+DREEM enables you to train your own model based on your own annotated data. This can be useful when the pretrained models, or traditional approaches to tracking don't work well for your data.
 
 ### Generate Ground Truth Data
 To train a model, you need:
@@ -44,7 +44,7 @@ Once you have your labels file containing initial detections and tracks, you'll 
 We recommend using the [`sleap-label` GUI](https://sleap.ai/guides/gui.html) for [proofreading](https://sleap.ai/guides/proofreading.html#id1). SLEAP provides tools that make it easy to correct errors in tracking.
 
 ##### Converting data to a SLEAP compatible format
-In order to use the SLEAP GUI you'll need to have your labels and videos in a SLEAP comptabile format. Check out [the sleap-io docs](https://io.sleap.ai/latest/formats/) for available formats. The easiest way to ensure your labels are compatible with sleap is to convert them to a `.slp` file. Otherwise if you used a different system (e.g DeepLabCut) check out [`sleap.io.convert`](https://sleap.ai/api/sleap.io.convert.html#module-sleap.io.convert) for available converters. With microscopy, we highly recommend starting out with TrackMate and then proofread in SLEAP's gui. Here is [a converter from trackmate's output to a `.slp`](https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e) file. In general, you can use [`sleap-io`](https://io.sleap.ai/latest/) to write a custom converter to `.slp` if you'd like to use the sleap-gui for proofreading.
+In order to use the SLEAP GUI you'll need to have your labels and videos in a SLEAP compatible format. Check out [the sleap-io docs](https://io.sleap.ai/latest/formats/) for available formats. The easiest way to ensure your labels are compatible with sleap is to convert them to a `.slp` file. Otherwise if you used a different system (e.g DeepLabCut) check out [`sleap.io.convert`](https://sleap.ai/api/sleap.io.convert.html#module-sleap.io.convert) for available converters. With microscopy, we highly recommend starting out with TrackMate and then proofread in SLEAP's gui. Here is [a converter from trackmate's output to a `.slp`](https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e) file. In general, you can use [`sleap-io`](https://io.sleap.ai/latest/) to write a custom converter to `.slp` if you'd like to use the sleap-gui for proofreading.
 
 #### Organize data
 
@@ -144,7 +144,7 @@ If you've been through the example notebooks, you'll notice that training was do
 ##### Overriding Arguments
 Instead of changing the `base.yaml` file every time you want to train a model using different configurations, `hydra` enables us to either
 
-1. provide another `.yaml` file with a subset of the parameters to overide
+1. provide another `.yaml` file with a subset of the parameters to override
 2. provide the args to the cli directly
 
 We recommend using the file-based override for logging and reproducibility.

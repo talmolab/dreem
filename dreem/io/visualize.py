@@ -1,17 +1,17 @@
 """Helper functions for visualizing tracking."""
 
-from scipy.interpolate import interp1d
-from copy import deepcopy
-from tqdm import tqdm
-from omegaconf import DictConfig
-
-import seaborn as sns
-import imageio
-import hydra
-import pandas as pd
-import numpy as np
-import cv2
 import logging
+from copy import deepcopy
+
+import cv2
+import hydra
+import imageio
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from omegaconf import DictConfig
+from scipy.interpolate import interp1d
+from tqdm import tqdm
 
 logger = logging.getLogger("dreem.io")
 
@@ -23,7 +23,7 @@ def fill_missing(data: np.ndarray, kind: str = "linear") -> np.ndarray:
 
     Args:
         data: the array for which to fill missing value
-        kind: How to interpolate missing values using `scipy.interpoloate.interp1d`
+        kind: How to interpolate missing values using `scipy.interpolate.interp1d`
 
     Returns:
         The array with missing values filled in
@@ -88,7 +88,9 @@ def annotate_video(
         names: Whether or not to annotate with name
         centroids: The size of the centroid. If centroid size <= 0 or None then it is not added
         poses: Whether or not to annotate with poses
+        save_path: The path to save the annotated video.
         fps: The frame rate of the generated video
+        track_scores: Minimum track score threshold for displaying tracks
         alpha: The opacity of the annotations.
 
     Returns:

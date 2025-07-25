@@ -142,3 +142,6 @@ dreem/training/models/*
 
 # docs
 site/
+
+# Serena MCP
+.serena/

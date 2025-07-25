@@ -1,12 +1,14 @@
 """Module containing logic for loading datasets."""
 
-from dreem.datasets import data_utils
-from dreem.io import Frame
-from torch.utils.data import Dataset
+import logging
 from typing import Union
+
 import numpy as np
 import torch
-import logging
+from torch.utils.data import Dataset
+
+from dreem.datasets import data_utils
+from dreem.io import Frame
 
 logger = logging.getLogger("dreem.datasets")
 
@@ -31,8 +33,8 @@ class BaseDataset(Dataset):
         """Initialize Dataset.
 
         Args:
-            label_files: a list of paths to label files.
-                should at least contain detections for inference, detections + tracks for training.
+            label_files: a list of paths to label files. Should at least contain
+                detections for inference, detections + tracks for training.
             vid_files: list of paths to video files.
             padding: amount of padding around object crops
             crop_size: the size of the object crops
@@ -82,7 +84,9 @@ class BaseDataset(Dataset):
     def process_segments(
         self, i: int, segments_to_stitch: list[torch.Tensor], clip_length: int
     ) -> None:
-        """Process segments to stitch. Modifies state variables chunked_frame_idx and label_idx.
+        """Process segments to stitch.
+
+        Modifies state variables chunked_frame_idx and label_idx.
 
         Args:
             segments_to_stitch: list of segments to stitch
@@ -111,10 +115,12 @@ class BaseDataset(Dataset):
             segments_to_stitch = []
             prev_end = annotated_segments[0][1]  # end of first segment
             for start, end in annotated_segments:
-                # check if the start of current segment is within batching_max_gap of end of previous
+                # check if the start of current segment is within
+                # batching_max_gap of end of previous
                 if (
-                    int(start) - int(prev_end) < self.max_batching_gap
-                ) or not self.chunk:  # also takes care of first segment as start < prev_end
+                    (int(start) - int(prev_end) < self.max_batching_gap)
+                    or not self.chunk
+                ):  # also takes care of first segment as start < prev_end
                     segments_to_stitch.append(torch.arange(start, end + 1))
                     prev_end = end
                 else:
@@ -151,16 +157,19 @@ class BaseDataset(Dataset):
 
             self.label_idx = [self.label_idx[i] for i in sample_idx]
 
-        # workaround for empty batch bug (needs to be changed). Check for batch with with only 1/10 size of clip length. Arbitrary thresholds
+        # workaround for empty batch bug (needs to be changed).
+        # Check for batch with with only 1/10 size of clip length.
+        # Arbitrary thresholds
         remove_idx = []
         for i, frame_chunk in enumerate(self.chunked_frame_idx):
             if (
-                len(frame_chunk)
-                <= min(int(self.clip_length / 10), 5)
+                len(frame_chunk) <= min(int(self.clip_length / 10), 5)
                 # and frame_chunk[-1] % self.clip_length == 0
             ):
                 logger.warning(
-                    f"Warning: Batch containing frames {frame_chunk} from video {self.vid_files[self.label_idx[i]]} has {len(frame_chunk)} frames. Removing to avoid empty batch possibility with failed frame loading"
+                    f"Warning: Batch containing frames {frame_chunk} from video "
+                    f"{self.vid_files[self.label_idx[i]]} has {len(frame_chunk)} frames. "
+                    f"Removing to avoid empty batch possibility with failed frame loading"
                 )
                 remove_idx.append(i)
         if len(remove_idx) > 0:
@@ -202,12 +211,13 @@ class BaseDataset(Dataset):
 
                 self.label_idx = [self.label_idx[i] for i in sample_idx]
 
-            # workaround for empty batch bug (needs to be changed). Check for batch with with only 1/10 size of clip length. Arbitrary thresholds
+            # workaround for empty batch bug (needs to be changed).
+            # Check for batch with with only 1/10 size of clip length.
+            # Arbitrary thresholds
             remove_idx = []
             for i, frame_chunk in enumerate(self.chunked_frame_idx):
                 if (
-                    len(frame_chunk)
-                    <= min(int(self.clip_length / 10), 5)
+                    len(frame_chunk) <= min(int(self.clip_length / 10), 5)
                     # and frame_chunk[-1] % self.clip_length == 0
                 ):
                     logger.warning(

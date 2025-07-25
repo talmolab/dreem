@@ -1,16 +1,17 @@
 """Module containing logic for going from association -> assignment."""
 
-import torch
-import pandas as pd
 import logging
+from math import inf
 
-from dreem.io import Frame
-from dreem.models import model_utils, GlobalTrackingTransformer
-from dreem.inference.track_queue import TrackQueue
+import pandas as pd
+import torch
+from scipy.optimize import linear_sum_assignment
+
 from dreem.inference import post_processing
 from dreem.inference.boxes import Boxes
-from scipy.optimize import linear_sum_assignment
-from math import inf
+from dreem.inference.track_queue import TrackQueue
+from dreem.io import Frame
+from dreem.models import GlobalTrackingTransformer, model_utils
 
 logger = logging.getLogger("dreem.inference")
 
@@ -49,6 +50,7 @@ class BatchTracker:
             max_tracks: the maximum number of tracks that can be created while tracking.
                 We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
             verbose: Whether or not to turn on debug printing after each operation.
+            **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
             window_size=window_size, max_gap=max_gap, verbose=verbose
@@ -182,8 +184,6 @@ class BatchTracker:
                 [frame.frame_id] * len(frame.instances)
             )
 
-        frames_to_track = context_window_frames + frames
-
         # query is current batch instances, key is context window and current batch instances
         association_matrix = model(
             context_window_instances + current_batch_instances, current_batch_instances
@@ -232,7 +232,6 @@ class BatchTracker:
             if (
                 self.persistent_tracking and frame_to_track.frame_id == 0
             ):  # check for new video and clear queue
-
                 logger.debug("New Video! Resetting Track Queue.")
                 self.track_queue.end_tracks()
 
@@ -241,7 +240,6 @@ class BatchTracker:
             """
             if len(self.track_queue) == 0:
                 if frame_to_track.has_instances():
-
                     logger.debug(
                         f"Initializing track on clip ind {batch_idx} frame {frame_to_track.frame_id.item()}"
                     )
@@ -257,14 +255,10 @@ class BatchTracker:
                             instance.pred_track_id = curr_track_id
 
             else:
-                if (
-                    frame_to_track.has_instances()
-                ):  # Check if there are detections. If there are skip and increment gap count
+                if frame_to_track.has_instances():  # Check if there are detections. If there are skip and increment gap count
                     frames_to_track = context_window_frames + [
                         frame_to_track
                     ]  # better var name?
-
-                    query_ind = len(frames_to_track) - 1
 
                     frame_to_track = self._run_frame_by_frame_tracker(
                         model,
@@ -421,9 +415,7 @@ class BatchTracker:
                     * torch.arange(len(all_prev_instances), device=id_inds.device)[
                         :, None
                     ]
-                ).max(dim=0)[
-                    1
-                ]  # M
+                ).max(dim=0)[1]  # M
 
                 last_boxes = nonquery_boxes[last_inds]  # n_traj x 4
                 last_ious = post_processing._pairwise_iou(
@@ -527,8 +519,9 @@ class BatchTracker:
 
         instances_per_frame = [frame.num_detected for frame in frames]
 
-        total_instances, window_size = sum(instances_per_frame), len(
-            instances_per_frame
+        total_instances, window_size = (
+            sum(instances_per_frame),
+            len(instances_per_frame),
         )  # Number of instances in window; length of window.
 
         logger.debug(f"total_instances: {total_instances}")
@@ -583,9 +576,7 @@ class BatchTracker:
                 if batch_idx != query_ind
             ],
             dim=0,
-        ).view(
-            n_nonquery
-        )  # (n_nonquery,)
+        ).view(n_nonquery)  # (n_nonquery,)
 
         query_inds = [
             x
@@ -678,9 +669,7 @@ class BatchTracker:
 
             last_inds = (
                 id_inds * torch.arange(n_nonquery, device=id_inds.device)[:, None]
-            ).max(dim=0)[
-                1
-            ]  # M
+            ).max(dim=0)[1]  # M
 
             last_boxes = nonquery_boxes[last_inds]  # n_traj x 4
             last_ious = post_processing._pairwise_iou(

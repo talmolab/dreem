@@ -1,16 +1,19 @@
 """Helper functions for calculating mot metrics."""
 
-import numpy as np
-import motmetrics as mm
-import torch
-import pandas as pd
 import logging
-from typing import Iterable
+from typing import TYPE_CHECKING
+
+import motmetrics as mm
+import numpy as np
+import pandas as pd
+
+if TYPE_CHECKING:
+    from dreem.io import Frame
 
 logger = logging.getLogger("dreem.inference")
 
 
-def get_matches(frames: list["dreem.io.Frame"]) -> tuple[dict, list, int]:
+def get_matches(frames: list["Frame"]) -> tuple[dict, list, int]:
     """Get comparison between predicted and gt trajectory labels. Deprecated.
 
     Args:
@@ -52,7 +55,7 @@ def get_switches(matches: dict, indices: list) -> dict:
         indices: a list of frame indices being used
 
     Returns:
-        A dict of dicts containing the frame at which the switch occured
+        A dict of dicts containing the frame at which the switch occurred
         and the change in labels
     """
     track, switches = {}, {}
@@ -169,7 +172,7 @@ def compute_motmetrics(df):
         if (pred_tracks == -1).all():
             pred_tracks = np.full(len(gt_ids), np.nan)
 
-        expected_tm_ids = []
+        # expected_tm_ids = []  # Currently unused but may be needed for future TRA metric calculations
         cost_gt_dreem = np.full((len(gt_ids), len(gt_ids)), np.nan)
         np.fill_diagonal(cost_gt_dreem, 1)
         acc_dreem.update(

@@ -499,7 +499,7 @@ dataset:
         clip_length: 32
         anchors: ["node1", "node2", ..."node_n"]
         handle_missing: "drop"
-        ... # we don't include augmentations bc usually you shouldnt use augmentations during val/test
+        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
     test_dataset:
         slp_files: ["/path/to/test/labels1.slp", "/path/to/test/labels2.slp", ..., "/path/to/test/labelsN.slp"]
         video_files: ["/path/to/test/video1.mp4", "/path/to/test/video2.mp4", ..., "/path/to/test/videoN.mp4"]
@@ -509,7 +509,7 @@ dataset:
         clip_length: 32
         anchors: ["node1", "node2", ..."node_n"]
         handle_missing: "drop"
-        ... # we don't include augmentations bc usually you shouldnt use augmentations during val/test
+        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
 ...
 ```
 #### [`MicroscopyDataset`](../reference/dreem/datasets/microscopy_dataset.md)
@@ -540,7 +540,7 @@ dataset:
         crop_size: 128 
         chunk: True
         clip_length: 32
-        ... # we don't include augmentations bc usually you shouldnt use augmentations during val/test
+        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
     test_dataset:
         tracks: ["/path/to/test/labels1.csv", "/path/to/test/labels2.csv", ..., "/path/to/test/labelsN.csv"]
         videos: ["/path/to/test/video1.tiff", "/path/to/test/video2.tiff", ..., "/path/to/test/videoN.tiff"]
@@ -549,7 +549,7 @@ dataset:
         crop_size: 128 
         chunk: True
         clip_length: 32
-        ... # we don't include augmentations bc usually you shouldnt use augmentations during val/test
+        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
 ```
 ## `dataloader`
 

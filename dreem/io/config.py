@@ -2,14 +2,21 @@
 """Data structures for handling config parsing."""
 
 from __future__ import annotations
-from omegaconf import DictConfig, OmegaConf, open_dict
-from typing import Iterable
-from pathlib import Path
-import logging
+
 import glob
+import logging
 import os
+from pathlib import Path
+from typing import TYPE_CHECKING, Iterable
+
 import pytorch_lightning as pl
 import torch
+from omegaconf import DictConfig, OmegaConf, open_dict
+
+if TYPE_CHECKING:
+    from dreem.datasets import CellTrackingDataset, MicroscopyDataset, SleapDataset
+    from dreem.models import GlobalTrackingTransformer, GTRRunner
+    from dreem.training.losses import AssoLoss
 
 logger = logging.getLogger("dreem.io")
 
@@ -106,7 +113,7 @@ class Config:
 
         return param
 
-    def get_model(self) -> "GlobalTrackingTransformer":
+    def get_model(self) -> GlobalTrackingTransformer:
         """Getter for gtr model.
 
         Returns:
@@ -131,7 +138,7 @@ class Config:
         """
         return self.get("tracker", {})
 
-    def get_gtr_runner(self, ckpt_path: str | None = None) -> "GTRRunner":
+    def get_gtr_runner(self, ckpt_path: str | None = None) -> GTRRunner:
         """Get lightning module for training, validation, and inference.
 
         Args:
@@ -269,7 +276,7 @@ class Config:
         mode: str,
         label_files: list[str] | None = None,
         vid_files: list[str | list[str]] = None,
-    ) -> "SleapDataset" | "CellTrackingDataset":
+    ) -> SleapDataset | CellTrackingDataset:
         """Getter for datasets.
 
         Args:
@@ -281,7 +288,7 @@ class Config:
         Returns:
             Either a `SleapDataset` or `CellTrackingDataset` with params indicated by cfg
         """
-        from dreem.datasets import SleapDataset, CellTrackingDataset
+        from dreem.datasets import CellTrackingDataset, SleapDataset
 
         dataset_params = self.get("dataset")
         if dataset_params is None:
@@ -365,7 +372,7 @@ class Config:
 
     def get_dataloader(
         self,
-        dataset: "SleapDataset" | "MicroscopyDataset" | "CellTrackingDataset",
+        dataset: SleapDataset | MicroscopyDataset | CellTrackingDataset,
         mode: str,
     ) -> torch.utils.data.DataLoader:
         """Getter for dataloader.
@@ -442,7 +449,7 @@ class Config:
             return None
         return init_scheduler(optimizer, lr_scheduler_params)
 
-    def get_loss(self) -> "dreem.training.losses.AssoLoss":
+    def get_loss(self) -> AssoLoss:
         """Getter for loss functions.
 
         Returns:

@@ -1,7 +1,13 @@
 """Module containing data structures for storing instances of the same Track."""
 
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import attrs
+
+if TYPE_CHECKING:
+    from dreem.io import Frame, Instance
 
 
 @attrs.define(eq=False)
@@ -43,7 +49,7 @@ class Track:
         self._id = track_id
 
     @property
-    def instances(self) -> list["Instances"]:
+    def instances(self) -> list["Instance"]:
         """Get the instances belonging to this track.
 
         Returns:
@@ -61,7 +67,7 @@ class Track:
         self._instances = instances
 
     @property
-    def frames(self) -> set["Frame"]:
+    def frames(self) -> set[Frame]:
         """Get the frames where this track appears.
 
         Returns:

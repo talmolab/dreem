@@ -1,8 +1,10 @@
 """Module containing different position and temporal embeddings."""
 
-import math
-import torch
 import logging
+import math
+
+import torch
+
 from dreem.models.mlp import MLP
 
 logger = logging.getLogger("dreem.models")
@@ -43,18 +45,25 @@ class Embedding(torch.nn.Module):
         """Initialize embeddings.
 
         Args:
-            emb_type: The type of embedding to compute. Must be one of `{"temp", "pos", "off"}`
+            emb_type: The type of embedding to compute.
+                Must be one of `{"temp", "pos", "off"}`
             mode: The mode or function used to map positions to vector embeddings.
                   Must be one of `{"fixed", "learned", "off"}`
             features: The embedding dimensions. Must match the dimension of the
                       input vectors for the transformer model.
             n_points: the number of points that will be embedded.
-            emb_num: the number of embeddings in the `self.lookup` table (Only used in learned embeddings).
-            over_boxes: Whether to compute the position embedding for each bbox coordinate (y1x1y2x2) or the centroid + bbox size (yxwh).
-            temperature: the temperature constant to be used when computing the sinusoidal position embedding
-            normalize: whether or not to normalize the positions (Only used in fixed embeddings).
-            scale: factor by which to scale the positions after normalizing (Only used in fixed embeddings).
-            mlp_cfg: A dictionary of mlp hyperparameters for projecting embedding to correct space.
+            emb_num: the number of embeddings in the `self.lookup` table
+                (Only used in learned embeddings).
+            over_boxes: Whether to compute the position embedding for each bbox
+                coordinate (y1x1y2x2) or the centroid + bbox size (yxwh).
+            temperature: the temperature constant to be used when computing
+                the sinusoidal position embedding
+            normalize: whether or not to normalize the positions
+                (Only used in fixed embeddings).
+            scale: factor by which to scale the positions after normalizing
+                (Only used in fixed embeddings).
+            mlp_cfg: A dictionary of mlp hyperparameters for projecting
+                embedding to correct space.
                     Example: {"hidden_dims": 256, "num_layers":3, "dropout": 0.3}
         """
         self._check_init_args(emb_type, mode)
@@ -175,7 +184,7 @@ class Embedding(torch.nn.Module):
     def _sine_box_embedding(self, boxes: torch.Tensor) -> torch.Tensor:
         """Compute sine positional embeddings for boxes using given parameters.
 
-         Args:
+        Args:
              boxes: the input boxes of shape N, n_anchors, 4 or B, N, n_anchors, 4
                     where the last dimension is the bbox coords in [y1, x1, y2, x2].
                     (Note currently `B=batch_size=1`).
@@ -405,9 +414,7 @@ class FourierPositionalEmbeddings(torch.nn.Module):
                 ),
             ),
             axis=-1,
-        ) / math.sqrt(
-            len(freq)
-        )  # (B,N,2*n_components)
+        ) / math.sqrt(len(freq))  # (B,N,2*n_components)
 
         if self.d_model % self.n_components != 0:
             raise ValueError(

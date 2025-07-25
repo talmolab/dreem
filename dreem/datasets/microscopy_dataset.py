@@ -1,12 +1,14 @@
 """Module containing microscopy dataset."""
 
-from PIL import Image
-from dreem.datasets import data_utils, BaseDataset
-from dreem.io import Instance, Frame
+import random
+
 import albumentations as A
 import numpy as np
-import random
 import torch
+from PIL import Image
+
+from dreem.datasets import BaseDataset, data_utils
+from dreem.io import Frame, Instance
 
 
 class MicroscopyDataset(BaseDataset):
@@ -82,7 +84,9 @@ class MicroscopyDataset(BaseDataset):
         if source.lower() == "trackmate":
             parser = data_utils.parse_trackmate
         elif source.lower() in ["icy", "isbi"]:
-            parser = lambda x: data_utils.parse_synthetic(x, source=source)
+
+            def parser(x):
+                return data_utils.parse_synthetic(x, source=source)
         else:
             raise ValueError(
                 f"{source} is unsupported! Must be one of [trackmate, icy, isbi]"

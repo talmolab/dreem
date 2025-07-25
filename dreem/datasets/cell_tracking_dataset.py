@@ -1,18 +1,19 @@
 """Module containing cell tracking challenge dataset."""
 
-from PIL import Image
-from dreem.datasets import data_utils, BaseDataset
-from dreem.io import Frame, Instance
-from scipy.ndimage import measurements
+import random
+from pathlib import Path
+from typing import Optional
+
 import albumentations as A
 import numpy as np
 import pandas as pd
-import random
-import torch
-from typing import Union, Optional
-from pathlib import Path
 import sleap_io as sio
-import matplotlib.pyplot as plt
+import torch
+from PIL import Image
+from scipy.ndimage import measurements
+
+from dreem.datasets import BaseDataset, data_utils
+from dreem.io import Frame, Instance
 
 
 class CellTrackingDataset(BaseDataset):
@@ -40,18 +41,22 @@ class CellTrackingDataset(BaseDataset):
         """Initialize CellTrackingDataset.
 
         Args:
-            gt_list: filepaths of gt label images in a list of lists (each list corresponds to a dataset)
-            raw_img_list: filepaths of original tif images in a list of lists (each list corresponds to a dataset)
+            gt_list: filepaths of gt label images in a list of lists (each list
+                corresponds to a dataset)
+            raw_img_list: filepaths of original tif images in a list of lists
+                (each list corresponds to a dataset)
             data_dirs: paths to data directories
             padding: amount of padding around object crops
             crop_size: the size of the object crops. Can be either:
                 - An integer specifying a single crop size for all objects
-                - A list of integers specifying different crop sizes for different data directories
+                - A list of integers specifying different crop sizes for
+                  different data directories
             chunk: whether or not to chunk the dataset into batches
             clip_length: the number of frames in each chunk
             mode: `train` or `val`. Determines whether this dataset is used for
                 training or validation. Currently doesn't affect dataset logic
-            augmentations: An optional dict mapping augmentations to parameters. The keys
+            augmentations: An optional dict mapping augmentations to parameters.
+                The keys
                 should map directly to augmentation classes in albumentations. Example:
                     augs = {
                         'Rotate': {'limit': [-90, 90]},
@@ -61,10 +66,14 @@ class CellTrackingDataset(BaseDataset):
             n_chunks: Number of chunks to subsample from.
                 Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
             seed: set a seed for reproducibility
-            max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
-            use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
-            ctc_track_meta: filepaths of man_track.txt files in a list of lists (each list corresponds to a dataset)
+            max_batching_gap: the max number of frames that can be unlabelled
+                before starting a new batch
+            use_tight_bbox: whether to use tight bounding box (around keypoints)
+                instead of the default square bounding box
+            ctc_track_meta: filepaths of man_track.txt files in a list of lists
+                (each list corresponds to a dataset)
             apply_mask_to_crop: whether to apply the mask to the crop
+            **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
             gt_list,
@@ -165,10 +174,11 @@ class CellTrackingDataset(BaseDataset):
         image_paths = self.raw_img_list[label_idx]
         gt_paths = self.gt_list[label_idx]
 
-        if self.list_df_track_meta is not None:
-            df_track_meta = self.list_df_track_meta[label_idx]
-        else:
-            df_track_meta = None
+        # df_track_meta is currently unused but may be needed for future track metadata processing
+        # if self.list_df_track_meta is not None:
+        #     df_track_meta = self.list_df_track_meta[label_idx]
+        # else:
+        #     df_track_meta = None
 
         # get the correct crop size based on the video
         video_par_path = Path(image_paths[0]).parent.parent

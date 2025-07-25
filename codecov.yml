@@ -1,0 +1,17 @@
+coverage:
+  status:
+    project:
+      default:
+        # Don't fail CI if project coverage drops
+        informational: true
+    patch:
+      default:
+        # Keep patch coverage requirements
+        target: auto
+        threshold: 10%
+        informational: false
+
+comment:
+  layout: "reach,diff,flags,tree,betaprofiling"
+  behavior: default
+  require_changes: false

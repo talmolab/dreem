@@ -1,17 +1,19 @@
 """Module containing logic for loading sleap datasets."""
 
+import logging
+import random
+from pathlib import Path
+from typing import Optional, Union
+
 import albumentations as A
-import torch
 import imageio
 import numpy as np
 import sleap_io as sio
-import random
-from pathlib import Path
-import logging
-from typing import Union, Optional
-from dreem.io import Instance, Frame
-from dreem.datasets import data_utils, BaseDataset
+import torch
 from torchvision.transforms import functional as tvf
+
+from dreem.datasets import BaseDataset, data_utils
+from dreem.io import Frame, Instance
 
 logger = logging.getLogger("dreem.datasets")
 
@@ -78,6 +80,7 @@ class SleapDataset(BaseDataset):
             normalize_image: whether to normalize the image to [0, 1]
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
+            **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
             slp_files,

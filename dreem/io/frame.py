@@ -1,14 +1,19 @@
 """Module containing data classes such as Instances and Frames."""
 
 from __future__ import annotations
-from numpy.typing import ArrayLike
-from typing import Self
-import torch
-import sleap_io as sio
-import numpy as np
-import attrs
+
 import logging
+from typing import TYPE_CHECKING, Self
+
+import attrs
 import h5py
+import numpy as np
+import sleap_io as sio
+import torch
+from numpy.typing import ArrayLike
+
+if TYPE_CHECKING:
+    from dreem.io import AssociationMatrix, Instance
 
 logger = logging.getLogger("dreem.io")
 
@@ -60,7 +65,7 @@ class Frame:
     )
 
     _instances: list["Instance"] = attrs.field(alias="instances", factory=list)
-    _asso_output: "AssociationMatrix" | None = attrs.field(
+    _asso_output: AssociationMatrix | None = attrs.field(
         alias="asso_output", default=None
     )
     _matches: tuple = attrs.field(alias="matches", factory=tuple)
@@ -140,11 +145,14 @@ class Frame:
 
         Args:
             lf: A sio.LabeledFrame object
+            video_id: The ID of the video containing this frame.
+            device: The device to use for tensor operations.
+            **kwargs: Additional keyword arguments passed to Instance creation.
 
         Returns:
             A dreem.io.Frame object
         """
-        from dreem.io import Instance
+        from dreem.io.instance import Instance
 
         img_shape = lf.image.shape
         if len(img_shape) == 2:
@@ -408,8 +416,8 @@ class Frame:
         return len(self.instances)
 
     @property
-    def asso_output(self) -> "AssociationMatrix":
-        """The association matrix between instances outputed directly by transformer.
+    def asso_output(self) -> AssociationMatrix:
+        """The association matrix between instances outputted directly by transformer.
 
         Returns:
             An arraylike (n_query, n_nonquery) association matrix between instances.
@@ -427,7 +435,7 @@ class Frame:
         return True
 
     @asso_output.setter
-    def asso_output(self, asso_output: "AssociationMatrix") -> None:
+    def asso_output(self, asso_output: AssociationMatrix) -> None:
         """Set the association matrix of a frame.
 
         Args:
@@ -437,7 +445,7 @@ class Frame:
 
     @property
     def matches(self) -> tuple:
-        """Matches between frame instances and availabel trajectories.
+        """Matches between frame instances and available trajectories.
 
         Returns:
             A tuple containing the instance idx and trajectory idx for the matched instance.

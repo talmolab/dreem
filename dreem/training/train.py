@@ -3,19 +3,20 @@
 Used for training a single model or deploying a batch train job on RUNAI CLI
 """
 
-from dreem.io import Config
-from dreem.datasets import TrackingDataset
-from dreem.datasets.data_utils import view_training_batch
-from multiprocessing import cpu_count
-from omegaconf import DictConfig
-
+import logging
 import os
+from multiprocessing import cpu_count
+
 import hydra
 import pandas as pd
 import pytorch_lightning as pl
 import torch
 import torch.multiprocessing
-import logging
+from omegaconf import DictConfig
+
+from dreem.datasets import TrackingDataset
+from dreem.datasets.data_utils import view_training_batch
+from dreem.io import Config
 
 logger = logging.getLogger("training")
 

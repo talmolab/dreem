@@ -1,11 +1,10 @@
 """Tests for `config.py`"""
 
+import torch
 from omegaconf import OmegaConf, open_dict
-from copy import deepcopy
+
 from dreem.io import Config
 from dreem.models import GlobalTrackingTransformer, GTRRunner
-
-import torch
 
 
 def test_init(base_config, params_config):

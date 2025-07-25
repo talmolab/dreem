@@ -1,8 +1,14 @@
 """Module containing GTR model used for training."""
 
-from dreem.models import Transformer
-from dreem.models import create_visual_encoder
+from typing import TYPE_CHECKING
+
 import torch
+
+from dreem.models.transformer import Transformer
+from dreem.models.visual_encoder import create_visual_encoder
+
+if TYPE_CHECKING:
+    from dreem.io import AssociationMatrix, Instance
 
 # todo: do we want to handle params with configs already here?
 
@@ -33,7 +39,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
             encoder_cfg: Dictionary of arguments to pass to the CNN constructor,
                 e.g: `cfg = {"model_name": "resnet18", "pretrained": False, "in_chans": 3}`
             d_model: The number of features in the encoder/decoder inputs.
-            nhead: The number of heads in the transfomer encoder/decoder.
+            nhead: The number of heads in the transformer encoder/decoder.
             num_encoder_layers: The number of encoder-layers in the encoder.
             num_decoder_layers: The number of decoder-layers in the decoder.
             dropout: Dropout value applied to the output of transformer layers.
