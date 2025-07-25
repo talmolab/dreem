@@ -1,0 +1,62 @@
+# Docs build
+name: Docs
+
+on:
+  release:
+    types:
+      - published
+  push:
+    paths:
+      - "dreem/**"
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
+
+jobs:
+  docs:
+    name: Docs
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+            miniforge-version: latest
+            conda-solver: "libmamba"
+            environment-file: environment.yml
+            activate-environment: dreem
+
+      - name: Print environment info
+        shell: bash -l {0}
+        run: |
+            which python
+            conda info
+            conda list
+            pip freeze
+
+      - name: Setup Git user
+        run: |
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Build and upload docs (release)
+        if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash -l {0}
+        run: |
+            mike deploy --update-aliases --allow-empty --push "${{ github.event.release.tag_name }}" latest
+
+      - name: Build and upload docs (dev)
+        if: ${{ github.event_name == 'push' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash -l {0}
+        run: |
+            mike deploy --update-aliases --allow-empty --push dev
