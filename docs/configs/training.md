@@ -5,14 +5,7 @@ Here, we describe the hyperparameters used for setting up training. Please see [
 > Note: for using defaults, simply leave the field blank or don't include the key. Using `null` will initialize the value to `None` which we use to represent turning off certain features such as logging, early stopping etc. e.g
 > ```YAML
 > model:
->   d_model: #defaults to 1024 
->   nhead: 8
->   ...
-> ```
-> vs.
-> ```YAML
-> model:
->   d_model: null # sets model.d_model=None 
+>   d_model: null # defaults to 1024 
 >   nhead: 8
 >   ...
 > ```
@@ -129,34 +122,12 @@ model:
     ...
     embedding_meta:
         temp:
-            mode: "fixed"
+            mode: "fixed" # also accepts "off" or null
             temperature: 10000
         ...
     ...
 ...
-```    
-###### Turned Off:
-```YAML
-model:
-    ...
-    embedding_meta:
-        temp: null
-        ...
-    ...
-...
-``` 
-or
-```YAML
-model:
-    ...
-    embedding_meta:
-        temp: 
-            mode: "off" #null also accepted
-            ...
-        ...
-    ...
-...
-```   
+```
 #### `embedding_meta` Example:
 
 Putting it all together, your `embedding_meta` section should look something like this
@@ -286,8 +257,7 @@ This section contains the parameters for initializing the training optimizer
 * `weight_decay`: (`float`) weight decay ($L_2$ penalty)
 
 ### Examples:
-Here we provide a couple examples for different optimizers:
-#### [`Adam`](https://pytorch.org/docs/stable/generated/torch.optim.Adam.html)
+Here's an example for [`Adam`](https://pytorch.org/docs/stable/generated/torch.optim.Adam.html):
 ```YAML
 ...
 optimizer:
@@ -296,19 +266,6 @@ optimizer:
     betas: [0.9, 0.999]
     eps: 1e-8
     weight_decay: 0.01
-    ...
-...
-```
-#### [`Stochastic Gradient Descent`](https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD)
-```YAML
-...
-optimizer:
-    name: "SGD" #must match `torch.optim` class name
-    lr: 0.001
-    momentum: 0.9
-    weight_decay: 0.01
-    dampening: 1e-8
-    nesterov: true
     ...
 ...
 ```
@@ -328,7 +285,7 @@ This section contains parameters for initializing the learning rate scheduler.
 * `threshold_mode`: (`str`)  One of {`"rel"`, "`abs`"}. In `rel` mode, `dynamic_threshold = best * ( 1 + threshold )` in `max` mode or `best * ( 1 - threshold )` in `min` mode. In `abs` mode, `dynamic_threshold = best + threshold` in `max` mode or `best - threshold` in `min` mode.
 
 ### Examples:
-Here we give a couple examples of configs for different schedulers:
+Here we give an example of configs for a Pytorch scheduler. For more detail, visit the PyTorch documentation page for the scheduler you are interested in.
 
 #### [`Reduce Learning Rate on Plateau`](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau)
 ```YAML
@@ -343,18 +300,7 @@ scheduler:
   ...
 ...
 ```
-#### [`Cosine Annealing with Warm Restarts`](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.CosineAnnealingWarmRestarts.html#torch.optim.lr_scheduler.CosineAnnealingWarmRestarts)
-```YAML
-...
-scheduler:
-    name: "CosineAnnealingWarmRestarts"
-    T_0: 10
-    T_mult: 1
-    eta_min: 0
-    last_epoch: 50
-    verbose: True
-...
-```
+
 ## `tracker`:
 
 This section contains parameters for initializing the [`Tracker`](../reference/dreem/inference/tracker.md)
@@ -770,7 +716,7 @@ trainer:
   min_epochs: 10
 ```
 
-## `view_batch`
+<!-- ## `view_batch`
 
 This section allows you to visualize the data before training
 
@@ -799,13 +745,4 @@ view_batch:
   enable: False
   num_frames: 32 #this arg can be anything
   no_train: True #training will not occur
-```
-
-# Example Config
-## Base Config
-```YAML
---8<-- "dreem/training/configs/base.yaml"
-```
-## Override Config
-```YAML
---8<-- "dreem/training/configs/params.yaml"
+``` -->

@@ -12,6 +12,7 @@ import torch
 from typing import Union, Optional
 from pathlib import Path
 import sleap_io as sio
+import matplotlib.pyplot as plt
 
 
 class CellTrackingDataset(BaseDataset):
@@ -33,6 +34,7 @@ class CellTrackingDataset(BaseDataset):
         max_batching_gap: int = 15,
         use_tight_bbox: bool = False,
         ctc_track_meta: list[str] | None = None,
+        apply_mask_to_crop: bool = False,
         **kwargs,
     ):
         """Initialize CellTrackingDataset.
@@ -62,6 +64,7 @@ class CellTrackingDataset(BaseDataset):
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
             ctc_track_meta: filepaths of man_track.txt files in a list of lists (each list corresponds to a dataset)
+            apply_mask_to_crop: whether to apply the mask to the crop
         """
         super().__init__(
             gt_list,
@@ -91,6 +94,7 @@ class CellTrackingDataset(BaseDataset):
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
         self.skeleton = sio.Skeleton(nodes=["centroid"])
+        self.apply_mask_to_crop = apply_mask_to_crop
         if not isinstance(self.data_dirs, list):
             self.data_dirs = [self.data_dirs]
 
@@ -180,11 +184,12 @@ class CellTrackingDataset(BaseDataset):
         frames = []
         max_crop_h, max_crop_w = 0, 0
         for i in frame_idx:
-            instances, gt_track_ids, centroids, dict_centroids, bboxes = (
+            instances, gt_track_ids, centroids, dict_centroids, bboxes, masks = (
                 [],
                 [],
                 [],
                 {},
+                [],
                 [],
             )
 
@@ -222,11 +227,13 @@ class CellTrackingDataset(BaseDataset):
                             data_utils.get_bbox([int(x), int(y)], crop_size),
                             padding=self.padding,
                         )
+                    mask = torch.as_tensor(mask)
 
                     gt_track_ids.append(int(instance))
                     centroids.append([x, y])
                     dict_centroids[int(instance)] = [x, y]
                     bboxes.append(bbox)
+                    masks.append(mask)
 
             # albumentations wants (spatial, channels), ensure correct dims
             if self.augmentations is not None:
@@ -237,10 +244,15 @@ class CellTrackingDataset(BaseDataset):
 
                 augmented = self.augmentations(
                     image=img,
+                    mask=gt_sec,  # albumentations ensures geometric transformations are synced between image and mask
                     keypoints=np.vstack(centroids),
                 )
-
-                img, centroids = augmented["image"], augmented["keypoints"]
+                img, aug_mask, centroids = (
+                    augmented["image"],
+                    augmented["mask"],
+                    augmented["keypoints"],
+                )
+                aug_mask = torch.Tensor(aug_mask).unsqueeze(0)
 
             img = torch.Tensor(img).unsqueeze(0)
 
@@ -250,7 +262,24 @@ class CellTrackingDataset(BaseDataset):
                     "centroid": np.array(dict_centroids[gt_track_ids[j]])
                 }
                 pose = {"centroid": dict_centroids[gt_track_ids[j]]}  # more formatting
-                crop = data_utils.crop_bbox(img, bboxes[j])
+                crop_raw = data_utils.crop_bbox(img, bboxes[j])
+                if self.apply_mask_to_crop:
+                    if (
+                        self.augmentations is not None
+                    ):  # TODO: change this to a flag that the user passes in apply_mask_to_crop
+                        cropped_mask = data_utils.crop_bbox(aug_mask, bboxes[j])
+                        # filter for the instance of interest
+                        cropped_mask[cropped_mask != gt_track_ids[j]] = 0
+                    else:
+                        # masks[j] is already filtered for the instance of interest
+                        cropped_mask = data_utils.crop_bbox(masks[j], bboxes[j])
+
+                    cropped_mask[cropped_mask != 0] = 1
+                    # apply mask to crop
+                    crop = crop_raw * cropped_mask
+                else:
+                    crop = crop_raw
+
                 c, h, w = crop.shape
                 if h > max_crop_h:
                     max_crop_h = h
@@ -268,6 +297,7 @@ class CellTrackingDataset(BaseDataset):
                         pose=pose,
                         bbox=bboxes[j],
                         crop=crop,
+                        mask=masks[j],
                     )
                 )
 

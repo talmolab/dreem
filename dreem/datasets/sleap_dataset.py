@@ -28,7 +28,7 @@ class SleapDataset(BaseDataset):
         crop_size: Union[int, list[int]] = 128,
         anchors: int | list[str] | str = "",
         chunk: bool = True,
-        clip_length: int = 500,
+        clip_length: int = 16,
         mode: str = "train",
         handle_missing: str = "centroid",
         augmentations: dict | None = None,
@@ -241,7 +241,7 @@ class SleapDataset(BaseDataset):
             gt_instances = []
             # don't load instances that have been 'greyed out' i.e. all nans for keypoints
             for inst in lf.instances:
-                pts = np.array([[p.x, p.y] for p in inst.points.values()])
+                pts = np.array([p for p in inst.numpy()])
                 if np.isnan(pts).all():
                     continue
                 else:
@@ -287,7 +287,7 @@ class SleapDataset(BaseDataset):
                     dict(
                         zip(
                             [n.name for n in instance.skeleton.nodes],
-                            [[p.x, p.y] for p in instance.points.values()],
+                            [p for p in instance.numpy()],
                         )
                     )
                 )
@@ -305,11 +305,12 @@ class SleapDataset(BaseDataset):
                     np.array(
                         [
                             (
-                                point.score
-                                if isinstance(point, sio.PredictedPoint)
-                                else 1.0
+                                1.0  # point scores not reliably available in sleap io PredictedPointsArray
+                                # point.score
+                                # if isinstance(point, sio.PredictedPoint)
+                                # else 1.0
                             )
-                            for point in instance.points.values()
+                            for point in instance.numpy()
                         ]
                     )
                 )

@@ -3,6 +3,7 @@
 from dreem.io import Config
 from dreem.inference import Tracker, BatchTracker
 from dreem.models import GTRRunner
+from dreem.datasets import CellTrackingDataset
 from omegaconf import DictConfig
 from pathlib import Path
 from datetime import datetime
@@ -14,7 +15,8 @@ import pytorch_lightning as pl
 import torch
 import sleap_io as sio
 import logging
-
+import numpy as np
+import tifffile
 
 logger = logging.getLogger("dreem.inference")
 
@@ -66,6 +68,35 @@ def export_trajectories(
     if save_path:
         save_df.to_csv(save_path, index=False)
     return save_df
+
+
+def track_ctc(
+    model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader
+) -> list[pd.DataFrame]:
+    """Run Inference.
+
+    Args:
+        model: GTRRunner model loaded from checkpoint used for inference
+        trainer: lighting Trainer object used for handling inference log.
+        dataloader: dataloader containing inference data
+    """
+    preds = trainer.predict(model, dataloader)
+    pred_imgs = []
+    for batch in preds:
+        for frame in batch:
+            frame_masks = []
+            for instance in frame.instances:
+                centroid = instance.centroid["centroid"]
+                mask = instance.mask.cpu().numpy()
+                track_id = instance.pred_track_id.cpu().numpy().item()
+                mask = mask.astype(np.uint8)
+                mask[mask != 0] = track_id  # label the mask with the track id
+                frame_masks.append(mask)
+                # combine masks by merging into single mask using max; this will cause overlap
+            frame_mask = np.max(frame_masks, axis=0)
+            pred_imgs.append(frame_mask)
+    pred_imgs = np.stack(pred_imgs)
+    return pred_imgs
 
 
 def track(
@@ -147,13 +178,25 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
             label_files=[label_file], vid_files=[vid_file], mode="test"
         )
         dataloader = pred_cfg.get_dataloader(dataset, mode="test")
-        preds = track(model, trainer, dataloader)
-        outpath = os.path.join(
-            outdir,
-            f"{Path(vid_file).stem}.dreem_inference.{get_timestamp()}.slp",
-        )
+        if isinstance(vid_file, list):
+            save_file_name = vid_file[0].split("/")[-2]
+        else:
+            save_file_name = vid_file
 
-        preds.save(outpath)
+        if isinstance(dataset, CellTrackingDataset):
+            preds = track_ctc(model, trainer, dataloader)
+            outpath = os.path.join(
+                outdir,
+                f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.tif",
+            )
+            tifffile.imwrite(outpath, preds.astype(np.uint16))
+        else:
+            preds = track(model, trainer, dataloader)
+            outpath = os.path.join(
+                outdir,
+                f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.slp",
+            )
+            preds.save(outpath)
 
     return preds
 

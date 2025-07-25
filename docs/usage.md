@@ -1,113 +1,129 @@
 # Usage
 
-Here we describe a basic workflow from setting up data thru training and running inference. Regardless if you're only interested in running inference, we recommend at least skimming thru the entire tutorial as there may be useful information that applies to both training and inference!
-## Background
+This page gives detailed instructions for using DREEM. We also have a [quickstart guide](./quickstart.md) and notebooks in the Examples section to help you get started.
 
-This repo is built on 3 main packages
+<!-- ## Background
 
-1. [`hydra`](https://hydra.cc) for config handling
+This repo uses 3 main packages:
+
+1. [`hydra`](https://hydra.cc) for configurations
 2. [`pytorch`](https://pytorch.org) for model construction
-3. [`pytorch-lightning`](https://lightning.ai) for high-level training/eval/inference handling. 
+3. [`pytorch-lightning`](https://lightning.ai) for high-level training/eval/inference -->
 
-Thus, we recommend skimming through their respective docs to get some familiarity but is not necessary.
+## Installation
 
-## Setup
-### Step 1. Clone the repository:
-In your terminal run:
-```bash
-git clone https://github.com/talmolab/dreem && cd dreem
-```
-This will clone the dreem repo into your current working directory and then move you inside the `dreem` directory.
-### Step 2. Set up in a new conda environment:
-Next run:
-```bash
-conda env create -y -f environment.yml && conda activate dreem
-```
-This will create a conda environment called `dreem` which will have `dreem` installed as well as any other dependcies needed to run.
-### Step 3. Activate the `dreem` environment
-Finally run:
-```bash
-conda activate dreem && cd ..
-```
-This will activate the `dreem` repo and move you back to your original working directory.
+Head over to the [installation guide](./installation.md) to get started.
 
 ## Training
 
-### Step 1: Generate Ground Truth Data
-In order to train a model you need 2 things.
+DREEM enables you to train your own model based on your own annotated data. This can be useful when the pretrained models, or traditional approches to tracking don't work well for your data.
 
-1. A video.
-    - For animal data see the [`imageio`](https://imageio.readthedocs.io/en/v2.4.1/formats.html) docs for supported file types.
-    - For microscopy data we currently support `.tif` files. Video formats supported by `imageio` coming soon.
-2. A ground truth labels file. This labels file contains two main pieces of data:
-    1. Detections/instances (i.e. locations of the instances in each frame). This can come in the form of centroids, poses or segmentations
-    2. Ground truth identities (also called tracks, or trajectories). These are temporally consistent labels that group detections through time.
+### Generate Ground Truth Data
+To train a model, you need:
 
-#### Step 1.1: Get Initial labels
-To generate your initial labels we recommend a couple methods.
+1. A video
+    - For animal data see the [`imageio`](https://imageio.readthedocs.io/en/v2.4.1/formats.html) docs for supported file types. Common ones include mp4, avi, etc.
+    - For microscopy data we currently support `.tif` stacks.
+2. A ground truth labels file in [SLEAP](https://sleap.ai) or [CellTrackingChallenge](https://celltrackingchallenge.net) format. This labels file must contain:
+    1. Detections (i.e. locations of the instances in each frame). This can come in the form of centroids or pose keypoints for SLEAP format data, or segmentation masks for Cell Tracking Challenge format data.
+    2. Ground truth identities (also called tracks). These are temporally consistent labels that link detections across time.
 
- - For animal pose-estimation, we highly recommend heading over to [SLEAP](https://sleap.ai) and running through their work flow. 
- - For microscopy tracking, check out [TrackMate](https://imagej.net/plugins/trackmate/).
+#### Get Initial labels
+To generate your initial labels we recommend a couple methods:
 
- This is because these methods will handle both the detection and tracking steps together. Furthermore, these are currently the two main label formats we support in our data pipelines for arbitrary [animal](reference/dreem/datasets/sleap_dataset.md) and [microscopy](reference/dreem/datasets/microscopy_dataset.md) datasets. If you'd like to use a different method, (e.g DeepLabCut or ilastik etc), the easiest way to make your data compatible with `dreem` is to convert your labels to a `.slp` file and your video to an [`imageio`-supported](https://imageio.readthedocs.io/en/v2.4.1/formats.html) video format. See the next section for more information on how to do this. Alternatively, you can write a custom dataloader but that will take significantly more overhead.
-#### Step 1.2 Proofreading
-Once you have your labels file containing the detections and tracks, you'll want to make sure to proofread your labels. This is because object-tracking is hard and the methods we recommend above may have made mistakes. The most important thing to train a good model is to have high quality data. In our case good quality means two things:
+ - For animal tracking, we recommend using [SLEAP](https://sleap.ai). SLEAP provides a graphical user interface that makes it easy to annotate data from scratch, and output the labels file in the SLEAP format.
+ - For microscopy tracking, check out [CellPose](https://www.cellpose.org) or [Ilastik](https://www.ilastik.org). These methods output segmentation masks, but do not provide tracks. [Fiji](https://imagej.net/software/fiji/) offers several end-to-end segmentation and tracking options. Recall that your labels file must contain tracks.
 
-1. No identity switches. This is essential for training our object tracking model. If there are identity switches (say an animal/cell/organelle in frame 1 has track label 0 but in frame 2 it has track label 1), this will basically teach the model to make mistakes and cause irrecoverable failures. See below for an example of an identity switch.
-//TODO add example id switch
-2. Good detections. Because the input to the model is a crop centered around each detection, we want to make sure the coordinates we crop around are as accurate as possible. This is a bit more arbitrary and up to the user to determine what is a "good" detection. A general rule of thumb is to avoid having detection coordinates be hard to distinguish. For instance, with animal pose estimation, we want to avoid having the key points on two instances. For segmentation, the boundaries should be as tight as possible. This may be unavoidable however, in cases of occlusion and overlap. See below for example cases of good and bad detections.
-//TODO add example good vs bad detection.
+#### Proofreading
+Once you have your labels file containing initial detections and tracks, you'll want to [proofread](https://sleap.ai/tutorials/proofreading.html#track-proofreading) your labels. Obtaining good results relies on having accurate ground truth tracks. The annotated data should follow these guidelines:
 
-We recommend using the [`sleap-label` gui](https://sleap.ai/guides/gui.html) for [proofreading](https://sleap.ai/guides/proofreading.html#id1). This is because SLEAP's in-built gui provides useful. functionality for visualizing detections, moving them, and reassigning tracks. It also provides some nice heuristics for flagging where switches may have occured. 
+1. No identity switches. This is important for training a model that maintains temporally consistent identities.
 
-##### Converting data to a SLEAP compatible format.
-In order to use the SLEAP gui you'll need to have your labels and videos in a SLEAP comptabile format. Check out [the sleap-io docs](https://io.sleap.ai/latest/formats/) for available formats. The easiest way to ensure your labels are compatible with sleap is to convert them to a `.slp` file. For animal tracking, if you used SLEAP, this is already how SLEAP saves your labesl so you can start proofreading right away. Otherwise if you used a different system (e.g DeepLabCut) check out [`sleap.io.convert`](https://sleap.ai/api/sleap.io.convert.html#module-sleap.io.convert) for available converters. With microscopy, we highly recommend starting out with TrackMate and then proofread in SLEAP's gui. Here is [a converter from trackmate's output to a `.slp`](https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e) file. In general, you can use [`sleap-io`](https://io.sleap.ai/latest/) to write a custom converter to `.slp` if you'd like to use the sleap-gui for proofreading. Once you've ensured that your labels files have no identity switches and your detections are as good as you're willing to make them, they're ready to use for training.
+2. Good detections. Since the input to the model is a crop centered around each detection, we want to make sure the coordinates we crop around are as accurate as possible.
 
-#### Step 1.3 Organize data.
+We recommend using the [`sleap-label` GUI](https://sleap.ai/guides/gui.html) for [proofreading](https://sleap.ai/guides/proofreading.html#id1). SLEAP provides tools that make it easy to correct errors in tracking.
 
-Although, our data loading does take paths to label files and video files directly so it's fairly flexible, we recommend organizing your data with a couple things in mind.
+##### Converting data to a SLEAP compatible format
+In order to use the SLEAP GUI you'll need to have your labels and videos in a SLEAP comptabile format. Check out [the sleap-io docs](https://io.sleap.ai/latest/formats/) for available formats. The easiest way to ensure your labels are compatible with sleap is to convert them to a `.slp` file. Otherwise if you used a different system (e.g DeepLabCut) check out [`sleap.io.convert`](https://sleap.ai/api/sleap.io.convert.html#module-sleap.io.convert) for available converters. With microscopy, we highly recommend starting out with TrackMate and then proofread in SLEAP's gui. Here is [a converter from trackmate's output to a `.slp`](https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e) file. In general, you can use [`sleap-io`](https://io.sleap.ai/latest/) to write a custom converter to `.slp` if you'd like to use the sleap-gui for proofreading.
 
-1. Match video and labels file stems. Because our dataloaders just take in a list of video files and a list of corresponding label files, the order in which the corresponding files are passed must match. (e.g `[file1.slp, file2.slp], [vid1.mp4, vid2.mp4]`). In order to make programmatic file searching easy its best to save your labels and vid files with the same stem so that you can ensure the ordering will be consistent. Its also just best practice so you know which video a labels file corresponds to.
-2. Store corresponding videos and labels files in the same directory. This will again make searching for the files much easier. 
+#### Organize data
 
-The best practice is to have your dataset organized as follows:
+For animal tracking, you'll need video/slp pairs in a directory that you can specify in the configuration files when training. For instance, you can have separate train/val/test directories, each with slp/video pairs. The naming convention is not important, as the .slp labels file has a reference to its associated video file when its created.
+
+For microscopy tracking, you'll need to organize your data in the Cell Tracking Challenge format. We've provided a sample directory structure below. Check out this [guide](https://public.celltrackingchallenge.net/documents/Naming%20and%20file%20content%20conventions.pdf) for more details.
+
+Using the **SLEAP** format:
 ```
 dataset_name/
     train/
         vid_1.{VID_EXTENSION}
-        vid_1.{slp, csv, xml} #depends on labels source
+        vid_1.slp
             .
             .
             .
         vid_n.{VID_EXTENSION}
-        vid_n.{slp, csv, xml}
+        vid_n.slp
     val/
         vid_1.{VID_EXTENSION}
-        vid_1.{slp, csv, xml}
+        vid_1.slp
             .
             .
             .
         vid_n.{VID_EXTENSION}
-        vid_n.{slp, csv, xml}
-    test/
+        vid_n.slp
+    test/ # optional; test sets are not automatically evaluated as part of training
         vid_1.{VID_EXTENSION}
-        vid_1.{slp, csv, xml}
+        vid_1.slp
             .
             .
             .
-        vid_n.{slp, csv, xml}
-        vid_n.{slp, csv, xml}
+        vid_n.slp
+        vid_n.slp
+```
+The **CellTrackingChallenge** format requires a directory with raw tifs, and a matching directory with labelled segmentation masks for the track labels. The directory structure is as follows:
+```
+dataset_name/
+    train/
+        subdir_0/
+            frame0.tif # these are raw images
+            ...
+            frameN.tif
+        subdir_0_GT/TRA # these are labelled segmentation masks
+            frame0.tif
+            ...
+            frameN.tif
+        subdir_1/
+            frame0.tif
+            ...
+            frameN.tif
+        subdir_1_GT/TRA
+            frame0.tif
+            ...
+            frameN.tif
+        ...
+    val/
+        subdir_0/
+        subdir_0_GT/TRA
+        subdir_1/
+        subdir_1_GT/TRA
+        ...
+    test/ # optional; test sets are not automatically evaluated as part of training
+        subdir_0/
+        subdir_0_GT/TRA
+        subdir_1/
+        subdir_1_GT/TRA
+        ...
 ```
 
-### Step 2. Training
+### Training
 
-Now that you have your dataset set up, we can start training! In [`dreem.training.train`](reference/dreem/training/train.md), we provide a train script that allows you to train with just a `.yaml` file. It also serves as a good example for how to write your own train script if you're an advanced user and would like to have some additional flexibility!
+Now that you have your dataset set up, let's start training a model! We provide a CLI that allows you to train with a simple command and a single yaml configuration file.
 
-#### Step 2.1. Setup Config:
+#### Setup Config
 
-The input into our training script is a `.yaml` file that contains all the parameters needed for training. Please see [here](configs/training.md) for a detailed description of all the parameters and how to set up the config. We also provide an [example training config](configs/training.md#base-config) to give you an idea for how the config should look. In general, the best practice is to keep a single `base.yaml` file which has all the default arguments you'd like to use. Then you can have a second `.yaml` file which will override only those specific set of parameters when training (for an example see [here](configs/training.md#override-config)).
+The input into our training script is a `.yaml` file that contains all the parameters needed for training. Please see [here](configs/training.md) for a detailed description of all the parameters and how to set up the config. We provide up-to-date sample configs on HuggingFace Hub in the [talmolab/microscopy-pretrained](https://huggingface.co/talmolab/microscopy-pretrained) and [talmolab/animals-pretrained](https://huggingface.co/talmolab/animals-pretrained). In general, the best practice is to keep a single `base.yaml` file which has all the default arguments you'd like to use. Then you can have a second `.yaml` file which will override a specific set of parameters when training.
 
-#### Step 2.2 Train Model
+#### Train Model
 
 Once you have your config file and dataset set up, training is as easy as running
 
@@ -116,33 +132,36 @@ dreem-train --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]
 ```
 where `CONFIG_DIR` is the directory that `hydra` should search for the `config.yaml` and `CONFIG_STEM` is the name of the config without the `.yaml` extension.
 
-e.g. If I have a config file called `base.yaml` inside my `/home/aaprasad/dreem_configs` directory I can call
+e.g. If you have a config file called `base.yaml` inside your `/home/user/dreem_configs` directory you can call
 ```bash
-dreem-train --config-base=/home/aaprasad/dreem_configs --config-name=base
+dreem-train --config-base=/home/user/dreem_configs --config-name=base
 ```
 
 > Note: you can use relative paths as well but may be a bit riskier so we recommend absolute paths whenever possible.
 
+If you've been through the example notebooks, you'll notice that training was done using the API rather than the CLI. You can use whichever you prefer.
+
 ##### Overriding Arguments
-Instead of changing the `base.yaml` file every time you want to run a different config, `hydra` enables us to either
+Instead of changing the `base.yaml` file every time you want to train a model using different configurations, `hydra` enables us to either
 
 1. provide another `.yaml` file with a subset of the parameters to overide
 2. provide the args to the cli directly
 
-###### File-based override
-For overriding specific params with a sub-config, you can specify a `params_config` key and path in your `config.yaml` or run
+We recommend using the file-based override for logging and reproducibility.
+
+For overriding specific params with an override file, you can run:
 
 ```bash
-dreem-train --config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM] ++params_config="/path/to/params.yaml"
+dreem-train --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM] ++params_config="/path/to/override_params.yaml"
 ```
 
-e.g. If I have a `params_to_override.yaml` file inside my `/home/aaprasad/dreem_configs` directory that contains a only a small selection of parameters that I'd like to override, I can run:
+e.g. If you have a `override_params.yaml` file inside your `/home/user/dreem_configs` directory that contains a only a small selection of parameters that you'd like to override, you can run:
 
 ```bash
-dreem-train --config-base=/home/aaprasad/dreem_configs --config-name=base ++params_config=/home/aaprasad/dreem_configs/params_to_override.yaml
+dreem-train --config-base=/home/user/dreem_configs --config-name=base ++params_config=/home/user/dreem_configs/override_params.yaml
 ```
 
-###### CLI-based override
+<!-- ###### CLI-based override
 For directly overriding a specific param via the command line directly you can use the `section.param=key` syntax as so:
 
 ```bash
@@ -174,49 +193,31 @@ See [here](https://hydra.cc/docs/advanced/override_grammar/basic/) for more info
 > However, be careful to ensure there are no conflicts when combining CLI and file-based override syntax
 > (e.g make sure `section.param` doesn't appear both in your override file and in the CLI). 
 > This is because hydra does not make a distinction, it will first overwrite with the CLI value and then overwrite with the params file value.
-> this means that it will always default to the params file value when there are conflicts.
+> this means that it will always default to the params file value when there are conflicts. -->
 
-### Output
-The output of the train script will be at least 1 `*.ckpt` file, assuming you've configured the `checkpointing` section of the config correctly and depending on the params you've used.
+#### Output
+The output of the train script will be at least 1 `ckpt` file, assuming you've configured the `checkpointing` section of the config correctly.
 
-## Eval
-Normally, testing will be done at the end of training assuming you passed in a test dataset. However, if you'd like to test your model on another dataset, we provide a way to do so here. Please [see above](./usage.md#step-1-generate-ground-truth-data) for how to set up your evaluation data. Basically we recommend storing your test videos/labels files as so to make things easier:
-dataset_name/
-    test/
-        vid_1.{VID_EXTENSION}
-        vid_1.{slp, csv, xml}
-            .
-            .
-            .
-        vid_n.{slp, csv, xml}
-        vid_n.{slp, csv, xml}
-Once you have your dataset set up you can move on to setting up your config!
-### Step 2. Set up config
+## Eval (with ground truth labels)
+To test the performance of your model, you can use the `dreem-eval` CLI. It computes multi-object tracking metrics on your test data and outputs it in h5 format.
 
-Similar to training, we need to set up a config file that specifies
- 
-1. a `ckpt_path`
-2. a `runner.save_path`
-3. a list of the [`pymotmetrics`](https://github.com/cheind/py-motmetrics) to be computed
-3. a `Tracker` config
-4. a `dataset` config with a `test_dataset` subsection containing dataset params.
+### Setup data
+Note that your data should have ground truth labels. You can arrange it in a /test directory as shown above.
 
-Please see [here](configs/inference.md) for a walk through of the inference params as well as how to set up an inference conifg and see [here](configs/inference.md#example-config) for an example inference config file.
-### Step 3 Run Evaluation
+### Setup config
 
-Just like training we can use the hydra syntax for specifying arguments via the cli. Thus you can run inference via:
+Samples are available at [talmolab/microscopy-pretrained](https://huggingface.co/talmolab/microscopy-pretrained) and [talmolab/animals-pretrained](https://huggingface.co/talmolab/animals-pretrained), while a detailed walkthrough is available [here](configs/inference.md)
+
+### Run evaluation 
+
+We provide a CLI that allows you to evaluate your model with a simple command and a single yaml configuration file.
 
 ```bash
 dreem-eval --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]
 ```
 
-e.g. If I had an inference config called `track.yaml` inside `/home/aaprasad/dreem_configs` 
 
-```bash
-dreem-eval --config-base=/home/aaprasad/dreem_configs --config-name=track
-```
-
-#### Overriding Parameters.
+<!-- #### Overriding Parameters.
 Because there aren't as many parameters during inference as during training we recommend just using the cli-based override rather than the file based but you're more than welcome to do so.
 
 In order to override params via the CLI, we can use the same `hydra` `section.param` syntax:
@@ -227,79 +228,38 @@ dreem-eval --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM] section.param=
 e.g if I want to set the window size of the tracker to 32 instead of 8 through `tracker.window_size=32` and use a different model saved in `/home/aaprasad/models/new_best.ckpt` I can do:
 ```bash
 dreem-eval --config-base=/home/aaprasad/dreem_configs --config-name=track ckpt_path="/home/aaprasad/models/new_best.ckpt" tracker.window_size=32`
-```
+``` -->
 ### Output
-This will run inference on the videos/detections you specified in the `dataset.test_dataset` section of the config and compute the pymotmetrics for the videos you specified. These results will be saved in an hdf5 file saved to the `runner.save_path` argument. It will be structured as so:
-```
-results_h5/
-    vid_1_file_name/
-        clip_1/
-            frame_0/
-                instance_0/
-                instance_1/
-                ...
-                instance_n/
-                traj_scores
-                asso_output
-```
-The evaluation metrics, and respective metadata etc will be stored in the `attrs` of the hdf5 file. If you aren't familiar with opening, reading and manipulating hdf5 files, we recommend checking out the docs for [`h5py`](https://www.h5py.org) We also store model inputs (e.g crops, visual encoder features, spatiotemporal embeddings) in failure cases (identity switches)
+Tracking results will be saved as .slp, and the evaluation metrics will be saved in an hdf5 file saved to the `outdir` argument. We provide a script to extract the results from the h5 file, which you can find in the repository [here](https://github.com/talmolab/dreem/blob/main/scripts/extract_metrics.ipynb).
+
 ## Inference
 
-### Step 1. Setup Data
-#### Step 1.1 Get detections
-One of the main advantages of this system is that we *decouple* detection and tracking so you can use off-the-shelf high performant detectors/pose-estimators/segementors. This means that in order to run inference(tracking) with our model you need 3 things.
+In general, you will likely not have access to ground truth labels for your videos. In this case, you can use DREEM to run inference on your videos using a pretrained model or a model you trained yourself.
 
-1. A pretrained model saved as a `.ckpt` file.
-2. A video.
-    - For animal data see the [`imageio`](https://imageio.readthedocs.io/en/v2.4.1/formats.html) docs for supported file types.
-    - For microscopy data we currently support `.tif` files. Video formats supported by `imageio` coming soon.
-3. A labels file. This labels file is slightly different than in training because we only need detections for tracking since the tracks will of course come from our model predictions.
+### Setup Data
+#### Get detections
+One of the main advantages of DREEM is that we *decouple* detection and tracking so you can use state of the art, off-the-shelf detection models. This means that in order to run inference (tracking) with our model you'll need the following:
 
-We still recommend using SLEAP and TrackMate to generate these labels however this time you would only need to proofread your detections if you'd like to. For TrackMate we recommend using the "spots table" labels `.csv` instead of the "tracks table" in the case where trackmate misses tracks.
-#### Step 1.2 Organize Data
+1. A model saved as a `.ckpt` file
+2. A video (same as in training)
+3. A labels file. This labels file is slightly different than in training since we now only need detections but no ground truth tracks. So, you don't need to run a tracking method and proofread the results. You can simply run your detection model of choice and convert the data to SLEAP or CellTrackingChallenge format.
 
-We recommend setting up your inference data with the same practices we used for training.
+#### Organize Data
 
-1. Match video and labels file stems. Because our dataloaders just take in a list of video files and a list of corresponding label files, the order in which the corresponding files are passed must match. (e.g `[file1.slp, file2.slp], [vid1.mp4, vid2.mp4]`). In order to make programmatic file searching easy its best to save your labels and vid files with the same stem so that you can ensure the ordering will be consistent. Its also just best practice so you know which video a labels file corresponds to.
-2. Store corresponding videos and labels files in the same directory. This will again make searching for the files much easier. 
+See the [training section](#organize-data) for more details on how to organize your data.
 
-The best practice is to have your dataset organized as follows:
-```
-dataset_name/
-    inference/
-        vid_1.{VID_EXTENSION}
-        vid_1.{slp, csv, xml} #extension depends on labels source, doesn't need tracks
-            .
-            .
-            .
-        vid_n.{slp, csv, xml}
-        vid_n.{slp, csv, xml}
-```
+### Set up config
 
-### Step 2. Set up config
+See the [eval section](#eval-with-ground-truth-labels) for more details on how to set up a config file. The format for eval and inference is the same.
 
-Similar to training, we need to set up a config file that specifies
- 
-1. a `ckpt_path`
-2. a `out_dir`
-3. a `Tracker` config
-4. a `dataset` config with a `test_dataset` subsection containing dataset params.
+### Run Inference
 
-Please see [here](configs/inference.md) for a walk through of the inference params as well as how to set up an inference conifg and see [here](configs/inference.md#example-config) for an example inference config file.
-
-### Step 3 Run Inference
-
-Just like training we can use the hydra syntax for specifying arguments via the cli. Thus you can run inference via:
+Similar to `dreem-eval`, you can run inference via:
 
 ```bash
 dreem-track --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]
 ```
-
-e.g. If I had an inference config called `track.yaml` inside `/home/aaprasad/dreem_configs` 
-
-```bash
-dreem-track --config-base=/home/aaprasad/dreem_configs --config-name=track
-```
+<!-- 
 
 #### Overriding Parameters.
 Because there aren't as many parameters during inference as during training we recommend just using the cli-based override rather than the file based but you're more than welcome to do so.
@@ -312,7 +272,8 @@ dreem-track --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM] section.param
 e.g if I want to set the window size of the tracker to 32 instead of 8 through `tracker.window_size=32` and use a different model saved in `/home/aaprasad/models/new_best.ckpt` I can do:
 ```bash
 dreem-track --config-base=/home/aaprasad/dreem_configs --config-name=track ckpt_path="/home/aaprasad/models/new_best.ckpt" tracker.window_size=32`
-```
+``` -->
 ### Output
-This will run inference on the videos/detections you specified in the `dataset.test_dataset` section of the config and save the tracks to individual `[VID_NAME].dreem_inference.slp` files. If an `outdir` is specified in the config it will save to  `./[OUTDIR]/[VID_NAME].dreem_inference.slp`, otherwise it will just save to `./results/[VID_NAME].dreem_inference.slp`. Now you can load the file with `sleap-io` and do what you please!
+Tracking results will be saved as .slp in the directory specified by the `outdir` argument. If you don't enter an `outdir` in the config, it will save to `./results`.
 
+You should now be ready to use DREEM to train and track your own data!
