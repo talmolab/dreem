@@ -39,8 +39,7 @@ readme = {file = ["README.md"]}
 dev = [
     "pytest",
     "pytest-cov",
-    "black",
-    "pydocstyle",
+    "ruff",
     "toml",
     "twine",
     "build",
@@ -69,3 +68,18 @@ line-length = 88
 [pydocstyle]
 convention = "google"
 match-dir = "sleap_roots"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "D",    # pydocstyle
+    "I",    # isort
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
