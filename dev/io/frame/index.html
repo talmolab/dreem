@@ -2979,7 +2979,7 @@
       &lt;small class=&quot;doc doc-label doc-label-writable&quot;&gt;&lt;code&gt;writable&lt;/code&gt;&lt;/small&gt;
   &lt;/span&gt; (&lt;code&gt;dreem.io.Frame.instances&lt;/code&gt;)" href="#dreem.io.Frame.instances">instances</a></code></td>
             <td>
-                  <code><span title="list">list</span>[<a class="autorefs autorefs-internal" title="&lt;code&gt;dreem.io.Instance&lt;/code&gt;" href="../instance/#dreem.io.Instance">Instance</a>]</code>
+                  <code><span title="list">list</span>[&#39;Instance&#39;]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3301,7 +3301,7 @@ or a single association matrix.</p>
 <a id="__codelineno-0-64" name="__codelineno-0-64"></a><a href="#__codelineno-0-64"><span class="linenos" data-linenos=" 64 "></span></a>        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;img_shape&quot;</span><span class="p">,</span> <span class="n">converter</span><span class="o">=</span><span class="n">_to_tensor</span><span class="p">,</span> <span class="n">factory</span><span class="o">=</span><span class="nb">list</span>
 <a id="__codelineno-0-65" name="__codelineno-0-65"></a><a href="#__codelineno-0-65"><span class="linenos" data-linenos=" 65 "></span></a>    <span class="p">)</span>
 <a id="__codelineno-0-66" name="__codelineno-0-66"></a><a href="#__codelineno-0-66"><span class="linenos" data-linenos=" 66 "></span></a>
-<a id="__codelineno-0-67" name="__codelineno-0-67"></a><a href="#__codelineno-0-67"><span class="linenos" data-linenos=" 67 "></span></a>    <span class="n">_instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Instance</span><span class="p">]</span> <span class="o">=</span> <span class="n">attrs</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s2">&quot;instances&quot;</span><span class="p">,</span> <span class="n">factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+<a id="__codelineno-0-67" name="__codelineno-0-67"></a><a href="#__codelineno-0-67"><span class="linenos" data-linenos=" 67 "></span></a>    <span class="n">_instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Instance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attrs</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s2">&quot;instances&quot;</span><span class="p">,</span> <span class="n">factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
 <a id="__codelineno-0-68" name="__codelineno-0-68"></a><a href="#__codelineno-0-68"><span class="linenos" data-linenos=" 68 "></span></a>    <span class="n">_asso_output</span><span class="p">:</span> <span class="n">AssociationMatrix</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">attrs</span><span class="o">.</span><span class="n">field</span><span class="p">(</span>
 <a id="__codelineno-0-69" name="__codelineno-0-69"></a><a href="#__codelineno-0-69"><span class="linenos" data-linenos=" 69 "></span></a>        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;asso_output&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span>
 <a id="__codelineno-0-70" name="__codelineno-0-70"></a><a href="#__codelineno-0-70"><span class="linenos" data-linenos=" 70 "></span></a>    <span class="p">)</span>
@@ -3614,7 +3614,7 @@ or a single association matrix.</p>
 <a id="__codelineno-0-377" name="__codelineno-0-377"></a><a href="#__codelineno-0-377"><span class="linenos" data-linenos="377 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_img_shape</span> <span class="o">=</span> <span class="n">_to_tensor</span><span class="p">(</span><span class="n">img_shape</span><span class="p">)</span>
 <a id="__codelineno-0-378" name="__codelineno-0-378"></a><a href="#__codelineno-0-378"><span class="linenos" data-linenos="378 "></span></a>
 <a id="__codelineno-0-379" name="__codelineno-0-379"></a><a href="#__codelineno-0-379"><span class="linenos" data-linenos="379 "></span></a>    <span class="nd">@property</span>
-<a id="__codelineno-0-380" name="__codelineno-0-380"></a><a href="#__codelineno-0-380"><span class="linenos" data-linenos="380 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">instances</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Instance</span><span class="p">]:</span>
+<a id="__codelineno-0-380" name="__codelineno-0-380"></a><a href="#__codelineno-0-380"><span class="linenos" data-linenos="380 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">instances</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Instance&quot;</span><span class="p">]:</span>
 <a id="__codelineno-0-381" name="__codelineno-0-381"></a><a href="#__codelineno-0-381"><span class="linenos" data-linenos="381 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;A list of instances in the frame.</span>
 <a id="__codelineno-0-382" name="__codelineno-0-382"></a><a href="#__codelineno-0-382"><span class="linenos" data-linenos="382 "></span></a>
 <a id="__codelineno-0-383" name="__codelineno-0-383"></a><a href="#__codelineno-0-383"><span class="linenos" data-linenos="383 "></span></a><span class="sd">        Returns:</span>
@@ -3623,7 +3623,7 @@ or a single association matrix.</p>
 <a id="__codelineno-0-386" name="__codelineno-0-386"></a><a href="#__codelineno-0-386"><span class="linenos" data-linenos="386 "></span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span>
 <a id="__codelineno-0-387" name="__codelineno-0-387"></a><a href="#__codelineno-0-387"><span class="linenos" data-linenos="387 "></span></a>
 <a id="__codelineno-0-388" name="__codelineno-0-388"></a><a href="#__codelineno-0-388"><span class="linenos" data-linenos="388 "></span></a>    <span class="nd">@instances</span><span class="o">.</span><span class="n">setter</span>
-<a id="__codelineno-0-389" name="__codelineno-0-389"></a><a href="#__codelineno-0-389"><span class="linenos" data-linenos="389 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">instances</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Instance</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-389" name="__codelineno-0-389"></a><a href="#__codelineno-0-389"><span class="linenos" data-linenos="389 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">instances</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Instance&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-390" name="__codelineno-0-390"></a><a href="#__codelineno-0-390"><span class="linenos" data-linenos="390 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the frame&#39;s instance.</span>
 <a id="__codelineno-0-391" name="__codelineno-0-391"></a><a href="#__codelineno-0-391"><span class="linenos" data-linenos="391 "></span></a>
 <a id="__codelineno-0-392" name="__codelineno-0-392"></a><a href="#__codelineno-0-392"><span class="linenos" data-linenos="392 "></span></a><span class="sd">        Args:</span>
@@ -4105,7 +4105,7 @@ or a single association matrix.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="list">list</span>[<a class="autorefs autorefs-internal" title="&lt;code&gt;dreem.io.Instance&lt;/code&gt;" href="../instance/#dreem.io.Instance">Instance</a>]</code>
+                  <code><span title="list">list</span>[&#39;Instance&#39;]</code>
             </td>
             <td>
               <div class="doc-md-description">
