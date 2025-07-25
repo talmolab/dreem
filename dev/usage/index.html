@@ -2435,7 +2435,7 @@ This repo uses 3 main packages:
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <p>Head over to the <a href="../installation/">installation guide</a> to get started.</p>
 <h2 id="training">Training<a class="headerlink" href="#training" title="Permanent link">&para;</a></h2>
-<p>DREEM enables you to train your own model based on your own annotated data. This can be useful when the pretrained models, or traditional approches to tracking don't work well for your data.</p>
+<p>DREEM enables you to train your own model based on your own annotated data. This can be useful when the pretrained models, or traditional approaches to tracking don't work well for your data.</p>
 <h3 id="generate-ground-truth-data">Generate Ground Truth Data<a class="headerlink" href="#generate-ground-truth-data" title="Permanent link">&para;</a></h3>
 <p>To train a model, you need:</p>
 <ol>
@@ -2468,7 +2468,7 @@ This repo uses 3 main packages:
 </ol>
 <p>We recommend using the <a href="https://sleap.ai/guides/gui.html"><code>sleap-label</code> GUI</a> for <a href="https://sleap.ai/guides/proofreading.html#id1">proofreading</a>. SLEAP provides tools that make it easy to correct errors in tracking.</p>
 <h5 id="converting-data-to-a-sleap-compatible-format">Converting data to a SLEAP compatible format<a class="headerlink" href="#converting-data-to-a-sleap-compatible-format" title="Permanent link">&para;</a></h5>
-<p>In order to use the SLEAP GUI you'll need to have your labels and videos in a SLEAP comptabile format. Check out <a href="https://io.sleap.ai/latest/formats/">the sleap-io docs</a> for available formats. The easiest way to ensure your labels are compatible with sleap is to convert them to a <code>.slp</code> file. Otherwise if you used a different system (e.g DeepLabCut) check out <a href="https://sleap.ai/api/sleap.io.convert.html#module-sleap.io.convert"><code>sleap.io.convert</code></a> for available converters. With microscopy, we highly recommend starting out with TrackMate and then proofread in SLEAP's gui. Here is <a href="https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e">a converter from trackmate's output to a <code>.slp</code></a> file. In general, you can use <a href="https://io.sleap.ai/latest/"><code>sleap-io</code></a> to write a custom converter to <code>.slp</code> if you'd like to use the sleap-gui for proofreading.</p>
+<p>In order to use the SLEAP GUI you'll need to have your labels and videos in a SLEAP compatible format. Check out <a href="https://io.sleap.ai/latest/formats/">the sleap-io docs</a> for available formats. The easiest way to ensure your labels are compatible with sleap is to convert them to a <code>.slp</code> file. Otherwise if you used a different system (e.g DeepLabCut) check out <a href="https://sleap.ai/api/sleap.io.convert.html#module-sleap.io.convert"><code>sleap.io.convert</code></a> for available converters. With microscopy, we highly recommend starting out with TrackMate and then proofread in SLEAP's gui. Here is <a href="https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e">a converter from trackmate's output to a <code>.slp</code></a> file. In general, you can use <a href="https://io.sleap.ai/latest/"><code>sleap-io</code></a> to write a custom converter to <code>.slp</code> if you'd like to use the sleap-gui for proofreading.</p>
 <h4 id="organize-data">Organize data<a class="headerlink" href="#organize-data" title="Permanent link">&para;</a></h4>
 <p>For animal tracking, you'll need video/slp pairs in a directory that you can specify in the configuration files when training. For instance, you can have separate train/val/test directories, each with slp/video pairs. The naming convention is not important, as the .slp labels file has a reference to its associated video file when its created.</p>
 <p>For microscopy tracking, you'll need to organize your data in the Cell Tracking Challenge format. We've provided a sample directory structure below. Check out this <a href="https://public.celltrackingchallenge.net/documents/Naming%20and%20file%20content%20conventions.pdf">guide</a> for more details.</p>
@@ -2551,7 +2551,7 @@ where <code>CONFIG_DIR</code> is the directory that <code>hydra</code> should se
 <h5 id="overriding-arguments">Overriding Arguments<a class="headerlink" href="#overriding-arguments" title="Permanent link">&para;</a></h5>
 <p>Instead of changing the <code>base.yaml</code> file every time you want to train a model using different configurations, <code>hydra</code> enables us to either</p>
 <ol>
-<li>provide another <code>.yaml</code> file with a subset of the parameters to overide</li>
+<li>provide another <code>.yaml</code> file with a subset of the parameters to override</li>
 <li>provide the args to the cli directly</li>
 </ol>
 <p>We recommend using the file-based override for logging and reproducibility.</p>
@@ -2696,7 +2696,7 @@ dreem-track --config-base=/home/aaprasad/dreem_configs --config-name=track ckpt_
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      Copyright &copy; 2024 - 2024 Talmo Lab – <a href="#__consent">Change cookie settings</a>
+      Copyright &copy; 2024 - 2025 Talmo Lab – <a href="#__consent">Change cookie settings</a>
 
     </div>
   
