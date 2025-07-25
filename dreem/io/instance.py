@@ -1,7 +1,7 @@
 """Module containing data class for storing detections."""
 
 import logging
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Optional, Self
 
 import attrs
 import h5py
@@ -102,7 +102,7 @@ class Instance:
     )
     _pose: dict[str, ArrayLike] = attrs.field(alias="pose", factory=dict)
     _device: str | torch.device | None = attrs.field(alias="device", default=None)
-    _frame: "Frame" | None = None
+    _frame: Optional["Frame"] = None
 
     def __attrs_post_init__(self) -> None:
         """Handle dimensionality and more intricate default initializations post-init."""
