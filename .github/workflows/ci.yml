@@ -45,7 +45,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.9
+        python-version: 3.12
 
     - name: Install dependencies
       run: |
@@ -65,7 +65,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-22.04", "windows-2022"]
-        python: [3.9]
+        python: [3.12]
 
     name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
@@ -96,20 +96,20 @@ jobs:
           pip freeze
 
       - name: Test with pytest
-        if: ${{ !(startsWith(matrix.os, 'ubuntu') && matrix.python == 3.9) }}
+        if: ${{ !(startsWith(matrix.os, 'ubuntu') && matrix.python == 3.12) }}
         shell: bash -l {0}
         run: |
           pytest
 
       - name: Test with pytest (with coverage)
-        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.python == 3.9 }}
+        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.python == 3.12 }}
         shell: bash -l {0}
         run: |
           pytest --cov=dreem --cov-report=xml tests/
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
-        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.python == 3.9 }}
+        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.python == 3.12 }}
         with:
           fail_ci_if_error: false
           verbose: true
