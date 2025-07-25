@@ -95,21 +95,14 @@ jobs:
           micromamba list
           pip freeze
 
-      - name: Test with pytest
-        if: ${{ !(startsWith(matrix.os, 'ubuntu') && matrix.python == 3.12) }}
-        shell: bash -l {0}
-        run: |
-          pytest
-
       - name: Test with pytest (with coverage)
-        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.python == 3.12 }}
         shell: bash -l {0}
         run: |
           pytest --cov=dreem --cov-report=xml tests/
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.python == 3.12 }}
+        uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: false
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
