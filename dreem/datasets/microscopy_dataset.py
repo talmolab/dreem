@@ -84,6 +84,7 @@ class MicroscopyDataset(BaseDataset):
         if source.lower() == "trackmate":
             parser = data_utils.parse_trackmate
         elif source.lower() in ["icy", "isbi"]:
+
             def parser(x):
                 return data_utils.parse_synthetic(x, source=source)
         else:

@@ -81,6 +81,7 @@ select = [
     "D",    # pydocstyle
     "I",    # isort
 ]
+ignore = ["E501"]  # Line too long - let formatter handle this
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

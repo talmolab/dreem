@@ -170,9 +170,7 @@ class GTRRunner(LightningModule):
 
         return result
 
-    def predict_step(
-        self, batch: list[list[Frame]], batch_idx: int
-    ) -> list[Frame]:
+    def predict_step(self, batch: list[list[Frame]], batch_idx: int) -> list[Frame]:
         """Run inference for model.
 
         Computes association + assignment.
@@ -188,9 +186,7 @@ class GTRRunner(LightningModule):
         frames_pred = self.tracker(self.model, batch[0])
         return frames_pred
 
-    def _shared_eval_step(
-        self, frames: list[Frame], mode: str
-    ) -> dict[str, float]:
+    def _shared_eval_step(self, frames: list[Frame], mode: str) -> dict[str, float]:
         """Run evaluation used by train, test, and val steps.
 
         Args:
