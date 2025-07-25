@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 import attrs
 import h5py
@@ -11,6 +11,9 @@ import numpy as np
 import sleap_io as sio
 import torch
 from numpy.typing import ArrayLike
+
+if TYPE_CHECKING:
+    from dreem.io import AssociationMatrix, Instance
 
 logger = logging.getLogger("dreem.io")
 
@@ -61,8 +64,8 @@ class Frame:
         alias="img_shape", converter=_to_tensor, factory=list
     )
 
-    _instances: list["Instance"] = attrs.field(alias="instances", factory=list)
-    _asso_output: "AssociationMatrix" | None = attrs.field(
+    _instances: list[Instance] = attrs.field(alias="instances", factory=list)
+    _asso_output: AssociationMatrix | None = attrs.field(
         alias="asso_output", default=None
     )
     _matches: tuple = attrs.field(alias="matches", factory=tuple)
@@ -371,7 +374,7 @@ class Frame:
         self._img_shape = _to_tensor(img_shape)
 
     @property
-    def instances(self) -> list["Instance"]:
+    def instances(self) -> list[Instance]:
         """A list of instances in the frame.
 
         Returns:
@@ -380,7 +383,7 @@ class Frame:
         return self._instances
 
     @instances.setter
-    def instances(self, instances: list["Instance"]) -> None:
+    def instances(self, instances: list[Instance]) -> None:
         """Set the frame's instance.
 
         Args:
@@ -410,7 +413,7 @@ class Frame:
         return len(self.instances)
 
     @property
-    def asso_output(self) -> "AssociationMatrix":
+    def asso_output(self) -> AssociationMatrix:
         """The association matrix between instances outputted directly by transformer.
 
         Returns:
@@ -429,7 +432,7 @@ class Frame:
         return True
 
     @asso_output.setter
-    def asso_output(self, asso_output: "AssociationMatrix") -> None:
+    def asso_output(self, asso_output: AssociationMatrix) -> None:
         """Set the association matrix of a frame.
 
         Args:

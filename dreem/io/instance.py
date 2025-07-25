@@ -1,7 +1,7 @@
 """Module containing data class for storing detections."""
 
 import logging
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 
 import attrs
 import h5py
@@ -9,6 +9,9 @@ import numpy as np
 import sleap_io as sio
 import torch
 from numpy.typing import ArrayLike
+
+if TYPE_CHECKING:
+    from dreem.io import Frame
 
 logger = logging.getLogger("dreem.io")
 
@@ -98,7 +101,7 @@ class Instance:
     )
     _pose: dict[str, ArrayLike] = attrs.field(alias="pose", factory=dict)
     _device: str | torch.device | None = attrs.field(alias="device", default=None)
-    _frame: "Frame" = None
+    _frame: Frame | None = None
 
     def __attrs_post_init__(self) -> None:
         """Handle dimensionality and more intricate default initializations post-init."""
@@ -272,7 +275,7 @@ class Instance:
             The h5 group representing this instance.
         """
         if label is None:
-            if pred_track_id != -1:
+            if self.pred_track_id != -1:
                 label = f"instance_{self.pred_track_id.item()}"
             else:
                 label = f"instance_{self.gt_track_id.item()}"
@@ -597,7 +600,7 @@ class Instance:
         self._embeddings[emb_type] = embedding
 
     @property
-    def frame(self) -> "Frame":
+    def frame(self) -> Frame:
         """Get the frame the instance belongs to.
 
         Returns:
@@ -606,7 +609,7 @@ class Instance:
         return self._frame
 
     @frame.setter
-    def frame(self, frame: "Frame") -> None:
+    def frame(self, frame: Frame) -> None:
         """Set the back reference to the `Frame` that this `Instance` belongs to.
 
         This field is set when instances are added to `Frame` object.

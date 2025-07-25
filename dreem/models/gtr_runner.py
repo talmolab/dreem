@@ -5,6 +5,7 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import h5py
 import numpy as np
@@ -18,6 +19,9 @@ from dreem.inference import metrics
 from dreem.models.global_tracking_transformer import GlobalTrackingTransformer
 from dreem.models.model_utils import init_optimizer, init_scheduler
 from dreem.training.losses import AssoLoss
+
+if TYPE_CHECKING:
+    from dreem.io import AssociationMatrix, Frame, Instance
 
 logger = logging.getLogger("dreem.models")
 if not logger.handlers:
@@ -97,9 +101,9 @@ class GTRRunner(LightningModule):
 
     def forward(
         self,
-        ref_instances: list["dreem.io.Instance"],
-        query_instances: list["dreem.io.Instance"] | None = None,
-    ) -> list["AssociationMatrix"]:
+        ref_instances: list[Instance],
+        query_instances: list[Instance] | None = None,
+    ) -> list[AssociationMatrix]:
         """Execute forward pass of the lightning module.
 
         Args:
@@ -113,7 +117,7 @@ class GTRRunner(LightningModule):
         return asso_preds
 
     def training_step(
-        self, train_batch: list[list["dreem.io.Frame"]], batch_idx: int
+        self, train_batch: list[list[Frame]], batch_idx: int
     ) -> dict[str, float]:
         """Execute single training step for model.
 
@@ -131,7 +135,7 @@ class GTRRunner(LightningModule):
         return result
 
     def validation_step(
-        self, val_batch: list[list["dreem.io.Frame"]], batch_idx: int
+        self, val_batch: list[list[Frame]], batch_idx: int
     ) -> dict[str, float]:
         """Execute single val step for model.
 
@@ -149,7 +153,7 @@ class GTRRunner(LightningModule):
         return result
 
     def test_step(
-        self, test_batch: list[list["dreem.io.Frame"]], batch_idx: int
+        self, test_batch: list[list[Frame]], batch_idx: int
     ) -> dict[str, float]:
         """Execute single test step for model.
 
@@ -167,8 +171,8 @@ class GTRRunner(LightningModule):
         return result
 
     def predict_step(
-        self, batch: list[list["dreem.io.Frame"]], batch_idx: int
-    ) -> list["dreem.io.Frame"]:
+        self, batch: list[list[Frame]], batch_idx: int
+    ) -> list[Frame]:
         """Run inference for model.
 
         Computes association + assignment.
@@ -185,7 +189,7 @@ class GTRRunner(LightningModule):
         return frames_pred
 
     def _shared_eval_step(
-        self, frames: list["dreem.io.Frame"], mode: str
+        self, frames: list[Frame], mode: str
     ) -> dict[str, float]:
         """Run evaluation used by train, test, and val steps.
 

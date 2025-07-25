@@ -16,7 +16,7 @@ from omegaconf import DictConfig
 
 from dreem.datasets import CellTrackingDataset
 from dreem.inference import BatchTracker, Tracker
-from dreem.io import Config
+from dreem.io import Config, Frame
 from dreem.models import GTRRunner
 
 logger = logging.getLogger("dreem.inference")
@@ -33,7 +33,7 @@ def get_timestamp() -> str:
 
 
 def export_trajectories(
-    frames_pred: list["dreem.io.Frame"], save_path: str | None = None
+    frames_pred: list[Frame], save_path: str | None = None
 ) -> pd.DataFrame:
     """Convert trajectories to data frame and save as .csv.
 

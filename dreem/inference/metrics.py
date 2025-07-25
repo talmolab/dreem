@@ -1,15 +1,19 @@
 """Helper functions for calculating mot metrics."""
 
 import logging
+from typing import TYPE_CHECKING
 
 import motmetrics as mm
 import numpy as np
 import pandas as pd
 
+if TYPE_CHECKING:
+    from dreem.io import Frame
+
 logger = logging.getLogger("dreem.inference")
 
 
-def get_matches(frames: list["dreem.io.Frame"]) -> tuple[dict, list, int]:
+def get_matches(frames: list["Frame"]) -> tuple[dict, list, int]:
     """Get comparison between predicted and gt trajectory labels. Deprecated.
 
     Args:

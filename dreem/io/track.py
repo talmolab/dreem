@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import attrs
+
+if TYPE_CHECKING:
+    from dreem.io import Frame, Instance
 
 
 @attrs.define(eq=False)
@@ -15,7 +20,7 @@ class Track:
     """
 
     _id: int = attrs.field(alias="id")
-    _instances: list["Instance"] = attrs.field(alias="instances", factory=list)
+    _instances: list[Instance] = attrs.field(alias="instances", factory=list)
 
     def __repr__(self) -> str:
         """Get the string representation of the track.
@@ -44,7 +49,7 @@ class Track:
         self._id = track_id
 
     @property
-    def instances(self) -> list["Instances"]:
+    def instances(self) -> list[Instance]:
         """Get the instances belonging to this track.
 
         Returns:
@@ -62,7 +67,7 @@ class Track:
         self._instances = instances
 
     @property
-    def frames(self) -> set["Frame"]:
+    def frames(self) -> set[Frame]:
         """Get the frames where this track appears.
 
         Returns:
@@ -78,7 +83,7 @@ class Track:
         """
         return len(self.instances)
 
-    def __getitem__(self, ind: int | list[int]) -> "Instance" | list["Instance"]:
+    def __getitem__(self, ind: int | list[int]) -> Instance | list[Instance]:
         """Get an instance from the track.
 
         Args:

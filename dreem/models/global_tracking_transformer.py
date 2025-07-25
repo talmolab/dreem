@@ -1,9 +1,14 @@
 """Module containing GTR model used for training."""
 
+from typing import TYPE_CHECKING
+
 import torch
 
 from dreem.models.transformer import Transformer
 from dreem.models.visual_encoder import create_visual_encoder
+
+if TYPE_CHECKING:
+    from dreem.io import AssociationMatrix, Instance
 
 # todo: do we want to handle params with configs already here?
 
@@ -79,8 +84,8 @@ class GlobalTrackingTransformer(torch.nn.Module):
         )
 
     def forward(
-        self, ref_instances: list["Instance"], query_instances: list["Instance"] = None
-    ) -> list["AssociationMatrix"]:
+        self, ref_instances: list[Instance], query_instances: list[Instance] = None
+    ) -> list[AssociationMatrix]:
         """Execute forward pass of GTR Model to get asso matrix.
 
         Args:
@@ -101,7 +106,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
         return asso_preds
 
     def extract_features(
-        self, instances: list["Instance"], force_recompute: bool = False
+        self, instances: list[Instance], force_recompute: bool = False
     ) -> None:
         """Extract features from instances using visual encoder backbone.
 
