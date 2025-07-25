@@ -102,7 +102,7 @@ class Instance:
     )
     _pose: dict[str, ArrayLike] = attrs.field(alias="pose", factory=dict)
     _device: str | torch.device | None = attrs.field(alias="device", default=None)
-    _frame: Frame | None = None
+    _frame: "Frame" | None = None
 
     def __attrs_post_init__(self) -> None:
         """Handle dimensionality and more intricate default initializations post-init."""
