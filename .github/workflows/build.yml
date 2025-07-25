@@ -31,14 +31,10 @@ jobs:
         enable-cache: true
         cache-dependency-glob: "pyproject.toml"
 
-    - name: Install dependencies
-      run: |
-        uv pip install --system build twine
-
     - name: Build wheel
       run: |
         uv build --no-sources
-        twine check dist/*
     
     - name: Upload to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      run: |
+        uv publish --trusted-publishing always
