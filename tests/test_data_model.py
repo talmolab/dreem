@@ -1,15 +1,15 @@
 """Tests for Instance, Frame, and AssociationMatrix Objects"""
 
-from dreem.io import Frame, Instance, AssociationMatrix, Track
-import torch
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
+import torch
+
+from dreem.io import AssociationMatrix, Frame, Instance, Track
 
 
 def test_instance():
     """Test Instance object logic."""
-
     gt_track_id = 0
     pred_track_id = 0
     bbox = torch.randn((1, 1, 4))
@@ -130,7 +130,6 @@ def test_frame():
 
 
 def test_association_matrix():
-
     n_traj = 2
     total_instances = 32
     n_query = 2
@@ -194,7 +193,6 @@ def test_association_matrix():
 
 
 def test_track():
-
     instances = [Instance(gt_track_id=0, pred_track_id=0) for i in range(32)]
 
     track = Track(0, instances=instances)

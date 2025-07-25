@@ -1,14 +1,16 @@
 """Module containing data classes such as Instances and Frames."""
 
 from __future__ import annotations
-from numpy.typing import ArrayLike
-from typing import Self
-import torch
-import sleap_io as sio
-import numpy as np
-import attrs
+
 import logging
+from typing import Self
+
+import attrs
 import h5py
+import numpy as np
+import sleap_io as sio
+import torch
+from numpy.typing import ArrayLike
 
 logger = logging.getLogger("dreem.io")
 

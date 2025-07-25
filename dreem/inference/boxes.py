@@ -1,7 +1,8 @@
 """Module containing Boxes class."""
 
-import torch
 from typing import Self
+
+import torch
 
 
 class Boxes:
@@ -124,9 +125,9 @@ class Boxes:
         if isinstance(item, int):
             return Boxes(self.tensor[item])
         b = self.tensor[item]
-        assert (
-            b.dim() == 3
-        ), "Indexing on Boxes with {} failed to return a matrix!".format(item)
+        assert b.dim() == 3, (
+            "Indexing on Boxes with {} failed to return a matrix!".format(item)
+        )
         return Boxes(b)
 
     def __len__(self) -> int:

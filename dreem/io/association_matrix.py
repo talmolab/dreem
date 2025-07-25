@@ -1,11 +1,13 @@
 """Module containing class for storing and looking up association scores."""
 
-import torch
-import numpy as np
-import pandas as pd
-import attrs
 import logging
 from typing import Self
+
+import attrs
+import numpy as np
+import pandas as pd
+import torch
+
 from dreem.io import Instance
 
 logger = logging.getLogger("dreem.io")
@@ -114,7 +116,7 @@ class AssociationMatrix:
             else:
                 raise ValueError(
                     (
-                        f"Mismatched # of rows and labels!",
+                        "Mismatched # of rows and labels!",
                         f"Found {len(row_labels)} with {len(self.query_instances)} rows",
                     )
                 )
@@ -140,7 +142,7 @@ class AssociationMatrix:
             else:
                 raise ValueError(
                     (
-                        f"Mismatched # of columns and labels!",
+                        "Mismatched # of columns and labels!",
                         f"Found {len(col_labels)} with {len(self.ref_instances)} columns",
                     )
                 )
@@ -207,7 +209,6 @@ class AssociationMatrix:
         reduced_matrix = []
         for row_track, row_instances in row_tracks.items():
             for col_track, col_instances in col_tracks.items():
-
                 asso_matrix = self[row_instances, col_instances]
 
                 if col_dims == "track":

@@ -1,8 +1,8 @@
 """Module containing GTR model used for training."""
 
-from dreem.models import Transformer
-from dreem.models import create_visual_encoder
 import torch
+
+from dreem.models import Transformer, create_visual_encoder
 
 # todo: do we want to handle params with configs already here?
 

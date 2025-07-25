@@ -1,11 +1,10 @@
 """Helper functions for calculating mot metrics."""
 
-import numpy as np
-import motmetrics as mm
-import torch
-import pandas as pd
 import logging
-from typing import Iterable
+
+import motmetrics as mm
+import numpy as np
+import pandas as pd
 
 logger = logging.getLogger("dreem.inference")
 

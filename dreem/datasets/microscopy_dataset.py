@@ -1,12 +1,14 @@
 """Module containing microscopy dataset."""
 
-from PIL import Image
-from dreem.datasets import data_utils, BaseDataset
-from dreem.io import Instance, Frame
+import random
+
 import albumentations as A
 import numpy as np
-import random
 import torch
+from PIL import Image
+
+from dreem.datasets import BaseDataset, data_utils
+from dreem.io import Frame, Instance
 
 
 class MicroscopyDataset(BaseDataset):

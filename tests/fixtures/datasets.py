@@ -1,9 +1,10 @@
 """Fixtures for testing dreem."""
 
-import pytest
-from pathlib import Path
 import glob
 import os
+from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture

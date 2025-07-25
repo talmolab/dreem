@@ -1,12 +1,14 @@
 """Module containing logic for loading datasets."""
 
-from dreem.datasets import data_utils
-from dreem.io import Frame
-from torch.utils.data import Dataset
+import logging
 from typing import Union
+
 import numpy as np
 import torch
-import logging
+from torch.utils.data import Dataset
+
+from dreem.datasets import data_utils
+from dreem.io import Frame
 
 logger = logging.getLogger("dreem.datasets")
 
@@ -113,8 +115,9 @@ class BaseDataset(Dataset):
             for start, end in annotated_segments:
                 # check if the start of current segment is within batching_max_gap of end of previous
                 if (
-                    int(start) - int(prev_end) < self.max_batching_gap
-                ) or not self.chunk:  # also takes care of first segment as start < prev_end
+                    (int(start) - int(prev_end) < self.max_batching_gap)
+                    or not self.chunk
+                ):  # also takes care of first segment as start < prev_end
                     segments_to_stitch.append(torch.arange(start, end + 1))
                     prev_end = end
                 else:
@@ -155,8 +158,7 @@ class BaseDataset(Dataset):
         remove_idx = []
         for i, frame_chunk in enumerate(self.chunked_frame_idx):
             if (
-                len(frame_chunk)
-                <= min(int(self.clip_length / 10), 5)
+                len(frame_chunk) <= min(int(self.clip_length / 10), 5)
                 # and frame_chunk[-1] % self.clip_length == 0
             ):
                 logger.warning(
@@ -206,8 +208,7 @@ class BaseDataset(Dataset):
             remove_idx = []
             for i, frame_chunk in enumerate(self.chunked_frame_idx):
                 if (
-                    len(frame_chunk)
-                    <= min(int(self.clip_length / 10), 5)
+                    len(frame_chunk) <= min(int(self.clip_length / 10), 5)
                     # and frame_chunk[-1] % self.clip_length == 0
                 ):
                     logger.warning(

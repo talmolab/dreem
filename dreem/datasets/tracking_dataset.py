@@ -1,12 +1,12 @@
 """Module containing Lightning module wrapper around all other datasets."""
 
+import torch
+from pytorch_lightning import LightningDataModule
+from torch.utils.data import DataLoader
+
 from dreem.datasets.cell_tracking_dataset import CellTrackingDataset
 from dreem.datasets.microscopy_dataset import MicroscopyDataset
 from dreem.datasets.sleap_dataset import SleapDataset
-from pytorch_lightning import LightningDataModule
-from torch.utils.data import DataLoader
-import torch
-
 
 """
 Lightning wrapper for tracking datasets

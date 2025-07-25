@@ -1,12 +1,14 @@
 """Test training logic."""
 
 import os
+
 import pytest
 import torch
-from dreem.io import Frame, Instance, Config
-from dreem.training.losses import AssoLoss
+from omegaconf import OmegaConf
+
+from dreem.io import Config, Frame, Instance
 from dreem.models import GTRRunner
-from omegaconf import OmegaConf, DictConfig
+from dreem.training.losses import AssoLoss
 from dreem.training.train import run
 
 # TODO: add named tensor tests

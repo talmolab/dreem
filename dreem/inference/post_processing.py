@@ -1,6 +1,7 @@
 """Helper functions for post-processing association matrix pre-tracking."""
 
 import torch
+
 from dreem.inference.boxes import Boxes
 
 
@@ -25,9 +26,9 @@ def weight_decay_time(
     Returns: The N_t x N association matrix weighted by decay time
     """
     if decay_time is not None and decay_time > 0:
-        assert (
-            reid_features is not None and T is not None and k is not None
-        ), "Need reid_features to weight traj_score by `decay_time`!"
+        assert reid_features is not None and T is not None and k is not None, (
+            "Need reid_features to weight traj_score by `decay_time`!"
+        )
         N_t = asso_output.shape[0]
         dts = torch.cat(
             [
@@ -140,9 +141,9 @@ def filter_max_center_dist(
         An N_t x N association matrix
     """
     if max_center_dist is not None and max_center_dist > 0:
-        assert (
-            query_boxes_px is not None and nonquery_boxes_px is not None
-        ), "Need `query_boxes_px`, and `nonquery_boxes_px` to filter by `max_center_dist`"
+        assert query_boxes_px is not None and nonquery_boxes_px is not None, (
+            "Need `query_boxes_px`, and `nonquery_boxes_px` to filter by `max_center_dist`"
+        )
 
         k_ct = (query_boxes_px[:, :, :2] + query_boxes_px[:, :, 2:]) / 2
         # k_s = ((curr_frame_boxes[:, :, 2:] - curr_frame_boxes[:, :, :2]) ** 2).sum(dim=2)  # n_k

@@ -11,14 +11,16 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
     * added fixed embeddings over boxes
 """
 
-from dreem.io import AssociationMatrix
-from dreem.models.attention_head import ATTWeightHead
-from dreem.models import Embedding, FourierPositionalEmbeddings
-from dreem.models.model_utils import get_boxes, get_times
-from torch import nn
 import copy
+
 import torch
 import torch.nn.functional as F
+from torch import nn
+
+from dreem.io import AssociationMatrix
+from dreem.models import Embedding, FourierPositionalEmbeddings
+from dreem.models.attention_head import ATTWeightHead
+from dreem.models.model_utils import get_boxes, get_times
 
 # todo: add named tensors
 # todo: add flash attention
@@ -499,9 +501,7 @@ class TransformerDecoderLayer(nn.Module):
             query=decoder_queries,  # (n_query, batch_size, embed_dim)
             key=encoder_features,  # (total_instances, batch_size, embed_dim)
             value=encoder_features,  # (total_instances, batch_size, embed_dim)
-        )[
-            0
-        ]  # (n_query, batch_size, embed_dim)
+        )[0]  # (n_query, batch_size, embed_dim)
 
         decoder_queries = decoder_queries + self.dropout2(
             x_attn_features

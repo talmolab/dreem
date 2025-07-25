@@ -1,18 +1,19 @@
 """Module containing cell tracking challenge dataset."""
 
-from PIL import Image
-from dreem.datasets import data_utils, BaseDataset
-from dreem.io import Frame, Instance
-from scipy.ndimage import measurements
+import random
+from pathlib import Path
+from typing import Optional
+
 import albumentations as A
 import numpy as np
 import pandas as pd
-import random
-import torch
-from typing import Union, Optional
-from pathlib import Path
 import sleap_io as sio
-import matplotlib.pyplot as plt
+import torch
+from PIL import Image
+from scipy.ndimage import measurements
+
+from dreem.datasets import BaseDataset, data_utils
+from dreem.io import Frame, Instance
 
 
 class CellTrackingDataset(BaseDataset):

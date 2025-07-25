@@ -1,17 +1,19 @@
 """Module containing logic for loading sleap datasets."""
 
+import logging
+import random
+from pathlib import Path
+from typing import Optional, Union
+
 import albumentations as A
-import torch
 import imageio
 import numpy as np
 import sleap_io as sio
-import random
-from pathlib import Path
-import logging
-from typing import Union, Optional
-from dreem.io import Instance, Frame
-from dreem.datasets import data_utils, BaseDataset
+import torch
 from torchvision.transforms import functional as tvf
+
+from dreem.datasets import BaseDataset, data_utils
+from dreem.io import Frame, Instance
 
 logger = logging.getLogger("dreem.datasets")
 

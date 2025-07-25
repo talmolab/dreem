@@ -1,8 +1,9 @@
 """Module containing model helper functions."""
 
 from typing import Iterable
-from pytorch_lightning import loggers
+
 import torch
+from pytorch_lightning import loggers
 
 
 def get_boxes(instances: list["dreem.io.Instance"]) -> torch.Tensor:

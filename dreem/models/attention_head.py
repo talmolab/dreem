@@ -1,6 +1,7 @@
 """Module containing different components of multi-head attention heads."""
 
 import torch
+
 from dreem.models.mlp import MLP
 
 # todo: add named tensors

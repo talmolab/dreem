@@ -1,23 +1,23 @@
 """Module containing training, validation and inference logic."""
 
-import torch
 import gc
 import logging
-import pandas as pd
-import h5py
 import os
-from dreem.inference import Tracker, BatchTracker
-from dreem.inference import metrics
-from dreem.models import GlobalTrackingTransformer
-from dreem.datasets import CellTrackingDataset
-from dreem.training.losses import AssoLoss
-from dreem.models.model_utils import init_optimizer, init_scheduler
-from pytorch_lightning import LightningModule
 from datetime import datetime
 from pathlib import Path
-import sleap_io as sio
+
+import h5py
 import numpy as np
+import sleap_io as sio
 import tifffile
+import torch
+from pytorch_lightning import LightningModule
+
+from dreem.datasets import CellTrackingDataset
+from dreem.inference import BatchTracker, Tracker, metrics
+from dreem.models import GlobalTrackingTransformer
+from dreem.models.model_utils import init_optimizer, init_scheduler
+from dreem.training.losses import AssoLoss
 
 logger = logging.getLogger("dreem.models")
 if not logger.handlers:

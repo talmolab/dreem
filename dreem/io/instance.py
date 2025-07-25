@@ -1,13 +1,14 @@
 """Module containing data class for storing detections."""
 
-import torch
-import sleap_io as sio
-import numpy as np
-import attrs
 import logging
+from typing import Any, Self
+
+import attrs
 import h5py
+import numpy as np
+import sleap_io as sio
+import torch
 from numpy.typing import ArrayLike
-from typing import Self, Any
 
 logger = logging.getLogger("dreem.io")
 

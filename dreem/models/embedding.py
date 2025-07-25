@@ -1,8 +1,10 @@
 """Module containing different position and temporal embeddings."""
 
-import math
-import torch
 import logging
+import math
+
+import torch
+
 from dreem.models.mlp import MLP
 
 logger = logging.getLogger("dreem.models")
@@ -175,7 +177,7 @@ class Embedding(torch.nn.Module):
     def _sine_box_embedding(self, boxes: torch.Tensor) -> torch.Tensor:
         """Compute sine positional embeddings for boxes using given parameters.
 
-         Args:
+        Args:
              boxes: the input boxes of shape N, n_anchors, 4 or B, N, n_anchors, 4
                     where the last dimension is the bbox coords in [y1, x1, y2, x2].
                     (Note currently `B=batch_size=1`).
@@ -405,9 +407,7 @@ class FourierPositionalEmbeddings(torch.nn.Module):
                 ),
             ),
             axis=-1,
-        ) / math.sqrt(
-            len(freq)
-        )  # (B,N,2*n_components)
+        ) / math.sqrt(len(freq))  # (B,N,2*n_components)
 
         if self.d_model % self.n_components != 0:
             raise ValueError(

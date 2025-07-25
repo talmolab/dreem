@@ -1,6 +1,7 @@
 """Module containing data structures for storing instances of the same Track."""
 
 from __future__ import annotations
+
 import attrs
 
 

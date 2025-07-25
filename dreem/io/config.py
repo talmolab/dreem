@@ -2,14 +2,16 @@
 """Data structures for handling config parsing."""
 
 from __future__ import annotations
-from omegaconf import DictConfig, OmegaConf, open_dict
-from typing import Iterable
-from pathlib import Path
-import logging
+
 import glob
+import logging
 import os
+from pathlib import Path
+from typing import Iterable
+
 import pytorch_lightning as pl
 import torch
+from omegaconf import DictConfig, OmegaConf, open_dict
 
 logger = logging.getLogger("dreem.io")
 
@@ -281,7 +283,7 @@ class Config:
         Returns:
             Either a `SleapDataset` or `CellTrackingDataset` with params indicated by cfg
         """
-        from dreem.datasets import SleapDataset, CellTrackingDataset
+        from dreem.datasets import CellTrackingDataset, SleapDataset
 
         dataset_params = self.get("dataset")
         if dataset_params is None:

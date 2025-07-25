@@ -1,17 +1,17 @@
 """Helper functions for visualizing tracking."""
 
-from scipy.interpolate import interp1d
-from copy import deepcopy
-from tqdm import tqdm
-from omegaconf import DictConfig
-
-import seaborn as sns
-import imageio
-import hydra
-import pandas as pd
-import numpy as np
-import cv2
 import logging
+from copy import deepcopy
+
+import cv2
+import hydra
+import imageio
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from omegaconf import DictConfig
+from scipy.interpolate import interp1d
+from tqdm import tqdm
 
 logger = logging.getLogger("dreem.io")
 

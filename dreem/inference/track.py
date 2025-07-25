@@ -1,22 +1,23 @@
 """Script to run inference and get out tracks."""
 
-from dreem.io import Config
-from dreem.inference import Tracker, BatchTracker
-from dreem.models import GTRRunner
-from dreem.datasets import CellTrackingDataset
-from omegaconf import DictConfig
-from pathlib import Path
+import logging
+import os
 from datetime import datetime
+from pathlib import Path
 
 import hydra
-import os
+import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
-import torch
 import sleap_io as sio
-import logging
-import numpy as np
 import tifffile
+import torch
+from omegaconf import DictConfig
+
+from dreem.datasets import CellTrackingDataset
+from dreem.inference import BatchTracker, Tracker
+from dreem.io import Config
+from dreem.models import GTRRunner
 
 logger = logging.getLogger("dreem.inference")
 
@@ -163,7 +164,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         model.tracker = BatchTracker(**model.tracker_cfg)
     else:
         model.tracker = Tracker(**model.tracker_cfg)
-    logger.info(f"Using the following tracker:")
+    logger.info("Using the following tracker:")
     logger.info(model.tracker)
 
     labels_files, vid_files = pred_cfg.get_data_paths(

@@ -1,30 +1,29 @@
 """Module containing helper functions for datasets."""
 
-from PIL import Image
-from numpy.typing import ArrayLike
-from torchvision.transforms import functional as tvf
-from xml.etree import cElementTree as et
-import albumentations as A
 import math
+from xml.etree import cElementTree as et
+
+import albumentations as A
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sleap_io as sio
 import torch
-from dreem.io import Instance
-from dreem.io import Instance
+from numpy.typing import ArrayLike
+from PIL import Image
+from sleap_io import LabeledFrame, Labels
 from sleap_io.io.slp import (
     read_hdf5_attrs,
-    read_tracks,
-    read_videos,
-    read_skeletons,
-    read_points,
-    read_pred_points,
+    read_hdf5_dataset,
     read_instances,
     read_metadata,
-    read_hdf5_dataset,
+    read_points,
+    read_pred_points,
+    read_skeletons,
+    read_tracks,
+    read_videos,
 )
-from sleap_io import Labels, LabeledFrame
+from torchvision.transforms import functional as tvf
 
 
 def load_slp(labels_path: str, open_videos: bool = True) -> Labels:

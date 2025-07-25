@@ -2,18 +2,19 @@
 
 import pytest
 import torch
+
 from dreem.io import Frame, Instance
-from dreem.models.mlp import MLP
-from dreem.models.attention_head import ATTWeightHead
 from dreem.models import (
     Embedding,
-    VisualEncoder,
-    Transformer,
     GlobalTrackingTransformer,
+    Transformer,
+    VisualEncoder,
 )
+from dreem.models.attention_head import ATTWeightHead
+from dreem.models.mlp import MLP
 from dreem.models.transformer import (
-    TransformerEncoderLayer,
     TransformerDecoderLayer,
+    TransformerEncoderLayer,
 )
 
 
@@ -130,7 +131,6 @@ def test_encoder_torch():
 
 def test_embedding_validity():
     """Test embedding usage."""
-
     # this would throw assertion since embedding should be "pos"
     with pytest.raises(Exception):
         _ = Embedding(emb_type="position", mode="learned", features=128)
@@ -169,7 +169,6 @@ def test_embedding_validity():
 
 def test_embedding_basic():
     """Test embedding logic."""
-
     frames = 32
     objects = 10
     d_model = 256
@@ -244,7 +243,6 @@ def test_embedding_basic():
 
 def test_embedding_kwargs():
     """Test embedding config logic."""
-
     frames = 32
     objects = 10
 

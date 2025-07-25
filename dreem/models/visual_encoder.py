@@ -1,13 +1,13 @@
 """Module for different visual feature extractors."""
 
-from typing import Any, Type, Dict
-import torch
-import torchvision
-import timm
-import torch.nn.functional as F
-import skimage.measure as measure
-from skimage.feature import local_binary_pattern
+from typing import Any, Dict, Type
+
 import numpy as np
+import skimage.measure as measure
+import timm
+import torch
+import torch.nn.functional as F
+import torchvision
 
 # import timm
 

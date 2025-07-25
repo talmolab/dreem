@@ -1,16 +1,17 @@
 """Test inference logic."""
 
-import torch
-import pytest
-import numpy as np
-from pytorch_lightning import Trainer
-from omegaconf import OmegaConf, DictConfig
-from dreem.io import Frame, Instance, Config
-from dreem.models import GTRRunner, GlobalTrackingTransformer
-from dreem.inference import Tracker, post_processing, metrics, BatchTracker
-from dreem.inference.track_queue import TrackQueue
-from dreem.inference.track import run
 import os
+
+import numpy as np
+import torch
+from omegaconf import OmegaConf
+from pytorch_lightning import Trainer
+
+from dreem.inference import Tracker, metrics, post_processing
+from dreem.inference.track import run
+from dreem.inference.track_queue import TrackQueue
+from dreem.io import Config, Frame, Instance
+from dreem.models import GlobalTrackingTransformer, GTRRunner
 
 
 def test_track_queue():
@@ -265,7 +266,6 @@ def get_ckpt(ckpt_path: str):
     """Save GTR Runner to checkpoint file."""
 
     class DummyDataset(torch.utils.data.Dataset):
-
         def __len__(self):
             return 0
 

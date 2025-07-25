@@ -1,10 +1,11 @@
 """Module containing different loss functions to be optimized."""
 
-from dreem.models.model_utils import get_boxes, get_times
-from torch import nn
 import torch
 import torch.nn.functional as F
 import torchvision
+from torch import nn
+
+from dreem.models.model_utils import get_boxes, get_times
 
 # todo: use named tensors
 # todo: clean up names, comments
