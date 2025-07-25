@@ -1,6 +1,6 @@
 <!-- ### Basic
 ```bash
-pip install dreem
+pip install dreem-tracker
 ```  
 -->
 #### Clone the repository:

@@ -4,15 +4,15 @@
 [![codecov](https://codecov.io/gh/talmolab/dreem/branch/main/graph/badge.svg?token=Sj8kIFl3pi)](https://codecov.io/gh/talmolab/dreem)
 [![Documentation](https://img.shields.io/badge/Documentation-dreem.sleap.ai-lightgrey)](https://dreem.sleap.ai)
 <!-- [![Release](https://img.shields.io/github/v/release/talmolab/dreem?label=Latest)](https://github.com/talmolab/dreem/releases/)
-[![PyPI](https://img.shields.io/pypi/v/dreem?label=PyPI)](https://pypi.org/project/dreem)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dreem) -->
+[![PyPI](https://img.shields.io/pypi/v/dreem-tracker?label=PyPI)](https://pypi.org/project/dreem-tracker)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dreem-tracker) -->
 
 Global Tracking Transformers for biological multi-object tracking.
 
 ## Installation
 <!-- ### Basic
 ```
-pip install dreem
+pip install dreem-tracker
 ``` -->
 ### Development
 #### Clone the repository:

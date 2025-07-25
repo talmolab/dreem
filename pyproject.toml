@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dreem"
+name = "dreem-tracker"
 authors = [
     {name = "Arlo Sheridan", email = "asheridan@salk.edu"},
     {name = "Aaditya Prasad", email = "aprasad@salk.edu"},
