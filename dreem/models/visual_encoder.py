@@ -220,6 +220,18 @@ class DescriptorVisualEncoder(torch.nn.Module):
 
         return torch.stack(descriptors)
 
+class DINOVisualEncoder(torch.nn.Module):
+    """Visual Encoder based on DINO."""
+
+    def __init__(self, **kwargs):
+        """Initialize DINO Visual Encoder."""
+        super().__init__()
+        self.dinov2_vits14_reg = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg')
+
+    def forward(self, img: torch.Tensor) -> torch.Tensor:
+        """Forward pass of feature extractor to get feature vector."""
+        return self.dinov2_vits14_reg(img)
+
 
 def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
     """Register a new encoder type."""
@@ -233,6 +245,7 @@ def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
     register_encoder("resnet", VisualEncoder)
     register_encoder("descriptor", DescriptorVisualEncoder)
     # register any custom encoders here
+    register_encoder("dino", DINOVisualEncoder)
 
     # compatibility with configs that don't specify encoder_type; default to resnet
     if not encoder_cfg or "encoder_type" not in encoder_cfg:
@@ -243,7 +256,7 @@ def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
 
     if encoder_type in ENCODER_REGISTRY:
         # choose the relevant encoder configs based on the encoder_type
-        configs = encoder_cfg[encoder_type]
+        configs = encoder_cfg.get(encoder_type, {})
         return ENCODER_REGISTRY[encoder_type](d_model=d_model, **configs)
     else:
         raise ValueError(
