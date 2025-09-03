@@ -405,15 +405,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#visualize-results" class="md-nav__link">
-    <span class="md-ellipsis">
-      Visualize Results
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#check-out-the-example-notebooks" class="md-nav__link">
     <span class="md-ellipsis">
       Check out the example notebooks
@@ -2333,15 +2324,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#visualize-results" class="md-nav__link">
-    <span class="md-ellipsis">
-      Visualize Results
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#check-out-the-example-notebooks" class="md-nav__link">
     <span class="md-ellipsis">
       Check out the example notebooks
@@ -2435,13 +2417,21 @@
 </code></pre></div></p>
 <h3 id="run-tracking">Run Tracking<a class="headerlink" href="#run-tracking" title="Permanent link">&para;</a></h3>
 <p>Tracking is easy to run using the CLI. Simply specify the path to the directory containing <code>inference.yaml</code> and the path to the model checkpoint.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>dreem-track<span class="w"> </span>--config-dir<span class="o">=</span>./data/sample-flies/configs<span class="w"> </span>--config-name<span class="o">=</span>inference<span class="w"> </span><span class="nv">ckpt_path</span><span class="o">=</span>./models/animals-pretrained.ckpt
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>dreem-track<span class="w"> </span>--config-dir<span class="o">=</span>./data/configs<span class="w"> </span>--config-name<span class="o">=</span>inference<span class="w"> </span><span class="nv">ckpt_path</span><span class="o">=</span>./models/animals-pretrained.ckpt
 </code></pre></div>
-<p>Once completed, it should output a file in a new <code>results</code> folder called <code>GT_190719_090330_wt_18159206_rig1.2@15000-17560.&lt;timestamp&gt;dreem_inference.slp</code></p>
-<h3 id="visualize-results">Visualize Results<a class="headerlink" href="#visualize-results" title="Permanent link">&para;</a></h3>
-<p>First, we recommend visualizing the outputs of the tracks you just made. You can do so by first installing sleap via <a href="https://sleap.ai/#quick-install">its installation guide</a> and then running</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sleap-label<span class="w"> </span>eval/GT_190719_090330_wt_18159206_rig1.2@15000-17560.dreem_inference.slp
+If you want to evaluate the tracking accuracy, you can use the <code>dreem-eval</code> command, a drop-in replacement for <code>dreem-track</code> that outputs evaluation metrics and a detailed frame-by-frame multi-object tracking event log.
+You can use it with this command. Note the different eval config file; this is only for illustrative purposes, to specify a test dataset path that has ground truth labels.
+ ```bash
+dreem-eval --config-dir=./data/configs --config-name=eval ckpt_path=./models/animals-pretrained.ckpt
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Once completed, it should output a file in a new `results` folder called `GT_190719_090330_wt_18159206_rig1.2@15000-17560.&lt;timestamp&gt;dreem_inference.slp`
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>### Visualize Results
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>First, we recommend visualizing the outputs of the tracks you just made. You can do so by first installing sleap via [its installation guide](https://sleap.ai/#quick-install) and then running
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>```bash
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>sleap-label results/GT_190719_090330_wt_18159206_rig1.2@15000-17560.&lt;timestamp&gt;dreem_inference.slp
 </code></pre></div>
+Note that the sleap-label command opens the SLEAP GUI which may not render on a remote server. </p>
 <h3 id="check-out-the-example-notebooks">Check out the example notebooks<a class="headerlink" href="#check-out-the-example-notebooks" title="Permanent link">&para;</a></h3>
 <p>Once you're ready to dive deeper, head over to the Examples section and check out the notebooks there. Go through the end-to-end demo 
 of the DREEM pipeline, from obtaining data to training a model, evaluating on a held-out dataset, and visualizing the results, all in the notebook. We also have
