@@ -687,6 +687,11 @@ dev = [
     { name = "twine" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "ipykernel" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "albumentations" },
@@ -728,6 +733,9 @@ requires-dist = [
     { name = "wandb" },
 ]
 provides-extras = ["dev", "cuda", "cpu", "apple-silicon"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ipykernel", specifier = ">=6.30.1" }]
 
 [[package]]
 name = "executing"

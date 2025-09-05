@@ -40,6 +40,7 @@ import torch
 import numpy as np
 from omegaconf import OmegaConf
 from dreem.inference import track
+from dreem.models import GTRRunner
 import matplotlib.pyplot as plt
 from pathlib import Path
 import pandas as pd
@@ -101,6 +102,8 @@ torch.set_float32_matmul_precision("medium")
 ## Detection
 
 Here we use CellPose to create segmentation masks for our instances. **If you want to skip this stage**, we have provided segmentation masks for the lysosomes dataset located at ./data/lysosomes. You can enter this path in the configuration file provided, under dataset.test_dataset.dir.path, and then skip straight ahead to the section labelled DREEM Inference below
+
+NOTE: If you installed DREEM with uv, you can simply run `uv run examples/cellpose-detection.py`! And move straight ahead to the Inference section.
 
 #### Install CellPose
 

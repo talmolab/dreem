@@ -92,6 +92,11 @@ line-length = 88
 [pydocstyle]
 convention = "google"
 
+[dependency-groups]
+dev = [
+    "ipykernel>=6.30.1",
+]
+
 [tool.ruff]
 line-length = 88
 
