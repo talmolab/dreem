@@ -10,11 +10,68 @@
 Global Tracking Transformers for biological multi-object tracking.
 
 ## Installation
-<!-- ### Basic
+
+### Using uv (Recommended)
+
+#### Prerequisites
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if you haven't already:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
-pip install dreem-tracker
-``` -->
-### Development
+
+#### Clone the repository:
+```bash
+git clone https://github.com/talmolab/dreem && cd dreem
+```
+
+#### Quick installation (Recommended):
+Use our automated installation script:
+
+**Linux/macOS:**
+```bash
+./install.sh
+```
+
+**Windows:**
+```cmd
+install.bat
+```
+
+#### Manual platform-specific installation:
+
+##### Linux/Windows with CUDA (GPU-accelerated):
+```bash
+uv sync --extra cuda
+```
+
+##### Linux/Windows CPU-only:
+```bash
+uv sync --extra cpu
+```
+
+##### macOS (Apple Silicon):
+```bash
+uv sync --extra apple-silicon
+```
+
+##### Development installation (includes dev dependencies):
+```bash
+uv sync --extra dev --extra cuda  # or --extra cpu or --extra apple-silicon
+```
+
+#### Activate the environment:
+```bash
+# Option 1: Use uv run to execute commands directly
+uv run dreem-train --help
+
+# Option 2: Activate the virtual environment manually
+source .venv/bin/activate  # Linux/macOS
+# or
+.venv\Scripts\activate     # Windows
+```
+
+### Using conda (Legacy)
+
 #### Clone the repository:
 ```bash
 git clone https://github.com/talmolab/dreem && cd dreem
@@ -33,8 +90,16 @@ conda env create -y -f environment_cpu.yml && conda activate dreem
 ```bash
 conda env create -y -f environment_osx-arm.yml && conda activate dreem
 ```
+
 ### Uninstalling
+#### Using uv:
+```bash
+rm -rf .venv     # Remove the virtual environment
+rm uv.lock       # Remove the lock file (optional)
 ```
+
+#### Using conda:
+```bash
 conda env remove -n dreem
 ```
 
@@ -57,18 +122,25 @@ In your terminal run:
 git clone https://github.com/talmolab/dreem && cd dreem
 ```
 This will clone the dreem repo into your current working directory and then move you inside the `dreem` directory.
-#### Step 2. Set up in a new conda environment:
-Next run:
+#### Step 2. Set up with uv:
+Next run (choose the appropriate option for your platform):
 ```bash
-conda env create -y -f environment.yml && conda activate dreem
+# For CUDA-enabled systems (Linux/Windows with GPU)
+uv sync --extra cuda
+
+# For CPU-only systems (Linux/Windows)
+uv sync --extra cpu
+
+# For Apple Silicon (macOS)
+uv sync --extra apple-silicon
 ```
-This will create a conda environment called `dreem` which will have `dreem` installed as well as any other dependencies needed to run.
-#### Step 3. Activate the `dreem` environment
+This will create a virtual environment and install `dreem` with all necessary dependencies.
+#### Step 3. Activate the environment
 Finally run:
 ```bash
-conda activate dreem && cd ..
+source .venv/bin/activate && cd ..
 ```
-This will activate the `dreem` repo and move you back to your original working directory.
+This will activate the virtual environment and move you back to your original working directory.
 
 ### Training
 

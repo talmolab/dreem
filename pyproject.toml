@@ -19,17 +19,26 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "torch >= 2.0.0",
-    "torchvision",
     "lightning",
     "imageio",
     "imageio-ffmpeg",
     "av",
     "albumentations",
     "hydra-core",
-    "sleap-io"
+    "sleap-io",
+    "matplotlib",
+    "opencv-python < 4.9.0",
+    "ffmpeg-python",
+    "motmetrics",
+    "seaborn",
+    "wandb",
+    "timm",
+    "huggingface-hub[cli]"
 ]
 dynamic = ["version", "readme"]
+
+[tool.setuptools]
+packages = ["dreem"]
 
 [tool.setuptools.dynamic]
 version = {attr = "dreem.version.__version__"}
@@ -51,6 +60,18 @@ dev = [
     "mkdocs-literate-nav",
     "mike",
     "mkdocs-section-index"
+]
+cuda = [
+    "torch >= 2.0.0",
+    "torchvision"
+]
+cpu = [
+    "torch >= 2.0.0",
+    "torchvision"
+]
+apple-silicon = [
+    "torch >= 2.0.0",
+    "torchvision"
 ]
 
 [project.scripts]
