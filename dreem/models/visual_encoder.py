@@ -220,13 +220,16 @@ class DescriptorVisualEncoder(torch.nn.Module):
 
         return torch.stack(descriptors)
 
+
 class DINOVisualEncoder(torch.nn.Module):
     """Visual Encoder based on DINO."""
 
     def __init__(self, **kwargs):
         """Initialize DINO Visual Encoder."""
         super().__init__()
-        self.dinov2_vits14_reg = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg')
+        self.dinov2_vits14_reg = torch.hub.load(
+            "facebookresearch/dinov2", "dinov2_vits14_reg"
+        )
 
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector."""

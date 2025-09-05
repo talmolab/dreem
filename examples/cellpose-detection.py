@@ -17,7 +17,9 @@ os.makedirs(segmented_path, exist_ok=True)
 
 diam_px = 25
 
-tiff_files = [f for f in os.listdir(data_path) if f.endswith('.tif') or f.endswith('.tiff')]
+tiff_files = [
+    f for f in os.listdir(data_path) if f.endswith(".tif") or f.endswith(".tiff")
+]
 stack = np.stack([tifffile.imread(os.path.join(data_path, f)) for f in tiff_files])
 frames, Y, X = stack.shape
 
@@ -40,4 +42,3 @@ for i, (mask, filename) in enumerate(zip(all_masks, tiff_files)):
     new_tiff_path = os.path.join(segmented_path, f"{os.path.splitext(filename)[0]}.tif")
     print(f"exporting frame {i} to tiff at {new_tiff_path}")
     tifffile.imwrite(new_tiff_path, mask)
-
