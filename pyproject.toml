@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dreem-tracker"
+name = "dreem"
 authors = [
     {name = "Arlo Sheridan", email = "asheridan@salk.edu"},
     {name = "Aaditya Prasad", email = "aprasad@salk.edu"},
@@ -33,7 +33,9 @@ dependencies = [
     "seaborn",
     "wandb",
     "timm",
-    "huggingface-hub[cli]"
+    "huggingface-hub[cli]",
+    "scikit-image",
+    "numpy < 2.0"
 ]
 dynamic = ["version", "readme"]
 
@@ -89,7 +91,6 @@ line-length = 88
 
 [pydocstyle]
 convention = "google"
-match-dir = "sleap_roots"
 
 [tool.ruff]
 line-length = 88
