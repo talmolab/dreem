@@ -72,16 +72,20 @@ def export_trajectories(
 
 def slp_to_napari(labels: sio.Labels) -> pd.DataFrame:
     """Convert SLP file to Napari format."""
+    list_records = []
     for frame in labels.labeled_frames:
         for instance in frame.instances:
             track_id = int(str(instance.track.name).replace("Track ",""))
+            coords = np.nanmean(instance.numpy(), axis=0)
             record = {
                 "track_id": track_id,
                 "frame": frame.frame_idx,
                 "z": 0,
-                
+                "y": coords[1],
+                "x": coords[0],
             }
-
+            list_records.append(record)
+    return pd.DataFrame(list_records)
 
 def track_ctc(
     model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader
@@ -215,6 +219,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
                 f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.napari.csv",
             )
             napari_df = slp_to_napari(preds)
+            napari_df = napari_df.sort_values(by=["track_id","frame"])
             napari_df.to_csv(napari_path, index=False)
 
     return preds
