@@ -2026,15 +2026,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#dreem.models.visual_encoder.DINOVisualEncoder" class="md-nav__link">
-    <span class="md-ellipsis">
-      DINOVisualEncoder
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dreem.models.visual_encoder.DescriptorVisualEncoder" class="md-nav__link">
     <span class="md-ellipsis">
       DescriptorVisualEncoder
@@ -2288,15 +2279,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#dreem.models.visual_encoder.DINOVisualEncoder" class="md-nav__link">
-    <span class="md-ellipsis">
-      DINOVisualEncoder
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dreem.models.visual_encoder.DescriptorVisualEncoder" class="md-nav__link">
     <span class="md-ellipsis">
       DescriptorVisualEncoder
@@ -2391,14 +2373,6 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title="&lt;code&gt;DINOVisualEncoder&lt;/code&gt; (&lt;code&gt;dreem.models.visual_encoder.DINOVisualEncoder&lt;/code&gt;)" href="#dreem.models.visual_encoder.DINOVisualEncoder">DINOVisualEncoder</a></code></td>
-            <td>
-              <div class="doc-md-description">
-                <p>Visual Encoder based on DINO.</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" title="&lt;code&gt;DescriptorVisualEncoder&lt;/code&gt; (&lt;code&gt;dreem.models.visual_encoder.DescriptorVisualEncoder&lt;/code&gt;)" href="#dreem.models.visual_encoder.DescriptorVisualEncoder">DescriptorVisualEncoder</a></code></td>
             <td>
               <div class="doc-md-description">
@@ -2461,250 +2435,6 @@
 
 
 
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="dreem.models.visual_encoder.DINOVisualEncoder" class="doc doc-heading">
-            <code>DINOVisualEncoder</code>
-
-
-<a href="#dreem.models.visual_encoder.DINOVisualEncoder" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="torch.nn.Module">Module</span></code></p>
-
-
-        <p>Visual Encoder based on DINO.</p>
-
-
-
-
-
-
-
-
-
-
-
-
-<p><span class="doc-section-title">Methods:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;fm&quot;&gt;__init__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;use_pretrained&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;True&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;**&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;kwargs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.models.visual_encoder.DINOVisualEncoder.__init__&lt;/code&gt;)" href="#dreem.models.visual_encoder.DINOVisualEncoder.__init__">__init__</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Initialize DINO Visual Encoder.</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;forward&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;img&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.models.visual_encoder.DINOVisualEncoder.forward&lt;/code&gt;)" href="#dreem.models.visual_encoder.DINOVisualEncoder.forward">forward</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Forward pass of feature extractor to get feature vector.</p>
-                </div>
-              </td>
-            </tr>
-      </tbody>
-    </table>
-
-
-
-              <details class="quote">
-                <summary>Source code in <code>dreem/models/visual_encoder.py</code></summary>
-                <div class="highlight"><pre><span></span><code><a id="__codelineno-0-224" name="__codelineno-0-224"></a><a href="#__codelineno-0-224"><span class="linenos" data-linenos="224 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">DINOVisualEncoder</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<a id="__codelineno-0-225" name="__codelineno-0-225"></a><a href="#__codelineno-0-225"><span class="linenos" data-linenos="225 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Visual Encoder based on DINO.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-226" name="__codelineno-0-226"></a><a href="#__codelineno-0-226"><span class="linenos" data-linenos="226 "></span></a>
-<a id="__codelineno-0-227" name="__codelineno-0-227"></a><a href="#__codelineno-0-227"><span class="linenos" data-linenos="227 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">use_pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a><a href="#__codelineno-0-228"><span class="linenos" data-linenos="228 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize DINO Visual Encoder.</span>
-<a id="__codelineno-0-229" name="__codelineno-0-229"></a><a href="#__codelineno-0-229"><span class="linenos" data-linenos="229 "></span></a>
-<a id="__codelineno-0-230" name="__codelineno-0-230"></a><a href="#__codelineno-0-230"><span class="linenos" data-linenos="230 "></span></a><span class="sd">        Always uses pretrained models.</span>
-<a id="__codelineno-0-231" name="__codelineno-0-231"></a><a href="#__codelineno-0-231"><span class="linenos" data-linenos="231 "></span></a>
-<a id="__codelineno-0-232" name="__codelineno-0-232"></a><a href="#__codelineno-0-232"><span class="linenos" data-linenos="232 "></span></a><span class="sd">        Args:</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233"></a><a href="#__codelineno-0-233"><span class="linenos" data-linenos="233 "></span></a><span class="sd">            d_model: The dimension of the output feature vector.</span>
-<a id="__codelineno-0-234" name="__codelineno-0-234"></a><a href="#__codelineno-0-234"><span class="linenos" data-linenos="234 "></span></a><span class="sd">            use_pretrained: Whether to use pretrained models (not supported yet).</span>
-<a id="__codelineno-0-235" name="__codelineno-0-235"></a><a href="#__codelineno-0-235"><span class="linenos" data-linenos="235 "></span></a><span class="sd">            kwargs: Unused but accepted for compatibility</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236"></a><a href="#__codelineno-0-236"><span class="linenos" data-linenos="236 "></span></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-237" name="__codelineno-0-237"></a><a href="#__codelineno-0-237"><span class="linenos" data-linenos="237 "></span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<a id="__codelineno-0-238" name="__codelineno-0-238"></a><a href="#__codelineno-0-238"><span class="linenos" data-linenos="238 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">d_model</span> <span class="o">=</span> <span class="n">d_model</span>
-<a id="__codelineno-0-239" name="__codelineno-0-239"></a><a href="#__codelineno-0-239"><span class="linenos" data-linenos="239 "></span></a>        <span class="c1"># the pretrained models use patch_size=14</span>
-<a id="__codelineno-0-240" name="__codelineno-0-240"></a><a href="#__codelineno-0-240"><span class="linenos" data-linenos="240 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;facebookresearch/dinov2&quot;</span><span class="p">,</span> <span class="s2">&quot;dinov2_vits14_reg&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-241" name="__codelineno-0-241"></a><a href="#__codelineno-0-241"><span class="linenos" data-linenos="241 "></span></a>        <span class="c1"># else: # not currently supported due to dependency issues that it would cause</span>
-<a id="__codelineno-0-242" name="__codelineno-0-242"></a><a href="#__codelineno-0-242"><span class="linenos" data-linenos="242 "></span></a>        <span class="c1">#     self.model = dinov2.models.vision_transformer.vit_small(patch_size=14, num_register_tokens=4)</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243"></a><a href="#__codelineno-0-243"><span class="linenos" data-linenos="243 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">num_features</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
-<a id="__codelineno-0-244" name="__codelineno-0-244"></a><a href="#__codelineno-0-244"><span class="linenos" data-linenos="244 "></span></a>
-<a id="__codelineno-0-245" name="__codelineno-0-245"></a><a href="#__codelineno-0-245"><span class="linenos" data-linenos="245 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<a id="__codelineno-0-246" name="__codelineno-0-246"></a><a href="#__codelineno-0-246"><span class="linenos" data-linenos="246 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass of feature extractor to get feature vector.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-247" name="__codelineno-0-247"></a><a href="#__codelineno-0-247"><span class="linenos" data-linenos="247 "></span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">d_model</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">num_features</span><span class="p">:</span>
-<a id="__codelineno-0-248" name="__codelineno-0-248"></a><a href="#__codelineno-0-248"><span class="linenos" data-linenos="248 "></span></a>            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">img</span><span class="p">))</span>
-<a id="__codelineno-0-249" name="__codelineno-0-249"></a><a href="#__codelineno-0-249"><span class="linenos" data-linenos="249 "></span></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-250" name="__codelineno-0-250"></a><a href="#__codelineno-0-250"><span class="linenos" data-linenos="250 "></span></a>            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-<a id="__codelineno-0-251" name="__codelineno-0-251"></a><a href="#__codelineno-0-251"><span class="linenos" data-linenos="251 "></span></a>        <span class="k">return</span> <span class="n">out</span>
-</code></pre></div>
-              </details>
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="dreem.models.visual_encoder.DINOVisualEncoder.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">use_pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
-
-<a href="#dreem.models.visual_encoder.DINOVisualEncoder.__init__" class="headerlink" title="Permanent link">&para;</a></h4>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Initialize DINO Visual Encoder.</p>
-<p>Always uses pretrained models.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>d_model</code>
-            </td>
-            <td>
-                  <code><span title="int">int</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The dimension of the output feature vector.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>use_pretrained</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Whether to use pretrained models (not supported yet).</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>kwargs</code>
-            </td>
-            <td>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Unused but accepted for compatibility</p>
-              </div>
-            </td>
-            <td>
-                  <code>{}</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-            <details class="quote">
-              <summary>Source code in <code>dreem/models/visual_encoder.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-227" name="__codelineno-0-227"></a><a href="#__codelineno-0-227"><span class="linenos" data-linenos="227 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">use_pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a><a href="#__codelineno-0-228"><span class="linenos" data-linenos="228 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize DINO Visual Encoder.</span>
-<a id="__codelineno-0-229" name="__codelineno-0-229"></a><a href="#__codelineno-0-229"><span class="linenos" data-linenos="229 "></span></a>
-<a id="__codelineno-0-230" name="__codelineno-0-230"></a><a href="#__codelineno-0-230"><span class="linenos" data-linenos="230 "></span></a><span class="sd">    Always uses pretrained models.</span>
-<a id="__codelineno-0-231" name="__codelineno-0-231"></a><a href="#__codelineno-0-231"><span class="linenos" data-linenos="231 "></span></a>
-<a id="__codelineno-0-232" name="__codelineno-0-232"></a><a href="#__codelineno-0-232"><span class="linenos" data-linenos="232 "></span></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233"></a><a href="#__codelineno-0-233"><span class="linenos" data-linenos="233 "></span></a><span class="sd">        d_model: The dimension of the output feature vector.</span>
-<a id="__codelineno-0-234" name="__codelineno-0-234"></a><a href="#__codelineno-0-234"><span class="linenos" data-linenos="234 "></span></a><span class="sd">        use_pretrained: Whether to use pretrained models (not supported yet).</span>
-<a id="__codelineno-0-235" name="__codelineno-0-235"></a><a href="#__codelineno-0-235"><span class="linenos" data-linenos="235 "></span></a><span class="sd">        kwargs: Unused but accepted for compatibility</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236"></a><a href="#__codelineno-0-236"><span class="linenos" data-linenos="236 "></span></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-237" name="__codelineno-0-237"></a><a href="#__codelineno-0-237"><span class="linenos" data-linenos="237 "></span></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<a id="__codelineno-0-238" name="__codelineno-0-238"></a><a href="#__codelineno-0-238"><span class="linenos" data-linenos="238 "></span></a>    <span class="bp">self</span><span class="o">.</span><span class="n">d_model</span> <span class="o">=</span> <span class="n">d_model</span>
-<a id="__codelineno-0-239" name="__codelineno-0-239"></a><a href="#__codelineno-0-239"><span class="linenos" data-linenos="239 "></span></a>    <span class="c1"># the pretrained models use patch_size=14</span>
-<a id="__codelineno-0-240" name="__codelineno-0-240"></a><a href="#__codelineno-0-240"><span class="linenos" data-linenos="240 "></span></a>    <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;facebookresearch/dinov2&quot;</span><span class="p">,</span> <span class="s2">&quot;dinov2_vits14_reg&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-241" name="__codelineno-0-241"></a><a href="#__codelineno-0-241"><span class="linenos" data-linenos="241 "></span></a>    <span class="c1"># else: # not currently supported due to dependency issues that it would cause</span>
-<a id="__codelineno-0-242" name="__codelineno-0-242"></a><a href="#__codelineno-0-242"><span class="linenos" data-linenos="242 "></span></a>    <span class="c1">#     self.model = dinov2.models.vision_transformer.vit_small(patch_size=14, num_register_tokens=4)</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243"></a><a href="#__codelineno-0-243"><span class="linenos" data-linenos="243 "></span></a>    <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">num_features</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
-</code></pre></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="dreem.models.visual_encoder.DINOVisualEncoder.forward" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">forward</span><span class="p">(</span><span class="n">img</span><span class="p">)</span></code>
-
-<a href="#dreem.models.visual_encoder.DINOVisualEncoder.forward" class="headerlink" title="Permanent link">&para;</a></h4>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Forward pass of feature extractor to get feature vector.</p>
-
-
-            <details class="quote">
-              <summary>Source code in <code>dreem/models/visual_encoder.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-245" name="__codelineno-0-245"></a><a href="#__codelineno-0-245"><span class="linenos" data-linenos="245 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<a id="__codelineno-0-246" name="__codelineno-0-246"></a><a href="#__codelineno-0-246"><span class="linenos" data-linenos="246 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Forward pass of feature extractor to get feature vector.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-247" name="__codelineno-0-247"></a><a href="#__codelineno-0-247"><span class="linenos" data-linenos="247 "></span></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">d_model</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">num_features</span><span class="p">:</span>
-<a id="__codelineno-0-248" name="__codelineno-0-248"></a><a href="#__codelineno-0-248"><span class="linenos" data-linenos="248 "></span></a>        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">img</span><span class="p">))</span>
-<a id="__codelineno-0-249" name="__codelineno-0-249"></a><a href="#__codelineno-0-249"><span class="linenos" data-linenos="249 "></span></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-250" name="__codelineno-0-250"></a><a href="#__codelineno-0-250"><span class="linenos" data-linenos="250 "></span></a>        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-<a id="__codelineno-0-251" name="__codelineno-0-251"></a><a href="#__codelineno-0-251"><span class="linenos" data-linenos="251 "></span></a>    <span class="k">return</span> <span class="n">out</span>
-</code></pre></div>
-            </details>
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
 
 <div class="doc doc-object doc-class">
 
@@ -3838,28 +3568,27 @@
 
             <details class="quote">
               <summary>Source code in <code>dreem/models/visual_encoder.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-261" name="__codelineno-0-261"></a><a href="#__codelineno-0-261"><span class="linenos" data-linenos="261 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">create_visual_encoder</span><span class="p">(</span><span class="n">d_model</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">encoder_cfg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
-<a id="__codelineno-0-262" name="__codelineno-0-262"></a><a href="#__codelineno-0-262"><span class="linenos" data-linenos="262 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a visual encoder based on the specified type.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-263" name="__codelineno-0-263"></a><a href="#__codelineno-0-263"><span class="linenos" data-linenos="263 "></span></a>    <span class="n">register_encoder</span><span class="p">(</span><span class="s2">&quot;resnet&quot;</span><span class="p">,</span> <span class="n">VisualEncoder</span><span class="p">)</span>
-<a id="__codelineno-0-264" name="__codelineno-0-264"></a><a href="#__codelineno-0-264"><span class="linenos" data-linenos="264 "></span></a>    <span class="n">register_encoder</span><span class="p">(</span><span class="s2">&quot;descriptor&quot;</span><span class="p">,</span> <span class="n">DescriptorVisualEncoder</span><span class="p">)</span>
-<a id="__codelineno-0-265" name="__codelineno-0-265"></a><a href="#__codelineno-0-265"><span class="linenos" data-linenos="265 "></span></a>    <span class="c1"># register any custom encoders here</span>
-<a id="__codelineno-0-266" name="__codelineno-0-266"></a><a href="#__codelineno-0-266"><span class="linenos" data-linenos="266 "></span></a>    <span class="n">register_encoder</span><span class="p">(</span><span class="s2">&quot;dino&quot;</span><span class="p">,</span> <span class="n">DINOVisualEncoder</span><span class="p">)</span>
-<a id="__codelineno-0-267" name="__codelineno-0-267"></a><a href="#__codelineno-0-267"><span class="linenos" data-linenos="267 "></span></a>
-<a id="__codelineno-0-268" name="__codelineno-0-268"></a><a href="#__codelineno-0-268"><span class="linenos" data-linenos="268 "></span></a>    <span class="c1"># compatibility with configs that don&#39;t specify encoder_type; default to resnet</span>
-<a id="__codelineno-0-269" name="__codelineno-0-269"></a><a href="#__codelineno-0-269"><span class="linenos" data-linenos="269 "></span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">encoder_cfg</span> <span class="ow">or</span> <span class="s2">&quot;encoder_type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">encoder_cfg</span><span class="p">:</span>
-<a id="__codelineno-0-270" name="__codelineno-0-270"></a><a href="#__codelineno-0-270"><span class="linenos" data-linenos="270 "></span></a>        <span class="n">encoder_type</span> <span class="o">=</span> <span class="s2">&quot;resnet&quot;</span>
-<a id="__codelineno-0-271" name="__codelineno-0-271"></a><a href="#__codelineno-0-271"><span class="linenos" data-linenos="271 "></span></a>        <span class="k">return</span> <span class="n">ENCODER_REGISTRY</span><span class="p">[</span><span class="n">encoder_type</span><span class="p">](</span><span class="n">d_model</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span> <span class="o">**</span><span class="n">encoder_cfg</span><span class="p">)</span>
-<a id="__codelineno-0-272" name="__codelineno-0-272"></a><a href="#__codelineno-0-272"><span class="linenos" data-linenos="272 "></span></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-273" name="__codelineno-0-273"></a><a href="#__codelineno-0-273"><span class="linenos" data-linenos="273 "></span></a>        <span class="n">encoder_type</span> <span class="o">=</span> <span class="n">encoder_cfg</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;encoder_type&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-274" name="__codelineno-0-274"></a><a href="#__codelineno-0-274"><span class="linenos" data-linenos="274 "></span></a>
-<a id="__codelineno-0-275" name="__codelineno-0-275"></a><a href="#__codelineno-0-275"><span class="linenos" data-linenos="275 "></span></a>    <span class="k">if</span> <span class="n">encoder_type</span> <span class="ow">in</span> <span class="n">ENCODER_REGISTRY</span><span class="p">:</span>
-<a id="__codelineno-0-276" name="__codelineno-0-276"></a><a href="#__codelineno-0-276"><span class="linenos" data-linenos="276 "></span></a>        <span class="c1"># choose the relevant encoder configs based on the encoder_type</span>
-<a id="__codelineno-0-277" name="__codelineno-0-277"></a><a href="#__codelineno-0-277"><span class="linenos" data-linenos="277 "></span></a>        <span class="n">configs</span> <span class="o">=</span> <span class="n">encoder_cfg</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;encoder_type_args&quot;</span><span class="p">,</span> <span class="p">{})</span>
-<a id="__codelineno-0-278" name="__codelineno-0-278"></a><a href="#__codelineno-0-278"><span class="linenos" data-linenos="278 "></span></a>        <span class="k">return</span> <span class="n">ENCODER_REGISTRY</span><span class="p">[</span><span class="n">encoder_type</span><span class="p">](</span><span class="n">d_model</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span> <span class="o">**</span><span class="n">configs</span><span class="p">)</span>
-<a id="__codelineno-0-279" name="__codelineno-0-279"></a><a href="#__codelineno-0-279"><span class="linenos" data-linenos="279 "></span></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-280" name="__codelineno-0-280"></a><a href="#__codelineno-0-280"><span class="linenos" data-linenos="280 "></span></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-281" name="__codelineno-0-281"></a><a href="#__codelineno-0-281"><span class="linenos" data-linenos="281 "></span></a>            <span class="sa">f</span><span class="s2">&quot;Unknown encoder type: </span><span class="si">{</span><span class="n">encoder_type</span><span class="si">}</span><span class="s2">. Please use one of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ENCODER_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-0-282" name="__codelineno-0-282"></a><a href="#__codelineno-0-282"><span class="linenos" data-linenos="282 "></span></a>        <span class="p">)</span>
+              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-231" name="__codelineno-0-231"></a><a href="#__codelineno-0-231"><span class="linenos" data-linenos="231 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">create_visual_encoder</span><span class="p">(</span><span class="n">d_model</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">encoder_cfg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<a id="__codelineno-0-232" name="__codelineno-0-232"></a><a href="#__codelineno-0-232"><span class="linenos" data-linenos="232 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a visual encoder based on the specified type.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-233" name="__codelineno-0-233"></a><a href="#__codelineno-0-233"><span class="linenos" data-linenos="233 "></span></a>    <span class="n">register_encoder</span><span class="p">(</span><span class="s2">&quot;resnet&quot;</span><span class="p">,</span> <span class="n">VisualEncoder</span><span class="p">)</span>
+<a id="__codelineno-0-234" name="__codelineno-0-234"></a><a href="#__codelineno-0-234"><span class="linenos" data-linenos="234 "></span></a>    <span class="n">register_encoder</span><span class="p">(</span><span class="s2">&quot;descriptor&quot;</span><span class="p">,</span> <span class="n">DescriptorVisualEncoder</span><span class="p">)</span>
+<a id="__codelineno-0-235" name="__codelineno-0-235"></a><a href="#__codelineno-0-235"><span class="linenos" data-linenos="235 "></span></a>    <span class="c1"># register any custom encoders here</span>
+<a id="__codelineno-0-236" name="__codelineno-0-236"></a><a href="#__codelineno-0-236"><span class="linenos" data-linenos="236 "></span></a>
+<a id="__codelineno-0-237" name="__codelineno-0-237"></a><a href="#__codelineno-0-237"><span class="linenos" data-linenos="237 "></span></a>    <span class="c1"># compatibility with configs that don&#39;t specify encoder_type; default to resnet</span>
+<a id="__codelineno-0-238" name="__codelineno-0-238"></a><a href="#__codelineno-0-238"><span class="linenos" data-linenos="238 "></span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">encoder_cfg</span> <span class="ow">or</span> <span class="s2">&quot;encoder_type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">encoder_cfg</span><span class="p">:</span>
+<a id="__codelineno-0-239" name="__codelineno-0-239"></a><a href="#__codelineno-0-239"><span class="linenos" data-linenos="239 "></span></a>        <span class="n">encoder_type</span> <span class="o">=</span> <span class="s2">&quot;resnet&quot;</span>
+<a id="__codelineno-0-240" name="__codelineno-0-240"></a><a href="#__codelineno-0-240"><span class="linenos" data-linenos="240 "></span></a>        <span class="k">return</span> <span class="n">ENCODER_REGISTRY</span><span class="p">[</span><span class="n">encoder_type</span><span class="p">](</span><span class="n">d_model</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span> <span class="o">**</span><span class="n">encoder_cfg</span><span class="p">)</span>
+<a id="__codelineno-0-241" name="__codelineno-0-241"></a><a href="#__codelineno-0-241"><span class="linenos" data-linenos="241 "></span></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-242" name="__codelineno-0-242"></a><a href="#__codelineno-0-242"><span class="linenos" data-linenos="242 "></span></a>        <span class="n">encoder_type</span> <span class="o">=</span> <span class="n">encoder_cfg</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;encoder_type&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-243" name="__codelineno-0-243"></a><a href="#__codelineno-0-243"><span class="linenos" data-linenos="243 "></span></a>
+<a id="__codelineno-0-244" name="__codelineno-0-244"></a><a href="#__codelineno-0-244"><span class="linenos" data-linenos="244 "></span></a>    <span class="k">if</span> <span class="n">encoder_type</span> <span class="ow">in</span> <span class="n">ENCODER_REGISTRY</span><span class="p">:</span>
+<a id="__codelineno-0-245" name="__codelineno-0-245"></a><a href="#__codelineno-0-245"><span class="linenos" data-linenos="245 "></span></a>        <span class="c1"># choose the relevant encoder configs based on the encoder_type</span>
+<a id="__codelineno-0-246" name="__codelineno-0-246"></a><a href="#__codelineno-0-246"><span class="linenos" data-linenos="246 "></span></a>        <span class="n">configs</span> <span class="o">=</span> <span class="n">encoder_cfg</span><span class="p">[</span><span class="n">encoder_type</span><span class="p">]</span>
+<a id="__codelineno-0-247" name="__codelineno-0-247"></a><a href="#__codelineno-0-247"><span class="linenos" data-linenos="247 "></span></a>        <span class="k">return</span> <span class="n">ENCODER_REGISTRY</span><span class="p">[</span><span class="n">encoder_type</span><span class="p">](</span><span class="n">d_model</span><span class="o">=</span><span class="n">d_model</span><span class="p">,</span> <span class="o">**</span><span class="n">configs</span><span class="p">)</span>
+<a id="__codelineno-0-248" name="__codelineno-0-248"></a><a href="#__codelineno-0-248"><span class="linenos" data-linenos="248 "></span></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-249" name="__codelineno-0-249"></a><a href="#__codelineno-0-249"><span class="linenos" data-linenos="249 "></span></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-250" name="__codelineno-0-250"></a><a href="#__codelineno-0-250"><span class="linenos" data-linenos="250 "></span></a>            <span class="sa">f</span><span class="s2">&quot;Unknown encoder type: </span><span class="si">{</span><span class="n">encoder_type</span><span class="si">}</span><span class="s2">. Please use one of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ENCODER_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-251" name="__codelineno-0-251"></a><a href="#__codelineno-0-251"><span class="linenos" data-linenos="251 "></span></a>        <span class="p">)</span>
 </code></pre></div>
             </details>
     </div>
@@ -3882,11 +3611,11 @@
 
             <details class="quote">
               <summary>Source code in <code>dreem/models/visual_encoder.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-254" name="__codelineno-0-254"></a><a href="#__codelineno-0-254"><span class="linenos" data-linenos="254 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">register_encoder</span><span class="p">(</span><span class="n">encoder_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">encoder_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]):</span>
-<a id="__codelineno-0-255" name="__codelineno-0-255"></a><a href="#__codelineno-0-255"><span class="linenos" data-linenos="255 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Register a new encoder type.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-256" name="__codelineno-0-256"></a><a href="#__codelineno-0-256"><span class="linenos" data-linenos="256 "></span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">encoder_class</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<a id="__codelineno-0-257" name="__codelineno-0-257"></a><a href="#__codelineno-0-257"><span class="linenos" data-linenos="257 "></span></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">encoder_class</span><span class="si">}</span><span class="s2"> must be a subclass of torch.nn.Module&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-258" name="__codelineno-0-258"></a><a href="#__codelineno-0-258"><span class="linenos" data-linenos="258 "></span></a>    <span class="n">ENCODER_REGISTRY</span><span class="p">[</span><span class="n">encoder_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">encoder_class</span>
+              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-224" name="__codelineno-0-224"></a><a href="#__codelineno-0-224"><span class="linenos" data-linenos="224 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">register_encoder</span><span class="p">(</span><span class="n">encoder_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">encoder_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]):</span>
+<a id="__codelineno-0-225" name="__codelineno-0-225"></a><a href="#__codelineno-0-225"><span class="linenos" data-linenos="225 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Register a new encoder type.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-226" name="__codelineno-0-226"></a><a href="#__codelineno-0-226"><span class="linenos" data-linenos="226 "></span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">encoder_class</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<a id="__codelineno-0-227" name="__codelineno-0-227"></a><a href="#__codelineno-0-227"><span class="linenos" data-linenos="227 "></span></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">encoder_class</span><span class="si">}</span><span class="s2"> must be a subclass of torch.nn.Module&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-228" name="__codelineno-0-228"></a><a href="#__codelineno-0-228"><span class="linenos" data-linenos="228 "></span></a>    <span class="n">ENCODER_REGISTRY</span><span class="p">[</span><span class="n">encoder_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">encoder_class</span>
 </code></pre></div>
             </details>
     </div>
