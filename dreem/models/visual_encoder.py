@@ -221,6 +221,36 @@ class DescriptorVisualEncoder(torch.nn.Module):
         return torch.stack(descriptors)
 
 
+class DINOVisualEncoder(torch.nn.Module):
+    """Visual Encoder based on DINO."""
+
+    def __init__(self, d_model: int, use_pretrained: bool = True, **kwargs):
+        """Initialize DINO Visual Encoder.
+
+        Always uses pretrained models.
+
+        Args:
+            d_model: The dimension of the output feature vector.
+            use_pretrained: Whether to use pretrained models (not supported yet).
+            kwargs: Unused but accepted for compatibility
+        """
+        super().__init__()
+        self.d_model = d_model
+        # the pretrained models use patch_size=14
+        self.model = torch.hub.load("facebookresearch/dinov2", "dinov2_vits14_reg")
+        # else: # not currently supported due to dependency issues that it would cause
+        #     self.model = dinov2.models.vision_transformer.vit_small(patch_size=14, num_register_tokens=4)
+        self.mlp = torch.nn.Linear(self.model.num_features, d_model)
+
+    def forward(self, img: torch.Tensor) -> torch.Tensor:
+        """Forward pass of feature extractor to get feature vector."""
+        if self.d_model != self.model.num_features:
+            out = self.mlp(self.model(img))
+        else:
+            out = self.model(img)
+        return out
+
+
 def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
     """Register a new encoder type."""
     if not issubclass(encoder_class, torch.nn.Module):
@@ -233,6 +263,7 @@ def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
     register_encoder("resnet", VisualEncoder)
     register_encoder("descriptor", DescriptorVisualEncoder)
     # register any custom encoders here
+    register_encoder("dino", DINOVisualEncoder)
 
     # compatibility with configs that don't specify encoder_type; default to resnet
     if not encoder_cfg or "encoder_type" not in encoder_cfg:
@@ -243,7 +274,7 @@ def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
 
     if encoder_type in ENCODER_REGISTRY:
         # choose the relevant encoder configs based on the encoder_type
-        configs = encoder_cfg[encoder_type]
+        configs = encoder_cfg.pop("encoder_type_args", {})
         return ENCODER_REGISTRY[encoder_type](d_model=d_model, **configs)
     else:
         raise ValueError(

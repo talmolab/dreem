@@ -156,6 +156,11 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
 
     logging.getLogger().setLevel(level=cfg.get("log_level", "INFO").upper())
 
+    if not checkpoint:
+        raise ValueError(
+            "Model checkpoint not found. Please provide a valid checkpoint path."
+        )
+
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     tracker_cfg = pred_cfg.get_tracker_cfg()
     logger.info("Updating tracker hparams")

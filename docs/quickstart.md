@@ -63,7 +63,13 @@ Your directory structure should look like this:
 Tracking is easy to run using the CLI. Simply specify the path to the directory containing ```inference.yaml``` and the path to the model checkpoint.
 
 ```bash
-dreem-track --config-dir=./data/sample-flies/configs --config-name=inference ckpt_path=./models/animals-pretrained.ckpt
+dreem-track --config-dir=./data/configs --config-name=inference ckpt_path=./models/animals-pretrained.ckpt
+```
+If you want to evaluate the tracking accuracy, you can use the `dreem-eval` command, a drop-in replacement for `dreem-track` that outputs evaluation metrics and a detailed frame-by-frame multi-object tracking event log.
+You can use it with this command. Note the different eval config file; this is only for illustrative purposes, to specify a test dataset path that has ground truth labels.
+
+ ```bash
+dreem-eval --config-dir=./data/configs --config-name=eval ckpt_path=./models/animals-pretrained.ckpt
 ```
 
 Once completed, it should output a file in a new `results` folder called `GT_190719_090330_wt_18159206_rig1.2@15000-17560.<timestamp>dreem_inference.slp`
@@ -72,8 +78,9 @@ Once completed, it should output a file in a new `results` folder called `GT_190
 First, we recommend visualizing the outputs of the tracks you just made. You can do so by first installing sleap via [its installation guide](https://sleap.ai/#quick-install) and then running
 
 ```bash
-sleap-label eval/GT_190719_090330_wt_18159206_rig1.2@15000-17560.dreem_inference.slp
+sleap-label results/GT_190719_090330_wt_18159206_rig1.2@15000-17560.<timestamp>dreem_inference.slp
 ```
+Note that the sleap-label command opens the SLEAP GUI which may not render on a remote server. 
 
 ### Check out the example notebooks
 Once you're ready to dive deeper, head over to the Examples section and check out the notebooks there. Go through the end-to-end demo 
