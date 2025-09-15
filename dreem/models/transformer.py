@@ -232,7 +232,7 @@ class Transformer(torch.nn.Module):
             )
 
         encoder_features = self.encoder(
-            encoder_queries, pos_emb=ref_emb, ref_boxes=ref_boxes
+            encoder_queries, temp_emb=ref_emb, ref_boxes=ref_boxes, query_boxes=ref_boxes
         )  # (total_instances, batch_size, embed_dim)
 
         n_query = total_instances
@@ -267,6 +267,7 @@ class Transformer(torch.nn.Module):
         else:
             query_instances = ref_instances
             query_times = ref_times
+            query_boxes = ref_boxes
 
         if self.return_embedding:
             for i, instance in enumerate(query_instances):
@@ -295,8 +296,10 @@ class Transformer(torch.nn.Module):
         decoder_features = self.decoder(
             query_features,
             encoder_features,
-            ref_pos_emb=ref_emb,
-            query_pos_emb=query_emb,
+            ref_temp_emb=ref_emb,
+            query_temp_emb=query_emb,
+            ref_boxes=ref_boxes,
+            query_boxes=query_boxes,
         )  # (L, n_query, batch_size, embed_dim)
 
         decoder_features = decoder_features.transpose(
@@ -337,17 +340,24 @@ class RelPosAttention(nn.Module):
         self.head_dim = dim // num_heads
         self.scale = self.head_dim ** -0.5
 
-        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.q_proj = nn.Linear(dim, dim, bias=qkv_bias)
+        self.k_proj = nn.Linear(dim, dim, bias=qkv_bias)
+        self.v_proj = nn.Linear(dim, dim, bias=qkv_bias)
         self.q_norm = norm_layer(self.head_dim) if qk_norm else nn.Identity()
         self.k_norm = norm_layer(self.head_dim) if qk_norm else nn.Identity()
-        self.rel_pos = rel_pos_cls(num_heads=num_heads) if rel_pos_cls else None
+        self.rel_pos = rel_pos_cls if rel_pos_cls else None
         self.attn_drop = nn.Dropout(attn_drop)
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
-    def forward(self, x, ref_boxes, query_boxes):
-        B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
+    def forward(self, q,k,v, ref_boxes, query_boxes):
+        # assumes input is (n_query, batch_size, embed_dim)
+        N, B, _ = q.shape
+        q = self.q_proj(q)
+        k = self.k_proj(k)
+        v = self.v_proj(v)
+        qkv = torch.cat([q, k, v], dim=-1)
+        qkv = qkv.reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
         q, k, v = qkv.unbind(0)
         q = self.q_norm(q)
         k = self.k_norm(k)
@@ -362,7 +372,8 @@ class RelPosAttention(nn.Module):
         attn = self.attn_drop(attn)
         x = attn @ v
 
-        x = x.transpose(1, 2).reshape(B, N, C)
+        # x = x.transpose(1, 2).reshape(B, N, -1) # only supports single head for now
+        x = x.squeeze()
         x = self.proj(x)
         x = self.proj_drop(x)
         return x
@@ -373,9 +384,7 @@ class EuclDistanceBias(nn.Module):
         super().__init__()
         assert n_heads == 1, "Euclidean distance bias in the attention module is only supported for 1 attention head"
 
-    def get_bias(self, ref_boxes, query_boxes = None) -> torch.Tensor:
-        if query_boxes is None:
-            query_boxes = ref_boxes
+    def get_bias(self, ref_boxes, query_boxes) -> torch.Tensor:
         ref_boxes = ref_boxes.squeeze()
         query_boxes = query_boxes.squeeze()
         query_centroids = (query_boxes[:,:2] + query_boxes[:,2:]) / 2
@@ -446,7 +455,7 @@ class TransformerEncoderLayer(nn.Module):
         super().__init__()
         self.attn_bias = EuclDistanceBias(nhead)
         # self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
-        self.self_attn = RelPosAttention(d_model, nhead, dropout, dropout, self.attn_bias)
+        self.biased_self_attn = RelPosAttention(d_model, nhead, dropout, dropout, self.attn_bias)
         self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
         self.linear2 = nn.Linear(dim_feedforward, d_model)
@@ -460,14 +469,15 @@ class TransformerEncoderLayer(nn.Module):
         self.activation = _get_activation_fn(activation)
 
     def forward(
-        self, queries: torch.Tensor, temp_emb: torch.Tensor = None, ref_boxes: torch.Tensor = None
+        self, queries: torch.Tensor, temp_emb: torch.Tensor = None, ref_boxes: torch.Tensor = None, query_boxes: torch.Tensor = None
     ) -> torch.Tensor:
         """Execute a forward pass of the encoder layer.
 
         Args:
             queries: Input sequence for encoder (n_query, batch_size, embed_dim).
             temp_emb: Temporal embedding, if provided is added to queries
-
+            ref_boxes: The input boxes tensor of shape (total_instances, batch_size, 4).
+            query_boxes: The target boxes tensor of shape (n_query, batch_size, 4).
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
@@ -476,10 +486,12 @@ class TransformerEncoderLayer(nn.Module):
 
         queries = queries + temp_emb # these are now just temporal embeddings
 
-        attn_features = self.self_attn(
-            queries, # in this attn implementation, a single mlp projects Q,K,V
+        attn_features = self.biased_self_attn(
+            q=queries,
+            k=queries,
+            v=queries,
             ref_boxes=ref_boxes,
-            query_boxes=None # in the encoder, there are no separate query boxes
+            query_boxes=query_boxes
         )[0]
 
         queries = queries + self.dropout1(attn_features)
@@ -519,12 +531,14 @@ class TransformerDecoderLayer(nn.Module):
 
         self.decoder_self_attn = decoder_self_attn
 
-        self.multihead_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
+        self.attn_bias = EuclDistanceBias(nhead)
+        self.biased_cross_attn = RelPosAttention(d_model, nhead, dropout, dropout, self.attn_bias)
+        # self.multihead_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
         self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
         self.linear2 = nn.Linear(dim_feedforward, d_model)
 
-        if self.decoder_self_attn:
+        if self.decoder_self_attn: # don't add bias to decoder self attn since only query instances in current frame are considered
             self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
 
         self.norm1 = nn.LayerNorm(d_model) if norm else nn.Identity()
@@ -541,8 +555,10 @@ class TransformerDecoderLayer(nn.Module):
         self,
         decoder_queries: torch.Tensor,
         encoder_features: torch.Tensor,
-        ref_pos_emb: torch.Tensor | None = None,
-        query_pos_emb: torch.Tensor | None = None,
+        ref_temp_emb: torch.Tensor | None = None,
+        query_temp_emb: torch.Tensor | None = None,
+        ref_boxes: torch.Tensor = None,
+        query_boxes: torch.Tensor = None,
     ) -> torch.Tensor:
         """Execute forward pass of decoder layer.
 
@@ -550,19 +566,21 @@ class TransformerDecoderLayer(nn.Module):
             decoder_queries: Target sequence for decoder to generate (n_query, batch_size, embed_dim).
             encoder_features: Output from encoder, that decoder uses to attend to relevant
                 parts of input sequence (total_instances, batch_size, embed_dim)
-            ref_pos_emb: The input positional embedding tensor of shape (n_query, embed_dim).
-            query_pos_emb: The target positional embedding of shape (n_query, embed_dim)
+            ref_temp_emb: The input temporal embedding tensor of shape (n_query, embed_dim).
+            query_temp_emb: The target temporal embedding of shape (n_query, embed_dim)
+            ref_boxes: The input boxes tensor of shape (total_instances, batch_size, 4).
+            query_boxes: The target boxes tensor of shape (n_query, batch_size, 4).
 
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
-        if query_pos_emb is None:
-            query_pos_emb = torch.zeros_like(decoder_queries)
-        if ref_pos_emb is None:
-            ref_pos_emb = torch.zeros_like(encoder_features)
+        if query_temp_emb is None:
+            query_temp_emb = torch.zeros_like(decoder_queries)
+        if ref_temp_emb is None:
+            ref_temp_emb = torch.zeros_like(encoder_features)
 
-        decoder_queries = decoder_queries + query_pos_emb
-        encoder_features = encoder_features + ref_pos_emb
+        decoder_queries = decoder_queries + query_temp_emb # note these are only temporal embeddings now
+        encoder_features = encoder_features + ref_temp_emb
 
         if self.decoder_self_attn:
             self_attn_features = self.self_attn(
@@ -571,10 +589,18 @@ class TransformerDecoderLayer(nn.Module):
             decoder_queries = decoder_queries + self.dropout1(self_attn_features)
             decoder_queries = self.norm1(decoder_queries)
 
-        x_attn_features = self.multihead_attn(
-            query=decoder_queries,  # (n_query, batch_size, embed_dim)
-            key=encoder_features,  # (total_instances, batch_size, embed_dim)
-            value=encoder_features,  # (total_instances, batch_size, embed_dim)
+        # x_attn_features = self.biased_cross_attn(
+        #     query=decoder_queries,  # (n_query, batch_size, embed_dim)
+        #     key=encoder_features,  # (total_instances, batch_size, embed_dim)
+        #     value=encoder_features,  # (total_instances, batch_size, embed_dim)
+        # )[0]  # (n_query, batch_size, embed_dim)
+
+        x_attn_features = self.biased_cross_attn(
+            q=decoder_queries,  # (n_query, batch_size, embed_dim)
+            k=encoder_features,  # (total_instances, batch_size, embed_dim)
+            v=encoder_features,  # (total_instances, batch_size, embed_dim)
+            ref_boxes=ref_boxes,
+            query_boxes=query_boxes,
         )[0]  # (n_query, batch_size, embed_dim)
 
         decoder_queries = decoder_queries + self.dropout2(
@@ -617,19 +643,20 @@ class TransformerEncoder(nn.Module):
         self.norm = norm if norm is not None else nn.Identity()
 
     def forward(
-        self, queries: torch.Tensor, temp_emb: torch.Tensor = None, ref_boxes: torch.Tensor = None
+        self, queries: torch.Tensor, temp_emb: torch.Tensor = None, ref_boxes: torch.Tensor = None, query_boxes: torch.Tensor = None
     ) -> torch.Tensor:
         """Execute a forward pass of encoder layer.
 
         Args:
             queries: The input tensor of shape (n_query, batch_size, embed_dim).
             temp_emb: The temporal embedding tensor of shape (n_query, embed_dim).
-
+            ref_boxes: The input boxes tensor of shape (total_instances, batch_size, 4).
+            query_boxes: The target boxes tensor of shape (n_query, batch_size, 4).
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
         for layer in self.layers:
-            queries = layer(queries, temp_emb=temp_emb, ref_boxes=ref_boxes)
+            queries = layer(queries, temp_emb=temp_emb, ref_boxes=ref_boxes, query_boxes=query_boxes)
 
         encoder_features = self.norm(queries)
         return encoder_features
@@ -663,8 +690,10 @@ class TransformerDecoder(nn.Module):
         self,
         decoder_queries: torch.Tensor,
         encoder_features: torch.Tensor,
-        ref_pos_emb: torch.Tensor | None = None,
-        query_pos_emb: torch.Tensor | None = None,
+        ref_temp_emb: torch.Tensor | None = None,
+        query_temp_emb: torch.Tensor | None = None,
+        ref_boxes: torch.Tensor = None,
+        query_boxes: torch.Tensor = None,
     ) -> torch.Tensor:
         """Execute a forward pass of the decoder block.
 
@@ -672,8 +701,10 @@ class TransformerDecoder(nn.Module):
             decoder_queries: Query sequence for decoder to generate (n_query, batch_size, embed_dim).
             encoder_features: Output from encoder, that decoder uses to attend to relevant
                 parts of input sequence (total_instances, batch_size, embed_dim)
-            ref_pos_emb: The input positional embedding tensor of shape (total_instances, batch_size, embed_dim).
-            query_pos_emb: The query positional embedding of shape (n_query, batch_size, embed_dim)
+            ref_temp_emb: The input temporal embedding tensor of shape (total_instances, batch_size, embed_dim).
+            query_temp_emb: The query temporal embedding of shape (n_query, batch_size, embed_dim)
+            ref_boxes: The input boxes tensor of shape (total_instances, batch_size, 4).
+            query_boxes: The target boxes tensor of shape (n_query, batch_size, 4).
 
         Returns:
             The output tensor of shape (L, n_query, batch_size, embed_dim).
@@ -686,8 +717,10 @@ class TransformerDecoder(nn.Module):
             decoder_features = layer(
                 decoder_features,
                 encoder_features,
-                ref_pos_emb=ref_pos_emb,
-                query_pos_emb=query_pos_emb,
+                ref_temp_emb=ref_temp_emb,
+                query_temp_emb=query_temp_emb,
+                ref_boxes=ref_boxes,
+                query_boxes=query_boxes,
             )
             if self.return_intermediate:
                 intermediate.append(self.norm(decoder_features))
