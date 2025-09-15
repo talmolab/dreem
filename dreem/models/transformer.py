@@ -197,7 +197,8 @@ class Transformer(torch.nn.Module):
                 instance.add_embedding("pos", ref_pos_emb[i])
                 instance.add_embedding("temp", ref_temp_emb[i])
 
-        ref_emb = (ref_pos_emb + ref_temp_emb) / 2.0
+        # ref_emb = (ref_pos_emb + ref_temp_emb) / 2.0
+        ref_emb = ref_temp_emb
 
         ref_emb = ref_emb.view(1, total_instances, embed_dim)
 
@@ -231,7 +232,7 @@ class Transformer(torch.nn.Module):
             )
 
         encoder_features = self.encoder(
-            encoder_queries, pos_emb=ref_emb
+            encoder_queries, pos_emb=ref_emb, ref_boxes=ref_boxes
         )  # (total_instances, batch_size, embed_dim)
 
         n_query = total_instances
@@ -241,7 +242,7 @@ class Transformer(torch.nn.Module):
         query_temp_emb = ref_temp_emb
         query_emb = ref_emb
 
-        if query_instances is not None:
+        if query_instances is not None: # only during inference
             n_query = len(query_instances)
 
             query_features = torch.cat(
@@ -258,7 +259,8 @@ class Transformer(torch.nn.Module):
 
             query_pos_emb = self.pos_emb(query_boxes)
 
-            query_emb = (query_pos_emb + query_temp_emb) / 2.0
+            # query_emb = (query_pos_emb + query_temp_emb) / 2.0
+            query_emb = query_temp_emb
             query_emb = query_emb.view(1, n_query, embed_dim)
             query_emb = query_emb.permute(1, 0, 2)  # (n_query, batch_size, embed_dim)
 
@@ -316,6 +318,78 @@ class Transformer(torch.nn.Module):
         # (L=1, n_query, total_instances)
         return asso_output
 
+class RelPosAttention(nn.Module):
+    """Adapted from https://github.com/huggingface/pytorch-image-models/blob/main/timm/models/vision_transformer_relpos.py."""
+    def __init__(
+            self,
+            dim: int,
+            num_heads: int,
+            attn_drop: float,
+            proj_drop: float,
+            rel_pos_cls: nn.Module,
+            qkv_bias=False,
+            qk_norm=False,
+            norm_layer=nn.LayerNorm,
+    ):
+        super().__init__()
+        assert dim % num_heads == 0, 'dim should be divisible by num_heads'
+        self.num_heads = num_heads
+        self.head_dim = dim // num_heads
+        self.scale = self.head_dim ** -0.5
+
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.q_norm = norm_layer(self.head_dim) if qk_norm else nn.Identity()
+        self.k_norm = norm_layer(self.head_dim) if qk_norm else nn.Identity()
+        self.rel_pos = rel_pos_cls(num_heads=num_heads) if rel_pos_cls else None
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+
+    def forward(self, x, ref_boxes, query_boxes):
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv.unbind(0)
+        q = self.q_norm(q)
+        k = self.k_norm(k)
+
+        # attention
+        q = q * self.scale
+        attn = q @ k.transpose(-2, -1)
+        if self.rel_pos is not None:
+            attn = self.rel_pos(attn, ref_boxes, query_boxes)
+        attn = attn.softmax(dim=-1)
+        # TODO: which one of attn drop and proj drop does pytorch MultiHeadAttention use? Discard the other one.
+        attn = self.attn_drop(attn)
+        x = attn @ v
+
+        x = x.transpose(1, 2).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.proj_drop(x)
+        return x
+
+class EuclDistanceBias(nn.Module):
+    """Relative position bias."""
+    def __init__(self, n_heads: int):
+        super().__init__()
+        assert n_heads == 1, "Euclidean distance bias in the attention module is only supported for 1 attention head"
+
+    def get_bias(self, ref_boxes, query_boxes = None) -> torch.Tensor:
+        if query_boxes is None:
+            query_boxes = ref_boxes
+        ref_boxes = ref_boxes.squeeze()
+        query_boxes = query_boxes.squeeze()
+        query_centroids = (query_boxes[:,:2] + query_boxes[:,2:]) / 2
+        ref_centroids = (ref_boxes[:,:2] + ref_boxes[:,2:]) / 2
+        # (n_query, n_ref)
+        eucl_dist = torch.cdist(query_centroids, ref_centroids, p=2)
+        # need (B, n_head, n_query, n_ref)
+        return eucl_dist.unsqueeze(0).unsqueeze(0)
+
+    def forward(self, attn, ref_boxes, query_boxes):
+        bias = self.get_bias(ref_boxes, query_boxes)
+        return attn + bias
+        
+        
 
 def apply_fourier_embeddings(
     queries: torch.Tensor,
@@ -370,7 +444,9 @@ class TransformerEncoderLayer(nn.Module):
             norm: If True, normalize output of encoder.
         """
         super().__init__()
-        self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
+        self.attn_bias = EuclDistanceBias(nhead)
+        # self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
+        self.self_attn = RelPosAttention(d_model, nhead, dropout, dropout, self.attn_bias)
         self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
         self.linear2 = nn.Linear(dim_feedforward, d_model)
@@ -384,28 +460,26 @@ class TransformerEncoderLayer(nn.Module):
         self.activation = _get_activation_fn(activation)
 
     def forward(
-        self, queries: torch.Tensor, pos_emb: torch.Tensor = None
+        self, queries: torch.Tensor, temp_emb: torch.Tensor = None, ref_boxes: torch.Tensor = None
     ) -> torch.Tensor:
         """Execute a forward pass of the encoder layer.
 
         Args:
             queries: Input sequence for encoder (n_query, batch_size, embed_dim).
-            pos_emb: Position embedding, if provided is added to src
+            temp_emb: Temporal embedding, if provided is added to queries
 
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
-        if pos_emb is None:
-            pos_emb = torch.zeros_like(queries)
+        if temp_emb is None:
+            temp_emb = torch.zeros_like(queries)
 
-        queries = queries + pos_emb
-
-        # q = k = src
+        queries = queries + temp_emb # these are now just temporal embeddings
 
         attn_features = self.self_attn(
-            query=queries,
-            key=queries,
-            value=queries,
+            queries, # in this attn implementation, a single mlp projects Q,K,V
+            ref_boxes=ref_boxes,
+            query_boxes=None # in the encoder, there are no separate query boxes
         )[0]
 
         queries = queries + self.dropout1(attn_features)
@@ -543,19 +617,19 @@ class TransformerEncoder(nn.Module):
         self.norm = norm if norm is not None else nn.Identity()
 
     def forward(
-        self, queries: torch.Tensor, pos_emb: torch.Tensor = None
+        self, queries: torch.Tensor, temp_emb: torch.Tensor = None, ref_boxes: torch.Tensor = None
     ) -> torch.Tensor:
         """Execute a forward pass of encoder layer.
 
         Args:
             queries: The input tensor of shape (n_query, batch_size, embed_dim).
-            pos_emb: The positional embedding tensor of shape (n_query, embed_dim).
+            temp_emb: The temporal embedding tensor of shape (n_query, embed_dim).
 
         Returns:
             The output tensor of shape (n_query, batch_size, embed_dim).
         """
         for layer in self.layers:
-            queries = layer(queries, pos_emb=pos_emb)
+            queries = layer(queries, temp_emb=temp_emb, ref_boxes=ref_boxes)
 
         encoder_features = self.norm(queries)
         return encoder_features

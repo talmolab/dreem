@@ -149,7 +149,7 @@ def filter_max_center_dist(
 
         k_ct = (query_boxes_px[:, :, :2] + query_boxes_px[:, :, 2:]) / 2
         # k_s = ((curr_frame_boxes[:, :, 2:] - curr_frame_boxes[:, :, :2]) ** 2).sum(dim=2)  # n_k
-        # nonk boxes are only from previous frame rather than entire window
+        # nonk boxes are the instances from the entire context window minus the current frame
         nonk_ct = (nonquery_boxes_px[:, :, :2] + nonquery_boxes_px[:, :, 2:]) / 2
 
         # pairwise euclidean distance in units of pixels
