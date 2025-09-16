@@ -224,7 +224,7 @@ class DescriptorVisualEncoder(torch.nn.Module):
 class DINOVisualEncoder(torch.nn.Module):
     """Visual Encoder based on DINO."""
 
-    def __init__(self, d_model: int, use_pretrained: bool = True, **kwargs):
+    def __init__(self, d_model: int, use_pretrained: bool = True, crop_size: int | None = None, **kwargs):
         """Initialize DINO Visual Encoder.
 
         Always uses pretrained models.
@@ -235,19 +235,30 @@ class DINOVisualEncoder(torch.nn.Module):
             kwargs: Unused but accepted for compatibility
         """
         super().__init__()
+        self.crop_size = crop_size
+        assert self.crop_size is not None, "Crop size must be provided for DINO Visual Encoder"
         self.d_model = d_model
         # the pretrained models use patch_size=14
-        self.model = torch.hub.load("facebookresearch/dinov2", "dinov2_vits14_reg")
+        # self.model = torch.hub.load("facebookresearch/dinov2", "dinov2_vits14_reg")
+        self.model = torch.hub.load("/root/vast/mustafa/dinov3", 'dinov3_vith16plus', source='local', weights="/root/vast/mustafa/dinov3-model/dinov3_vith16plus_pretrain_lvd1689m-7c1da9a5.pth")
+        self.model.eval()
         # else: # not currently supported due to dependency issues that it would cause
         #     self.model = dinov2.models.vision_transformer.vit_small(patch_size=14, num_register_tokens=4)
-        self.mlp = torch.nn.Linear(self.model.num_features, d_model)
+        for param in self.model.parameters():
+            param.requires_grad = False
+        # else: # not currently supported due to dependency issues that it would cause
+        #     self.model = dinov2.models.vision_transformer.vit_small(patch_size=14, num_register_tokens=4)
+        # self.mlp = torch.nn.Linear(self.model.num_features, d_model)
+        PATCH_SIZE = 16
+        assert self.crop_size % PATCH_SIZE == 0, "Crop size must be divisible by patch size for DINO Visual Encoder"
+        self.mlp = torch.nn.Conv2d(in_channels=self.model.num_features, out_channels=d_model, kernel_size=self.crop_size // PATCH_SIZE, stride=PATCH_SIZE)
 
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector."""
-        if self.d_model != self.model.num_features:
-            out = self.mlp(self.model(img))
-        else:
-            out = self.model(img)
+        dense_map = self.model.get_intermediate_layers(img, n=1, reshape=True)[0]
+        out = self.mlp(dense_map).squeeze()
+        if out.shape[0] == self.model.num_features:
+            out = out.unsqueeze(0)
         return out
 
 
@@ -258,7 +269,7 @@ def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
     ENCODER_REGISTRY[encoder_type] = encoder_class
 
 
-def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
+def create_visual_encoder(d_model: int, crop_size: int | None = None, **encoder_cfg) -> torch.nn.Module:
     """Create a visual encoder based on the specified type."""
     register_encoder("resnet", VisualEncoder)
     register_encoder("descriptor", DescriptorVisualEncoder)
@@ -268,14 +279,14 @@ def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
     # compatibility with configs that don't specify encoder_type; default to resnet
     if not encoder_cfg or "encoder_type" not in encoder_cfg:
         encoder_type = "resnet"
-        return ENCODER_REGISTRY[encoder_type](d_model=d_model, **encoder_cfg)
+        return ENCODER_REGISTRY[encoder_type](d_model=d_model, crop_size=crop_size, **encoder_cfg)
     else:
         encoder_type = encoder_cfg.pop("encoder_type")
 
     if encoder_type in ENCODER_REGISTRY:
         # choose the relevant encoder configs based on the encoder_type
         configs = encoder_cfg.pop("encoder_type_args", {})
-        return ENCODER_REGISTRY[encoder_type](d_model=d_model, **configs)
+        return ENCODER_REGISTRY[encoder_type](d_model=d_model, crop_size=crop_size, **configs)
     else:
         raise ValueError(
             f"Unknown encoder type: {encoder_type}. Please use one of {list(ENCODER_REGISTRY.keys())}"

@@ -78,7 +78,7 @@ class GTRRunner(LightningModule):
         self.loss_cfg = loss_cfg if loss_cfg else {}
         self.tracker_cfg = tracker_cfg if tracker_cfg else {}
 
-        self.model = GlobalTrackingTransformer(**self.model_cfg)
+        self.model = GlobalTrackingTransformer(**self.model_cfg) # includes crop size
         self.loss = AssoLoss(**self.loss_cfg)
         if self.tracker_cfg.get("tracker_type", "standard") == "batch":
             from dreem.inference.batch_tracker import BatchTracker

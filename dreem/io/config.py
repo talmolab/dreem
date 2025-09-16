@@ -149,7 +149,7 @@ class Config:
         """
         from dreem.models import GTRRunner
 
-        keys = ["tracker", "optimizer", "scheduler", "loss", "runner", "model"]
+        keys = ["tracker", "optimizer", "scheduler", "loss", "runner", "model", "dataset"]
         args = [key + "_cfg" if key != "runner" else key for key in keys]
 
         params = {}
@@ -165,6 +165,12 @@ class Config:
                 runner_params = sub_params
                 for k, v in runner_params.items():
                     params[k] = v
+            elif key == "dataset":
+                dataset_params = sub_params
+                for _, v in dataset_params.items():
+                    for k2, v2 in v.items():
+                        if k2 == "crop_size":
+                            params["model_cfg"]["crop_size"] = v2
             else:
                 params[arg] = sub_params
 
