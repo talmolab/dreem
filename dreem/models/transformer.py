@@ -350,15 +350,20 @@ class RelPosAttention(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
+        self.bias_weight = AttentionBiasWeight(dim, num_heads)
+
     def forward(self, q,k,v, ref_boxes, query_boxes):
         # assumes input is (n_query, batch_size, embed_dim)
-        N, B, _ = q.shape
-        q = self.q_proj(q)
-        k = self.k_proj(k)
-        v = self.v_proj(v)
-        qkv = torch.cat([q, k, v], dim=-1)
-        qkv = qkv.reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
-        q, k, v = qkv.unbind(0)
+        global_feature_variance = torch.var(q, dim=0) # (batch_size, embed_dim)
+        bias_weight = self.bias_weight(global_feature_variance)
+            
+        N_q, B, _ = q.shape
+        N_k, _, _ = k.shape
+        q,k,v = q.permute(1,0,2), k.permute(1,0,2), v.permute(1,0,2) # (batch_size, n_query, embed_dim)
+        q = self.q_proj(q).reshape(B,N_q,self.num_heads, self.head_dim).permute(0,2,1,3) # (B, N, num_heads, head_dim)
+        k = self.k_proj(k).reshape(B,N_k,self.num_heads, self.head_dim).permute(0,2,1,3) # (B, N, num_heads, head_dim)
+        v = self.v_proj(v).reshape(B,N_k,self.num_heads, self.head_dim).permute(0,2,1,3) # (B, N, num_heads, head_dim)
+
         q = self.q_norm(q)
         k = self.k_norm(k)
 
@@ -366,7 +371,7 @@ class RelPosAttention(nn.Module):
         q = q * self.scale
         attn = q @ k.transpose(-2, -1)
         if self.rel_pos is not None:
-            attn = self.rel_pos(attn, ref_boxes, query_boxes)
+            attn = self.rel_pos(attn, ref_boxes, query_boxes, bias_weight)
         attn = attn.softmax(dim=-1)
         # TODO: which one of attn drop and proj drop does pytorch MultiHeadAttention use? Discard the other one.
         attn = self.attn_drop(attn)
@@ -394,11 +399,24 @@ class EuclDistanceBias(nn.Module):
         # need (B, n_head, n_query, n_ref)
         return eucl_dist.unsqueeze(0).unsqueeze(0)
 
-    def forward(self, attn, ref_boxes, query_boxes):
+    def forward(self, attn, ref_boxes, query_boxes, bias_weight: torch.Tensor):
         bias = self.get_bias(ref_boxes, query_boxes)
-        return attn + bias
+        return attn + bias * bias_weight
         
-        
+
+class AttentionBiasWeight(nn.Module):
+    def __init__(self, d_model: int, n_heads: int):
+        super().__init__()
+        self.mlp = nn.Sequential(
+            nn.Linear(d_model, 2*d_model),
+            nn.ReLU(),
+            nn.Linear(2*d_model, n_heads),
+            nn.Sigmoid()
+        )
+    
+    def forward(self, global_feature_variance: torch.Tensor):
+        return self.mlp(global_feature_variance)
+
 
 def apply_fourier_embeddings(
     queries: torch.Tensor,
