@@ -40,6 +40,7 @@ class SleapDataset(BaseDataset):
         normalize_image: bool = True,
         max_batching_gap: int = 15,
         use_tight_bbox: bool = False,
+        apply_mask_to_crop: bool = False,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -80,6 +81,7 @@ class SleapDataset(BaseDataset):
             normalize_image: whether to normalize the image to [0, 1]
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
+            apply_mask_to_crop: whether to apply the mask to the crop - mask is computed by dilating the keypoints
             **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
@@ -109,6 +111,7 @@ class SleapDataset(BaseDataset):
         self.normalize_image = normalize_image
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
+        self.apply_mask_to_crop = apply_mask_to_crop
 
         if isinstance(anchors, int):
             self.anchors = anchors
@@ -423,6 +426,10 @@ class SleapDataset(BaseDataset):
                         )
                     else:
                         crop = data_utils.crop_bbox(img, bbox)
+                    
+                    if self.apply_mask_to_crop:
+                        mask = data_utils.get_mask_from_keypoints(pose, crop_size)
+                        crop = crop * mask
 
                     crops.append(crop)
                     # get max h,w for padding for tight bboxes

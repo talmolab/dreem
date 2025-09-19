@@ -130,6 +130,15 @@ def crop_bbox(img: torch.Tensor, bbox: ArrayLike) -> torch.Tensor:
 
     return crop
 
+def get_mask_from_keypoints(pose: torch.Tensor, crop_size: int) -> torch.Tensor:
+    """Get a mask from keypoints.
+    
+    Args:
+        pose: array of keypoints
+        crop_size: size of the crop
+    """
+    
+
 
 def pad_variable_size_crops(instance, target_size):
     """Pad or crop an instance's crop to the target size.
