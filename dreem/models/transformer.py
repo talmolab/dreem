@@ -354,7 +354,11 @@ class RelPosAttention(nn.Module):
 
     def forward(self, q,k,v, ref_boxes, query_boxes):
         # assumes input is (n_query, batch_size, embed_dim)
-        global_feature_variance = torch.var(q, dim=0) # (batch_size, embed_dim)
+        # use var of keys as during inference, there is only 1 query frame so var is meaningless
+        global_feature_variance = torch.var(k, dim=0) # (batch_size, embed_dim)
+        # print(f"Global feature variance: {global_feature_variance}")
+        if torch.isnan(global_feature_variance).any():
+            print("Global feature variance is nan")
         bias_weight = self.bias_weight(global_feature_variance)
             
         N_q, B, _ = q.shape
@@ -392,6 +396,8 @@ class EuclDistanceBias(nn.Module):
     def get_bias(self, ref_boxes, query_boxes) -> torch.Tensor:
         ref_boxes = ref_boxes.squeeze()
         query_boxes = query_boxes.squeeze()
+        if query_boxes.dim() == 1:
+            query_boxes = query_boxes.unsqueeze(0)
         query_centroids = (query_boxes[:,:2] + query_boxes[:,2:]) / 2
         ref_centroids = (ref_boxes[:,:2] + ref_boxes[:,2:]) / 2
         # (n_query, n_ref)
