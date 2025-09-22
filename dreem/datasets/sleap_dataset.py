@@ -41,6 +41,7 @@ class SleapDataset(BaseDataset):
         max_batching_gap: int = 15,
         use_tight_bbox: bool = False,
         apply_mask_to_crop: bool = False,
+        dilation_radius_px: int = 20,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -82,6 +83,7 @@ class SleapDataset(BaseDataset):
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
             apply_mask_to_crop: whether to apply the mask to the crop - mask is computed by dilating the keypoints
+            dilation_radius_px: radius of the keypoints dilation in pixels
             **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
@@ -112,6 +114,7 @@ class SleapDataset(BaseDataset):
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
         self.apply_mask_to_crop = apply_mask_to_crop
+        self.dilation_radius_px = dilation_radius_px
 
         if isinstance(anchors, int):
             self.anchors = anchors
@@ -399,15 +402,14 @@ class SleapDataset(BaseDataset):
 
                     else:
                         centroid = np.array([np.nan, np.nan])
+                    
+                    arr_pose = np.array(list(pose.values()))
 
                     if np.isnan(centroid).all():
                         bbox = torch.tensor([np.nan, np.nan, np.nan, np.nan])
-
                     else:
                         if self.use_tight_bbox and len(pose) > 1:
-                            # tight bbox
-                            # dont allow this for centroid-only poses!
-                            arr_pose = np.array(list(pose.values()))
+                            # tight bbox, dont allow this for centroid-only poses!
                             # note bbox will be a different size for each instance; padded at the end of the loop
                             bbox = data_utils.get_tight_bbox(arr_pose)
 
@@ -426,12 +428,14 @@ class SleapDataset(BaseDataset):
                         )
                     else:
                         crop = data_utils.crop_bbox(img, bbox)
-                    
-                    if self.apply_mask_to_crop:
-                        mask = data_utils.get_mask_from_keypoints(pose, crop_size)
-                        crop = crop * mask
 
-                    crops.append(crop)
+                    masked_crop = crop
+                    if self.apply_mask_to_crop:
+                        mask = data_utils.get_mask_from_keypoints(arr_pose, img, self.dilation_radius_px)
+                        cropped_mask = data_utils.crop_bbox(mask, bbox)
+                        masked_crop = crop * cropped_mask
+
+                    crops.append(masked_crop)
                     # get max h,w for padding for tight bboxes
                     c, h, w = crop.shape
                     if h > max_crop_h:
