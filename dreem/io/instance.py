@@ -72,6 +72,7 @@ class Instance:
         crop: The crop of the instance.
         centroid: the centroid around which the bbox was cropped.
         features: The reid features extracted from the CNN backbone used in the transformer.
+        motion_features: The motion features extracted from the motion encoder.
         track_score: The track score output from the association matrix.
         point_scores: The point scores from sleap.
         instance_score: The instance scores from sleap.
@@ -91,6 +92,9 @@ class Instance:
     _centroid: dict[str, ArrayLike] = attrs.field(alias="centroid", factory=dict)
     _features: ArrayLike = attrs.field(
         alias="features", factory=list, converter=_to_tensor
+    )
+    _motion_features: ArrayLike = attrs.field(
+        alias="motion_features", factory=list, converter=_to_tensor
     )
     _embeddings: dict = attrs.field(alias="embeddings", factory=dict)
     _track_score: float = attrs.field(alias="track_score", default=-1.0)
@@ -552,6 +556,44 @@ class Instance:
             True if the instance has reid features, False otherwise.
         """
         if self._features.shape[-1] == 0:
+            return False
+        else:
+            return True
+
+    @property
+    def motion_features(self) -> torch.Tensor:
+        """Motion features extracted from the motion encoder.
+
+        Returns:
+            a (1, d) tensor containing the motion features.
+        """
+        return self._motion_features
+
+    @motion_features.setter
+    def motion_features(self, motion_features: ArrayLike) -> None:
+        """Set the motion features of the instance.
+
+        Args:
+            motion_features: a (1, d) array like object containing the motion features for the instance.
+        """
+        if motion_features is None or len(motion_features) == 0:
+            self._motion_features = torch.tensor([])
+
+        elif not isinstance(motion_features, torch.Tensor):
+            self._motion_features = torch.tensor(motion_features)
+        else:
+            self._motion_features = motion_features
+
+        if self._motion_features.shape[0] and len(self._motion_features.shape) == 1:
+            self._motion_features = self._motion_features.unsqueeze(0)
+    
+    def has_motion_features(self) -> bool:
+        """Determine if the instance has computed motion features.
+
+        Returns:
+            True if the instance has motion features, False otherwise.
+        """
+        if self._motion_features.shape[-1] == 0:
             return False
         else:
             return True

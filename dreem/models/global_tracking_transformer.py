@@ -6,6 +6,7 @@ import torch
 
 from dreem.models.transformer import Transformer
 from dreem.models.visual_encoder import create_visual_encoder
+from dreem.models.motion_encoder import create_motion_encoder
 
 if TYPE_CHECKING:
     from dreem.io import AssociationMatrix, Instance
@@ -65,6 +66,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
         if not encoder_cfg:
             encoder_cfg = {}
         self.visual_encoder = create_visual_encoder(d_model=d_model, **encoder_cfg)
+        self.motion_encoder = create_motion_encoder(d_model=d_model, **encoder_cfg)
 
         self.transformer = Transformer(
             d_model=d_model,
@@ -108,7 +110,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
     def extract_features(
         self, instances: list["Instance"], force_recompute: bool = False
     ) -> None:
-        """Extract features from instances using visual encoder backbone.
+        """Extract features from instances using visual and motion encoder backbones.
 
         Args:
             instances: A list of instances to compute features for
@@ -129,9 +131,16 @@ class GlobalTrackingTransformer(torch.nn.Module):
             instances_to_compute = instances
 
         crops = torch.concatenate([instance.crop for instance in instances_to_compute])
+        # motion_vectors = 
 
-        features = self.visual_encoder(crops)
-        features = features.to(device=instances_to_compute[0].device)
+        visual_features = self.visual_encoder(crops)
+        visual_features = visual_features.to(device=instances_to_compute[0].device)
 
-        for i, z_i in enumerate(features):
+        motion_features = self.motion_encoder(motion_vectors)
+        motion_features = motion_features.to(device=instances_to_compute[0].device)
+
+        for i, z_i in enumerate(visual_features):
             instances_to_compute[i].features = z_i
+
+        for i, z_i in enumerate(motion_features):
+            instances_to_compute[i].motion_features = z_i
