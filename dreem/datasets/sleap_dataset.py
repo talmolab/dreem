@@ -402,7 +402,7 @@ class SleapDataset(BaseDataset):
 
                     else:
                         centroid = np.array([np.nan, np.nan])
-                    
+
                     arr_pose = np.array(list(pose.values()))
 
                     if np.isnan(centroid).all():
@@ -431,9 +431,12 @@ class SleapDataset(BaseDataset):
 
                     masked_crop = crop
                     if self.apply_mask_to_crop:
-                        mask = data_utils.get_mask_from_keypoints(arr_pose, img, self.dilation_radius_px)
+                        mask = data_utils.get_mask_from_keypoints(
+                            arr_pose, img, self.dilation_radius_px
+                        )
                         cropped_mask = data_utils.crop_bbox(mask, bbox)
                         masked_crop = crop * cropped_mask
+                        logger.info(f"Applying mask to crop {frame_ind}_{j}")
 
                     crops.append(masked_crop)
                     # get max h,w for padding for tight bboxes
