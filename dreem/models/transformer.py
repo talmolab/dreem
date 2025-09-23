@@ -400,12 +400,16 @@ class TransformerEncoderLayer(nn.Module):
 
         queries = queries + pos_emb
 
-        # q = k = src
+        # most recent instances are last in the sequence
+        attn_mask = torch.triu(torch.ones((queries.shape[0], queries.shape[0])), diagonal=1).bool()
+        attn_mask = attn_mask.to(queries.device)
 
         attn_features = self.self_attn(
             query=queries,
             key=queries,
             value=queries,
+            attn_mask=attn_mask,
+            is_causal=True,
         )[0]
 
         queries = queries + self.dropout1(attn_features)
@@ -489,19 +493,40 @@ class TransformerDecoderLayer(nn.Module):
 
         decoder_queries = decoder_queries + query_pos_emb
         encoder_features = encoder_features + ref_pos_emb
+        
+        if self.training:
+            attn_mask = torch.triu(torch.ones((decoder_queries.shape[0], decoder_queries.shape[0])), diagonal=1).bool()
+            attn_mask = attn_mask.to(decoder_queries.device)
+        else:
+            attn_mask = None
 
         if self.decoder_self_attn:
-            self_attn_features = self.self_attn(
-                query=decoder_queries, key=decoder_queries, value=decoder_queries
-            )[0]
+            if attn_mask:
+                self_attn_features = self.self_attn(
+                    query=decoder_queries, key=decoder_queries, value=decoder_queries, attn_mask=attn_mask,
+                    is_causal=True,
+                )[0]
+            else:
+                self_attn_features = self.self_attn(
+                    query=decoder_queries, key=decoder_queries, value=decoder_queries,
+                )[0]
             decoder_queries = decoder_queries + self.dropout1(self_attn_features)
             decoder_queries = self.norm1(decoder_queries)
 
-        x_attn_features = self.multihead_attn(
-            query=decoder_queries,  # (n_query, batch_size, embed_dim)
-            key=encoder_features,  # (total_instances, batch_size, embed_dim)
-            value=encoder_features,  # (total_instances, batch_size, embed_dim)
-        )[0]  # (n_query, batch_size, embed_dim)
+        if attn_mask:
+            x_attn_features = self.multihead_attn(
+                query=decoder_queries,  # (n_query, batch_size, embed_dim)
+                key=encoder_features,  # (total_instances, batch_size, embed_dim)
+                value=encoder_features,  # (total_instances, batch_size, embed_dim)
+                attn_mask=attn_mask,
+                is_causal=True,
+            )[0]  # (n_query, batch_size, embed_dim)
+        else:
+            x_attn_features = self.multihead_attn(
+                query=decoder_queries,  # (n_query, batch_size, embed_dim)
+                key=encoder_features,  # (total_instances, batch_size, embed_dim)
+                value=encoder_features,  # (total_instances, batch_size, embed_dim)
+            )[0]  # (n_query, batch_size, embed_dim)
 
         decoder_queries = decoder_queries + self.dropout2(
             x_attn_features
@@ -591,6 +616,7 @@ class TransformerDecoder(nn.Module):
         encoder_features: torch.Tensor,
         ref_pos_emb: torch.Tensor | None = None,
         query_pos_emb: torch.Tensor | None = None,
+
     ) -> torch.Tensor:
         """Execute a forward pass of the decoder block.
 
