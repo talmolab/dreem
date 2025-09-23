@@ -4,8 +4,9 @@ import logging
 import random
 from pathlib import Path
 from typing import Optional, Union
-
+import time
 import albumentations as A
+import matplotlib.pyplot as plt
 import imageio
 import numpy as np
 import sleap_io as sio
@@ -429,16 +430,16 @@ class SleapDataset(BaseDataset):
                     else:
                         crop = data_utils.crop_bbox(img, bbox)
 
-                    masked_crop = crop
                     if self.apply_mask_to_crop:
                         mask = data_utils.get_mask_from_keypoints(
-                            arr_pose, img, self.dilation_radius_px
+                            arr_pose, crop, self.dilation_radius_px, bbox
                         )
-                        cropped_mask = data_utils.crop_bbox(mask, bbox)
-                        masked_crop = crop * cropped_mask
-                        logger.info(f"Applying mask to crop {frame_ind}_{j}")
+                        crop = crop * mask
+                        # os.makedirs(f"/root/vast/mustafa/dreem-experiments/run/apply-mask-kpts-dilate/crops", exist_ok=True)
+                        # plt.imsave(f"/root/vast/mustafa/dreem-experiments/run/apply-mask-kpts-dilate/crops/frame_{frame_ind}_{j}_crop.png", crop[0].numpy())
+                        logger.debug(f"Applying mask to crop {frame_ind}_{j}")
 
-                    crops.append(masked_crop)
+                    crops.append(crop)
                     # get max h,w for padding for tight bboxes
                     c, h, w = crop.shape
                     if h > max_crop_h:

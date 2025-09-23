@@ -132,21 +132,25 @@ def crop_bbox(img: torch.Tensor, bbox: ArrayLike) -> torch.Tensor:
 
 
 def get_mask_from_keypoints(
-    arr_pose: np.ndarray, img: torch.Tensor, dilation_radius_px: int
+    arr_pose: np.ndarray, crop: torch.Tensor, dilation_radius_px: int, bbox: torch.Tensor
 ) -> torch.Tensor:
     """Get a mask from keypoints.
 
     Args:
         arr_pose: array of keypoints
-        img: image
+        crop: crop of the image
         dilation_radius_px: radius of the dilation in pixels
-
+        bbox: bounding box of the crop
     Returns:
         mask: mask of the image
     """
-    X, Y = np.meshgrid(np.arange(img.shape[2]), np.arange(img.shape[1]))
+    y1, x1, y2, x2 = bbox.numpy()
+    arr_pose_transformed = arr_pose.copy()
+    arr_pose_transformed[:, 0] = arr_pose_transformed[:, 0] - x1
+    arr_pose_transformed[:, 1] = arr_pose_transformed[:, 1] - y1
+    X, Y = np.meshgrid(np.arange(crop.shape[2]), np.arange(crop.shape[1]))
     dists = np.sqrt(
-        (X[..., None] - arr_pose[:, 0]) ** 2 + (Y[..., None] - arr_pose[:, 1]) ** 2
+        (X[..., None] - arr_pose_transformed[:, 0]) ** 2 + (Y[..., None] - arr_pose_transformed[:, 1]) ** 2
     )
     mask = np.min(dists, axis=-1) < dilation_radius_px
     mask = torch.from_numpy(mask.astype(np.uint8))
