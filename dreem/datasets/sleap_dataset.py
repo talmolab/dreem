@@ -42,7 +42,7 @@ class SleapDataset(BaseDataset):
         max_batching_gap: int = 15,
         use_tight_bbox: bool = False,
         apply_mask_to_crop: bool = False,
-        dilation_radius_px: int = 20,
+        dilation_radius_px: Union[int, list[int]] = 20,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -134,6 +134,11 @@ class SleapDataset(BaseDataset):
             else:
                 self.crop_size = [self.crop_size]
 
+        if not isinstance(self.dilation_radius_px, list):
+            self.dilation_radius_px = [self.dilation_radius_px] * len(self.data_dirs)
+        else:
+            self.dilation_radius_px = [self.dilation_radius_px]
+
         if len(self.data_dirs) > 0 and len(self.crop_size) != len(self.data_dirs):
             raise ValueError(
                 f"If a list of crop sizes or data directories are given,"
@@ -197,9 +202,11 @@ class SleapDataset(BaseDataset):
             for j, data_dir in enumerate(self.data_dirs):
                 if Path(data_dir) == video_par_path:
                     crop_size = self.crop_size[j]
+                    dilation_radius_px = self.dilation_radius_px[j]
                     break
         else:
             crop_size = self.crop_size[0]
+            dilation_radius_px = self.dilation_radius_px[0]
 
         vid_reader = self.videos[label_idx]
 
@@ -431,13 +438,15 @@ class SleapDataset(BaseDataset):
                         crop = data_utils.crop_bbox(img, bbox)
 
                     if self.apply_mask_to_crop:
+                        if np.isnan(arr_pose).any():
+                            print("arr_pose is nan")
                         mask = data_utils.get_mask_from_keypoints(
-                            arr_pose, crop, self.dilation_radius_px, bbox
+                            arr_pose, crop, dilation_radius_px, bbox
                         )
                         crop = crop * mask
                         # os.makedirs(f"/root/vast/mustafa/dreem-experiments/run/apply-mask-kpts-dilate/crops", exist_ok=True)
                         # plt.imsave(f"/root/vast/mustafa/dreem-experiments/run/apply-mask-kpts-dilate/crops/frame_{frame_ind}_{j}_crop.png", crop[0].numpy())
-                        logger.debug(f"Applying mask to crop {frame_ind}_{j}")
+                        # logger.debug(f"Applying mask to crop {frame_ind}_{j}")
 
                     crops.append(crop)
                     # get max h,w for padding for tight bboxes
