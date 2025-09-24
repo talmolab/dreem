@@ -501,7 +501,7 @@ class TransformerDecoderLayer(nn.Module):
             attn_mask = None
 
         if self.decoder_self_attn:
-            if attn_mask:
+            if attn_mask is not None:
                 self_attn_features = self.self_attn(
                     query=decoder_queries, key=decoder_queries, value=decoder_queries, attn_mask=attn_mask,
                     is_causal=True,
@@ -513,7 +513,7 @@ class TransformerDecoderLayer(nn.Module):
             decoder_queries = decoder_queries + self.dropout1(self_attn_features)
             decoder_queries = self.norm1(decoder_queries)
 
-        if attn_mask:
+        if attn_mask is not None:
             x_attn_features = self.multihead_attn(
                 query=decoder_queries,  # (n_query, batch_size, embed_dim)
                 key=encoder_features,  # (total_instances, batch_size, embed_dim)
