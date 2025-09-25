@@ -88,6 +88,7 @@ class Instance:
     )
     _bbox: ArrayLike = attrs.field(alias="bbox", factory=list, converter=_to_tensor)
     _crop: ArrayLike = attrs.field(alias="crop", factory=list, converter=_to_tensor)
+    _img: ArrayLike = attrs.field(alias="img", factory=list, converter=_to_tensor)
     _centroid: dict[str, ArrayLike] = attrs.field(alias="centroid", factory=dict)
     _features: ArrayLike = attrs.field(
         alias="features", factory=list, converter=_to_tensor
@@ -158,6 +159,7 @@ class Instance:
             self._bbox = self._bbox.to(map_location)
             self._crop = self._crop.to(map_location)
             self._features = self._features.to(map_location)
+            self._img = self._img.to(map_location)
             if isinstance(map_location, (str, torch.device)):
                 self.device = map_location
 
@@ -477,6 +479,35 @@ class Instance:
                 self._mask = torch.tensor(mask)
             else:
                 self._mask = mask
+    
+    @property
+    def img(self) -> torch.Tensor:
+        """The original image of the instance.
+
+        Returns:
+            A (1, c, h , w) tensor containing the image of the instance.
+        """
+        return self._img
+
+    @img.setter
+    def img(self, img: ArrayLike) -> None:
+        """Set the original image of the instance.
+
+        Args:
+            img: an arraylike object containing the original image of the instance.
+        """
+        if img is None or len(img) == 0:
+            self._img = torch.tensor([])
+        else:
+            if not isinstance(img, torch.Tensor):
+                self._img = torch.tensor(img)
+            else:
+                self._img = img
+        
+        if len(self._img.shape) == 2:
+            self._img = self._img.unsqueeze(0)
+        if len(self._img.shape) == 3:
+            self._img = self._img.unsqueeze(0)
 
     @property
     def crop(self) -> torch.Tensor:

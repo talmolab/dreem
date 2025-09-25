@@ -17,7 +17,7 @@ import torchvision
 ENCODER_REGISTRY: Dict[str, Type[torch.nn.Module]] = {}
 
 
-class VisualEncoder(torch.nn.Module):
+class VisualEncoderROIAlign(torch.nn.Module):
     """Class wrapping around a visual feature extractor backbone.
 
     Currently CNN only.
@@ -56,6 +56,8 @@ class VisualEncoder(torch.nn.Module):
             backend=self.backend,
             **kwargs,
         )
+        self.layer4_activation = {}
+        self.feature_extractor.layer4.register_forward_hook(self.get_activation('layer4'))
 
         self.out_layer = torch.nn.Linear(
             self.encoder_dim(self.feature_extractor), self.d_model
@@ -130,6 +132,22 @@ class VisualEncoder(torch.nn.Module):
         _ = model.train()  # to be safe
         return dummy_output.shape[-1]
 
+    def roi_align(self, feature_map: torch.Tensor, bbox: torch.Tensor) -> torch.Tensor:
+        """Roi align the feature map.
+
+        Args:
+            feature_map: The feature map to align.
+            bbox: The bounding box to align.
+        """
+        spatial_scale = 
+        output_size = 
+        return F.roi_align(feature_map, bbox, output_size=, spatial_scale=)
+    
+    def get_activation(self, name):
+        def hook(output):
+            self.layer4_activation[name] = output.detach()
+        return hook
+
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector.
 
@@ -151,16 +169,18 @@ class VisualEncoder(torch.nn.Module):
                     Hint: have you set the number of anchors in your dataset > 1? \n
                     If so, make sure to set `in_chans=3 * n_anchors`"""
             )
-        feats = self.feature_extractor(
+        out_feat_vec = self.feature_extractor(
             img
         )  # (B, out_dim, 1, 1) if using resnet18 backbone.
+        feats = self.layer4_activation['layer4'] # (B, 7, 7, 512) for resnet18
+
 
         # Reshape feature vectors
-        feats = feats.reshape([img.shape[0], -1])  # (B, out_dim)
+        # feats = feats.reshape([img.shape[0], -1])  # (B, out_dim)
         # Map feature vectors to output dimension using linear layer.
-        feats = self.out_layer(feats)  # (B, d_model)
+        # feats = self.out_layer(feats)  # (B, d_model)
         # Normalize output feature vectors.
-        feats = F.normalize(feats)  # (B, d_model)
+        # feats = F.normalize(feats)  # (B, d_model)
         return feats
 
 
@@ -260,14 +280,14 @@ def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
 
 def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
     """Create a visual encoder based on the specified type."""
-    register_encoder("resnet", VisualEncoder)
+    register_encoder("roi_align", VisualEncoderROIAlign)
     register_encoder("descriptor", DescriptorVisualEncoder)
     # register any custom encoders here
     register_encoder("dino", DINOVisualEncoder)
 
     # compatibility with configs that don't specify encoder_type; default to resnet
     if not encoder_cfg or "encoder_type" not in encoder_cfg:
-        encoder_type = "resnet"
+        encoder_type = "roi_align"
         return ENCODER_REGISTRY[encoder_type](d_model=d_model, **encoder_cfg)
     else:
         encoder_type = encoder_cfg.pop("encoder_type")

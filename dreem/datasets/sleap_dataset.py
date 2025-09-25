@@ -363,6 +363,7 @@ class SleapDataset(BaseDataset):
 
                 """Check for anchor"""
                 crops = []
+                imgs = []
                 boxes = []
                 centroids = {}
 
@@ -425,6 +426,7 @@ class SleapDataset(BaseDataset):
                         crop = data_utils.crop_bbox(img, bbox)
 
                     crops.append(crop)
+                    imgs.append(img)
                     # get max h,w for padding for tight bboxes
                     c, h, w = crop.shape
                     if h > max_crop_h:
@@ -437,6 +439,7 @@ class SleapDataset(BaseDataset):
 
                 if len(crops) > 0:
                     crops = torch.concat(crops, dim=0)
+                    imgs = torch.concat(imgs, dim=0)
 
                 if len(boxes) > 0:
                     boxes = torch.stack(boxes, dim=0)
@@ -448,6 +451,7 @@ class SleapDataset(BaseDataset):
                     gt_track_id=gt_track_ids[j],
                     pred_track_id=-1,
                     crop=crops,
+                    imgs=imgs,
                     centroid=centroids,
                     bbox=boxes,
                     skeleton=skeleton,
