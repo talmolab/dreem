@@ -54,7 +54,7 @@ def run(cfg: DictConfig):
     logging.getLogger().setLevel(level=cfg.get("log_level", "INFO").upper())
     logger.info(f"Final train config: {train_cfg}")
 
-    model = train_cfg.get_model()
+    # model = train_cfg.get_model()
 
     train_dataset = train_cfg.get_dataset(mode="train")
     train_dataloader = train_cfg.get_dataloader(train_dataset, mode="train")

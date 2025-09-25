@@ -49,6 +49,7 @@ class GTRRunner(LightningModule):
 
     def __init__(
         self,
+        dataset_cfg: dict | None = None,
         model_cfg: dict | None = None,
         tracker_cfg: dict | None = None,
         loss_cfg: dict | None = None,
@@ -61,6 +62,7 @@ class GTRRunner(LightningModule):
         """Initialize a lightning module for GTR.
 
         Args:
+            dataset_cfg: hyperparameters for dataset
             model_cfg: hyperparameters for GlobalTrackingTransformer
             tracker_cfg: The parameters used for the tracker post-processing
             loss_cfg: hyperparameters for AssoLoss
@@ -77,6 +79,7 @@ class GTRRunner(LightningModule):
         self.model_cfg = model_cfg if model_cfg else {}
         self.loss_cfg = loss_cfg if loss_cfg else {}
         self.tracker_cfg = tracker_cfg if tracker_cfg else {}
+        self.model_cfg["crop_size"] = dataset_cfg.get("train_dataset", {}).get("crop_size", None)
 
         self.model = GlobalTrackingTransformer(**self.model_cfg)
         self.loss = AssoLoss(**self.loss_cfg)
@@ -101,19 +104,20 @@ class GTRRunner(LightningModule):
 
     def forward(
         self,
+        frames: list["Frame"],
         ref_instances: list["Instance"],
-        query_instances: list["Instance"] | None = None,
+        query_instances: list["Instance"] = None,
     ) -> list["AssociationMatrix"]:
         """Execute forward pass of the lightning module.
 
         Args:
+            frames: a list of `Frame` objects containing crops and other data needed for transformer model
             ref_instances: a list of `Instance` objects containing crops and other data needed for transformer model
             query_instances: a list of `Instance` objects used as queries in the decoder. Mostly used for inference.
-
         Returns:
             An association matrix between objects
         """
-        asso_preds = self.model(ref_instances, query_instances)
+        asso_preds = self.model(frames, ref_instances, query_instances)
         return asso_preds
 
     def training_step(
@@ -198,13 +202,12 @@ class GTRRunner(LightningModule):
         """
         try:
             instances = [instance for frame in frames for instance in frame.instances]
-
             if len(instances) == 0:
                 return None
 
             # eval_metrics = self.metrics[mode]  # Currently unused but available for future metric computation
 
-            logits = self(instances)
+            logits = self(frames, instances, None)
             logits = [asso.matrix for asso in logits]
             loss = self.loss(logits, frames)
 

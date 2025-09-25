@@ -113,22 +113,22 @@ class Config:
 
         return param
 
-    def get_model(self) -> GlobalTrackingTransformer:
-        """Getter for gtr model.
+    # def get_model(self) -> GlobalTrackingTransformer:
+    #     """Getter for gtr model.
 
-        Returns:
-            A global tracking transformer with parameters indicated by cfg
-        """
-        from dreem.models import GlobalTrackingTransformer, GTRRunner
+    #     Returns:
+    #         A global tracking transformer with parameters indicated by cfg
+    #     """
+    #     from dreem.models import GlobalTrackingTransformer, GTRRunner
 
-        model_params = self.get("model", {})
+    #     model_params = self.get("model", {})
 
-        ckpt_path = model_params.pop("ckpt_path", None)
+    #     ckpt_path = model_params.pop("ckpt_path", None)
 
-        if ckpt_path is not None and len(ckpt_path) > 0:
-            return GTRRunner.load_from_checkpoint(ckpt_path).model
+    #     if ckpt_path is not None and len(ckpt_path) > 0:
+    #         return GTRRunner.load_from_checkpoint(ckpt_path).model
 
-        return GlobalTrackingTransformer(**model_params)
+    #     return GlobalTrackingTransformer(**model_params)
 
     def get_tracker_cfg(self) -> dict:
         """Getter for tracker config params.
@@ -149,7 +149,7 @@ class Config:
         """
         from dreem.models import GTRRunner
 
-        keys = ["tracker", "optimizer", "scheduler", "loss", "runner", "model"]
+        keys = ["tracker", "optimizer", "scheduler", "loss", "runner", "model", "dataset"]
         args = [key + "_cfg" if key != "runner" else key for key in keys]
 
         params = {}

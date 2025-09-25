@@ -63,6 +63,7 @@ class Frame:
     _img_shape: ArrayLike = attrs.field(
         alias="img_shape", converter=_to_tensor, factory=list
     )
+    _img: torch.Tensor = attrs.field(alias="img", factory=list, converter=_to_tensor)
 
     _instances: list["Instance"] = attrs.field(alias="instances", factory=list)
     _asso_output: AssociationMatrix | None = attrs.field(
@@ -316,6 +317,16 @@ class Frame:
             frame_id: The int index of the frame in the full video.
         """
         self._frame_id = torch.tensor([frame_id])
+
+    @property
+    def img(self) -> torch.Tensor:
+        """The image of the frame."""
+        return self._img
+
+    @img.setter
+    def img(self, img: torch.Tensor) -> None:
+        """Set the image of the frame."""
+        self._img = img
 
     @property
     def video(self) -> sio.Video | str:

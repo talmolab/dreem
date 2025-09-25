@@ -9,7 +9,7 @@ from .gtr_runner import GTRRunner
 from .transformer import Transformer
 from .visual_encoder import (
     DescriptorVisualEncoder,
-    VisualEncoder,
+    VisualEncoderROIAlign,
     create_visual_encoder,
     register_encoder,
 )
@@ -21,7 +21,7 @@ __all__ = [
     "GTRRunner",
     "Transformer",
     "DescriptorVisualEncoder",
-    "VisualEncoder",
+    "VisualEncoderROIAlign",
     "create_visual_encoder",
     "register_encoder",
 ]

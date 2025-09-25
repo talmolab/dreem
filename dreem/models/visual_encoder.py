@@ -29,6 +29,7 @@ class VisualEncoderROIAlign(torch.nn.Module):
         d_model: int = 512,
         in_chans: int = 3,
         backend: int = "timm",
+        crop_size: int = None,
         **kwargs: Any | None,
     ):
         """Initialize Visual Encoder.
@@ -45,6 +46,9 @@ class VisualEncoderROIAlign(torch.nn.Module):
         self.model_name = model_name.lower()
         self.d_model = d_model
         self.backend = backend
+        if crop_size is None:
+            raise ValueError("crop_size must be specified for ROI Align")
+        self.crop_size = crop_size
         if in_chans == 1:
             self.in_chans = 3
         else:
@@ -56,12 +60,28 @@ class VisualEncoderROIAlign(torch.nn.Module):
             backend=self.backend,
             **kwargs,
         )
-        self.layer4_activation = {}
+        self.layer_activation = {}
         self.feature_extractor.layer4.register_forward_hook(self.get_activation('layer4'))
 
-        self.out_layer = torch.nn.Linear(
-            self.encoder_dim(self.feature_extractor), self.d_model
+        self.roi_align_output_size = int(self.crop_size / 32) # TODO: remove hardcoded value - do this based on downsampling rate of the layer in use
+        num_feat_map_channels = self.feature_extractor.layer4[-1].conv2.out_channels # TODO: hardcoded for layer4. change this
+        self.post_align_conv1 = torch.nn.Conv2d(
+            in_channels=num_feat_map_channels,
+            out_channels=d_model,
+            kernel_size=(self.roi_align_output_size, self.roi_align_output_size),
+            stride=1,
+            padding=0,
         )
+        self.bnorm1 = torch.nn.BatchNorm2d(d_model)
+        # 1x1 conv mlp
+        self.post_align_conv2 = torch.nn.Conv2d(
+            in_channels=d_model,
+            out_channels=d_model,
+            kernel_size=(1, 1),
+            stride=1,
+            padding=0,
+        )
+        self.bnorm2 = torch.nn.BatchNorm2d(d_model)
 
     def select_feature_extractor(
         self, model_name: str, in_chans: int, backend: str, **kwargs: Any
@@ -132,56 +152,69 @@ class VisualEncoderROIAlign(torch.nn.Module):
         _ = model.train()  # to be safe
         return dummy_output.shape[-1]
 
-    def roi_align(self, feature_map: torch.Tensor, bbox: torch.Tensor) -> torch.Tensor:
+    def roi_align(self, feature_maps: torch.Tensor, bboxes: torch.Tensor, imgs_shape: torch.Tensor) -> torch.Tensor:
         """Roi align the feature map.
 
         Args:
-            feature_map: The feature map to align.
-            bbox: The bounding box to align.
+            feature_maps: The feature maps to align of shape (B, C, H_F, W_F).
+            bboxes: Input bounding box list of Tensor[num_instances, 4] for each frame.
+            imgs_shape: The shape of the batch of images.
         """
-        spatial_scale = 
-        output_size = 
-        return F.roi_align(feature_map, bbox, output_size=, spatial_scale=)
-    
+        B, C, H, W = imgs_shape
+        _, C_F, H_F, W_F = feature_maps.shape
+        if torch.isnan(torch.concatenate(bboxes, dim=0)).any():
+            raise ValueError("Bboxes contain NaNs; ROI Align will fail. This is a temporary failsafe.")
+        H_ROI = bboxes[0][0,2] - bboxes[0][0,0] # just take 1st instance from 1st frame in batch
+        W_ROI = bboxes[0][0,3] - bboxes[0][0,1]
+
+        spatial_scale = (H_F/H + W_F/W)/2 # in case the scale isn't a round number
+
+        # output_size = max(1, (H_ROI * spatial_scale).round().int()).item()
+        # self.post_align_kernel_size = output_size
+        return torchvision.ops.roi_align(feature_maps, bboxes, output_size=self.roi_align_output_size, spatial_scale=spatial_scale)
+ 
     def get_activation(self, name):
-        def hook(output):
-            self.layer4_activation[name] = output.detach()
+        """Get the activation of the layer."""
+        def hook(model, input, output):
+            self.layer_activation[name] = output.detach()
         return hook
 
-    def forward(self, img: torch.Tensor) -> torch.Tensor:
+    def forward(self, imgs: torch.Tensor, bboxes: list[torch.Tensor]) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector.
 
         Args:
-            img: Input image tensor of shape (B, C, H, W).
+            imgs: Input image tensor of shape (B, C, H, W).
+            bboxes: Input bounding box list of Tensor[num_instances, 4] for each frame.
 
         Returns:
             feats: Normalized output tensor of shape (B, d_model).
         """
         # If grayscale, tile the image to 3 channels.
-        if img.shape[1] == 1:
-            img = img.repeat([1, 3, 1, 1])  # (B, nc=3, H, W)
+        if imgs.shape[1] == 1:
+            imgs = imgs.repeat([1, 3, 1, 1])  # (B, nc=3, H, W)
 
-        b, c, h, w = img.shape
-
-        if c != self.in_chans:
+        if imgs.shape[1] != self.in_chans:
             raise ValueError(
-                f"""Found {c} channels in image but model was configured for {self.in_chans} channels! \n
+                f"""Found {imgs.shape[1]} channels in image but model was configured for {self.in_chans} channels! \n
                     Hint: have you set the number of anchors in your dataset > 1? \n
                     If so, make sure to set `in_chans=3 * n_anchors`"""
             )
+        # pass entire img through backbone to get the layer 4 feature map
         out_feat_vec = self.feature_extractor(
-            img
+            imgs
         )  # (B, out_dim, 1, 1) if using resnet18 backbone.
-        feats = self.layer4_activation['layer4'] # (B, 7, 7, 512) for resnet18
+        feature_maps = self.layer_activation['layer4'] # (B, 512, hf, wf) for resnet18; not necessarily square
+        aligned_feature_maps = self.roi_align(feature_maps, bboxes, imgs.shape)
 
+        aligned_feature_maps = self.post_align_conv1(aligned_feature_maps)
+        aligned_feature_maps = self.bnorm1(aligned_feature_maps)
+        aligned_feature_maps = F.relu(aligned_feature_maps)
+        aligned_feature_maps = self.post_align_conv2(aligned_feature_maps)
+        aligned_feature_maps = self.bnorm2(aligned_feature_maps)
+        aligned_feature_maps = F.relu(aligned_feature_maps)
+        aligned_feature_maps = aligned_feature_maps.squeeze()
 
-        # Reshape feature vectors
-        # feats = feats.reshape([img.shape[0], -1])  # (B, out_dim)
-        # Map feature vectors to output dimension using linear layer.
-        # feats = self.out_layer(feats)  # (B, d_model)
-        # Normalize output feature vectors.
-        # feats = F.normalize(feats)  # (B, d_model)
-        return feats
+        return aligned_feature_maps
 
 
 class DescriptorVisualEncoder(torch.nn.Module):
@@ -278,7 +311,7 @@ def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
     ENCODER_REGISTRY[encoder_type] = encoder_class
 
 
-def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
+def create_visual_encoder(d_model: int, crop_size: int = None, **encoder_cfg) -> torch.nn.Module:
     """Create a visual encoder based on the specified type."""
     register_encoder("roi_align", VisualEncoderROIAlign)
     register_encoder("descriptor", DescriptorVisualEncoder)
@@ -288,14 +321,14 @@ def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
     # compatibility with configs that don't specify encoder_type; default to resnet
     if not encoder_cfg or "encoder_type" not in encoder_cfg:
         encoder_type = "roi_align"
-        return ENCODER_REGISTRY[encoder_type](d_model=d_model, **encoder_cfg)
+        return ENCODER_REGISTRY[encoder_type](d_model=d_model, crop_size=crop_size, **encoder_cfg)
     else:
         encoder_type = encoder_cfg.pop("encoder_type")
 
     if encoder_type in ENCODER_REGISTRY:
         # choose the relevant encoder configs based on the encoder_type
         configs = encoder_cfg.pop("encoder_type_args", {})
-        return ENCODER_REGISTRY[encoder_type](d_model=d_model, **configs)
+        return ENCODER_REGISTRY[encoder_type](d_model=d_model, crop_size=crop_size, **configs)
     else:
         raise ValueError(
             f"Unknown encoder type: {encoder_type}. Please use one of {list(ENCODER_REGISTRY.keys())}"

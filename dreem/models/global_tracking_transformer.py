@@ -8,7 +8,7 @@ from dreem.models.transformer import Transformer
 from dreem.models.visual_encoder import create_visual_encoder
 
 if TYPE_CHECKING:
-    from dreem.io import AssociationMatrix, Instance
+    from dreem.io import AssociationMatrix, Instance, Frame
 
 # todo: do we want to handle params with configs already here?
 
@@ -32,6 +32,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
         embedding_meta: dict | None = None,
         return_embedding: bool = False,
         decoder_self_attn: bool = False,
+        crop_size: int = None,
     ):
         """Initialize GTR.
 
@@ -51,7 +52,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
             embedding_meta: Metadata for positional embeddings. See below.
             return_embedding: Whether to return the positional embeddings
             decoder_self_attn: If True, use decoder self attention.
-
+            crop_size: The size of the crops to be used for the visual encoder.
                 More details on `embedding_meta`:
                     By default this will be an empty dict and indicate
                     that no positional embeddings should be used. To use the positional embeddings
@@ -64,7 +65,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
 
         if not encoder_cfg:
             encoder_cfg = {}
-        self.visual_encoder = create_visual_encoder(d_model=d_model, **encoder_cfg)
+        self.visual_encoder = create_visual_encoder(d_model=d_model, crop_size=crop_size, **encoder_cfg)
 
         self.transformer = Transformer(
             d_model=d_model,
@@ -84,11 +85,12 @@ class GlobalTrackingTransformer(torch.nn.Module):
         )
 
     def forward(
-        self, ref_instances: list["Instance"], query_instances: list["Instance"] = None
+        self, frames: list["Frame"], ref_instances: list["Instance"], query_instances: list["Instance"] = None
     ) -> list["AssociationMatrix"]:
         """Execute forward pass of GTR Model to get asso matrix.
 
         Args:
+            frames: List of frames containing instances and other data needed for transformer model
             ref_instances: List of instances from chunk containing crops of objects + gt label info
             query_instances: list of instances used as query in decoder.
 
@@ -96,21 +98,22 @@ class GlobalTrackingTransformer(torch.nn.Module):
             An N_T x N association matrix
         """
         # Extract feature representations with pre-trained encoder.
-        self.extract_features(ref_instances)
+        self.extract_features(frames, ref_instances)
 
         if query_instances:
-            self.extract_features(query_instances)
+            self.extract_features(frames, query_instances)
 
         asso_preds = self.transformer(ref_instances, query_instances)
 
         return asso_preds
 
     def extract_features(
-        self, instances: list["Instance"], force_recompute: bool = False
+        self, frames: list["Frame"], instances: list["Instance"], force_recompute: bool = False
     ) -> None:
         """Extract features from instances using visual encoder backbone.
 
         Args:
+            frames: List of frames containing instances and other data needed for transformer model
             instances: A list of instances to compute features for
             force_recompute: indicate whether to compute features for all instances regardless of if they have instances
         """
@@ -128,9 +131,22 @@ class GlobalTrackingTransformer(torch.nn.Module):
         elif len(instances_to_compute) == 1:  # handle batch norm error when B=1
             instances_to_compute = instances
 
-        crops = torch.concatenate([instance.crop for instance in instances_to_compute])
+        bboxes = []
+        images = []
+        for frame in frames:
+            frame_bboxes = []
+            for instance in frame.instances:
+                raw_bbox = instance.bbox.squeeze()
+                # torch expects x1,y1,x2,y2 but instance.bbox is y1,x1,y2,x2
+                bbox = torch.tensor([[raw_bbox[1], raw_bbox[0], raw_bbox[3], raw_bbox[2]]], device=instance.device)
+                frame_bboxes.append(bbox)
+            images.append(frame.img.to(instance.device))
+            bboxes.append(torch.concatenate(frame_bboxes, dim=0))
+            # bboxes is list of Tensor[num_instances, 4]
 
-        features = self.visual_encoder(crops)
+        images = torch.stack(images, dim=0) # (B, C, H, W)
+
+        features = self.visual_encoder(images, bboxes)
         features = features.to(device=instances_to_compute[0].device)
 
         for i, z_i in enumerate(features):

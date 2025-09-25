@@ -451,7 +451,6 @@ class SleapDataset(BaseDataset):
                     gt_track_id=gt_track_ids[j],
                     pred_track_id=-1,
                     crop=crops,
-                    imgs=imgs,
                     centroid=centroids,
                     bbox=boxes,
                     skeleton=skeleton,
@@ -464,6 +463,7 @@ class SleapDataset(BaseDataset):
 
             frame = Frame(
                 video_id=label_idx,
+                img=imgs,
                 frame_id=frame_ind,
                 vid_file=video_name,
                 img_shape=img.shape,
