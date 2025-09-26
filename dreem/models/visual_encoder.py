@@ -63,8 +63,9 @@ class VisualEncoderROIAlign(torch.nn.Module):
         self.layer_activation = {}
         self.feature_extractor.layer4.register_forward_hook(self.get_activation('layer4'))
 
-        self.roi_align_output_size = int(self.crop_size / 32) # TODO: remove hardcoded value - do this based on downsampling rate of the layer in use
+        self.roi_align_output_size = 2 # TODO: hardcoded for now. Let user choose
         num_feat_map_channels = self.feature_extractor.layer4[-1].conv2.out_channels # TODO: hardcoded for layer4. change this
+        print("ROI Align output map size: ", self.roi_align_output_size)
         self.post_align_conv1 = torch.nn.Conv2d(
             in_channels=num_feat_map_channels,
             out_channels=d_model,
@@ -162,15 +163,11 @@ class VisualEncoderROIAlign(torch.nn.Module):
         """
         B, C, H, W = imgs_shape
         _, C_F, H_F, W_F = feature_maps.shape
+
         if torch.isnan(torch.concatenate(bboxes, dim=0)).any():
             raise ValueError("Bboxes contain NaNs; ROI Align will fail. This is a temporary failsafe.")
-        H_ROI = bboxes[0][0,2] - bboxes[0][0,0] # just take 1st instance from 1st frame in batch
-        W_ROI = bboxes[0][0,3] - bboxes[0][0,1]
-
         spatial_scale = (H_F/H + W_F/W)/2 # in case the scale isn't a round number
 
-        # output_size = max(1, (H_ROI * spatial_scale).round().int()).item()
-        # self.post_align_kernel_size = output_size
         return torchvision.ops.roi_align(feature_maps, bboxes, output_size=self.roi_align_output_size, spatial_scale=spatial_scale)
  
     def get_activation(self, name):

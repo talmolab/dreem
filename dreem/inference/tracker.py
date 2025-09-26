@@ -113,25 +113,25 @@ class Tracker:
 
         _ = model.eval()
 
-        for frame in frames:
-            if frame.has_instances():
-                if not self.use_vis_feats:
-                    for instance in frame.instances:
-                        instance.features = torch.zeros(1, model.d_model)
-                    # frame["features"] = torch.randn(
-                    #     num_frame_instances, self.model.d_model
-                    # )
+        # for frame in frames:
+        #     if frame.has_instances():
+        #         if not self.use_vis_feats:
+        #             for instance in frame.instances:
+        #                 instance.features = torch.zeros(1, model.d_model)
+        #             # frame["features"] = torch.randn(
+        #             #     num_frame_instances, self.model.d_model
+        #             # )
 
                 # comment out to turn encoder off
 
                 # Assuming the encoder is already trained or train encoder jointly.
-                elif not frame.has_features():
-                    with torch.no_grad():
-                        crops = frame.get_crops()
-                        z = model.visual_encoder(crops)
+                # elif not frame.has_features():
+                #     with torch.no_grad():
+                #         crops = frame.get_crops()
+                #         z = model.visual_encoder(crops)
 
-                        for i, z_i in enumerate(z):
-                            frame.instances[i].features = z_i
+                #         for i, z_i in enumerate(z):
+                #             frame.instances[i].features = z_i
 
         # I feel like this chunk is unnecessary:
         # reid_features = torch.cat(
@@ -205,7 +205,11 @@ class Tracker:
                     ]  # better var name?
 
                     query_ind = len(frames_to_track) - 1
-
+                    # first frame will be empty from trackqueue
+                    for f in frames_to_track:
+                        # Check if f.img is an empty tensor (tensor([])), not a Python list
+                        if isinstance(f.img, torch.Tensor) and f.img.numel() == 0:
+                            f.img = frames[f.frame_id.item()].img
                     frame_to_track = self._run_global_tracker(
                         model,
                         frames_to_track,
@@ -273,13 +277,13 @@ class Tracker:
         n_traj = self.track_queue.n_tracks
         curr_track = self.track_queue.curr_track
 
-        reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
-            None
-        ]  # (1, total_instances, D=512)
+        # reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
+        #     None
+        # ]  # (1, total_instances, D=512)
 
         # (L=1, n_query, total_instances)
         with torch.no_grad():
-            asso_matrix = model(all_instances, query_instances)
+            asso_matrix = model(frames, all_instances, query_instances)
 
         asso_output = asso_matrix[-1].matrix.split(
             instances_per_frame, dim=1
@@ -374,7 +378,7 @@ class Tracker:
         # reweighting hyper-parameters for association -> they use 0.9
 
         traj_score = post_processing.weight_decay_time(
-            asso_nonquery, self.decay_time, reid_features, window_size, query_ind
+            asso_nonquery, self.decay_time, None, window_size, query_ind
         )
 
         if self.decay_time is not None and self.decay_time > 0:

@@ -79,7 +79,13 @@ class GTRRunner(LightningModule):
         self.model_cfg = model_cfg if model_cfg else {}
         self.loss_cfg = loss_cfg if loss_cfg else {}
         self.tracker_cfg = tracker_cfg if tracker_cfg else {}
-        self.model_cfg["crop_size"] = dataset_cfg.get("train_dataset", {}).get("crop_size", None)
+        # Set crop_size from train_dataset if available, else from test_dataset (for inference/eval)
+        if "train_dataset" in dataset_cfg:
+            self.model_cfg["crop_size"] = dataset_cfg.get("train_dataset", {}).get("crop_size", None)
+        elif "test_dataset" in dataset_cfg:
+            self.model_cfg["crop_size"] = dataset_cfg.get("test_dataset", {}).get("crop_size", None)
+        else:
+            self.model_cfg["crop_size"] = None
 
         self.model = GlobalTrackingTransformer(**self.model_cfg)
         self.loss = AssoLoss(**self.loss_cfg)

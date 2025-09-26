@@ -25,10 +25,10 @@ def weight_decay_time(
         k: an integer for the query frame within the window of instances
     Returns: The N_t x N association matrix weighted by decay time
     """
-    if decay_time is not None and decay_time > 0:
-        assert reid_features is not None and T is not None and k is not None, (
-            "Need reid_features to weight traj_score by `decay_time`!"
-        )
+    if decay_time is not None and decay_time > 0 and reid_features is not None:
+        # assert reid_features is not None and T is not None and k is not None, (
+        #     "Need reid_features to weight traj_score by `decay_time`!"
+        # )
         N_t = asso_output.shape[0]
         dts = torch.cat(
             [

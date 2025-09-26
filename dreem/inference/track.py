@@ -161,7 +161,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
             "Model checkpoint not found. Please provide a valid checkpoint path."
         )
 
-    model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
+    model = GTRRunner.load_from_checkpoint(checkpoint, strict=False, dataset_cfg=pred_cfg.cfg.dataset)
     tracker_cfg = pred_cfg.get_tracker_cfg()
     logger.info("Updating tracker hparams")
     model.tracker_cfg = tracker_cfg

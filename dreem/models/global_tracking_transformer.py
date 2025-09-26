@@ -133,18 +133,24 @@ class GlobalTrackingTransformer(torch.nn.Module):
 
         bboxes = []
         images = []
-        for frame in frames:
-            frame_bboxes = []
-            for instance in frame.instances:
-                raw_bbox = instance.bbox.squeeze()
-                # torch expects x1,y1,x2,y2 but instance.bbox is y1,x1,y2,x2
-                bbox = torch.tensor([[raw_bbox[1], raw_bbox[0], raw_bbox[3], raw_bbox[2]]], device=instance.device)
-                frame_bboxes.append(bbox)
-            images.append(frame.img.to(instance.device))
-            bboxes.append(torch.concatenate(frame_bboxes, dim=0))
-            # bboxes is list of Tensor[num_instances, 4]
+        if True: #if self.training:
+            for frame in frames:
+                frame_bboxes = []
+                for instance in frame.instances:
+                    raw_bbox = instance.bbox.squeeze()
+                    # torch expects x1,y1,x2,y2 but instance.bbox is y1,x1,y2,x2
+                    bbox = torch.tensor([[raw_bbox[1], raw_bbox[0], raw_bbox[3], raw_bbox[2]]], device=instance.device)
+                    frame_bboxes.append(bbox)
+                images.append(frame.img.to(instance.device))
+                bboxes.append(torch.concatenate(frame_bboxes, dim=0))
+                # bboxes is list of Tensor[num_instances, 4]
 
-        images = torch.stack(images, dim=0) # (B, C, H, W)
+            images = torch.stack(images, dim=0) # (B, C, H, W)
+        
+        else:
+            # now, frames contain many more than batch_size number of frames, and also many instances that we're not interested in as these
+            # could be from far in the past. Need to subset frames
+            ...
 
         features = self.visual_encoder(images, bboxes)
         features = features.to(device=instances_to_compute[0].device)
