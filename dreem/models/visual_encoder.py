@@ -16,6 +16,37 @@ import torchvision
 
 ENCODER_REGISTRY: Dict[str, Type[torch.nn.Module]] = {}
 
+def roi_align(feature_maps: list[torch.Tensor], bboxes: list[torch.Tensor], imgs_shape: torch.Tensor, roi_align_output_size: int) -> torch.Tensor:
+    """Roi align the feature map.
+
+    Args:
+        feature_maps: List of feature maps to align of shape (B, C, H_F, W_F).
+        bboxes: Input bounding box list of Tensor[num_instances, 4] for each frame.
+        imgs_shape: The shape of the batch of images.
+        roi_align_output_size: The output size of the ROI Align.
+    """
+    B, C, H, W = imgs_shape
+    if torch.isnan(torch.concatenate(bboxes, dim=0)).any():
+        raise ValueError("Bboxes contain NaNs; ROI Align will fail. This is a temporary failsafe.")
+    # choose ROI level
+    img_area = H*W
+    h_roi = bboxes[0][0][3] - bboxes[0][0][1] # bboxes is a list of (num_instances, 4)
+    w_roi = bboxes[0][0][2] - bboxes[0][0][0]
+    roi_level = torch.log(torch.sqrt(h_roi*w_roi)/torch.sqrt(torch.tensor(img_area)))
+    roi_level = torch.round(roi_level + 4)
+    roi_level[roi_level < 3] = 3
+    roi_level[roi_level > 5] = 5
+    roi_level = roi_level.squeeze().int().item()
+    feature_map = feature_maps[roi_level - len(feature_maps)]
+    spatial_scale = feature_map.shape[2] / H # how much to scale the bbox coords to match feature map size
+
+    return torchvision.ops.roi_align(feature_map, bboxes, output_size=roi_align_output_size, spatial_scale=spatial_scale)
+
+def get_activation(name, dict_activation):
+        """Get the activation of the layer."""
+        def hook(model, input, output):
+            dict_activation[name] = output.detach()
+        return hook
 
 class VisualEncoderROIAlign(torch.nn.Module):
     """Class wrapping around a visual feature extractor backbone.
@@ -61,9 +92,9 @@ class VisualEncoderROIAlign(torch.nn.Module):
             **kwargs,
         )
         self.layer_activation = {}
-        self.feature_extractor.layer4.register_forward_hook(self.get_activation('layer4'))
-        self.feature_extractor.layer3.register_forward_hook(self.get_activation('layer3'))
-        self.feature_extractor.layer2.register_forward_hook(self.get_activation('layer2'))
+        self.feature_extractor.layer4.register_forward_hook(get_activation('layer4', self.layer_activation))
+        self.feature_extractor.layer3.register_forward_hook(get_activation('layer3', self.layer_activation))
+        self.feature_extractor.layer2.register_forward_hook(get_activation('layer2', self.layer_activation))
         # layer 2 is downsampled 8x so a crop of size 32 would become 4x4
 
         self.latlayer1 = torch.nn.Conv2d(self.feature_extractor.layer4[-1].conv2.out_channels, 256, (1, 1), stride=1, padding=0) # 512
@@ -148,50 +179,6 @@ class VisualEncoderROIAlign(torch.nn.Module):
         _ = model.train()  # to be safe
         return dummy_output.shape[-1]
 
-    def _upsample_add(self, x, y):
-        """Upsample and add two feature maps.
-
-        Args:
-          x: (Tensor) top feature map to be upsampled.
-          y: (Tensor) lateral feature map.
-
-        Returns:
-          (Tensor) added feature map.
-        """
-        _,_,H,W = y.size()
-        return F.interpolate(x, size=(H,W), mode='bilinear', align_corners=False) + y
-
-    def roi_align(self, feature_maps: list[torch.Tensor], bboxes: list[torch.Tensor], imgs_shape: torch.Tensor) -> torch.Tensor:
-        """Roi align the feature map.
-
-        Args:
-            feature_maps: List of feature maps to align of shape (B, C, H_F, W_F).
-            bboxes: Input bounding box list of Tensor[num_instances, 4] for each frame.
-            imgs_shape: The shape of the batch of images.
-        """
-        B, C, H, W = imgs_shape
-        if torch.isnan(torch.concatenate(bboxes, dim=0)).any():
-            raise ValueError("Bboxes contain NaNs; ROI Align will fail. This is a temporary failsafe.")
-        # choose ROI level
-        img_area = H*W
-        h_roi = bboxes[0][0][3] - bboxes[0][0][1] # bboxes is a list of (num_instances, 4)
-        w_roi = bboxes[0][0][2] - bboxes[0][0][0]
-        roi_level = torch.log(torch.sqrt(h_roi*w_roi)/torch.sqrt(torch.tensor(img_area)))
-        roi_level = torch.round(roi_level + 4)
-        roi_level[roi_level < 3] = 3
-        roi_level[roi_level > 5] = 5
-        roi_level = roi_level.squeeze().int().item()
-        feature_map = feature_maps[roi_level - len(feature_maps)]
-        spatial_scale = feature_map.shape[2] / H # how much to scale the bbox coords to match feature map size
-
-        return torchvision.ops.roi_align(feature_map, bboxes, output_size=self.roi_align_output_size, spatial_scale=spatial_scale)
- 
-    def get_activation(self, name):
-        """Get the activation of the layer."""
-        def hook(model, input, output):
-            self.layer_activation[name] = output.detach()
-        return hook
-
     def forward(self, imgs: torch.Tensor, bboxes: list[torch.Tensor]) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector.
 
@@ -220,11 +207,11 @@ class VisualEncoderROIAlign(torch.nn.Module):
         c4 = self.layer_activation['layer3'] # (B, 256, hf, wf) for resnet18; not necessarily square
         c5 = self.layer_activation['layer4'] # (B, 512, hf, wf) for resnet18; not necessarily square
         p5 = self.latlayer1(c5) # latlayer1 is for layer 4 output
-        p4 = self._upsample_add(p5, self.latlayer2(c4))
-        p3 = self._upsample_add(p4, self.latlayer3(c3))
+        p4 = upsample_add(p5, self.latlayer2(c4))
+        p3 = upsample_add(p4, self.latlayer3(c3))
         feature_maps = [p3, p4, p5]
 
-        aligned_feature_maps = self.roi_align(feature_maps, bboxes, imgs.shape) # (N, 256, output, output)
+        aligned_feature_maps = roi_align(feature_maps, bboxes, imgs.shape, self.roi_align_output_size) # (N, 256, output, output)
 
         aligned_feature_maps = self.post_align_conv1(aligned_feature_maps)
         aligned_feature_maps = self.bnorm1(aligned_feature_maps)
@@ -235,6 +222,20 @@ class VisualEncoderROIAlign(torch.nn.Module):
         aligned_feature_maps = aligned_feature_maps.squeeze() # (N, d_model)
 
         return aligned_feature_maps
+
+
+def upsample_add(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        """Upsample and add two feature maps.
+
+        Args:
+          x: (Tensor) top feature map to be upsampled.
+          y: (Tensor) lateral feature map.
+
+        Returns:
+          (Tensor) added feature map.
+        """
+        _,_,H,W = y.size()
+        return F.interpolate(x, size=(H,W), mode='bilinear', align_corners=False) + y
 
 
 class DescriptorVisualEncoder(torch.nn.Module):
@@ -309,19 +310,57 @@ class DINOVisualEncoder(torch.nn.Module):
         """
         super().__init__()
         self.d_model = d_model
+        self.model = torch.hub.load("/root/vast/mustafa/dinov3", 'dinov3_convnext_base', source='local', weights="/root/vast/mustafa/dinov3-model/dinov3_convnext_base_pretrain_lvd1689m-801f2ba9.pth")
+        # freeze the model
+        for param in self.model.parameters():
+            param.requires_grad = False
         # the pretrained models use patch_size=14
-        self.model = torch.hub.load("facebookresearch/dinov2", "dinov2_vits14_reg")
-        # else: # not currently supported due to dependency issues that it would cause
-        #     self.model = dinov2.models.vision_transformer.vit_small(patch_size=14, num_register_tokens=4)
-        self.mlp = torch.nn.Linear(self.model.num_features, d_model)
+        self.layer_activation = {}
+        # final layer is 32x downsampled
+        self.model.stages[-1].register_forward_hook(get_activation('layer_1', self.layer_activation))
+        # second to last layer is 16x downsampled
+        self.model.stages[-2].register_forward_hook(get_activation('layer_2', self.layer_activation))
+        # third to last layer is 8x downsampled
+        self.model.stages[-3].register_forward_hook(get_activation('layer_3', self.layer_activation))
 
-    def forward(self, img: torch.Tensor) -> torch.Tensor:
+        # final stage has 1024 channels
+        self.latlayer1 = torch.nn.Conv2d(self.model.stages[-1][-1].pwconv2.out_features, 256, (1, 1), stride=1, padding=0) # 1024
+        # second to last stage has 512 channels
+        self.latlayer2 = torch.nn.Conv2d(self.model.stages[-2][-1].pwconv2.out_features, 256, (1, 1), stride=1, padding=0) # 256
+        # third to last stage has 256 channels
+        self.latlayer3 = torch.nn.Conv2d(self.model.stages[-3][-1].pwconv2.out_features, 256, (1, 1), stride=1, padding=0) # 128
+        
+        # TODO: hardcoded for now. 4x4 is the smallest a crop would map to on the feature map assuming min crop size of 32
+        self.roi_align_output_size = 4
+        print("ROI Align output map size: ", self.roi_align_output_size)
+        self.post_align_conv1 = torch.nn.Conv2d(256, d_model, (self.roi_align_output_size, self.roi_align_output_size), stride=1, padding=0)
+        self.bnorm1 = torch.nn.BatchNorm2d(d_model)
+        self.post_align_conv2 = torch.nn.Conv2d(d_model, d_model, (1, 1), stride=1, padding=0)
+        self.bnorm2 = torch.nn.BatchNorm2d(d_model)
+
+    def forward(self, imgs: torch.Tensor, bboxes: list[torch.Tensor]) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector."""
-        if self.d_model != self.model.num_features:
-            out = self.mlp(self.model(img))
-        else:
-            out = self.model(img)
-        return out
+
+        out = self.model(imgs)
+        c3 = self.layer_activation['layer_3'] # (B, 256, hf, wf) for resnet18; not necessarily square
+        c4 = self.layer_activation['layer_2'] # (B, 512, hf, wf) for resnet18; not necessarily square
+        c5 = self.layer_activation['layer_1'] # (B, 1024, hf, wf) for resnet18; not necessarily square
+        p5 = self.latlayer1(c5) # latlayer1 is for layer 4 output
+        p4 = upsample_add(p5, self.latlayer2(c4))
+        p3 = upsample_add(p4, self.latlayer3(c3))
+        feature_maps = [p3, p4, p5]
+
+        aligned_feature_maps = roi_align(feature_maps, bboxes, imgs.shape, self.roi_align_output_size) # (N, 256, output, output)
+
+        aligned_feature_maps = self.post_align_conv1(aligned_feature_maps)
+        aligned_feature_maps = self.bnorm1(aligned_feature_maps)
+        aligned_feature_maps = F.relu(aligned_feature_maps)
+        aligned_feature_maps = self.post_align_conv2(aligned_feature_maps)
+        aligned_feature_maps = self.bnorm2(aligned_feature_maps)
+        aligned_feature_maps = F.relu(aligned_feature_maps)
+        aligned_feature_maps = aligned_feature_maps.squeeze() # (N, d_model)
+
+        return aligned_feature_maps
 
 
 def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):

@@ -84,6 +84,11 @@ class GlobalTrackingTransformer(torch.nn.Module):
             encoder_cfg=encoder_cfg,
         )
 
+        self.classification_head = torch.nn.Linear(d_model, 4)
+        self.classification_head.weight.data.normal_(0, 0.01)
+        self.classification_head.bias.data.zero_()
+        self.classification_head.requires_grad = True
+
     def forward(
         self, frames: list["Frame"], ref_instances: list["Instance"], query_instances: list["Instance"] = None
     ) -> list["AssociationMatrix"]:
@@ -145,5 +150,29 @@ class GlobalTrackingTransformer(torch.nn.Module):
         features = self.visual_encoder(images, bboxes)
         features = features.to(device=instances[0].device)
 
+        dict_track_features = {}
         for i, instance in enumerate(instances):
             instance.features = features[i]
+            if instance.gt_track_id not in dict_track_features:
+                dict_track_features[instance.gt_track_id] = []
+            dict_track_features[instance.gt_track_id].append(features[i])
+        
+        # detached classification head to classify each instance by its track id
+
+        # create data, label pairs for classification head
+        data = []
+        label = []
+        for track_id, list_features in dict_track_features.items():
+            for features in list_features:
+                data.append(features)
+                label.append(track_id)
+        
+        data = torch.stack(data, dim=0).detach()
+        label = torch.tensor(label, device=instances[0].device).detach()
+
+        # train classification head with detached features (auxiliary loss only for classification head)
+        logits = self.classification_head(data)
+        auxiliary_loss = torch.nn.CrossEntropyLoss()(logits, label)
+        
+        # Store auxiliary loss for later use
+        self._auxiliary_loss = auxiliary_loss

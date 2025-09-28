@@ -75,6 +75,7 @@ class GTRRunner(LightningModule):
         """
         super().__init__()
         self.save_hyperparameters()
+        self.automatic_optimization = False
 
         self.model_cfg = model_cfg if model_cfg else {}
         self.loss_cfg = loss_cfg if loss_cfg else {}
@@ -206,6 +207,10 @@ class GTRRunner(LightningModule):
         Returns:
             a dict containing the loss and any other metrics specified by `eval_metrics`
         """
+        opt1, opt2 = self.optimizers()
+        opt1.zero_grad()
+        opt2.zero_grad()
+
         try:
             instances = [instance for frame in frames for instance in frame.instances]
             if len(instances) == 0:
@@ -215,9 +220,23 @@ class GTRRunner(LightningModule):
 
             logits = self(frames, instances, None)
             logits = [asso.matrix for asso in logits]
-            loss = self.loss(logits, frames)
+            main_loss = self.loss(logits, frames)
+            opt1.manual_backward(main_loss)
+            opt1.step()
+            
+            # Get auxiliary loss from the model if it exists
+            auxiliary_loss = getattr(self.model, '_auxiliary_loss', torch.tensor(0.0, device=main_loss.device))
+            
+            # Backpropagate auxiliary loss separately (only affects classification head)
+            if auxiliary_loss.item() != 0:
+                opt2.manual_backward(auxiliary_loss)
+                opt2.step()
 
-            return_metrics = {"loss": loss}
+            return_metrics = {
+                "loss": main_loss,
+                "auxiliary_loss": auxiliary_loss
+            }
+
             if mode == "test":
                 self.tracker.persistent_tracking = True
                 frames_pred = self.tracker(self.model, frames)
@@ -255,15 +274,19 @@ class GTRRunner(LightningModule):
         else:
             scheduler = init_scheduler(optimizer, self.scheduler_cfg)
 
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": {
+        opts = [optimizer, optimizer]
+        lr_schedulers = [{
                 "scheduler": scheduler,
                 "monitor": "val_loss",
                 "interval": "epoch",
                 "frequency": 1,
-            },
-        }
+            }, {
+                "scheduler": scheduler,
+                "monitor": "val_auxiliary_loss",
+                "interval": "epoch",
+                "frequency": 1,
+            }]
+        return opts, lr_schedulers
 
     def log_metrics(self, result: dict, batch_size: int, mode: str) -> None:
         """Log metrics computed during evaluation.
