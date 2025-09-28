@@ -196,13 +196,14 @@ class TrackQueue:
             return
         vid_id = frame.video_id.item()
         frame_id = frame.frame_id.item()
+        img = frame.img
         img_shape = frame.img_shape
         if isinstance(frame.video, str):
             vid_name = frame.video
         else:
             vid_name = frame.video.filename
         # traj_score = frame.get_traj_score()  TODO: figure out better way to save trajectory scores.
-        frame_meta = (vid_id, frame_id, vid_name, img_shape.cpu().tolist())
+        frame_meta = (vid_id, frame_id, vid_name, img_shape.cpu().tolist(), img)
 
         pred_tracks = []
         for instance in frame.instances:
@@ -254,8 +255,8 @@ class TrackQueue:
             if track_ids is not None
             else self._queues
         )
-        for track, instances in tracks_to_convert.items():
-            for video_id, frame_id, vid_name, img_shape, instance in instances:
+        for track, queue_entries in tracks_to_convert.items():
+            for video_id, frame_id, vid_name, img_shape, img, instance in queue_entries:
                 # if frame_id < context_start_frame_id - self.window_size:
                 #     continue
                 if (video_id, frame_id) not in frames.keys():
@@ -263,6 +264,7 @@ class TrackQueue:
                         video_id,
                         frame_id,
                         img_shape=img_shape,
+                        img=img,
                         instances=[instance],
                         vid_file=vid_name,
                     )

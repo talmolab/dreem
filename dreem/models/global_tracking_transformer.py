@@ -101,59 +101,49 @@ class GlobalTrackingTransformer(torch.nn.Module):
         self.extract_features(frames, ref_instances)
 
         if query_instances:
-            self.extract_features(frames, query_instances)
+            self.extract_features(frames, query_instances, is_query=True)
 
         asso_preds = self.transformer(ref_instances, query_instances)
 
         return asso_preds
 
     def extract_features(
-        self, frames: list["Frame"], instances: list["Instance"], force_recompute: bool = False
+        self, frames: list["Frame"], instances: list["Instance"], force_recompute: bool = False, is_query: bool = False
     ) -> None:
         """Extract features from instances using visual encoder backbone.
 
         Args:
             frames: List of frames containing instances and other data needed for transformer model
-            instances: A list of instances to compute features for
+            instances: A list of instances to compute features for. During training, this is all the instances from the context window.
+            During inference, this is only the query instances i.e. from the current frame.
             force_recompute: indicate whether to compute features for all instances regardless of if they have instances
+            is_query: indicate whether the instances are from the query frame
         """
-        if not force_recompute:
-            instances_to_compute = [
-                instance
-                for instance in instances
-                if instance.has_crop() and not instance.has_features()
-            ]
-        else:
-            instances_to_compute = instances
-
-        if len(instances_to_compute) == 0:
+        if len(instances) == 0:
             return
-        elif len(instances_to_compute) == 1:  # handle batch norm error when B=1
-            instances_to_compute = instances
 
         bboxes = []
         images = []
-        if True: #if self.training:
-            for frame in frames:
-                frame_bboxes = []
-                for instance in frame.instances:
-                    raw_bbox = instance.bbox.squeeze()
-                    # torch expects x1,y1,x2,y2 but instance.bbox is y1,x1,y2,x2
-                    bbox = torch.tensor([[raw_bbox[1], raw_bbox[0], raw_bbox[3], raw_bbox[2]]], device=instance.device)
-                    frame_bboxes.append(bbox)
-                images.append(frame.img.to(instance.device))
-                bboxes.append(torch.concatenate(frame_bboxes, dim=0))
-                # bboxes is list of Tensor[num_instances, 4]
+        for frame in frames: # for frame in tracked_frames
+            if is_query:
+                frame = frames[-1]
+            frame_bboxes = []
+            for instance in frame.instances: # for all instances in this past tracked frame (ONLY CONTAINS INSTANCES
+                # THAT NEEDED TO BE INCLUDED IN CONTEXT WINDOW)
+                raw_bbox = instance.bbox.squeeze()
+                # torch expects x1,y1,x2,y2 but instance.bbox is y1,x1,y2,x2
+                bbox = torch.tensor([[raw_bbox[1], raw_bbox[0], raw_bbox[3], raw_bbox[2]]], device=instance.device)
+                frame_bboxes.append(bbox)
+            images.append(frame.img.to(instance.device))
+            bboxes.append(torch.concatenate(frame_bboxes, dim=0))
+            # bboxes is list of Tensor[num_instances, 4]
+            if is_query:
+                break
 
-            images = torch.stack(images, dim=0) # (B, C, H, W)
-        
-        else:
-            # now, frames contain many more than batch_size number of frames, and also many instances that we're not interested in as these
-            # could be from far in the past. Need to subset frames
-            ...
+        images = torch.stack(images, dim=0) # (B, C, H, W)
 
         features = self.visual_encoder(images, bboxes)
-        features = features.to(device=instances_to_compute[0].device)
+        features = features.to(device=instances[0].device)
 
-        for i, z_i in enumerate(features):
-            instances_to_compute[i].features = z_i
+        for i, instance in enumerate(instances):
+            instance.features = features[i]

@@ -203,13 +203,7 @@ class Tracker:
                     frames_to_track = tracked_frames + [
                         frame_to_track
                     ]  # better var name?
-
                     query_ind = len(frames_to_track) - 1
-                    # first frame will be empty from trackqueue
-                    for f in frames_to_track:
-                        # Check if f.img is an empty tensor (tensor([])), not a Python list
-                        if isinstance(f.img, torch.Tensor) and f.img.numel() == 0:
-                            f.img = frames[f.frame_id.item()].img
                     frame_to_track = self._run_global_tracker(
                         model,
                         frames_to_track,
