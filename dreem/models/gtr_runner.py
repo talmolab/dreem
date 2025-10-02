@@ -334,8 +334,7 @@ class GTRRunner(LightningModule):
                 if metric_name == "motmetrics":
                     # For num_switches, save mot_summary and mot_events separately
                     mot_summary = value[0]
-                    mot_events = value[1]
-                    frame_switch_map = value[2]
+                    frame_switch_map = value[1]
                     mot_summary_group = vid_group.require_group("mot_summary")
                     # Loop through each row in mot_summary and save as attributes
                     for _, row in mot_summary.iterrows():
@@ -359,11 +358,11 @@ class GTRRunner(LightningModule):
                                 vid_group, frame.get_gt_track_ids().cpu().numpy()
                             )
                     # save motevents log to csv
-                    motevents_path = os.path.join(
-                        self.test_results["save_path"], f"{vid_name}.motevents.csv"
-                    )
-                    logger.info(f"Saving motevents log to {motevents_path}")
-                    mot_events.to_csv(motevents_path, index=False)
+                    # motevents_path = os.path.join(
+                    #     self.test_results["save_path"], f"{vid_name}.motevents.csv"
+                    # )
+                    # logger.info(f"Saving motevents log to {motevents_path}")
+                    # mot_events.to_csv(motevents_path, index=False)
 
                 elif metric_name == "global_tracking_accuracy":
                     gta_by_gt_track = value

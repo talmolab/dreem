@@ -165,6 +165,8 @@ def compute_motmetrics(df):
     summary_dreem = {}
     acc_dreem = mm.MOTAccumulator(auto_id=True)
     frame_switch_map = {}
+    # filter out -1 track_ids; these are untracked instances due to confidence thresholding
+    df = df[df["pred_track_id"] != -1]
     for frame, framedf in df.groupby("frame_id"):
         gt_ids = framedf["gt_track_id"].values
         pred_tracks = framedf["pred_track_id"].values
@@ -185,13 +187,19 @@ def compute_motmetrics(df):
     mh = mm.metrics.create()
     summary_dreem = mh.compute(acc_dreem, name="acc").transpose()
     motevents = acc_dreem.mot_events.reset_index()
-    for idx, row in motevents.iterrows():
-        if row["Type"] == "SWITCH":
-            frame_switch_map[int(row["FrameId"])] = True
-        else:
-            frame_switch_map[int(row["FrameId"])] = False
+    switch_frames = []
+    for frame_id in sorted(df["frame_id"].unique()):
+        frame_switch_map[frame_id] = False # just populate with false for all frames at first
+        motevent = motevents[motevents["FrameId"] == frame_id]
+        if motevent.empty: # if no assigned instances in this frame, skip
+            continue
+        if (motevent['Type'] == "SWITCH").any():
+            switch_frames.append(frame_id)
 
-    return summary_dreem, motevents, frame_switch_map
+    for i, switch_frame in enumerate(switch_frames):
+        frame_switch_map[switch_frame] = True
+
+    return summary_dreem, frame_switch_map
 
 
 def compute_global_tracking_accuracy(df):
