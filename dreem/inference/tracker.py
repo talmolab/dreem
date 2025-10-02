@@ -31,7 +31,7 @@ class Tracker:
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
-        uncertainty_threshold: float = 0.2,
+        uncertainty_threshold: float | None = None,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -397,32 +397,34 @@ class Tracker:
         query_frame.add_traj_score("scaled", scaled_traj_score_df)
         ################################################################################
         # Compute entropy for each row and filter out rows with high entropy
-        entropy = -torch.sum(scaled_traj_score * torch.log(scaled_traj_score + 1e-12), axis=1)
-        # remove these rows from the cost matrix, but careful to maintain indexes of the results
-        remove = entropy > self.uncertainty_threshold 
+        if self.uncertainty_threshold is not None:
+            entropy = -torch.sum(scaled_traj_score * torch.log(scaled_traj_score + 1e-12), axis=1)
+            # remove these rows from the cost matrix, but careful to maintain indexes of the results
+            remove = entropy > self.uncertainty_threshold 
 
-        if (remove.sum() == traj_score.shape[0]).item():
-            logger.debug(f"All instances have high entropy in frame {query_frame.frame_id.item()}, skipping assignment")
-            return query_frame
+            if (remove.sum() == traj_score.shape[0]).item():
+                logger.debug(f"All instances have high entropy in frame {query_frame.frame_id.item()}, skipping assignment")
+                return query_frame
 
-        dict_remove_inds = {}
-        # post-LSA matches will have fewer rows, with remove=True indices being the removed rows
-        for idx in range(traj_score.shape[0]):
-            dict_remove_inds[idx] = True if remove[idx].item() else False
+            dict_remove_inds = {}
+            # post-LSA matches will have fewer rows, with remove=True indices being the removed rows
+            for idx in range(traj_score.shape[0]):
+                dict_remove_inds[idx] = True if remove[idx].item() else False
 
-        dict_old_new_map = {i: None for i in range(traj_score.shape[0])}
-        dict_new_old_map = {i: None for i in range(remove.sum())}
-        new_idx = 0
-        for idx in range(traj_score.shape[0]):
-            if remove[idx].item():
-                pass
-            else:
-                dict_old_new_map[idx] = new_idx
-                dict_new_old_map[new_idx] = idx
-                new_idx += 1
+            dict_old_new_map = {i: None for i in range(traj_score.shape[0])}
+            dict_new_old_map = {i: None for i in range(remove.sum())}
+            new_idx = 0
+            for idx in range(traj_score.shape[0]):
+                if remove[idx].item():
+                    pass
+                else:
+                    dict_old_new_map[idx] = new_idx
+                    dict_new_old_map[new_idx] = idx
+                    new_idx += 1
 
-        
-        traj_score_filt = traj_score[~remove]
+            traj_score_filt = traj_score[~remove]
+        else:
+            traj_score_filt = traj_score
 
         match_i, match_j = linear_sum_assignment((-traj_score_filt))
         # reindex the match indices to account for removed rows; only match_i needs to be reindexed
