@@ -206,6 +206,8 @@ class TrackQueue:
 
         pred_tracks = []
         for instance in frame.instances:
+            if instance.pred_track_id == -1:
+                continue
             pred_track_id = instance.pred_track_id.item()
             pred_tracks.append(pred_track_id)
 
