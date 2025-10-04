@@ -32,7 +32,7 @@ class Tracker:
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
-        uncertainty_threshold: float | None = None,
+        confidence_threshold: float | None = None,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -51,7 +51,7 @@ class Tracker:
             max_tracks: the maximum number of tracks that can be created while tracking.
                 We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
             verbose: Whether or not to turn on debug printing after each operation.
-            uncertainty_threshold: threshold for filtering out instances with high uncertainty.
+            confidence_threshold: threshold for filtering out instances with high confidence.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
@@ -66,7 +66,7 @@ class Tracker:
         self.persistent_tracking = persistent_tracking
         self.verbose = verbose
         self.max_tracks = max_tracks
-        self.uncertainty_threshold = uncertainty_threshold
+        self.confidence_threshold = confidence_threshold
 
     def __call__(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -467,10 +467,12 @@ class Tracker:
         query_frame.add_traj_score("scaled", scaled_traj_score_df)
         ################################################################################
         # Compute entropy for each row and filter out rows with high entropy
-        if self.uncertainty_threshold is not None:
+        if self.confidence_threshold is not None:
             entropy = -torch.sum(scaled_traj_score * torch.log(scaled_traj_score + 1e-12), axis=1)
+            norm_entropy = entropy / torch.log(torch.tensor(len(unique_ids)))
+            removal_threshold = 1 - self.confidence_threshold
             # remove these rows from the cost matrix, but careful to maintain indexes of the results
-            remove = entropy > self.uncertainty_threshold 
+            remove = norm_entropy > removal_threshold 
 
             if (remove.sum() == traj_score.shape[0]).item():
                 logger.debug(f"All instances have high entropy in frame {query_frame.frame_id.item()}, skipping assignment")
