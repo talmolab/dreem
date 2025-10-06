@@ -132,6 +132,8 @@ class GlobalTrackingTransformer(torch.nn.Module):
         for frame in frames: # for frame in tracked_frames
             if is_query:
                 frame = frames[-1]
+            if frame.instances == []:
+                continue
             frame_bboxes = []
             for instance in frame.instances: # for all instances in this past tracked frame (ONLY CONTAINS INSTANCES
                 # THAT NEEDED TO BE INCLUDED IN CONTEXT WINDOW)
