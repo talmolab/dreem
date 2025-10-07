@@ -151,6 +151,9 @@ class GlobalTrackingTransformer(torch.nn.Module):
 
         features = self.visual_encoder(images, bboxes)
         features = features.to(device=instances[0].device)
+        # Check if there is no batch dimension in features
+        if features.dim() == 1:
+            features = features.unsqueeze(0)
 
         dict_track_features = {}
         for i, instance in enumerate(instances):
