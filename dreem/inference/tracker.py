@@ -33,6 +33,7 @@ class Tracker:
         max_tracks: int = inf,
         verbose: bool = False,
         confidence_threshold: float | None = None,
+        temperature: float = 0.1,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -52,6 +53,7 @@ class Tracker:
                 We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
             verbose: Whether or not to turn on debug printing after each operation.
             confidence_threshold: threshold for filtering out instances with high confidence.
+            temperature: temperature for softmax.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
@@ -67,6 +69,7 @@ class Tracker:
         self.verbose = verbose
         self.max_tracks = max_tracks
         self.confidence_threshold = confidence_threshold
+        self.temperature = temperature
 
     def __call__(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -97,7 +100,8 @@ class Tracker:
             f"decay_time={self.decay_time}, "
             f"max_center_dist={self.max_center_dist}, "
             f"verbose={self.verbose}, "
-            f"queue={self.track_queue}"
+            f"queue={self.track_queue}, "
+            f"temperature={self.temperature}"
         )
 
     def track(
@@ -457,7 +461,7 @@ class Tracker:
             query_frame.add_traj_score("max_center_dist", max_center_dist_traj_score)
 
         ################################################################################
-        scaled_traj_score = torch.softmax(traj_score, dim=1)
+        scaled_traj_score = torch.nn.functional.log_softmax(traj_score/self.temperature, dim=1)
         scaled_traj_score_df = pd.DataFrame(
             scaled_traj_score.numpy(), columns=unique_ids.cpu().numpy()
         )
@@ -468,7 +472,7 @@ class Tracker:
         ################################################################################
         # Compute entropy for each row and filter out rows with high entropy
         if self.confidence_threshold is not None:
-            entropy = -torch.sum(scaled_traj_score * torch.log(scaled_traj_score + 1e-12), axis=1)
+            entropy = -torch.sum(scaled_traj_score * torch.exp(scaled_traj_score), axis=1)
             norm_entropy = entropy / torch.log(torch.tensor(len(unique_ids)))
             removal_threshold = 1 - self.confidence_threshold
             # remove these rows from the cost matrix, but careful to maintain indexes of the results
