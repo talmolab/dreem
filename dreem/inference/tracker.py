@@ -431,11 +431,13 @@ class Tracker:
             traj_score_filt = traj_score[~remove]
         else:
             traj_score_filt = traj_score
+            remove = torch.zeros(traj_score.shape[0])
 
         match_i, match_j = linear_sum_assignment((-traj_score_filt))
-        # reindex the match indices to account for removed rows; only match_i needs to be reindexed
-        for i, _ in enumerate(match_i):
-            match_i[i] = dict_new_old_map[i]
+        if self.confidence_threshold is not None:
+            # reindex the match indices to account for removed rows; only match_i needs to be reindexed
+            for i, _ in enumerate(match_i):
+                match_i[i] = dict_new_old_map[i]
 
         track_ids = instance_ids.new_full((n_query,), -1)
         for i, j in zip(match_i, match_j):
