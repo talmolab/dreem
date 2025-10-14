@@ -37,7 +37,7 @@ class TrackQueue:
         self._curr_gap = {}
         if self._max_gap <= self._window_size:
             self._max_gap = self._window_size
-        self._curr_track = -1
+        self._curr_track = set()
         self._verbose = verbose
 
     def __len__(self) -> int:
@@ -59,7 +59,7 @@ class TrackQueue:
             f"window_size={self.window_size}, "
             f"max_gap={self.max_gap}, "
             f"n_tracks={self.n_tracks}, "
-            f"curr_track={self.curr_track}, "
+            # f"curr_track={self.curr_track}, "
             f"queues={[(key, len(queue)) for key, queue in self._queues.items()]}, "
             f"curr_gap:{self._curr_gap}"
             ")"
@@ -115,7 +115,7 @@ class TrackQueue:
         return self._curr_track
 
     @curr_track.setter
-    def curr_track(self, curr_track: int) -> None:
+    def curr_track(self, curr_track: set) -> None:
         """Set the newest *created* trajectory in the queue.
 
         Args:
@@ -173,7 +173,7 @@ class TrackQueue:
         if track_id is None:
             self._queues = {}
             self._curr_gap = {}
-            self.curr_track = -1
+            self.curr_track = set()
         else:
             try:
                 self._queues.pop(track_id)
@@ -214,7 +214,7 @@ class TrackQueue:
                 self._queues[pred_track_id] = deque(
                     [(*frame_meta, instance)], maxlen=self.window_size
                 )  # dumb work around to retain `img_shape`
-                self.curr_track = pred_track_id
+                self.curr_track.add(pred_track_id)
 
                 logger.debug(
                     f"New track = {pred_track_id} on frame {frame_id}! Current number of tracks = {self.n_tracks}"

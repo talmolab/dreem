@@ -269,7 +269,7 @@ class Tracker:
         overlap_thresh = self.overlap_thresh
         mult_thresh = self.mult_thresh
         n_traj = self.track_queue.n_tracks
-        curr_track = self.track_queue.curr_track
+        curr_tracks = self.track_queue.curr_track
 
         # reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
         #     None
@@ -484,9 +484,10 @@ class Tracker:
         logger.debug(f"track_ids: {track_ids}")
         for i in range(n_query):
             if track_ids[i] < 0:
-                logger.debug(f"Creating new track {curr_track}")
-                curr_track += 1
-                track_ids[i] = curr_track
+                max_track_id = max(curr_tracks)
+                logger.debug(f"Creating new track {max_track_id + 1}")
+                curr_tracks.add(max_track_id + 1)
+                track_ids[i] = max_track_id + 1
 
         query_frame.matches = (match_i, match_j)
 

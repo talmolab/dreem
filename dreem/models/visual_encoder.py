@@ -200,7 +200,7 @@ class VisualEncoderROIAlign(torch.nn.Module):
                     If so, make sure to set `in_chans=3 * n_anchors`"""
             )
         # pass entire img through backbone to get the layer 4 feature map
-        _ = self.feature_extractor(
+        out = self.feature_extractor(
             imgs
         )  # TODO: since not using output, remove the out layers to avoid unnecessary compute
         c3 = self.layer_activation['layer2'] # (B, 128, hf, wf) for resnet18; not necessarily square
@@ -212,6 +212,9 @@ class VisualEncoderROIAlign(torch.nn.Module):
         feature_maps = [p3, p4, p5]
 
         aligned_feature_maps = roi_align(feature_maps, bboxes, imgs.shape, self.roi_align_output_size) # (N, 256, output, output)
+        self.layer_activation.clear()
+        del c3, c4, c5, p3, p4, p5, feature_maps, out
+        torch.cuda.empty_cache()
 
         aligned_feature_maps = self.post_align_conv1(aligned_feature_maps)
         aligned_feature_maps = self.bnorm1(aligned_feature_maps)
@@ -351,6 +354,10 @@ class DINOVisualEncoder(torch.nn.Module):
         feature_maps = [p3, p4, p5]
 
         aligned_feature_maps = roi_align(feature_maps, bboxes, imgs.shape, self.roi_align_output_size) # (N, 256, output, output)
+
+        self.layer_activation.clear()
+        del c3, c4, c5, p3, p4, p5, feature_maps, out
+        torch.cuda.empty_cache()
 
         aligned_feature_maps = self.post_align_conv1(aligned_feature_maps)
         aligned_feature_maps = self.bnorm1(aligned_feature_maps)
