@@ -122,16 +122,16 @@ class Tracker:
         #             #     num_frame_instances, self.model.d_model
         #             # )
 
-                # comment out to turn encoder off
+        # comment out to turn encoder off
 
-                # Assuming the encoder is already trained or train encoder jointly.
-                # elif not frame.has_features():
-                #     with torch.no_grad():
-                #         crops = frame.get_crops()
-                #         z = model.visual_encoder(crops)
+        # Assuming the encoder is already trained or train encoder jointly.
+        # elif not frame.has_features():
+        #     with torch.no_grad():
+        #         crops = frame.get_crops()
+        #         z = model.visual_encoder(crops)
 
-                #         for i, z_i in enumerate(z):
-                #             frame.instances[i].features = z_i
+        #         for i, z_i in enumerate(z):
+        #             frame.instances[i].features = z_i
 
         # I feel like this chunk is unnecessary:
         # reid_features = torch.cat(
