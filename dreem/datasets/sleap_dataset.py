@@ -4,9 +4,7 @@ import logging
 import random
 from pathlib import Path
 from typing import Optional, Union
-import time
 import albumentations as A
-import matplotlib.pyplot as plt
 import imageio
 import numpy as np
 import sleap_io as sio
@@ -41,8 +39,7 @@ class SleapDataset(BaseDataset):
         normalize_image: bool = True,
         max_batching_gap: int = 15,
         use_tight_bbox: bool = False,
-        apply_mask_to_crop: bool = False,
-        dilation_radius_px: Union[int, list[int]] = 20,
+        dilation_radius_px: Union[int, list[int]] = 0,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -83,8 +80,7 @@ class SleapDataset(BaseDataset):
             normalize_image: whether to normalize the image to [0, 1]
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
-            apply_mask_to_crop: whether to apply the mask to the crop - mask is computed by dilating the keypoints
-            dilation_radius_px: radius of the keypoints dilation in pixels
+            dilation_radius_px: radius of the keypoints dilation in pixels. 0 means no mask applied
             **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
@@ -114,7 +110,6 @@ class SleapDataset(BaseDataset):
         self.normalize_image = normalize_image
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
-        self.apply_mask_to_crop = apply_mask_to_crop
         self.dilation_radius_px = dilation_radius_px
 
         if isinstance(anchors, int):
@@ -437,9 +432,9 @@ class SleapDataset(BaseDataset):
                     else:
                         crop = data_utils.crop_bbox(img, bbox)
 
-                    if self.apply_mask_to_crop:
+                    if dilation_radius_px > 0:
                         if np.isnan(arr_pose).any():
-                            print("arr_pose is nan")
+                            logger.warning("arr_pose is nan")
                         mask = data_utils.get_mask_from_keypoints(
                             arr_pose, crop, dilation_radius_px, bbox
                         )
