@@ -113,25 +113,25 @@ class Tracker:
 
         _ = model.eval()
 
-        for frame in frames:
-            if frame.has_instances():
-                if not self.use_vis_feats:
-                    for instance in frame.instances:
-                        instance.features = torch.zeros(1, model.d_model)
-                    # frame["features"] = torch.randn(
-                    #     num_frame_instances, self.model.d_model
-                    # )
+        # for frame in frames:
+        #     if frame.has_instances():
+        #         if not self.use_vis_feats:
+        #             for instance in frame.instances:
+        #                 instance.features = torch.zeros(1, model.d_model)
+        #             # frame["features"] = torch.randn(
+        #             #     num_frame_instances, self.model.d_model
+        #             # )
 
                 # comment out to turn encoder off
 
                 # Assuming the encoder is already trained or train encoder jointly.
-                elif not frame.has_features():
-                    with torch.no_grad():
-                        crops = frame.get_crops()
-                        z = model.visual_encoder(crops)
+                # elif not frame.has_features():
+                #     with torch.no_grad():
+                #         crops = frame.get_crops()
+                #         z = model.visual_encoder(crops)
 
-                        for i, z_i in enumerate(z):
-                            frame.instances[i].features = z_i
+                #         for i, z_i in enumerate(z):
+                #             frame.instances[i].features = z_i
 
         # I feel like this chunk is unnecessary:
         # reid_features = torch.cat(
@@ -203,9 +203,7 @@ class Tracker:
                     frames_to_track = tracked_frames + [
                         frame_to_track
                     ]  # better var name?
-
                     query_ind = len(frames_to_track) - 1
-
                     frame_to_track = self._run_global_tracker(
                         model,
                         frames_to_track,
@@ -271,11 +269,11 @@ class Tracker:
         overlap_thresh = self.overlap_thresh
         mult_thresh = self.mult_thresh
         n_traj = self.track_queue.n_tracks
-        curr_track = self.track_queue.curr_track
+        curr_tracks = self.track_queue.curr_track
 
-        reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
-            None
-        ]  # (1, total_instances, D=512)
+        # reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
+        #     None
+        # ]  # (1, total_instances, D=512)
 
         # (L=1, n_query, total_instances)
         with torch.no_grad():
@@ -374,7 +372,7 @@ class Tracker:
         # reweighting hyper-parameters for association -> they use 0.9
 
         traj_score = post_processing.weight_decay_time(
-            asso_nonquery, self.decay_time, reid_features, window_size, query_ind
+            asso_nonquery, self.decay_time, None, window_size, query_ind
         )
 
         if self.decay_time is not None and self.decay_time > 0:
@@ -486,9 +484,10 @@ class Tracker:
         logger.debug(f"track_ids: {track_ids}")
         for i in range(n_query):
             if track_ids[i] < 0:
-                logger.debug(f"Creating new track {curr_track}")
-                curr_track += 1
-                track_ids[i] = curr_track
+                max_track_id = max(curr_tracks)
+                logger.debug(f"Creating new track {max_track_id + 1}")
+                curr_tracks.add(max_track_id + 1)
+                track_ids[i] = max_track_id + 1
 
         query_frame.matches = (match_i, match_j)
 
