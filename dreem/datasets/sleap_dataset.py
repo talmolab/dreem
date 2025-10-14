@@ -194,6 +194,7 @@ class SleapDataset(BaseDataset):
         video_par_path = Path(video_name).parent
         if len(self.data_dirs) > 0:
             crop_size = self.crop_size[0]
+            dilation_radius_px = self.dilation_radius_px[0]
             for j, data_dir in enumerate(self.data_dirs):
                 if Path(data_dir) == video_par_path:
                     crop_size = self.crop_size[j]
