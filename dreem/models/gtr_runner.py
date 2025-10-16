@@ -184,6 +184,8 @@ class GTRRunner(LightningModule):
             A list of dicts where each dict is a frame containing the predicted track ids
         """
         frames_pred = self.tracker(self.model, batch[0])
+        for frame in frames_pred:
+            frame = frame.to("cpu")
         return frames_pred
 
     def _shared_eval_step(self, frames: list["Frame"], mode: str) -> dict[str, float]:

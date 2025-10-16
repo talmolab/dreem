@@ -1,6 +1,7 @@
 """Module containing logic for going from association -> assignment."""
 
 import logging
+import gc
 from math import inf
 
 import pandas as pd
@@ -168,9 +169,10 @@ class Tracker:
         # W: width.
 
         for batch_idx, frame_to_track in enumerate(frames):
-            tracked_frames = self.track_queue.collate_tracks(
-                device=frame_to_track.frame_id.device
-            )
+            self.device = frame_to_track.device
+            frame_to_track = frame_to_track.to("cpu")
+
+            tracked_frames = self.track_queue.collate_tracks()
             logger.debug(f"Current number of tracks is {self.track_queue.n_tracks}")
 
             if (
@@ -211,11 +213,16 @@ class Tracker:
                     )
 
             if frame_to_track.has_instances():
+                frame_to_track = frame_to_track.to("cpu")
+
                 self.track_queue.add_frame(frame_to_track)
             else:
                 self.track_queue.increment_gaps([])
 
             frames[batch_idx] = frame_to_track
+        
+        del frame_to_track, tracked_frames, frames_to_track
+        torch.cuda.empty_cache()
         return frames
 
     def _run_global_tracker(
@@ -276,6 +283,11 @@ class Tracker:
         # ]  # (1, total_instances, D=512)
 
         # (L=1, n_query, total_instances)
+        for instance in all_instances:
+            instance = instance.to(self.device)
+        for instance in query_instances:
+            instance = instance.to(self.device)
+
         with torch.no_grad():
             asso_matrix = model(all_instances, query_instances)
 
@@ -501,4 +513,5 @@ class Tracker:
         final_traj_score.columns.name = "Unique IDs"
 
         query_frame.add_traj_score("final", final_traj_score)
+
         return query_frame
