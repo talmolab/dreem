@@ -136,4 +136,3 @@ class GlobalTrackingTransformer(torch.nn.Module):
             instances_to_compute[i].features = z_i
             instances_to_compute[i].crop = None
         
-        del crops, features
