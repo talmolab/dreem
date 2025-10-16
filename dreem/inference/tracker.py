@@ -299,15 +299,15 @@ class Tracker:
         )  # (window_size, n_query, N_i)
         asso_output = torch.cat(asso_output, dim=1).cpu()  # (n_query, total_instances)
 
-        asso_output_df = pd.DataFrame(
-            asso_output.clone().numpy(),
-            columns=[f"Instance {i}" for i in range(asso_output.shape[-1])],
-        )
-
-        asso_output_df.index.name = "Instances"
-        asso_output_df.columns.name = "Instances"
-
-        query_frame.add_traj_score("asso_output", asso_output_df)
+        # asso_output_df = pd.DataFrame(
+        #     asso_output.clone().numpy(),
+        #     columns=[f"Instance {i}" for i in range(asso_output.shape[-1])],
+        # )
+        # 
+        # asso_output_df.index.name = "Instances"
+        # asso_output_df.columns.name = "Instances"
+        # 
+        # query_frame.add_traj_score("asso_output", asso_output_df)
         query_frame.asso_output = asso_matrix[-1]
 
         n_query = (
@@ -343,14 +343,14 @@ class Tracker:
         # instead should we do model(nonquery_instances, query_instances)?
         asso_nonquery = asso_output[:, nonquery_inds]  # (n_query, n_nonquery)
 
-        asso_nonquery_df = pd.DataFrame(
-            asso_nonquery.clone().numpy(), columns=nonquery_inds
-        )
-
-        asso_nonquery_df.index.name = "Current Frame Instances"
-        asso_nonquery_df.columns.name = "Nonquery Instances"
-
-        query_frame.add_traj_score("asso_nonquery", asso_nonquery_df)
+        # asso_nonquery_df = pd.DataFrame(
+        #     asso_nonquery.clone().numpy(), columns=nonquery_inds
+        # )
+        # 
+        # asso_nonquery_df.index.name = "Current Frame Instances"
+        # asso_nonquery_df.columns.name = "Nonquery Instances"
+        # 
+        # query_frame.add_traj_score("asso_nonquery", asso_nonquery_df)
 
         # get raw bbox coords of prev frame instances from frame.instances_per_frame
         query_boxes_px = torch.cat(
@@ -387,28 +387,28 @@ class Tracker:
             asso_nonquery, self.decay_time, None, window_size, query_ind
         )
 
-        if self.decay_time is not None and self.decay_time > 0:
-            decay_time_traj_score = pd.DataFrame(
-                traj_score.clone().numpy(), columns=nonquery_inds
-            )
-
-            decay_time_traj_score.index.name = "Query Instances"
-            decay_time_traj_score.columns.name = "Nonquery Instances"
-
-            query_frame.add_traj_score("decay_time", decay_time_traj_score)
+        # if self.decay_time is not None and self.decay_time > 0:
+        #     decay_time_traj_score = pd.DataFrame(
+        #         traj_score.clone().numpy(), columns=nonquery_inds
+        #     )
+        # 
+        #     decay_time_traj_score.index.name = "Query Instances"
+        #     decay_time_traj_score.columns.name = "Nonquery Instances"
+        # 
+        #     query_frame.add_traj_score("decay_time", decay_time_traj_score)
         ################################################################################
 
         # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj
         traj_score = torch.mm(traj_score, id_inds.cpu())  # (n_query, n_traj)
 
-        traj_score_df = pd.DataFrame(
-            traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
-        )
-
-        traj_score_df.index.name = "Current Frame Instances"
-        traj_score_df.columns.name = "Unique IDs"
-
-        query_frame.add_traj_score("traj_score", traj_score_df)
+        # traj_score_df = pd.DataFrame(
+        #     traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+        # )
+        # 
+        # traj_score_df.index.name = "Current Frame Instances"
+        # traj_score_df.columns.name = "Unique IDs"
+        # 
+        # query_frame.add_traj_score("traj_score", traj_score_df)
         ################################################################################
 
         # with iou -> combining with location in tracker, they set to True
@@ -432,15 +432,15 @@ class Tracker:
 
         traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious.cpu())
 
-        if self.iou is not None and self.iou != "":
-            iou_traj_score = pd.DataFrame(
-                traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
-            )
-
-            iou_traj_score.index.name = "Current Frame Instances"
-            iou_traj_score.columns.name = "Unique IDs"
-
-            query_frame.add_traj_score("weight_iou", iou_traj_score)
+        # if self.iou is not None and self.iou != "":
+        #     iou_traj_score = pd.DataFrame(
+        #         traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+        #     )
+        # 
+        #     iou_traj_score.index.name = "Current Frame Instances"
+        #     iou_traj_score.columns.name = "Unique IDs"
+        # 
+        #     query_frame.add_traj_score("weight_iou", iou_traj_score)
         ################################################################################
 
         # threshold for continuing a tracking or starting a new track -> they use 1.0
@@ -453,25 +453,25 @@ class Tracker:
             nonquery_boxes_px,
         )
 
-        if self.max_center_dist is not None and self.max_center_dist > 0:
-            max_center_dist_traj_score = pd.DataFrame(
-                traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
-            )
-
-            max_center_dist_traj_score.index.name = "Current Frame Instances"
-            max_center_dist_traj_score.columns.name = "Unique IDs"
-
-            query_frame.add_traj_score("max_center_dist", max_center_dist_traj_score)
+        # if self.max_center_dist is not None and self.max_center_dist > 0:
+        #     max_center_dist_traj_score = pd.DataFrame(
+        #         traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+        #     )
+        # 
+        #     max_center_dist_traj_score.index.name = "Current Frame Instances"
+        #     max_center_dist_traj_score.columns.name = "Unique IDs"
+        # 
+        #     query_frame.add_traj_score("max_center_dist", max_center_dist_traj_score)
 
         ################################################################################
         scaled_traj_score = torch.softmax(traj_score, dim=1)
-        scaled_traj_score_df = pd.DataFrame(
-            scaled_traj_score.numpy(), columns=unique_ids.cpu().numpy()
-        )
-        scaled_traj_score_df.index.name = "Current Frame Instances"
-        scaled_traj_score_df.columns.name = "Unique IDs"
-
-        query_frame.add_traj_score("scaled", scaled_traj_score_df)
+        # scaled_traj_score_df = pd.DataFrame(
+        #     scaled_traj_score.numpy(), columns=unique_ids.cpu().numpy()
+        # )
+        # scaled_traj_score_df.index.name = "Current Frame Instances"
+        # scaled_traj_score_df.columns.name = "Unique IDs"
+        # 
+        # query_frame.add_traj_score("scaled", scaled_traj_score_df)
         ################################################################################
 
         match_i, match_j = linear_sum_assignment((-traj_score))
@@ -506,12 +506,12 @@ class Tracker:
         for instance, track_id in zip(query_frame.instances, track_ids):
             instance.pred_track_id = track_id
 
-        final_traj_score = pd.DataFrame(
-            traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
-        )
-        final_traj_score.index.name = "Current Frame Instances"
-        final_traj_score.columns.name = "Unique IDs"
-
-        query_frame.add_traj_score("final", final_traj_score)
+        # final_traj_score = pd.DataFrame(
+        #     traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+        # )
+        # final_traj_score.index.name = "Current Frame Instances"
+        # final_traj_score.columns.name = "Unique IDs"
+        # 
+        # query_frame.add_traj_score("final", final_traj_score)
 
         return query_frame
