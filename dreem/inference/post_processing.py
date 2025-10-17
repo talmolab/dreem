@@ -5,42 +5,6 @@ import torch
 from dreem.inference.boxes import Boxes
 
 
-def weight_decay_time(
-    asso_output: torch.Tensor,
-    decay_time: float = 0,
-    T: int | None = None,
-    k: int | None = None,
-) -> torch.Tensor:
-    """Weight association matrix by time.
-
-    Weighs matrix by number of frames the ith object is from the jth object
-    in the association matrix.
-
-    Args:
-        asso_output: the association matrix to be reweighted
-        decay_time: the scale to weight the asso_output by
-        T: The length of the window
-        k: an integer for the query frame within the window of instances
-    Returns: The N_t x N association matrix weighted by decay time
-    """
-    if decay_time is not None and decay_time > 0:
-        assert T is not None and k is not None, (
-            "Need reid_features to weight traj_score by `decay_time`!"
-        )
-        N_t = asso_output.shape[0]
-        dts = torch.cat(
-            [
-                x.new_full((N_t,), T - t - 2)
-                for t, x in enumerate(reid_features)
-                if t != k
-            ],
-            dim=0,
-        ).cpu()  # Np
-        # asso_output = asso_output.to(self.device) * (self.decay_time ** dts[None, :])
-        asso_output = asso_output * (decay_time ** dts[:, None])
-    return asso_output
-
-
 def _pairwise_intersection(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     """Compute the intersection area between __all__ N x M pairs of boxes.
 

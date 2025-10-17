@@ -350,25 +350,8 @@ class Tracker:
 
         ################################################################################
 
-        # reweighting hyper-parameters for association -> they use 0.9
-
-        traj_score = post_processing.weight_decay_time(
-            asso_nonquery, self.decay_time, window_size, query_ind
-        )
-
-        if self.decay_time is not None and self.decay_time > 0:
-            decay_time_traj_score = pd.DataFrame(
-                traj_score.clone().numpy(), columns=nonquery_inds
-            )
-        
-            decay_time_traj_score.index.name = "Query Instances"
-            decay_time_traj_score.columns.name = "Nonquery Instances"
-        
-            query_frame.add_traj_score("decay_time", decay_time_traj_score)
-        ################################################################################
-
         # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj
-        traj_score = torch.mm(traj_score, id_inds.cpu())  # (n_query, n_traj)
+        traj_score = torch.mm(asso_nonquery, id_inds.cpu())  # (n_query, n_traj)
 
         traj_score_df = pd.DataFrame(
             traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
