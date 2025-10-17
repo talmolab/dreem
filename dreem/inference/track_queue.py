@@ -4,7 +4,6 @@ import logging
 from collections import deque
 
 import numpy as np
-from torch import device
 
 from dreem.io import Frame
 
@@ -59,7 +58,6 @@ class TrackQueue:
             f"window_size={self.window_size}, "
             f"max_gap={self.max_gap}, "
             f"n_tracks={self.n_tracks}, "
-            # f"curr_track={self.curr_track}, "
             f"queues={[(key, len(queue)) for key, queue in self._queues.items()]}, "
             f"curr_gap:{self._curr_gap}"
             ")"

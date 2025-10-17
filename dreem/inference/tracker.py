@@ -110,38 +110,7 @@ class Tracker:
         Returns:
             List of Frames populated with pred track ids and association matrix scores
         """
-        # Extract feature representations with pre-trained encoder.
-
         _ = model.eval()
-
-        # for frame in frames:
-        #     if frame.has_instances():
-        #         if not self.use_vis_feats:
-        #             for instance in frame.instances:
-        #                 instance.features = torch.zeros(1, model.d_model)
-        #             # frame["features"] = torch.randn(
-        #             #     num_frame_instances, self.model.d_model
-        #             # )
-
-        # comment out to turn encoder off
-
-        # Assuming the encoder is already trained or train encoder jointly.
-        # elif not frame.has_features():
-        #     with torch.no_grad():
-        #         crops = frame.get_crops()
-        #         z = model.visual_encoder(crops)
-
-        #         for i, z_i in enumerate(z):
-        #             frame.instances[i].features = z_i
-
-        # I feel like this chunk is unnecessary:
-        # reid_features = torch.cat(
-        #     [frame["features"] for frame in instances], dim=0
-        # ).unsqueeze(0)
-
-        # asso_preds, pred_boxes, pred_time, embeddings = self.model(
-        #     instances, reid_features
-        # )
         instances_pred = self.sliding_inference(model, frames)
 
         if not self.persistent_tracking:
@@ -384,7 +353,7 @@ class Tracker:
         # reweighting hyper-parameters for association -> they use 0.9
 
         traj_score = post_processing.weight_decay_time(
-            asso_nonquery, self.decay_time, None, window_size, query_ind
+            asso_nonquery, self.decay_time, window_size, query_ind
         )
 
         if self.decay_time is not None and self.decay_time > 0:

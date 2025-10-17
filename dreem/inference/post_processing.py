@@ -8,7 +8,6 @@ from dreem.inference.boxes import Boxes
 def weight_decay_time(
     asso_output: torch.Tensor,
     decay_time: float = 0,
-    reid_features: torch.Tensor | None = None,
     T: int | None = None,
     k: int | None = None,
 ) -> torch.Tensor:
@@ -20,13 +19,12 @@ def weight_decay_time(
     Args:
         asso_output: the association matrix to be reweighted
         decay_time: the scale to weight the asso_output by
-        reid_features: The n x d matrix of feature vectors for each object
         T: The length of the window
         k: an integer for the query frame within the window of instances
     Returns: The N_t x N association matrix weighted by decay time
     """
     if decay_time is not None and decay_time > 0:
-        assert reid_features is not None and T is not None and k is not None, (
+        assert T is not None and k is not None, (
             "Need reid_features to weight traj_score by `decay_time`!"
         )
         N_t = asso_output.shape[0]

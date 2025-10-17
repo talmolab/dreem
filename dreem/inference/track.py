@@ -15,7 +15,7 @@ import torch
 from omegaconf import DictConfig
 
 from dreem.datasets import CellTrackingDataset
-from dreem.inference import BatchTracker, Tracker
+from dreem.inference.tracker import Tracker
 from dreem.io import Config, Frame
 from dreem.models import GTRRunner
 
@@ -165,10 +165,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     tracker_cfg = pred_cfg.get_tracker_cfg()
     logger.info("Updating tracker hparams")
     model.tracker_cfg = tracker_cfg
-    if model.tracker_cfg.get("tracker_type", "standard") == "batch":
-        model.tracker = BatchTracker(**model.tracker_cfg)
-    else:
-        model.tracker = Tracker(**model.tracker_cfg)
+    model.tracker = Tracker(**model.tracker_cfg)
     logger.info("Using the following tracker:")
     logger.info(model.tracker)
 
