@@ -5,7 +5,6 @@ from collections import deque
 
 import numpy as np
 from torch import device
-
 from dreem.io import Frame
 
 logger = logging.getLogger("dreem.inference")
@@ -37,7 +36,7 @@ class TrackQueue:
         self._curr_gap = {}
         if self._max_gap <= self._window_size:
             self._max_gap = self._window_size
-        self._curr_track = -1
+        self._curr_track = set()
         self._verbose = verbose
 
     def __len__(self) -> int:
@@ -59,7 +58,6 @@ class TrackQueue:
             f"window_size={self.window_size}, "
             f"max_gap={self.max_gap}, "
             f"n_tracks={self.n_tracks}, "
-            f"curr_track={self.curr_track}, "
             f"queues={[(key, len(queue)) for key, queue in self._queues.items()]}, "
             f"curr_gap:{self._curr_gap}"
             ")"
@@ -171,9 +169,10 @@ class TrackQueue:
                 (ie if the track doesn't exist in the queue.)
         """
         if track_id is None:
+            # for track, instances in self._queues.items()
             self._queues = {}
             self._curr_gap = {}
-            self.curr_track = -1
+            self.curr_track = set()
         else:
             try:
                 self._queues.pop(track_id)
@@ -211,9 +210,9 @@ class TrackQueue:
 
             if pred_track_id not in self._queues.keys():
                 self._queues[pred_track_id] = deque(
-                    [(*frame_meta, instance)], maxlen=self.window_size
+                    [(*frame_meta, instance)]
                 )  # dumb work around to retain `img_shape`
-                self.curr_track = pred_track_id
+                self.curr_track.add(pred_track_id)
 
                 logger.debug(
                     f"New track = {pred_track_id} on frame {frame_id}! Current number of tracks = {self.n_tracks}"
@@ -221,15 +220,18 @@ class TrackQueue:
 
             else:
                 self._queues[pred_track_id].append((*frame_meta, instance))
+            if len(self._queues[pred_track_id]) > self.window_size:
+                popped = self._queues[pred_track_id].popleft()
+                inst = popped[-1].to("cpu")
+                del inst, popped
         self.increment_gaps(
             pred_tracks
         )  # should this be done in the tracker or the queue?
 
     def collate_tracks(
         self,
-        context_start_frame_id: int | None = None,
-        track_ids: list[int] | None = None,
         device: str | device | None = None,
+        track_ids: list[int] | None = None,
     ) -> list[Frame]:
         """Merge queues into a single list of Frames containing corresponding instances.
 
@@ -237,8 +239,6 @@ class TrackQueue:
             context_start_frame_id: The frame_id of the last frame in the context i.e. just before the start of the current batch
             track_ids: A list of trajectorys to merge. If None, then merge all
                 queues, otherwise filter queues by track_ids then merge.
-            device: A str representation of the device the frames should be on after merging
-                since all instances in the queue are kept on the cpu.
 
         Returns:
             A sorted list of Frame objects from which each instance came from,
@@ -310,7 +310,12 @@ class TrackQueue:
                 logger.debug(
                     f"Track {track} has not been seen for {self._curr_gap[track]} frames! Terminating Track...Current number of tracks = {self.n_tracks}."
                 )
-                self._queues.pop(track)
+                track_instances = self._queues.pop(track)
+                for tup in track_instances:
+                    inst = tup[-1]
+                    inst = inst.to("cpu")
+                del track_instances
+
                 self._curr_gap.pop(track)
 
         return exceeded_gap

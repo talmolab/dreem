@@ -80,14 +80,9 @@ class GTRRunner(LightningModule):
 
         self.model = GlobalTrackingTransformer(**self.model_cfg)
         self.loss = AssoLoss(**self.loss_cfg)
-        if self.tracker_cfg.get("tracker_type", "standard") == "batch":
-            from dreem.inference.batch_tracker import BatchTracker
+        from dreem.inference.tracker import Tracker
 
-            self.tracker = BatchTracker(**self.tracker_cfg)
-        else:
-            from dreem.inference.tracker import Tracker
-
-            self.tracker = Tracker(**self.tracker_cfg)
+        self.tracker = Tracker(**self.tracker_cfg)
         self.optimizer_cfg = optimizer_cfg
         self.scheduler_cfg = scheduler_cfg
 
@@ -184,6 +179,8 @@ class GTRRunner(LightningModule):
             A list of dicts where each dict is a frame containing the predicted track ids
         """
         frames_pred = self.tracker(self.model, batch[0])
+        for frame in frames_pred:
+            frame = frame.to("cpu")
         return frames_pred
 
     def _shared_eval_step(self, frames: list["Frame"], mode: str) -> dict[str, float]:

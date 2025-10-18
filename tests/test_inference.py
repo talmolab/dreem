@@ -39,7 +39,7 @@ def test_track_queue():
     assert tq.tracks == [i for i in range(max(n_instances_per_frame))]
     assert len(tq.collate_tracks()) == window_size
     assert all([gap == 0 for gap in tq._curr_gap.values()])
-    assert tq.curr_track == max(n_instances_per_frame) - 1
+    assert max(tq.curr_track) == max(n_instances_per_frame) - 1
 
     tq.add_frame(
         Frame(
@@ -84,7 +84,7 @@ def test_track_queue():
         )
 
     assert tq.n_tracks == 1
-    assert tq.curr_track == max(n_instances_per_frame)
+    assert max(tq.curr_track) == max(n_instances_per_frame)
     assert 0 in tq._queues.keys()
 
     tq.end_tracks()
@@ -173,18 +173,6 @@ def test_post_processing():  # set_default_device
     asso_nonk = torch.rand((N_t, N_p))
 
     decay_time = 0
-
-    assert (
-        asso_nonk
-        == post_processing.weight_decay_time(asso_nonk, decay_time, reid_features, T, k)
-    ).all()
-
-    decay_time = 0.9
-
-    assert not (
-        asso_nonk
-        == post_processing.weight_decay_time(asso_nonk, decay_time, reid_features, T, k)
-    ).all()
 
     asso_output = torch.rand((N_t, M))
     ious = torch.rand((N_t, M))

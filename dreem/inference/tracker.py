@@ -28,7 +28,6 @@ class Tracker:
         decay_time: float | None = None,
         iou: str | None = None,
         max_center_dist: float | None = None,
-        persistent_tracking: bool = False,
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
@@ -45,7 +44,6 @@ class Tracker:
             iou: Either [None, '', "mult" or "max"]
                  Whether to use multiplicative or max iou reweighting.
             max_center_dist: distance threshold for filtering trajectory score matrix.
-            persistent_tracking: whether to keep a buffer across chunks or not.
             max_gap: the max number of frames a trajectory can be missing before termination.
             max_tracks: the maximum number of tracks that can be created while tracking.
                 We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
@@ -61,7 +59,6 @@ class Tracker:
         self.decay_time = decay_time
         self.iou = iou
         self.max_center_dist = max_center_dist
-        self.persistent_tracking = persistent_tracking
         self.verbose = verbose
         self.max_tracks = max_tracks
 
@@ -86,7 +83,6 @@ class Tracker:
         """
         return (
             "Tracker("
-            f"persistent_tracking={self.persistent_tracking}, "
             f"max_tracks={self.max_tracks}, "
             f"use_vis_feats={self.use_vis_feats}, "
             f"overlap_thresh={self.overlap_thresh}, "
@@ -109,43 +105,8 @@ class Tracker:
         Returns:
             List of Frames populated with pred track ids and association matrix scores
         """
-        # Extract feature representations with pre-trained encoder.
-
         _ = model.eval()
-
-        for frame in frames:
-            if frame.has_instances():
-                if not self.use_vis_feats:
-                    for instance in frame.instances:
-                        instance.features = torch.zeros(1, model.d_model)
-                    # frame["features"] = torch.randn(
-                    #     num_frame_instances, self.model.d_model
-                    # )
-
-                # comment out to turn encoder off
-
-                # Assuming the encoder is already trained or train encoder jointly.
-                elif not frame.has_features():
-                    with torch.no_grad():
-                        crops = frame.get_crops()
-                        z = model.visual_encoder(crops)
-
-                        for i, z_i in enumerate(z):
-                            frame.instances[i].features = z_i
-
-        # I feel like this chunk is unnecessary:
-        # reid_features = torch.cat(
-        #     [frame["features"] for frame in instances], dim=0
-        # ).unsqueeze(0)
-
-        # asso_preds, pred_boxes, pred_time, embeddings = self.model(
-        #     instances, reid_features
-        # )
         instances_pred = self.sliding_inference(model, frames)
-
-        if not self.persistent_tracking:
-            logger.debug("Clearing Queue after tracking")
-            self.track_queue.end_tracks()
 
         return instances_pred
 
@@ -169,16 +130,9 @@ class Tracker:
 
         for batch_idx, frame_to_track in enumerate(frames):
             tracked_frames = self.track_queue.collate_tracks(
-                device=frame_to_track.frame_id.device
+                device=frame_to_track.device
             )
             logger.debug(f"Current number of tracks is {self.track_queue.n_tracks}")
-
-            if (
-                self.persistent_tracking and frame_to_track.frame_id == 0
-            ):  # check for new video and clear queue
-                logger.debug("New Video! Resetting Track Queue.")
-                self.track_queue.end_tracks()
-
             """
             Initialize tracks on first frame where detections appear.
             """
@@ -203,9 +157,7 @@ class Tracker:
                     frames_to_track = tracked_frames + [
                         frame_to_track
                     ]  # better var name?
-
                     query_ind = len(frames_to_track) - 1
-
                     frame_to_track = self._run_global_tracker(
                         model,
                         frames_to_track,
@@ -218,6 +170,9 @@ class Tracker:
                 self.track_queue.increment_gaps([])
 
             frames[batch_idx] = frame_to_track
+
+        del frame_to_track, tracked_frames, frames_to_track
+        torch.cuda.empty_cache()
         return frames
 
     def _run_global_tracker(
@@ -261,23 +216,15 @@ class Tracker:
 
         instances_per_frame = [frame.num_detected for frame in frames]
 
-        total_instances, window_size = (
-            sum(instances_per_frame),
-            len(instances_per_frame),
-        )  # Number of instances in window; length of window.
+        total_instances = sum(instances_per_frame) # Number of instances in window
 
         logger.debug(f"total_instances: {total_instances}")
 
         overlap_thresh = self.overlap_thresh
         mult_thresh = self.mult_thresh
         n_traj = self.track_queue.n_tracks
-        curr_track = self.track_queue.curr_track
+        curr_tracks = self.track_queue.curr_track
 
-        reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
-            None
-        ]  # (1, total_instances, D=512)
-
-        # (L=1, n_query, total_instances)
         with torch.no_grad():
             asso_matrix = model(all_instances, query_instances)
 
@@ -350,7 +297,7 @@ class Tracker:
             [
                 instance.bbox
                 for nonquery_frame in frames
-                if nonquery_frame.frame_id != query_frame.frame_id
+                if nonquery_frame.frame_id != query_frame.frame_id.item()
                 for instance in nonquery_frame.instances
             ],
             dim=0,
@@ -371,25 +318,8 @@ class Tracker:
 
         ################################################################################
 
-        # reweighting hyper-parameters for association -> they use 0.9
-
-        traj_score = post_processing.weight_decay_time(
-            asso_nonquery, self.decay_time, reid_features, window_size, query_ind
-        )
-
-        if self.decay_time is not None and self.decay_time > 0:
-            decay_time_traj_score = pd.DataFrame(
-                traj_score.clone().numpy(), columns=nonquery_inds
-            )
-
-            decay_time_traj_score.index.name = "Query Instances"
-            decay_time_traj_score.columns.name = "Nonquery Instances"
-
-            query_frame.add_traj_score("decay_time", decay_time_traj_score)
-        ################################################################################
-
         # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj
-        traj_score = torch.mm(traj_score, id_inds.cpu())  # (n_query, n_traj)
+        traj_score = torch.mm(asso_nonquery, id_inds.cpu())  # (n_query, n_traj)
 
         traj_score_df = pd.DataFrame(
             traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
@@ -486,9 +416,10 @@ class Tracker:
         logger.debug(f"track_ids: {track_ids}")
         for i in range(n_query):
             if track_ids[i] < 0:
-                logger.debug(f"Creating new track {curr_track}")
-                curr_track += 1
-                track_ids[i] = curr_track
+                max_track_id = max(curr_tracks)
+                logger.debug(f"Creating new track {max_track_id + 1}")
+                curr_tracks.add(max_track_id + 1)
+                track_ids[i] = max_track_id + 1
 
         query_frame.matches = (match_i, match_j)
 
@@ -502,4 +433,5 @@ class Tracker:
         final_traj_score.columns.name = "Unique IDs"
 
         query_frame.add_traj_score("final", final_traj_score)
+
         return query_frame
