@@ -8,7 +8,7 @@ import pandas as pd
 import sleap_io as sio
 from omegaconf import DictConfig
 
-from dreem.inference import BatchTracker, Tracker
+from dreem.inference import Tracker
 from dreem.io import Config
 from dreem.models import GTRRunner
 
@@ -47,10 +47,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
 
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     model.tracker_cfg = eval_cfg.cfg.tracker
-    if model.tracker_cfg.get("tracker_type", "standard") == "batch":
-        model.tracker = BatchTracker(**model.tracker_cfg)
-    else:
-        model.tracker = Tracker(**model.tracker_cfg)
+    model.tracker = Tracker(**model.tracker_cfg)
     logger.info("Using the following tracker:")
     logger.info(model.tracker)
     model.metrics["test"] = eval_cfg.get("metrics", {}).get("test", "all")

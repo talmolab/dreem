@@ -4,7 +4,7 @@ import logging
 from collections import deque
 
 import numpy as np
-
+from torch import device
 from dreem.io import Frame
 
 logger = logging.getLogger("dreem.inference")
@@ -169,6 +169,7 @@ class TrackQueue:
                 (ie if the track doesn't exist in the queue.)
         """
         if track_id is None:
+            # for track, instances in self._queues.items()
             self._queues = {}
             self._curr_gap = {}
             self.curr_track = set()
@@ -209,7 +210,7 @@ class TrackQueue:
 
             if pred_track_id not in self._queues.keys():
                 self._queues[pred_track_id] = deque(
-                    [(*frame_meta, instance)], maxlen=self.window_size
+                    [(*frame_meta, instance)]
                 )  # dumb work around to retain `img_shape`
                 self.curr_track.add(pred_track_id)
 
@@ -219,13 +220,17 @@ class TrackQueue:
 
             else:
                 self._queues[pred_track_id].append((*frame_meta, instance))
+            if len(self._queues[pred_track_id]) > self.window_size:
+                popped = self._queues[pred_track_id].popleft()
+                inst = popped[-1].to("cpu")
+                del inst, popped
         self.increment_gaps(
             pred_tracks
         )  # should this be done in the tracker or the queue?
 
     def collate_tracks(
         self,
-        context_start_frame_id: int | None = None,
+        device: str | device | None = None,
         track_ids: list[int] | None = None,
     ) -> list[Frame]:
         """Merge queues into a single list of Frames containing corresponding instances.
@@ -264,7 +269,7 @@ class TrackQueue:
                     frames[(video_id, frame_id)] = frame
                 else:
                     frames[(video_id, frame_id)].instances.append(instance)
-        return [frames[frame] for frame in sorted(frames.keys())]
+        return [frames[frame].to(device) for frame in sorted(frames.keys())]
 
     def increment_gaps(self, pred_track_ids: list[int]) -> dict[int, bool]:
         """Keep track of number of consecutive frames each trajectory has been missing from the queue.
@@ -305,7 +310,12 @@ class TrackQueue:
                 logger.debug(
                     f"Track {track} has not been seen for {self._curr_gap[track]} frames! Terminating Track...Current number of tracks = {self.n_tracks}."
                 )
-                self._queues.pop(track)
+                track_instances = self._queues.pop(track)
+                for tup in track_instances:
+                    inst = tup[-1]
+                    inst = inst.to("cpu")
+                del track_instances
+
                 self._curr_gap.pop(track)
 
         return exceeded_gap

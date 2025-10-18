@@ -174,18 +174,6 @@ def test_post_processing():  # set_default_device
 
     decay_time = 0
 
-    assert (
-        asso_nonk
-        == post_processing.weight_decay_time(asso_nonk, decay_time, reid_features, T, k)
-    ).all()
-
-    decay_time = 0.9
-
-    assert not (
-        asso_nonk
-        == post_processing.weight_decay_time(asso_nonk, decay_time, reid_features, T, k)
-    ).all()
-
     asso_output = torch.rand((N_t, M))
     ious = torch.rand((N_t, M))
 

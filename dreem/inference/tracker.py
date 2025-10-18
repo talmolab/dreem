@@ -29,7 +29,6 @@ class Tracker:
         decay_time: float | None = None,
         iou: str | None = None,
         max_center_dist: float | None = None,
-        persistent_tracking: bool = False,
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
@@ -46,7 +45,6 @@ class Tracker:
             iou: Either [None, '', "mult" or "max"]
                  Whether to use multiplicative or max iou reweighting.
             max_center_dist: distance threshold for filtering trajectory score matrix.
-            persistent_tracking: whether to keep a buffer across chunks or not.
             max_gap: the max number of frames a trajectory can be missing before termination.
             max_tracks: the maximum number of tracks that can be created while tracking.
                 We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
@@ -62,7 +60,6 @@ class Tracker:
         self.decay_time = decay_time
         self.iou = iou
         self.max_center_dist = max_center_dist
-        self.persistent_tracking = persistent_tracking
         self.verbose = verbose
         self.max_tracks = max_tracks
 
@@ -87,7 +84,6 @@ class Tracker:
         """
         return (
             "Tracker("
-            f"persistent_tracking={self.persistent_tracking}, "
             f"max_tracks={self.max_tracks}, "
             f"use_vis_feats={self.use_vis_feats}, "
             f"overlap_thresh={self.overlap_thresh}, "
@@ -113,10 +109,6 @@ class Tracker:
         _ = model.eval()
         instances_pred = self.sliding_inference(model, frames)
 
-        if not self.persistent_tracking:
-            logger.debug("Clearing Queue after tracking")
-            self.track_queue.end_tracks()
-
         return instances_pred
 
     def sliding_inference(
@@ -138,18 +130,8 @@ class Tracker:
         # W: width.
 
         for batch_idx, frame_to_track in enumerate(frames):
-            self.device = frame_to_track.device
-            frame_to_track = frame_to_track.to("cpu")
-
-            tracked_frames = self.track_queue.collate_tracks()
+            tracked_frames = self.track_queue.collate_tracks(device=frame_to_track.device)
             logger.debug(f"Current number of tracks is {self.track_queue.n_tracks}")
-
-            if (
-                self.persistent_tracking and frame_to_track.frame_id == 0
-            ):  # check for new video and clear queue
-                logger.debug("New Video! Resetting Track Queue.")
-                self.track_queue.end_tracks()
-
             """
             Initialize tracks on first frame where detections appear.
             """
@@ -182,8 +164,6 @@ class Tracker:
                     )
 
             if frame_to_track.has_instances():
-                frame_to_track = frame_to_track.to("cpu")
-
                 self.track_queue.add_frame(frame_to_track)
             else:
                 self.track_queue.increment_gaps([])
@@ -246,16 +226,6 @@ class Tracker:
         mult_thresh = self.mult_thresh
         n_traj = self.track_queue.n_tracks
         curr_tracks = self.track_queue.curr_track
-
-        # reid_features = torch.cat([frame.get_features() for frame in frames], dim=0)[
-        #     None
-        # ]  # (1, total_instances, D=512)
-
-        # (L=1, n_query, total_instances)
-        for instance in all_instances:
-            instance = instance.to(self.device)
-        for instance in query_instances:
-            instance = instance.to(self.device)
 
         with torch.no_grad():
             asso_matrix = model(all_instances, query_instances)
@@ -329,7 +299,7 @@ class Tracker:
             [
                 instance.bbox
                 for nonquery_frame in frames
-                if nonquery_frame.frame_id != query_frame.frame_id
+                if nonquery_frame.frame_id != query_frame.frame_id.item()
                 for instance in nonquery_frame.instances
             ],
             dim=0,
