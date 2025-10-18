@@ -130,7 +130,9 @@ class Tracker:
         # W: width.
 
         for batch_idx, frame_to_track in enumerate(frames):
-            tracked_frames = self.track_queue.collate_tracks(device=frame_to_track.device)
+            tracked_frames = self.track_queue.collate_tracks(
+                device=frame_to_track.device
+            )
             logger.debug(f"Current number of tracks is {self.track_queue.n_tracks}")
             """
             Initialize tracks on first frame where detections appear.
@@ -169,7 +171,7 @@ class Tracker:
                 self.track_queue.increment_gaps([])
 
             frames[batch_idx] = frame_to_track
-        
+
         del frame_to_track, tracked_frames, frames_to_track
         torch.cuda.empty_cache()
         return frames
@@ -242,10 +244,10 @@ class Tracker:
             asso_output.clone().numpy(),
             columns=[f"Instance {i}" for i in range(asso_output.shape[-1])],
         )
-        
+
         asso_output_df.index.name = "Instances"
         asso_output_df.columns.name = "Instances"
-        
+
         query_frame.add_traj_score("asso_output", asso_output_df)
         query_frame.asso_output = asso_matrix[-1]
 
@@ -285,10 +287,10 @@ class Tracker:
         asso_nonquery_df = pd.DataFrame(
             asso_nonquery.clone().numpy(), columns=nonquery_inds
         )
-        
+
         asso_nonquery_df.index.name = "Current Frame Instances"
         asso_nonquery_df.columns.name = "Nonquery Instances"
-        
+
         query_frame.add_traj_score("asso_nonquery", asso_nonquery_df)
 
         # get raw bbox coords of prev frame instances from frame.instances_per_frame
@@ -326,10 +328,10 @@ class Tracker:
         traj_score_df = pd.DataFrame(
             traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
         )
-        
+
         traj_score_df.index.name = "Current Frame Instances"
         traj_score_df.columns.name = "Unique IDs"
-        
+
         query_frame.add_traj_score("traj_score", traj_score_df)
         ################################################################################
 
@@ -358,10 +360,10 @@ class Tracker:
             iou_traj_score = pd.DataFrame(
                 traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
             )
-        
+
             iou_traj_score.index.name = "Current Frame Instances"
             iou_traj_score.columns.name = "Unique IDs"
-        
+
             query_frame.add_traj_score("weight_iou", iou_traj_score)
         ################################################################################
 
@@ -379,10 +381,10 @@ class Tracker:
             max_center_dist_traj_score = pd.DataFrame(
                 traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
             )
-        
+
             max_center_dist_traj_score.index.name = "Current Frame Instances"
             max_center_dist_traj_score.columns.name = "Unique IDs"
-        
+
             query_frame.add_traj_score("max_center_dist", max_center_dist_traj_score)
 
         ################################################################################
@@ -392,7 +394,7 @@ class Tracker:
         )
         scaled_traj_score_df.index.name = "Current Frame Instances"
         scaled_traj_score_df.columns.name = "Unique IDs"
-        
+
         query_frame.add_traj_score("scaled", scaled_traj_score_df)
         ################################################################################
 
@@ -433,7 +435,7 @@ class Tracker:
         )
         final_traj_score.index.name = "Current Frame Instances"
         final_traj_score.columns.name = "Unique IDs"
-        
+
         query_frame.add_traj_score("final", final_traj_score)
 
         return query_frame

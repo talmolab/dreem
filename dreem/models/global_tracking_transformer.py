@@ -135,4 +135,3 @@ class GlobalTrackingTransformer(torch.nn.Module):
         for i, z_i in enumerate(features):
             instances_to_compute[i].features = z_i
             instances_to_compute[i].crop = None
-        

@@ -81,6 +81,7 @@ class GTRRunner(LightningModule):
         self.model = GlobalTrackingTransformer(**self.model_cfg)
         self.loss = AssoLoss(**self.loss_cfg)
         from dreem.inference.tracker import Tracker
+
         self.tracker = Tracker(**self.tracker_cfg)
         self.optimizer_cfg = optimizer_cfg
         self.scheduler_cfg = scheduler_cfg
