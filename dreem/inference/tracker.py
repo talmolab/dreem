@@ -1,7 +1,6 @@
 """Module containing logic for going from association -> assignment."""
 
 import logging
-import gc
 from math import inf
 
 import pandas as pd
@@ -217,10 +216,7 @@ class Tracker:
 
         instances_per_frame = [frame.num_detected for frame in frames]
 
-        total_instances, window_size = (
-            sum(instances_per_frame),
-            len(instances_per_frame),
-        )  # Number of instances in window; length of window.
+        total_instances = sum(instances_per_frame) # Number of instances in window
 
         logger.debug(f"total_instances: {total_instances}")
 
