@@ -458,17 +458,13 @@ class Tracker:
                 query_frame.instances[i].track_score = scaled_traj_score[i, j].item()
         logger.debug(f"track_ids: {track_ids}")
         for i in range(n_query):
-            if track_ids[i] < 0:
+            # True if association score was below the threshold, and we haven't reached max tracks
+            if track_ids[i] < 0 and remove.sum().item() == 0: # if we couldn't assign an instance to a track, but also it wasn't due to high uncertainty, only then start a new track
+                # if match wasn't made due to high uncertainty, we don't want to start a new track, just leave it be until it can be confidently assigned in the future
                 max_track_id = max(curr_tracks)
                 logger.debug(f"Creating new track {max_track_id + 1}")
                 curr_tracks.add(max_track_id + 1)
                 track_ids[i] = max_track_id + 1
-            # True if association score was below the threshold, and we haven't reached max tracks
-            if track_ids[i] < 0 and remove.sum().item() == 0: # if we couldn't assign an instance to a track, but also it wasn't due to high uncertainty, only then start a new track
-                # if match wasn't made due to high uncertainty, we don't want to start a new track, just leave it be until it can be confidently assigned in the future
-                logger.debug(f"Creating new track {curr_track}")
-                curr_track += 1
-                track_ids[i] = curr_track
 
         query_frame.matches = (match_i, match_j)
 
