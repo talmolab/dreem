@@ -403,7 +403,7 @@ class Tracker:
         # Compute entropy for each row and filter out rows with high entropy
         if self.confidence_threshold is not None:
             entropy = -torch.sum(scaled_traj_score * torch.exp(scaled_traj_score), axis=1)
-            norm_entropy = entropy / torch.log(torch.tensor(len(unique_ids)))
+            norm_entropy = entropy / torch.log(torch.tensor(n_query))
             removal_threshold = 1 - self.confidence_threshold
             # remove these rows from the cost matrix, but careful to maintain indexes of the results
             remove = norm_entropy > removal_threshold 

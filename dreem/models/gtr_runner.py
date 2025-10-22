@@ -38,7 +38,7 @@ class GTRRunner(LightningModule):
     DEFAULT_METRICS = {
         "train": [],
         "val": [],
-        "test": ["num_switches", "global_tracking_accuracy"],
+        "test": ["motmetrics"],
     }
     DEFAULT_TRACKING = {
         "train": False,
@@ -55,8 +55,8 @@ class GTRRunner(LightningModule):
         optimizer_cfg: dict | None = None,
         scheduler_cfg: dict | None = None,
         metrics: dict[str, list[str]] | None = None,
-        persistent_tracking: dict[str, bool] | None = None,
         test_save_path: str = "./test_results.h5",
+        save_frame_meta: bool = False,
     ):
         """Initialize a lightning module for GTR.
 
@@ -68,7 +68,6 @@ class GTRRunner(LightningModule):
                        Only used to overwrite `configure_optimizer`
             scheduler_cfg: hyperparameters for lr_scheduler used to overwrite `configure_optimizer
             metrics: a dict containing the metrics to be computed during train, val, and test.
-            persistent_tracking: a dict containing whether to use persistent tracking during train, val and test inference.
             test_save_path: path to a directory to save the eval and tracking results to
         """
         super().__init__()
@@ -87,12 +86,7 @@ class GTRRunner(LightningModule):
         self.scheduler_cfg = scheduler_cfg
 
         self.metrics = metrics if metrics is not None else self.DEFAULT_METRICS
-        self.persistent_tracking = (
-            persistent_tracking
-            if persistent_tracking is not None
-            else self.DEFAULT_TRACKING
-        )
-        self.test_results = {"preds": [], "save_path": test_save_path}
+        self.test_results = {"preds": [], "save_path": test_save_path, "save_frame_meta": save_frame_meta}
 
     def forward(
         self,
@@ -207,7 +201,6 @@ class GTRRunner(LightningModule):
 
             return_metrics = {"loss": loss}
             if mode == "test":
-                self.tracker.persistent_tracking = True
                 frames_pred = self.tracker(self.model, frames)
                 self.test_results["preds"].extend(
                     [frame.to("cpu") for frame in frames_pred]
@@ -288,13 +281,13 @@ class GTRRunner(LightningModule):
             "test"
         ]  # list of metrics to compute, or "all"
         if metrics_to_compute == "all":
-            metrics_to_compute = ["motmetrics", "global_tracking_accuracy"]
+            metrics_to_compute = ["motmetrics"]
         if isinstance(metrics_to_compute, str):
             metrics_to_compute = [metrics_to_compute]
         for metric in metrics_to_compute:
-            if metric not in ["motmetrics", "global_tracking_accuracy"]:
+            if metric not in ["motmetrics"]:
                 raise ValueError(
-                    f"Metric {metric} not supported. Please select from 'motmetrics' or 'global_tracking_accuracy'"
+                    f"Metric {metric} not supported. Please select from 'motmetrics'"
                 )
 
         preds = self.test_results["preds"]
@@ -336,24 +329,21 @@ class GTRRunner(LightningModule):
                     # Loop through each row in mot_summary and save as attributes
                     for _, row in mot_summary.iterrows():
                         mot_summary_group.attrs[row.name] = row["acc"]
-                    # save extra metadata for frames in which there is a switch
-                    for frame_id, switch in frame_switch_map.items():
-                        frame = preds[frame_id]
-                        frame = frame.to("cpu")
-                        if switch:
+                    if self.test_results["save_frame_meta"]:
+                        # save frame metadata for every frame, specifically assoc matrices
+                        frame_meta_group = vid_group.require_group("frame_meta")
+                        switch_group = frame_meta_group.require_group("switches")
+                        for frame in preds:
+                            frame = frame.to("cpu")
                             _ = frame.to_h5(
-                                vid_group,
-                                frame.get_gt_track_ids().cpu().numpy(),
-                                save={
-                                    "crop": True,
-                                    "features": True,
-                                    "embeddings": True,
-                                },
+                                frame_meta_group, frame.get_gt_track_ids().cpu().numpy()
                             )
-                        else:
-                            _ = frame.to_h5(
-                                vid_group, frame.get_gt_track_ids().cpu().numpy()
-                            )
+                            if frame.frame_id.item() in frame_switch_map:
+                                if frame_switch_map[frame.frame_id.item()]:
+                                    switch_group.attrs["frame_" + str(frame.frame_id.item())] = True
+                                else:
+                                    switch_group.attrs["frame_" + str(frame.frame_id.item())] = False
+
                     # save motevents log to csv
                     # motevents_path = os.path.join(
                     #     self.test_results["save_path"], f"{vid_name}.motevents.csv"

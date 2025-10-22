@@ -253,7 +253,7 @@ class Frame:
             if save.get("embeddings", False):
                 for key, val in instance.get_embedding().items():
                     kwargs[f"{key}_emb"] = val.cpu().numpy()
-            _ = instance.to_h5(frame_group, f"instance_{instance_label}", **kwargs)
+            # _ = instance.to_h5(frame_group, f"instance_{instance_label}", **kwargs)
 
         return frame_group
 

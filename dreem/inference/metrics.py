@@ -167,7 +167,12 @@ def compute_motmetrics(df):
     frame_switch_map = {}
     # filter out -1 track_ids; these are untracked instances due to confidence thresholding
     df = df[df["pred_track_id"] != -1]
+    preds_motevents_map = {}
+    motevents_frame_id = 0
     for frame, framedf in df.groupby("frame_id"):
+        # if a frame has no preds, motevents just enumerates in order, leading to mismatch in frame ids
+        preds_motevents_map[frame] = motevents_frame_id
+        motevents_frame_id += 1
         gt_ids = framedf["gt_track_id"].values
         pred_tracks = framedf["pred_track_id"].values
         # if no matching preds, fill with nan to let motmetrics handle it
@@ -190,7 +195,7 @@ def compute_motmetrics(df):
     switch_frames = []
     for frame_id in sorted(df["frame_id"].unique()):
         frame_switch_map[frame_id] = False # just populate with false for all frames at first
-        motevent = motevents[motevents["FrameId"] == frame_id]
+        motevent = motevents[motevents["FrameId"] == preds_motevents_map[frame_id]]
         if motevent.empty: # if no assigned instances in this frame, skip
             continue
         if (motevent['Type'] == "SWITCH").any():

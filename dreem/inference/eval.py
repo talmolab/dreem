@@ -51,9 +51,10 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     logger.info("Using the following tracker:")
     logger.info(model.tracker)
     model.metrics["test"] = eval_cfg.get("metrics", {}).get("test", "all")
-    model.persistent_tracking["test"] = True
     logger.info("Computing the following metrics:")
     logger.info(model.metrics["test"])
+    save_frame_meta = eval_cfg.cfg.get("save_frame_meta", False)
+    model.test_results["save_frame_meta"] = save_frame_meta
     model.test_results["save_path"] = eval_cfg.get("outdir", ".")
     os.makedirs(model.test_results["save_path"], exist_ok=True)
     logger.info(
