@@ -165,6 +165,11 @@ def compute_motmetrics(df):
     summary_dreem = {}
     acc_dreem = mm.MOTAccumulator(auto_id=True)
     frame_switch_map = {}
+    track_name_mapping = {}
+    curr_track = 0
+    for trk in df["gt_track_id"].unique():
+        track_name_mapping[trk] = curr_track
+        curr_track += 1
     # filter out -1 track_ids; these are untracked instances due to confidence thresholding
     df = df[df["pred_track_id"] != -1]
     preds_motevents_map = {}
@@ -174,6 +179,7 @@ def compute_motmetrics(df):
         preds_motevents_map[frame] = motevents_frame_id
         motevents_frame_id += 1
         gt_ids = framedf["gt_track_id"].values
+        gt_ids = [track_name_mapping[trk] for trk in gt_ids]
         pred_tracks = framedf["pred_track_id"].values
         # if no matching preds, fill with nan to let motmetrics handle it
         if (pred_tracks == -1).all():
