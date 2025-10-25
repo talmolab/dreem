@@ -272,7 +272,7 @@ class Tracker:
                 if batch_idx != query_ind
             ],
             dim=0,
-        ).view(n_nonquery)  # (n_nonquery,)
+        ).view(n_nonquery).cpu()  # (n_nonquery,)
 
         query_inds = [
             x
@@ -314,7 +314,7 @@ class Tracker:
         query_boxes = pred_boxes[query_inds]  # n_k x 4
         nonquery_boxes = pred_boxes[nonquery_inds]  # n_nonquery x 4
 
-        unique_ids = torch.unique(instance_ids)  # (n_nonquery,)
+        unique_ids = torch.unique(instance_ids).cpu()  # (n_nonquery,)
 
         logger.debug(f"Instance IDs: {instance_ids}")
         logger.debug(f"unique ids: {unique_ids}")
@@ -347,7 +347,7 @@ class Tracker:
             #    n_nonquery, device=id_inds.device)[:, None]).max(dim=0)[1] # n_traj
 
             last_inds = (
-                id_inds * torch.arange(n_nonquery, device=id_inds.device)[:, None]
+                id_inds * torch.arange(n_nonquery)[:, None]
             ).max(dim=0)[1]  # M
 
             last_boxes = nonquery_boxes[last_inds]  # n_traj x 4
@@ -372,12 +372,22 @@ class Tracker:
 
         # threshold for continuing a tracking or starting a new track -> they use 1.0
         # todo -> should also work without pos_embed
-        traj_score = post_processing.filter_max_center_dist(
+        _, h, w = query_frame.img_shape.flatten()
+        last_boxes_px = last_boxes.clone()
+        last_boxes_px[:, :, [0, 2]] *= w
+        last_boxes_px[:, :, [1, 3]] *= h
+        last_boxes_px = last_boxes_px.cpu()
+        query_boxes_px = query_boxes_px.cpu()
+        last_inds = last_inds.cpu()
+        true_frame_ids = torch.tensor([frame.frame_id.item() for frame in frames])
+        traj_score, valid_mult = post_processing.filter_max_center_dist(
             traj_score,
             self.max_center_dist,
-            id_inds,
+            last_inds,
             query_boxes_px,
-            nonquery_boxes_px,
+            last_boxes_px,
+            torch.tensor(instances_per_frame[:-1]).cpu(),
+            true_frame_ids,
         )
 
         if self.max_center_dist is not None and self.max_center_dist > 0:
@@ -412,13 +422,8 @@ class Tracker:
                 logger.debug(f"All instances have high entropy in frame {query_frame.frame_id.item()}, skipping assignment")
                 return query_frame
 
-            dict_remove_inds = {}
-            # post-LSA matches will have fewer rows, with remove=True indices being the removed rows
-            for idx in range(traj_score.shape[0]):
-                dict_remove_inds[idx] = True if remove[idx].item() else False
-
-            dict_old_new_map = {i: None for i in range(traj_score.shape[0])}
-            dict_new_old_map = {i: None for i in range(remove.sum())}
+            dict_old_new_map = {}
+            dict_new_old_map = {}
             new_idx = 0
             for idx in range(traj_score.shape[0]):
                 if remove[idx].item():
@@ -439,8 +444,17 @@ class Tracker:
             for i, _ in enumerate(match_i):
                 match_i[i] = dict_new_old_map[i]
 
+        match_i_valid = []
+        match_j_valid = []
+        if self.max_center_dist is not None and self.max_center_dist > 0 and valid_mult is not None:
+            for i, j in zip(match_i, match_j):
+                # check if this pairing is valid, otherwise filter it out of the matches
+                if valid_mult[i, j].item():
+                    match_i_valid.append(i)
+                    match_j_valid.append(j)
+
         track_ids = instance_ids.new_full((n_query,), -1)
-        for i, j in zip(match_i, match_j):
+        for i, j in zip(match_i_valid, match_j_valid):
             # The overlap threshold is multiplied by the number of times the unique track j is matched to an
             # instance out of all instances in the window excluding the current frame.
             #
@@ -450,6 +464,7 @@ class Tracker:
             thresh = (
                 overlap_thresh * id_inds[:, j].sum() if mult_thresh else overlap_thresh
             )
+            # if we've already reached max tracks, just assign it to one of the existing tracks
             if n_traj >= self.max_tracks or traj_score[i, j] > thresh:
                 logger.debug(
                     f"Assigning instance {i} to track {j} with id {unique_ids[j]}"
@@ -457,16 +472,18 @@ class Tracker:
                 track_ids[i] = unique_ids[j]
                 query_frame.instances[i].track_score = scaled_traj_score[i, j].item()
         logger.debug(f"track_ids: {track_ids}")
-        for i in range(n_query):
-            # True if association score was below the threshold, and we haven't reached max tracks
-            if track_ids[i] < 0 and remove.sum().item() == 0: # if we couldn't assign an instance to a track, but also it wasn't due to high uncertainty, only then start a new track
+        for idx,i in enumerate(range(n_query)):
+            # if not assigned, and we haven't reached max tracks, start a new track. Otherwise leave it unassigned till a future frame
+            if track_ids[i] < 0 and n_traj < self.max_tracks:
+                # and remove[idx].item() == 0: disabled for now; if we haven't reached max tracks, maybe it should start a new track. 
+                # original justification: if we couldn't assign an instance to a track, but also it wasn't due to high uncertainty, only then start a new track
                 # if match wasn't made due to high uncertainty, we don't want to start a new track, just leave it be until it can be confidently assigned in the future
                 max_track_id = max(curr_tracks)
                 logger.debug(f"Creating new track {max_track_id + 1}")
                 curr_tracks.add(max_track_id + 1)
                 track_ids[i] = max_track_id + 1
 
-        query_frame.matches = (match_i, match_j)
+        query_frame.matches = (match_i_valid, match_j_valid)
 
         for instance, track_id in zip(query_frame.instances, track_ids):
             instance.pred_track_id = track_id
