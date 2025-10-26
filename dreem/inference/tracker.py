@@ -299,16 +299,7 @@ class Tracker:
         # get raw bbox coords of prev frame instances from frame.instances_per_frame
         query_boxes_px = torch.cat(
             [instance.bbox for instance in query_frame.instances], dim=0
-        )
-        nonquery_boxes_px = torch.cat(
-            [
-                instance.bbox
-                for nonquery_frame in frames
-                if nonquery_frame.frame_id != query_frame.frame_id.item()
-                for instance in nonquery_frame.instances
-            ],
-            dim=0,
-        )
+        ).cpu()
 
         pred_boxes = model_utils.get_boxes(all_instances)
         query_boxes = pred_boxes[query_inds]  # n_k x 4
@@ -372,12 +363,10 @@ class Tracker:
 
         # threshold for continuing a tracking or starting a new track -> they use 1.0
         # todo -> should also work without pos_embed
-        _, h, w = query_frame.img_shape.flatten()
-        last_boxes_px = last_boxes.clone()
+        _, h, w = query_frame.img_shape.flatten().cpu()
+        last_boxes_px = last_boxes.cpu()
         last_boxes_px[:, :, [0, 2]] *= w
         last_boxes_px[:, :, [1, 3]] *= h
-        last_boxes_px = last_boxes_px.cpu()
-        query_boxes_px = query_boxes_px.cpu()
         last_inds = last_inds.cpu()
         true_frame_ids = torch.tensor([frame.frame_id.item() for frame in frames])
         traj_score, valid_mult = post_processing.filter_max_center_dist(

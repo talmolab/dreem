@@ -125,7 +125,7 @@ def filter_max_center_dist(
         n_nonquery = sum(instances_per_frame)
         cumulative = torch.cumsum(instances_per_frame, dim=0)
         # bin ids are the indices (into the true_frame_ids list) of the last known position of the instances
-        bin_ids = torch.searchsorted(cumulative, last_inds, right=False)
+        bin_ids = torch.searchsorted(cumulative, last_inds + 1, right=False)
         curr_frame_id = true_frame_ids[-1].item()
         # scale max_center_dist by num of frames i.e. grow the possible region that the instance can be in
         max_center_dist_adjusted = max_center_dist * (torch.max(torch.tensor(1), curr_frame_id - true_frame_ids[:-1][bin_ids]))

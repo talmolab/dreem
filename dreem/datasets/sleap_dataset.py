@@ -440,8 +440,6 @@ class SleapDataset(BaseDataset):
                             arr_pose, crop, dilation_radius_px, bbox
                         )
                         crop = crop * mask
-                        # os.makedirs(f"/root/vast/mustafa/dreem-experiments/run/apply-mask-kpts-dilate/crops", exist_ok=True)
-                        # plt.imsave(f"/root/vast/mustafa/dreem-experiments/run/apply-mask-kpts-dilate/crops/frame_{frame_ind}_{j}_crop.png", crop[0].numpy())
                         # logger.debug(f"Applying mask to crop {frame_ind}_{j}")
 
                     crops.append(crop)
