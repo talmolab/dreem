@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 from scipy.optimize import linear_sum_assignment
 
+from dreem.datasets.data_utils import _pairwise_iou
 from dreem.inference import post_processing
 from dreem.inference.boxes import Boxes
 from dreem.inference.track_queue import TrackQueue
@@ -31,6 +32,8 @@ class Tracker:
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
+        confidence_threshold: float = 0,
+        temperature: float = 0.1,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -48,6 +51,8 @@ class Tracker:
             max_tracks: the maximum number of tracks that can be created while tracking.
                 We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
             verbose: Whether or not to turn on debug printing after each operation.
+            confidence_threshold: threshold for filtering out instances with high confidence. Set to 0 to disable confidence thresholding.
+            temperature: temperature for softmax.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
@@ -61,6 +66,8 @@ class Tracker:
         self.max_center_dist = max_center_dist
         self.verbose = verbose
         self.max_tracks = max_tracks
+        self.confidence_threshold = confidence_threshold
+        self.temperature = temperature
 
     def __call__(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -90,7 +97,8 @@ class Tracker:
             f"decay_time={self.decay_time}, "
             f"max_center_dist={self.max_center_dist}, "
             f"verbose={self.verbose}, "
-            f"queue={self.track_queue}"
+            f"queue={self.track_queue}, "
+            f"temperature={self.temperature}"
         )
 
     def track(
@@ -163,6 +171,7 @@ class Tracker:
                         frames_to_track,
                         query_ind=query_ind,
                     )
+                    del frames_to_track
 
             if frame_to_track.has_instances():
                 self.track_queue.add_frame(frame_to_track)
@@ -171,7 +180,7 @@ class Tracker:
 
             frames[batch_idx] = frame_to_track
 
-        del frame_to_track, tracked_frames, frames_to_track
+        del frame_to_track, tracked_frames
         torch.cuda.empty_cache()
         return frames
 
@@ -216,7 +225,7 @@ class Tracker:
 
         instances_per_frame = [frame.num_detected for frame in frames]
 
-        total_instances = sum(instances_per_frame) # Number of instances in window
+        total_instances = sum(instances_per_frame)  # Number of instances in window
 
         logger.debug(f"total_instances: {total_instances}")
 
@@ -344,9 +353,7 @@ class Tracker:
             ).max(dim=0)[1]  # M
 
             last_boxes = nonquery_boxes[last_inds]  # n_traj x 4
-            last_ious = post_processing._pairwise_iou(
-                Boxes(query_boxes), Boxes(last_boxes)
-            )  # n_k x M
+            last_ious = _pairwise_iou(Boxes(query_boxes), Boxes(last_boxes))  # n_k x M
         else:
             last_ious = traj_score.new_zeros(traj_score.shape)
 
@@ -384,7 +391,9 @@ class Tracker:
             query_frame.add_traj_score("max_center_dist", max_center_dist_traj_score)
 
         ################################################################################
-        scaled_traj_score = torch.softmax(traj_score, dim=1)
+        scaled_traj_score = torch.nn.functional.log_softmax(
+            traj_score / self.temperature, dim=1
+        )
         scaled_traj_score_df = pd.DataFrame(
             scaled_traj_score.numpy(), columns=unique_ids.cpu().numpy()
         )
@@ -393,8 +402,48 @@ class Tracker:
 
         query_frame.add_traj_score("scaled", scaled_traj_score_df)
         ################################################################################
+        # Compute entropy for each row and filter out rows with high entropy
+        if self.confidence_threshold > 0:
+            entropy = -torch.sum(
+                scaled_traj_score * torch.exp(scaled_traj_score), axis=1
+            )
+            norm_entropy = entropy / torch.log(torch.tensor(n_query))
+            removal_threshold = 1 - self.confidence_threshold
+            # remove these rows from the cost matrix, but careful to maintain indexes of the results
+            remove = norm_entropy > removal_threshold
 
-        match_i, match_j = linear_sum_assignment((-traj_score))
+            if (remove.sum() == traj_score.shape[0]).item():
+                logger.debug(
+                    f"All instances have high entropy in frame {query_frame.frame_id.item()}, skipping assignment"
+                )
+                return query_frame
+
+            dict_remove_inds = {}
+            # post-LSA matches will have fewer rows, with remove=True indices being the removed rows
+            for idx in range(traj_score.shape[0]):
+                dict_remove_inds[idx] = True if remove[idx].item() else False
+
+            dict_old_new_map = {i: None for i in range(traj_score.shape[0])}
+            dict_new_old_map = {i: None for i in range(remove.sum())}
+            new_idx = 0
+            for idx in range(traj_score.shape[0]):
+                if remove[idx].item():
+                    pass
+                else:
+                    dict_old_new_map[idx] = new_idx
+                    dict_new_old_map[new_idx] = idx
+                    new_idx += 1
+
+            traj_score_filt = traj_score[~remove]
+        else:
+            traj_score_filt = traj_score
+            remove = torch.zeros(traj_score.shape[0])
+
+        match_i, match_j = linear_sum_assignment((-traj_score_filt))
+        if self.confidence_threshold > 0:
+            # reindex the match indices to account for removed rows; only match_i needs to be reindexed
+            for i, _ in enumerate(match_i):
+                match_i[i] = dict_new_old_map[i]
 
         track_ids = instance_ids.new_full((n_query,), -1)
         for i, j in zip(match_i, match_j):
@@ -415,7 +464,8 @@ class Tracker:
                 query_frame.instances[i].track_score = scaled_traj_score[i, j].item()
         logger.debug(f"track_ids: {track_ids}")
         for i in range(n_query):
-            if track_ids[i] < 0:
+            # True if association score was below the threshold, and we haven't reached max tracks
+            if track_ids[i] < 0 and n_traj < self.max_tracks:
                 max_track_id = max(curr_tracks)
                 logger.debug(f"Creating new track {max_track_id + 1}")
                 curr_tracks.add(max_track_id + 1)

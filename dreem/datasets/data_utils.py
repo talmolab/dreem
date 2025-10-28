@@ -11,6 +11,7 @@ import sleap_io as sio
 import torch
 from numpy.typing import ArrayLike
 from PIL import Image
+from dreem.inference.boxes import Boxes
 from sleap_io import LabeledFrame, Labels
 from sleap_io.io.slp import (
     read_hdf5_attrs,
@@ -202,6 +203,55 @@ def pad_variable_size_crops(instance, target_size):
         )
 
     return instance
+
+
+def _pairwise_intersection(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
+    """Compute the intersection area between __all__ N x M pairs of boxes.
+
+    The box order must be (xmin, ymin, xmax, ymax)
+
+    Args:
+        boxes1: First set of boxes (Boxes object containing N boxes).
+        boxes2: Second set of boxes (Boxes object containing M boxes).
+
+    Returns:
+        Tensor: intersection, sized [N,M].
+    """
+    boxes1, boxes2 = boxes1.tensor, boxes2.tensor
+    width_height = torch.min(boxes1[:, None, :, 2:], boxes2[:, :, 2:]) - torch.max(
+        boxes1[:, None, :, :2], boxes2[:, :, :2]
+    )  # [N,M,n_anchors,     2]
+    width_height.clamp_(min=0)  # [N,M, n_anchors, 2]
+
+    intersection = width_height.prod(dim=3)  # [N,M, n_anchors]
+
+    return intersection
+
+
+def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
+    """Compute intersection over union between all N x M pairs of boxes.
+
+    The box order must be (xmin, ymin, xmax, ymax).
+
+    Args:
+        boxes1: First set of boxes (Boxes object containing N boxes).
+        boxes2: Second set of boxes (Boxes object containing M boxes).
+
+    Returns:
+        Tensor: IoU, sized [N,M].
+    """
+    area1 = boxes1.area()  # [N]
+    area2 = boxes2.area()  # [M]
+
+    inter = _pairwise_intersection(boxes1, boxes2)
+
+    # handle empty boxes
+    iou = torch.where(
+        inter >= 0,
+        inter / (area1[:, None, :] + area2 - inter),
+        torch.nan,
+    )
+    return iou.nanmean(dim=-1)
 
 
 def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:

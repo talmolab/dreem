@@ -165,8 +165,21 @@ def compute_motmetrics(df):
     summary_dreem = {}
     acc_dreem = mm.MOTAccumulator(auto_id=True)
     frame_switch_map = {}
+    track_name_mapping = {}
+    curr_track = 0
+    for trk in df["gt_track_id"].unique():
+        track_name_mapping[trk] = curr_track
+        curr_track += 1
+    # filter out -1 track_ids; these are untracked instances due to confidence thresholding
+    df = df[df["pred_track_id"] != -1]
+    preds_motevents_map = {}
+    motevents_frame_id = 0
     for frame, framedf in df.groupby("frame_id"):
+        # if a frame has no preds, motevents just enumerates in order, leading to mismatch in frame ids
+        preds_motevents_map[frame] = motevents_frame_id
+        motevents_frame_id += 1
         gt_ids = framedf["gt_track_id"].values
+        gt_ids = [track_name_mapping[trk] for trk in gt_ids]
         pred_tracks = framedf["pred_track_id"].values
         # if no matching preds, fill with nan to let motmetrics handle it
         if (pred_tracks == -1).all():
@@ -185,13 +198,21 @@ def compute_motmetrics(df):
     mh = mm.metrics.create()
     summary_dreem = mh.compute(acc_dreem, name="acc").transpose()
     motevents = acc_dreem.mot_events.reset_index()
-    for idx, row in motevents.iterrows():
-        if row["Type"] == "SWITCH":
-            frame_switch_map[int(row["FrameId"])] = True
-        else:
-            frame_switch_map[int(row["FrameId"])] = False
+    switch_frames = []
+    for frame_id in sorted(df["frame_id"].unique()):
+        frame_switch_map[frame_id] = (
+            False  # just populate with false for all frames at first
+        )
+        motevent = motevents[motevents["FrameId"] == preds_motevents_map[frame_id]]
+        if motevent.empty:  # if no assigned instances in this frame, skip
+            continue
+        if (motevent["Type"] == "SWITCH").any():
+            switch_frames.append(frame_id)
 
-    return summary_dreem, motevents, frame_switch_map
+    for i, switch_frame in enumerate(switch_frames):
+        frame_switch_map[switch_frame] = True
+
+    return summary_dreem, frame_switch_map
 
 
 def compute_global_tracking_accuracy(df):
