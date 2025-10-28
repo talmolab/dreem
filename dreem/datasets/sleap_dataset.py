@@ -10,9 +10,10 @@ import numpy as np
 import sleap_io as sio
 import torch
 from torchvision.transforms import functional as tvf
-
 from dreem.datasets import BaseDataset, data_utils
 from dreem.io import Frame, Instance
+from dreem.datasets.data_utils import _pairwise_iou, nms
+from dreem.inference.boxes import Boxes
 
 logger = logging.getLogger("dreem.datasets")
 
@@ -40,6 +41,7 @@ class SleapDataset(BaseDataset):
         max_batching_gap: int = 15,
         use_tight_bbox: bool = False,
         dilation_radius_px: Union[int, list[int]] = 0,
+        detection_iou_threshold: float | None = None,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -81,6 +83,7 @@ class SleapDataset(BaseDataset):
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
             dilation_radius_px: radius of the keypoints dilation in pixels. 0 means no mask applied
+            detection_iou_threshold: the iou threshold for non-maximum suppression of detections
             **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
@@ -111,7 +114,7 @@ class SleapDataset(BaseDataset):
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
         self.dilation_radius_px = dilation_radius_px
-
+        self.detection_iou_threshold = detection_iou_threshold
         if isinstance(anchors, int):
             self.anchors = anchors
         elif isinstance(anchors, str):
@@ -477,6 +480,30 @@ class SleapDataset(BaseDataset):
                 )
 
                 instances.append(instance)
+
+            # nms
+            if self.detection_iou_threshold is not None and len(instances) > 0:
+                discard = set()
+                bboxes = np.stack([instance.bbox.squeeze(0) for instance in instances])
+                ious = _pairwise_iou(Boxes(bboxes), Boxes(bboxes))
+                high_iou_pairs = nms(ious, self.detection_iou_threshold)
+                for pair in high_iou_pairs:
+                    if pair[0] in discard or pair[1] in discard:
+                        continue
+                    # if there are multiple pose keypoints, pick the instance with the most keypoints
+                    inst_1_keypoints = len(instances[pair[0]].pose)
+                    inst_2_keypoints = len(instances[pair[1]].pose)
+                    # break ties by keeping the first instance
+                    if inst_1_keypoints >= inst_2_keypoints:
+                        id_to_discard = pair[1]
+                    else:
+                        id_to_discard = pair[0]
+                    discard.add(id_to_discard)
+                for id in sorted(discard, reverse=True):
+                    removed = instances.pop(id)
+                    logger.debug(
+                        f"Removed instance from frame {frame_ind} due to high bounding box overlap with another instance"
+                    )
 
             frame = Frame(
                 video_id=label_idx,

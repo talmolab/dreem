@@ -254,6 +254,24 @@ def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     return iou.nanmean(dim=-1)
 
 
+def nms(ious: torch.Tensor, threshold: float) -> list[int]:
+    """Non-maximum suppression.
+
+    Args:
+        ious: IoU matrix
+        threshold: threshold for non-maximum suppression
+    Returns:
+        list of indices of the boxes to keep
+    """
+    keep_inds = []
+    x, y = np.where(ious > threshold)
+    coords = np.stack([x, y], axis=-1)
+    self_mask = coords[:, 0] == coords[:, 1]  # diagonal elements are self-ious
+    coords = coords[~self_mask]
+
+    return coords
+
+
 def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:
     """Get a square bbox around a centroid coordinates.
 
