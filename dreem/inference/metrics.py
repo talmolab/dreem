@@ -200,11 +200,13 @@ def compute_motmetrics(df):
     motevents = acc_dreem.mot_events.reset_index()
     switch_frames = []
     for frame_id in sorted(df["frame_id"].unique()):
-        frame_switch_map[frame_id] = False # just populate with false for all frames at first
+        frame_switch_map[frame_id] = (
+            False  # just populate with false for all frames at first
+        )
         motevent = motevents[motevents["FrameId"] == preds_motevents_map[frame_id]]
-        if motevent.empty: # if no assigned instances in this frame, skip
+        if motevent.empty:  # if no assigned instances in this frame, skip
             continue
-        if (motevent['Type'] == "SWITCH").any():
+        if (motevent["Type"] == "SWITCH").any():
             switch_frames.append(frame_id)
 
     for i, switch_frame in enumerate(switch_frames):

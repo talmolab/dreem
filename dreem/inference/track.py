@@ -21,13 +21,12 @@ from dreem.models import GTRRunner
 
 logger = logging.getLogger("dreem.inference")
 
+
 def store_frame_metadata(frame, h5_path: str):
-    with h5py.File(h5_path, 'a') as h5f:
+    with h5py.File(h5_path, "a") as h5f:
         frame_meta_group = h5f.require_group("frame_meta")
         frame = frame.to("cpu")
-        _ = frame.to_h5(
-            frame_meta_group, frame.get_gt_track_ids().cpu().numpy()
-        )
+        _ = frame.to_h5(frame_meta_group, frame.get_gt_track_ids().cpu().numpy())
 
 
 def get_timestamp() -> str:
@@ -109,7 +108,11 @@ def track_ctc(
 
 
 def track(
-    model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader, outdir: str, save_frame_meta: bool,
+    model: GTRRunner,
+    trainer: pl.Trainer,
+    dataloader: torch.utils.data.DataLoader,
+    outdir: str,
+    save_frame_meta: bool,
 ) -> list[pd.DataFrame]:
     """Run Inference.
 
@@ -123,11 +126,14 @@ def track(
     """
     preds = trainer.predict(model, dataloader)
     if save_frame_meta:
-        h5_path = os.path.join(outdir, f'{dataloader.dataset.slp_files[0].split("/")[-1].replace(".slp", "")}_frame_meta.h5')
+        h5_path = os.path.join(
+            outdir,
+            f"{dataloader.dataset.slp_files[0].split('/')[-1].replace('.slp', '')}_frame_meta.h5",
+        )
         if os.path.exists(h5_path):
             os.remove(h5_path)
-        with h5py.File(h5_path, 'a') as h5f:
-            h5f.create_dataset('vid_name', data=preds[0][0].vid_name)
+        with h5py.File(h5_path, "a") as h5f:
+            h5f.create_dataset("vid_name", data=preds[0][0].vid_name)
     pred_slp = []
     tracks = {}
     for batch in tqdm(preds, desc="Saving .slp and frame metadata"):

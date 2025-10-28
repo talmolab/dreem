@@ -204,6 +204,7 @@ def pad_variable_size_crops(instance, target_size):
 
     return instance
 
+
 def _pairwise_intersection(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     """Compute the intersection area between __all__ N x M pairs of boxes.
 

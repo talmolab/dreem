@@ -86,7 +86,11 @@ class GTRRunner(LightningModule):
         self.scheduler_cfg = scheduler_cfg
 
         self.metrics = metrics if metrics is not None else self.DEFAULT_METRICS
-        self.test_results = {"preds": [], "save_path": test_save_path, "save_frame_meta": save_frame_meta}
+        self.test_results = {
+            "preds": [],
+            "save_path": test_save_path,
+            "save_frame_meta": save_frame_meta,
+        }
 
     def forward(
         self,
@@ -268,9 +272,10 @@ class GTRRunner(LightningModule):
         """
         gc.collect()
         torch.cuda.empty_cache()
-    
+
     def setup_eval(self, eval_cfg: DictConfig):
         from dreem.inference.tracker import Tracker
+
         self.tracker_cfg = eval_cfg.cfg.tracker
         self.tracker = Tracker(**self.tracker_cfg)
         logger.info("Using the following tracker:")
@@ -354,9 +359,13 @@ class GTRRunner(LightningModule):
                             )
                             if frame.frame_id.item() in frame_switch_map:
                                 if frame_switch_map[frame.frame_id.item()]:
-                                    switch_group.attrs["frame_" + str(frame.frame_id.item())] = True
+                                    switch_group.attrs[
+                                        "frame_" + str(frame.frame_id.item())
+                                    ] = True
                                 else:
-                                    switch_group.attrs["frame_" + str(frame.frame_id.item())] = False
+                                    switch_group.attrs[
+                                        "frame_" + str(frame.frame_id.item())
+                                    ] = False
 
                 elif metric_name == "global_tracking_accuracy":
                     gta_by_gt_track = value

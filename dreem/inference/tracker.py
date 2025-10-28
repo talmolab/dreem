@@ -225,7 +225,7 @@ class Tracker:
 
         instances_per_frame = [frame.num_detected for frame in frames]
 
-        total_instances = sum(instances_per_frame) # Number of instances in window
+        total_instances = sum(instances_per_frame)  # Number of instances in window
 
         logger.debug(f"total_instances: {total_instances}")
 
@@ -353,9 +353,7 @@ class Tracker:
             ).max(dim=0)[1]  # M
 
             last_boxes = nonquery_boxes[last_inds]  # n_traj x 4
-            last_ious = _pairwise_iou(
-                Boxes(query_boxes), Boxes(last_boxes)
-            )  # n_k x M
+            last_ious = _pairwise_iou(Boxes(query_boxes), Boxes(last_boxes))  # n_k x M
         else:
             last_ious = traj_score.new_zeros(traj_score.shape)
 
@@ -393,7 +391,9 @@ class Tracker:
             query_frame.add_traj_score("max_center_dist", max_center_dist_traj_score)
 
         ################################################################################
-        scaled_traj_score = torch.nn.functional.log_softmax(traj_score/self.temperature, dim=1)
+        scaled_traj_score = torch.nn.functional.log_softmax(
+            traj_score / self.temperature, dim=1
+        )
         scaled_traj_score_df = pd.DataFrame(
             scaled_traj_score.numpy(), columns=unique_ids.cpu().numpy()
         )
@@ -404,14 +404,18 @@ class Tracker:
         ################################################################################
         # Compute entropy for each row and filter out rows with high entropy
         if self.confidence_threshold > 0:
-            entropy = -torch.sum(scaled_traj_score * torch.exp(scaled_traj_score), axis=1)
+            entropy = -torch.sum(
+                scaled_traj_score * torch.exp(scaled_traj_score), axis=1
+            )
             norm_entropy = entropy / torch.log(torch.tensor(n_query))
             removal_threshold = 1 - self.confidence_threshold
             # remove these rows from the cost matrix, but careful to maintain indexes of the results
-            remove = norm_entropy > removal_threshold 
+            remove = norm_entropy > removal_threshold
 
             if (remove.sum() == traj_score.shape[0]).item():
-                logger.debug(f"All instances have high entropy in frame {query_frame.frame_id.item()}, skipping assignment")
+                logger.debug(
+                    f"All instances have high entropy in frame {query_frame.frame_id.item()}, skipping assignment"
+                )
                 return query_frame
 
             dict_remove_inds = {}
