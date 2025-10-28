@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 from scipy.optimize import linear_sum_assignment
 
+from dreem.datasets.data_utils import _pairwise_iou
 from dreem.inference import post_processing
 from dreem.inference.boxes import Boxes
 from dreem.inference.track_queue import TrackQueue
@@ -31,7 +32,7 @@ class Tracker:
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
-        confidence_threshold: float | None = None,
+        confidence_threshold: float = 0,
         temperature: float = 0.1,
         **kwargs,
     ):
@@ -50,7 +51,7 @@ class Tracker:
             max_tracks: the maximum number of tracks that can be created while tracking.
                 We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
             verbose: Whether or not to turn on debug printing after each operation.
-            confidence_threshold: threshold for filtering out instances with high confidence.
+            confidence_threshold: threshold for filtering out instances with high confidence. Set to 0 to disable confidence thresholding.
             temperature: temperature for softmax.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
@@ -170,6 +171,7 @@ class Tracker:
                         frames_to_track,
                         query_ind=query_ind,
                     )
+                    del frames_to_track
 
             if frame_to_track.has_instances():
                 self.track_queue.add_frame(frame_to_track)
@@ -178,7 +180,7 @@ class Tracker:
 
             frames[batch_idx] = frame_to_track
 
-        del frame_to_track, tracked_frames, frames_to_track
+        del frame_to_track, tracked_frames
         torch.cuda.empty_cache()
         return frames
 
@@ -351,7 +353,7 @@ class Tracker:
             ).max(dim=0)[1]  # M
 
             last_boxes = nonquery_boxes[last_inds]  # n_traj x 4
-            last_ious = post_processing._pairwise_iou(
+            last_ious = _pairwise_iou(
                 Boxes(query_boxes), Boxes(last_boxes)
             )  # n_k x M
         else:
@@ -401,7 +403,7 @@ class Tracker:
         query_frame.add_traj_score("scaled", scaled_traj_score_df)
         ################################################################################
         # Compute entropy for each row and filter out rows with high entropy
-        if self.confidence_threshold is not None:
+        if self.confidence_threshold > 0:
             entropy = -torch.sum(scaled_traj_score * torch.exp(scaled_traj_score), axis=1)
             norm_entropy = entropy / torch.log(torch.tensor(n_query))
             removal_threshold = 1 - self.confidence_threshold
@@ -434,7 +436,7 @@ class Tracker:
             remove = torch.zeros(traj_score.shape[0])
 
         match_i, match_j = linear_sum_assignment((-traj_score_filt))
-        if self.confidence_threshold is not None:
+        if self.confidence_threshold > 0:
             # reindex the match indices to account for removed rows; only match_i needs to be reindexed
             for i, _ in enumerate(match_i):
                 match_i[i] = dict_new_old_map[i]
@@ -459,8 +461,7 @@ class Tracker:
         logger.debug(f"track_ids: {track_ids}")
         for i in range(n_query):
             # True if association score was below the threshold, and we haven't reached max tracks
-            if track_ids[i] < 0 and remove.sum().item() == 0: # if we couldn't assign an instance to a track, but also it wasn't due to high uncertainty, only then start a new track
-                # if match wasn't made due to high uncertainty, we don't want to start a new track, just leave it be until it can be confidently assigned in the future
+            if track_ids[i] < 0 and n_traj < self.max_tracks:
                 max_track_id = max(curr_tracks)
                 logger.debug(f"Creating new track {max_track_id + 1}")
                 curr_tracks.add(max_track_id + 1)

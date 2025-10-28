@@ -13,10 +13,10 @@ import sleap_io as sio
 import tifffile
 import torch
 from pytorch_lightning import LightningModule
-
+from omegaconf import DictConfig
 from dreem.datasets import CellTrackingDataset
 from dreem.inference import metrics
-from dreem.models.global_tracking_transformer import GlobalTrackingTransformer
+from dreem.models import GlobalTrackingTransformer
 from dreem.models.model_utils import init_optimizer, init_scheduler
 from dreem.training.losses import AssoLoss
 
@@ -268,6 +268,20 @@ class GTRRunner(LightningModule):
         """
         gc.collect()
         torch.cuda.empty_cache()
+    
+    def setup_eval(self, eval_cfg: DictConfig):
+        from dreem.inference.tracker import Tracker
+        self.tracker_cfg = eval_cfg.cfg.tracker
+        self.tracker = Tracker(**self.tracker_cfg)
+        logger.info("Using the following tracker:")
+        logger.info(self.tracker)
+        self.metrics["test"] = eval_cfg.get("metrics", {}).get("test", "all")
+        logger.info("Computing the following metrics:")
+        logger.info(self.metrics["test"])
+        save_frame_meta = eval_cfg.cfg.get("save_frame_meta", False)
+        self.test_results["save_frame_meta"] = save_frame_meta
+        self.test_results["save_path"] = eval_cfg.get("outdir", ".")
+        os.makedirs(self.test_results["save_path"], exist_ok=True)
 
     def on_test_end(self):
         """Run inference and metrics pipeline to compute metrics for test set.
@@ -343,13 +357,6 @@ class GTRRunner(LightningModule):
                                     switch_group.attrs["frame_" + str(frame.frame_id.item())] = True
                                 else:
                                     switch_group.attrs["frame_" + str(frame.frame_id.item())] = False
-
-                    # save motevents log to csv
-                    # motevents_path = os.path.join(
-                    #     self.test_results["save_path"], f"{vid_name}.motevents.csv"
-                    # )
-                    # logger.info(f"Saving motevents log to {motevents_path}")
-                    # mot_events.to_csv(motevents_path, index=False)
 
                 elif metric_name == "global_tracking_accuracy":
                     gta_by_gt_track = value
