@@ -1,13 +1,11 @@
 """Module containing logic for going from association -> assignment."""
 
 import logging
-from math import inf
-
+from math import inf, radians as deg2rad
 import pandas as pd
 import torch
 from scipy.optimize import linear_sum_assignment
-
-from dreem.datasets.data_utils import _pairwise_iou
+from dreem.datasets.data_utils import _pairwise_iou, is_valid_pose_for_principal_axis, gather_pose_array
 from dreem.inference import post_processing
 from dreem.inference.boxes import Boxes
 from dreem.inference.track_queue import TrackQueue
@@ -34,6 +32,7 @@ class Tracker:
         verbose: bool = False,
         confidence_threshold: float = 0,
         temperature: float = 0.1,
+        max_angle_diff: float = 0,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -53,6 +52,7 @@ class Tracker:
             verbose: Whether or not to turn on debug printing after each operation.
             confidence_threshold: threshold for filtering out instances with high confidence. Set to 0 to disable confidence thresholding.
             temperature: temperature for softmax.
+            max_angle_diff: maximum angle difference between pose principal axes when considering association between two instances. Set to 0 to disable angle difference filtering.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
@@ -68,6 +68,7 @@ class Tracker:
         self.max_tracks = max_tracks
         self.confidence_threshold = confidence_threshold
         self.temperature = temperature
+        self.max_angle_diff = deg2rad(max_angle_diff)
 
     def __call__(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -311,6 +312,13 @@ class Tracker:
             ],
             dim=0,
         )
+        query_poses = [instance.pose for instance in query_frame.instances]
+        nonquery_poses = [
+                instance.pose
+                for nonquery_frame in frames
+                if nonquery_frame.frame_id != query_frame.frame_id.item()
+                for instance in nonquery_frame.instances
+            ]
 
         pred_boxes = model_utils.get_boxes(all_instances)
         query_boxes = pred_boxes[query_inds]  # n_k x 4
@@ -392,12 +400,21 @@ class Tracker:
         
         ################################################################################
 
+        valid, failures = is_valid_pose_for_principal_axis(query_poses)
+        if not valid:
+            raise ValueError(f"Cannot compute principal axis: {failures}")
+        valid, failures = is_valid_pose_for_principal_axis(nonquery_poses)
+        if not valid:
+            raise ValueError(f"Cannot compute principal axis: {failures}")
+        
+        query_pose_arr = gather_pose_array(query_poses)
+        nonquery_pose_arr = gather_pose_array(nonquery_poses)
+
         traj_score = post_processing.filter_max_angle_diff(
             traj_score,
             self.max_angle_diff,
-            id_inds,
-            query_boxes_px,
-            nonquery_boxes_px,
+            query_pose_arr,
+            nonquery_pose_arr,
         )
 
         if self.max_angle_diff is not None and self.max_angle_diff > 0:

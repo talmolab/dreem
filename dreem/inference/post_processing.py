@@ -1,7 +1,7 @@
 """Helper functions for post-processing association matrix pre-tracking."""
 
 import torch
-from dreem.datasets.data_utils import principal_axis_numpy
+from dreem.datasets.data_utils import get_pose_principal_axis
 
 
 def weight_iou(
@@ -37,20 +37,34 @@ def weight_iou(
 def filter_max_angle_diff(
     asso_output: torch.Tensor,
     max_angle_diff: float = 0,
-    id_inds: torch.Tensor | None = None,
-    query_boxes_px: torch.Tensor | None = None,
-    nonquery_boxes_px: torch.Tensor | None = None,
+    query_poses: torch.Tensor | None = None,
+    nonquery_poses: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Filter trajectory score by angle difference between objects across frames.
 
     Args:
         asso_output: An N_t x N association matrix
         max_angle_diff: The max angle difference between pose principal axes when considering association between two instances
-        id_inds: track ids
-        query_boxes_px: the raw bbox coords of the current frame instances
-        nonquery_boxes_px: the raw bbox coords of the instances in the nonquery frames (context window)
+        query_poses: the raw pose coords of the current frame instances
+        nonquery_poses: the raw pose coords of the instances in the nonquery frames (context window)
     """
-
+    if max_angle_diff is not None and max_angle_diff > 0:
+        assert query_poses is not None and nonquery_poses is not None, (
+            "Need `query_poses`, and `nonquery_poses` to filter by `max_angle_diff`"
+        )
+        # query, nonquery will generally have different number of instances
+        query_principal_axes = get_pose_principal_axis(query_poses)
+        nonquery_principal_axes = get_pose_principal_axis(nonquery_poses)
+        # First wrap to [0, pi] range
+        dot_prod = torch.einsum('qk,nk->qn', query_principal_axes, nonquery_principal_axes) # (q, nq)
+        norms = torch.norm(query_principal_axes, dim=-1)[:, None] * torch.norm(nonquery_principal_axes, dim=-1)[None, :] # (q, nq)
+        angle_diff = torch.arccos(torch.clamp(dot_prod / norms, min=-1, max=1)) # (q, nq)
+        angle_diff_wrapped = torch.where(angle_diff > torch.pi, 2 * torch.pi - angle_diff, angle_diff)
+        # Then wrap to [0, pi/2] to handle head/tail ambiguity (180° = 0°)
+        angle_diff_wrapped = torch.where(angle_diff_wrapped > torch.pi / 2, torch.pi - angle_diff_wrapped, angle_diff_wrapped)
+        return asso_output + 
+    else:
+        return asso_output
 
 
 
