@@ -389,6 +389,26 @@ class Tracker:
             max_center_dist_traj_score.columns.name = "Unique IDs"
 
             query_frame.add_traj_score("max_center_dist", max_center_dist_traj_score)
+        
+        ################################################################################
+
+        traj_score = post_processing.filter_max_angle_diff(
+            traj_score,
+            self.max_angle_diff,
+            id_inds,
+            query_boxes_px,
+            nonquery_boxes_px,
+        )
+
+        if self.max_angle_diff is not None and self.max_angle_diff > 0:
+            max_angle_diff_traj_score = pd.DataFrame(
+                traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+            )
+
+            max_angle_diff_traj_score.index.name = "Current Frame Instances"
+            max_angle_diff_traj_score.columns.name = "Unique IDs"
+
+            query_frame.add_traj_score("max_angle_diff", max_angle_diff_traj_score)
 
         ################################################################################
         scaled_traj_score = torch.nn.functional.log_softmax(

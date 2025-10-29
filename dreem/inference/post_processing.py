@@ -1,8 +1,7 @@
 """Helper functions for post-processing association matrix pre-tracking."""
 
 import torch
-
-from dreem.inference.boxes import Boxes
+from dreem.datasets.data_utils import principal_axis_numpy
 
 
 def weight_iou(
@@ -34,6 +33,25 @@ def weight_iou(
                 f"`method` must be one of ['mult' or 'max'] got '{method.lower()}'"
             )
     return asso_output
+
+def filter_max_angle_diff(
+    asso_output: torch.Tensor,
+    max_angle_diff: float = 0,
+    id_inds: torch.Tensor | None = None,
+    query_boxes_px: torch.Tensor | None = None,
+    nonquery_boxes_px: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Filter trajectory score by angle difference between objects across frames.
+
+    Args:
+        asso_output: An N_t x N association matrix
+        max_angle_diff: The max angle difference between pose principal axes when considering association between two instances
+        id_inds: track ids
+        query_boxes_px: the raw bbox coords of the current frame instances
+        nonquery_boxes_px: the raw bbox coords of the instances in the nonquery frames (context window)
+    """
+
+
 
 
 def filter_max_center_dist(

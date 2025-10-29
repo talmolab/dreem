@@ -162,6 +162,57 @@ def get_mask_from_keypoints(
     return mask
 
 
+def principal_axis_numpy(points, weights=None):
+    """
+    points: array-like of shape (N, 2)
+    weights: optional array-like of shape (N,), non-negative
+    Returns:
+      axis: (vx, vy) unit vector for the first principal component (up to sign)
+      angle: float radians, atan2(vy, vx)
+      centroid: (cx, cy)
+      eigenvalues: (lambda_max, lambda_min)
+    """
+    P = np.asarray(points, dtype=float)
+    if P.ndim != 2 or P.shape[1] != 2:
+        raise ValueError("points must be (N, 2)")
+    # drop rows with NaNs
+    mask = np.isfinite(P).all(axis=1)
+    P = P[mask]
+    if P.shape[0] == 0:
+        return (0.0, 0.0), 0.0, (0.0, 0.0), (0.0, 0.0)
+
+    if weights is None:
+        w = np.ones(len(points), dtype=float)[mask]
+    else:
+        w = np.asarray(weights, dtype=float)[mask]
+        w = np.clip(w, 0.0, np.inf)
+
+    sw = w.sum()
+    if sw == 0:
+        w = np.ones_like(w)
+        sw = w.sum()
+
+    # weighted centroid
+    centroid = (w @ P) / sw
+    X = P - centroid
+
+    # weighted 2x2 covariance (un-normalized by sw is fine for eigenvectors)
+    Sxx = np.sum(w * X[:, 0] * X[:, 0])
+    Syy = np.sum(w * X[:, 1] * X[:, 1])
+    Sxy = np.sum(w * X[:, 0] * X[:, 1])
+    C = np.array([[Sxx, Sxy],
+                  [Sxy, Syy]], dtype=float)
+
+    # eigendecomposition
+    evals, evecs = np.linalg.eigh(C)
+    idx = np.argsort(evals)[::-1]
+    evals = evals[idx]
+    axis = evecs[:, idx[0]]
+    axis = axis / (np.linalg.norm(axis) + 1e-12)
+    angle = float(np.arctan2(axis[1], axis[0]))
+    return (float(axis[0]), float(axis[1])), angle, (float(centroid[0]), float(centroid[1])), (float(evals[0]), float(evals[1]))
+
+
 def pad_variable_size_crops(instance, target_size):
     """Pad or crop an instance's crop to the target size.
 
