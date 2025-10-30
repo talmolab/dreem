@@ -37,35 +37,28 @@ def weight_iou(
 def filter_max_angle_diff(
     asso_output: torch.Tensor,
     max_angle_diff: float = 0,
-    query_poses: torch.Tensor | None = None,
-    nonquery_poses: torch.Tensor | None = None,
+    query_principal_axes: torch.Tensor | None = None,
+    nonquery_principal_axes: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Filter trajectory score by angle difference between objects across frames.
 
     Args:
         asso_output: An N_t x N association matrix
         max_angle_diff: The max angle difference between pose principal axes when considering association between two instances
-        query_poses: the raw pose coords of the current frame instances
-        nonquery_poses: the raw pose coords of the instances in the nonquery frames (context window)
+        query_principal_axes: the principal axes of the current frame instances. Shape: (q, 2)
+        nonquery_principal_axes: the principal axes of the instances in the nonquery frames (context window). Shape: (nq, 2)
     """
-    if max_angle_diff is not None and max_angle_diff > 0:
-        assert query_poses is not None and nonquery_poses is not None, (
-            "Need `query_poses`, and `nonquery_poses` to filter by `max_angle_diff`"
-        )
-        # query, nonquery will generally have different number of instances
-        query_principal_axes = get_pose_principal_axis(query_poses)
-        nonquery_principal_axes = get_pose_principal_axis(nonquery_poses)
-        # First wrap to [0, pi] range
-        dot_prod = torch.einsum('qk,nk->qn', query_principal_axes, nonquery_principal_axes) # (q, nq)
-        norms = torch.norm(query_principal_axes, dim=-1)[:, None] * torch.norm(nonquery_principal_axes, dim=-1)[None, :] # (q, nq)
-        angle_diff = torch.arccos(torch.clamp(dot_prod / norms, min=-1, max=1)) # (q, nq)
-        angle_diff_wrapped = torch.where(angle_diff > torch.pi, 2 * torch.pi - angle_diff, angle_diff)
-        # Then wrap to [0, pi/2] to handle head/tail ambiguity (180° = 0°)
-        angle_diff_wrapped = torch.where(angle_diff_wrapped > torch.pi / 2, torch.pi - angle_diff_wrapped, angle_diff_wrapped)
-        return asso_output + 
-    else:
-        return asso_output
-
+    assert query_principal_axes is not None and nonquery_principal_axes is not None, (
+        "Need `query_principal_axes`, and `nonquery_principal_axes` to filter by `max_angle_diff`"
+    )
+    dot_prod = torch.einsum('qk,nk->qn', query_principal_axes, nonquery_principal_axes) # (q, nq)
+    norms = torch.norm(query_principal_axes, dim=-1)[:, None] * torch.norm(nonquery_principal_axes, dim=-1)[None, :] # (q, nq)
+    angle_diff = torch.arccos(torch.clamp(dot_prod / norms, min=-1, max=1)) # (q, nq)
+    angle_diff_wrapped = torch.where(angle_diff > torch.pi, 2 * torch.pi - angle_diff, angle_diff)
+    # Then wrap to [0, pi/2] to handle head/tail ambiguity (180 deg == 0 deg)
+    # TODO: do we need this? verify it works as intended
+    angle_diff_wrapped = torch.where(angle_diff_wrapped > torch.pi / 2, torch.pi - angle_diff_wrapped, angle_diff_wrapped)
+    return asso_output # + 
 
 
 def filter_max_center_dist(

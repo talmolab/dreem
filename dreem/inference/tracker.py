@@ -33,6 +33,7 @@ class Tracker:
         confidence_threshold: float = 0,
         temperature: float = 0.1,
         max_angle_diff: float = 0,
+        orientation_prompt: list[str] | None = None,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -53,6 +54,7 @@ class Tracker:
             confidence_threshold: threshold for filtering out instances with high confidence. Set to 0 to disable confidence thresholding.
             temperature: temperature for softmax.
             max_angle_diff: maximum angle difference between pose principal axes when considering association between two instances. Set to 0 to disable angle difference filtering.
+            orientation_prompt: list of skeleton node names to be used to determine the orientation of the object. If None, computes using all available nodes.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
@@ -69,6 +71,7 @@ class Tracker:
         self.confidence_threshold = confidence_threshold
         self.temperature = temperature
         self.max_angle_diff = deg2rad(max_angle_diff)
+        self.orientation_prompt = orientation_prompt
 
     def __call__(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -400,24 +403,75 @@ class Tracker:
         
         ################################################################################
 
-        valid, failures = is_valid_pose_for_principal_axis(query_poses)
-        if not valid:
-            raise ValueError(f"Cannot compute principal axis: {failures}")
-        valid, failures = is_valid_pose_for_principal_axis(nonquery_poses)
-        if not valid:
-            raise ValueError(f"Cannot compute principal axis: {failures}")
-        
-        query_pose_arr = gather_pose_array(query_poses)
-        nonquery_pose_arr = gather_pose_array(nonquery_poses)
-
-        traj_score = post_processing.filter_max_angle_diff(
-            traj_score,
-            self.max_angle_diff,
-            query_pose_arr,
-            nonquery_pose_arr,
-        )
-
         if self.max_angle_diff is not None and self.max_angle_diff > 0:
+            # check if poses are valid for PCA as we may need to fall back to this method if all orientation prompts are not available
+            valid, failures = is_valid_pose_for_principal_axis(query_poses)
+            if not valid:
+                raise ValueError(f"Cannot compute principal axis: {failures}. If this cannot be resolved, set max_angle_diff=0 to disable this post-processing step")
+            valid, failures = is_valid_pose_for_principal_axis(nonquery_poses)
+            if not valid:
+                raise ValueError(f"Cannot compute principal axis: {failures}. If this cannot be resolved, set max_angle_diff=0 to disable this post-processing step")
+            
+            # TODO: messy code section that uses user-provided nodes to compute orientation, and falls back to PCA if not visible 
+            if len(self.orientation_prompt) > 0:
+                assert len(self.orientation_prompt) == 2, "Orientation prompt must be a list of only two skeleton node names, with the 'head' node first"
+                query_principal_axes = []
+                nonquery_principal_axes = []
+
+                for instance in query_poses:
+                    head = None
+                    tip = None
+                    for node_name, node_coords in instance.items():
+                        if node_name == self.orientation_prompt[0]:
+                            # head node first
+                            head = node_coords
+                        elif node_name == self.orientation_prompt[1]:
+                            tip = node_coords
+                        else:
+                            raise ValueError(f"Invalid orientation prompt: {node_name}. Ensure that the spelling of the nodes matches the skeleton in the SLP file")
+                    if head is not None and tip is not None:
+                        query_principal_axes.append(head - tip)
+                    else:
+                        logger.warning(f"Orientation prompts not available for all instances in frame {query_frame.frame_id.item()}. Falling back to using all available nodes to compute orientation of instances")
+                        instance_pose_arr = gather_pose_array([instance])
+                        instance_principal_axes = get_pose_principal_axis(instance_pose_arr)
+                        query_principal_axes.append(instance_principal_axes)
+                query_principal_axes = torch.stack(query_principal_axes).T # (n_query, 2)
+                
+                for instance in nonquery_poses:
+                    head = None
+                    tip = None
+                    for node_name, node_coords in instance.items():
+                        if node_name == self.orientation_prompt[0]:
+                            head = node_coords
+                        elif node_name == self.orientation_prompt[1]:
+                            tip = node_coords
+                        else:
+                            raise ValueError(f"Invalid orientation prompt: {node_name}. Ensure that the spelling of the nodes matches the skeleton in the SLP file")
+                    if head is not None and tip is not None:
+                        nonquery_principal_axes.append(head - tip)
+                    else:
+                        logger.warning(f"Orientation prompts not available for all instances in frame {query_frame.frame_id.item()}. Falling back to using all available nodes to compute orientation of instances")
+                        instance_pose_arr = gather_pose_array([instance])
+                        instance_principal_axes = get_pose_principal_axis(instance_pose_arr)
+                        nonquery_principal_axes.append(instance_principal_axes)
+                nonquery_principal_axes = torch.stack(nonquery_principal_axes).T # (n_nonquery, 2)
+
+            else:
+                logger.warning("Maximum rotation angle specified but no orientation prompt provided. \n"
+                               "Using all available nodes to compute orientation of instances")
+                query_pose_arr = gather_pose_array(query_poses) # poses is a list of dicts of keypts
+                nonquery_pose_arr = gather_pose_array(nonquery_poses)
+                query_principal_axes = get_pose_principal_axis(query_poses)
+                nonquery_principal_axes = get_pose_principal_axis(nonquery_poses)
+
+            traj_score = post_processing.filter_max_angle_diff(
+                traj_score,
+                self.max_angle_diff,
+                query_principal_axes,
+                nonquery_principal_axes,
+            )
+
             max_angle_diff_traj_score = pd.DataFrame(
                 traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
             )
