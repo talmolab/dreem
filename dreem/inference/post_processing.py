@@ -1,7 +1,7 @@
 """Helper functions for post-processing association matrix pre-tracking."""
 
 import torch
-from dreem.datasets.data_utils import get_pose_principal_axis
+from dreem.datasets.data_utils import get_pose_principal_axis, gather_pose_array
 
 
 def weight_iou(
@@ -34,31 +34,64 @@ def weight_iou(
             )
     return asso_output
 
-def filter_max_angle_diff(
+def _compute_principal_axis_with_pca(instance):
+    """PCA fallback method."""
+    instance_pose_arr = gather_pose_array([instance])
+    return get_pose_principal_axis(instance_pose_arr)[0]
+
+def _compute_principal_axis_with_prompts(instance, orientation_prompt):
+    """Primary method using orientation prompts."""
+    head = None
+    tip = None
+    for node_name, node_coords in instance.items():
+        if node_name == orientation_prompt[0]:
+            head = node_coords
+        elif node_name == orientation_prompt[1]:
+            tip = node_coords
+    if head is not None and tip is not None and ~torch.isnan(torch.tensor(head)).any() and ~torch.isnan(torch.tensor(tip)).any():
+        return torch.tensor(head - tip)
+    return None
+
+def get_principal_axis_with_fallback(instance, orientation_prompt: list[str] | None, logger, frame_id):
+    """Compute principal axis with automatic fallback.
+
+    Tries the preferred method first, falls back to PCA if it fails.
+    """
+    if orientation_prompt is not None:
+        assert len(orientation_prompt) == 2, "Orientation prompt must be a list of only two skeleton node names, with the 'head' node first"
+        result = _compute_principal_axis_with_prompts(instance, orientation_prompt)
+        if result is not None:
+            return result, False
+    return _compute_principal_axis_with_pca(instance), True
+
+def weight_by_angle_diff(
     asso_output: torch.Tensor,
-    max_angle_diff: float = 0,
     query_principal_axes: torch.Tensor | None = None,
-    nonquery_principal_axes: torch.Tensor | None = None,
+    last_principal_axes: torch.Tensor | None = None,
+    fallback: bool = False,
 ) -> torch.Tensor:
-    """Filter trajectory score by angle difference between objects across frames.
+    """Weight trajectory score by angle difference between objects across frames.
 
     Args:
         asso_output: An N_t x N association matrix
-        max_angle_diff: The max angle difference between pose principal axes when considering association between two instances
         query_principal_axes: the principal axes of the current frame instances. Shape: (q, 2)
-        nonquery_principal_axes: the principal axes of the instances in the nonquery frames (context window). Shape: (nq, 2)
+        last_principal_axes: the principal axes of the instances in the last frame. Shape: (nq, 2)
     """
-    assert query_principal_axes is not None and nonquery_principal_axes is not None, (
-        "Need `query_principal_axes`, and `nonquery_principal_axes` to filter by `max_angle_diff`"
+    assert query_principal_axes is not None and last_principal_axes is not None, (
+        "Need `query_principal_axes`, and `last_principal_axes` to weight by angle difference"
     )
-    dot_prod = torch.einsum('qk,nk->qn', query_principal_axes, nonquery_principal_axes) # (q, nq)
-    norms = torch.norm(query_principal_axes, dim=-1)[:, None] * torch.norm(nonquery_principal_axes, dim=-1)[None, :] # (q, nq)
-    angle_diff = torch.arccos(torch.clamp(dot_prod / norms, min=-1, max=1)) # (q, nq)
-    angle_diff_wrapped = torch.where(angle_diff > torch.pi, 2 * torch.pi - angle_diff, angle_diff)
-    # Then wrap to [0, pi/2] to handle head/tail ambiguity (180 deg == 0 deg)
-    # TODO: do we need this? verify it works as intended
-    angle_diff_wrapped = torch.where(angle_diff_wrapped > torch.pi / 2, torch.pi - angle_diff_wrapped, angle_diff_wrapped)
-    return asso_output # + 
+    dot = (query_principal_axes[:,None,:] * last_principal_axes[None,:,:]).sum(dim=-1) # (q, nq)
+    # cross product is scalar in 2D
+    cross_z = query_principal_axes[:,None, 0] * last_principal_axes[None,:, 1] - query_principal_axes[:,None, 1] * last_principal_axes[None,:, 0] # (q, nq)
+    # product of norms cancels out in arctan so no need to calculate
+    angle_diff = torch.abs(torch.atan2(cross_z, dot))
+    # wrap angle diff to [0, pi/2] for PCA method since there is no head/tail disambiguation
+    if fallback:
+        angle_diff = torch.where(angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff)
+    weight = asso_output.mean(dim=1) # row wise aggregation of association scores; used to weight the angle diff 
+    penalty = -weight * angle_diff
+    asso_out = asso_output + penalty
+    return asso_out
 
 
 def filter_max_center_dist(

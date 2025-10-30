@@ -505,3 +505,189 @@ def test_confidence_thresholding():
     print("Test 7 passed: Index mappings are correct")
 
     print("\nAll confidence thresholding tests passed!")
+
+
+def test_filter_max_angle_diff_basic():
+    """Test 1: Basic angle difference calculation and weighting.
+
+    Tests that angles are computed correctly and association scores are weighted
+    proportionally to the angle difference.
+    """
+    asso_output = torch.tensor([
+        [0.8, 0.6],
+        [0.7, 0.9],
+    ], dtype=torch.float32)
+
+    query_principal_axes = torch.tensor([
+        [1.0, 0.0],
+        [0.0, 1.0],
+    ], dtype=torch.float32)
+
+    last_principal_axes = torch.tensor([
+        [1.0, 0.0],
+        [0.0, -1.0],
+    ], dtype=torch.float32)
+
+    result = post_processing.weight_by_angle_diff(
+        asso_output,
+        query_principal_axes,
+        last_principal_axes
+    )
+
+    # Expected: no wrapping by default
+    # angle_0: 0 degrees, angle_1: 90 degrees
+    angle_diffs = torch.tensor([[0.0, torch.pi/2], [torch.pi/2, 0.0]])
+    weight = asso_output.mean(dim=1)  # [0.7, 0.8]
+    penalty = -weight[:, None] * angle_diffs
+    expected = asso_output + penalty
+
+    assert torch.allclose(result, expected, rtol=1e-4)
+
+
+def test_filter_max_angle_diff_angle_wrapping():
+    """Test 2: Angle difference wrapping to [0, pi/2].
+
+    Tests that angles > pi/2 are correctly wrapped to [0, pi/2] range
+    for cases where head/tail cannot be disambiguated (fallback=True).
+    """
+    asso_output = torch.tensor([
+        [0.5, 0.3, 0.2],
+    ])
+
+    query_principal_axes = torch.tensor([
+        [1.0, 0.0],
+    ])
+
+    theta = torch.tensor(2) * torch.pi / 3
+    last_principal_axes = torch.tensor([
+        [torch.cos(theta), torch.sin(theta)],
+        [1.0, 0.0],
+        [0.0, 1.0],
+    ])
+
+    result = post_processing.weight_by_angle_diff(
+        asso_output,
+        query_principal_axes,
+        last_principal_axes,
+        fallback=True
+    )
+
+    # With fallback: 120 degrees wraps to 60 degrees (pi - 120)
+    mean_weight = asso_output.mean(dim=1)[0]  # (0.5 + 0.3 + 0.2) / 3
+    angle_after_wrap = torch.pi - 2 * torch.pi / 3
+    penalty_120 = -mean_weight * angle_after_wrap
+    penalty_0 = 0.0
+    penalty_90 = -mean_weight * torch.pi / 2
+
+    assert torch.isclose(result[0, 0], asso_output[0, 0] + penalty_120, rtol=1e-4)
+    assert torch.isclose(result[0, 1], asso_output[0, 1] + penalty_0, rtol=1e-4)
+    assert torch.isclose(result[0, 2], asso_output[0, 2] + penalty_90, rtol=1e-4)
+
+
+def test_filter_max_angle_diff_proportional_penalty():
+    """Test 3: Proportional penalty based on angle difference.
+
+    Tests that larger angle differences result in larger penalties.
+    """
+    asso_output = torch.tensor([
+        [0.8, 0.6],
+        [0.7, 0.9],
+    ])
+
+    query_principal_axes = torch.tensor([
+        [1.0, 0.0],
+        [0.0, 1.0],
+    ])
+
+    last_principal_axes = torch.tensor([
+        [1.0, 0.0],
+        [0.707, 0.707],  # 45 degrees
+    ])
+
+    result = post_processing.weight_by_angle_diff(
+        asso_output,
+        query_principal_axes,
+        last_principal_axes
+    )
+
+    # angle_0: 0 degrees, angle_1: 45 degrees
+    angle_diffs = torch.tensor([[0.0, torch.pi/4], [torch.pi/2, 0.0]])
+    weight = asso_output.mean(dim=1)
+    penalty = -weight[:, None] * angle_diffs
+    expected = asso_output + penalty
+
+    assert torch.allclose(result, expected, rtol=1e-4)
+
+    # Verify larger angle = more penalty
+    assert result[0, 1] < result[0, 0]  # 45 degree penalty < 0 degree penalty
+    assert result[1, 0] < result[1, 1]  # 90 degree penalty < 0 degree penalty
+
+
+def test_filter_max_angle_diff_with_nans():
+    """Test 4: Handling of NaN values in principal axes.
+
+    Tests behavior when principal axes contain NaN values.
+    """
+    asso_output = torch.tensor([
+        [0.8, 0.6],
+        [0.7, 0.9],
+    ], dtype=torch.float32)
+
+    query_principal_axes = torch.tensor([
+        [1.0, 0.0],
+        [float('nan'), 1.0],
+    ], dtype=torch.float32)
+
+    last_principal_axes = torch.tensor([
+        [1.0, float('nan')],
+        [0.0, 1.0],
+    ])
+
+    result = post_processing.weight_by_angle_diff(
+        asso_output,
+        query_principal_axes,
+        last_principal_axes
+    )
+
+    assert result.shape == asso_output.shape
+    assert not torch.isnan(result).all()
+    assert not torch.isinf(result).all()
+
+
+def test_filter_max_angle_diff_weighting_mechanism():
+    """Test 5: Verify association weighting mechanism.
+
+    Tests that the weighting uses row-wise mean of association scores
+    applied proportionally to angle differences.
+    """
+    asso_output = torch.tensor([
+        [1.0, 0.8, 0.6],
+        [0.2, 0.3, 0.4],
+        [0.5, 0.5, 0.5],
+    ], dtype=torch.float32)
+
+    query_principal_axes = torch.tensor([
+        [1.0, 0.0],
+        [1.0, 0.0],
+        [1.0, 0.0],
+    ], dtype=torch.float32)
+
+    angles = [torch.pi/2, torch.pi/4, torch.pi/6]
+    last_principal_axes = torch.tensor([
+        [torch.cos(a).item(), torch.sin(a).item()] for a in angles
+    ], dtype=torch.float32)
+
+    result = post_processing.filter_max_angle_diff(
+        asso_output,
+        query_principal_axes,
+        last_principal_axes
+    )
+
+    # Verify penalties scale with angle difference
+    # Row 0: angles are [90, 45, 30] degrees, weights [0.8, 0.8, 0.8]
+    assert result[0, 0] < result[0, 1] < result[0, 2]  # larger angle = more penalty
+    # Row 1: same angles, weights [0.3, 0.3, 0.3] (smaller weights)
+    assert result[1, 0] < result[1, 1] < result[1, 2]
+
+    # Verify higher mean weight causes larger penalty for same angle
+    assert (result[0, 0] - asso_output[0, 0]) < (result[1, 0] - asso_output[1, 0])

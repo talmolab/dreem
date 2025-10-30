@@ -201,7 +201,7 @@ def get_pose_principal_axis(pose_arr: torch.Tensor) -> torch.Tensor:
         instance_filt = instance[valid]
         U, S, Vt = torch.linalg.svd(instance_filt - instance_filt.mean(dim=0))
         principal_axes.append(Vt[:, 0])
-    return torch.stack(principal_axes).T
+    return torch.stack(principal_axes)
 
 def pad_variable_size_crops(instance, target_size):
     """Pad or crop an instance's crop to the target size.
