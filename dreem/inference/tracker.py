@@ -32,7 +32,7 @@ class Tracker:
         verbose: bool = False,
         confidence_threshold: float = 0,
         temperature: float = 0.1,
-        angle_diff_weight: bool = False,
+        max_angle_diff: float = 0,
         orientation_prompt: list[str] | None = None,
         **kwargs,
     ):
@@ -53,7 +53,7 @@ class Tracker:
             verbose: Whether or not to turn on debug printing after each operation.
             confidence_threshold: threshold for filtering out instances with high confidence. Set to 0 to disable confidence thresholding.
             temperature: temperature for softmax.
-            angle_diff_weight: whether to weight the association score by the angle difference between pose principal axes.
+            max_angle_diff: maximum angle difference between pose principal axes when considering association between two instances. Set to 0 to disable angle difference filtering.
             orientation_prompt: list of skeleton node names to be used to determine the orientation of the object. If None, computes using all available nodes.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
@@ -70,7 +70,7 @@ class Tracker:
         self.max_tracks = max_tracks
         self.confidence_threshold = confidence_threshold
         self.temperature = temperature
-        self.angle_diff_weight = angle_diff_weight
+        self.max_angle_diff = deg2rad(max_angle_diff)
         self.orientation_prompt = orientation_prompt
 
     def __call__(
@@ -403,15 +403,15 @@ class Tracker:
         
         ################################################################################
 
-        if self.angle_diff_weight:
+        if self.max_angle_diff > 0:
             last_poses = [pose for i,pose in enumerate(nonquery_poses) if i in last_inds.cpu()]
             # check if poses are valid for PCA as we may need to fall back to this method if all orientation prompts are not available
             valid, failures = is_valid_pose_for_principal_axis(query_poses)
             if not valid:
-                raise ValueError(f"Cannot compute principal axis: {failures}. If this cannot be resolved, set angle_diff_weight=False to disable this post-processing step")
+                raise ValueError(f"Cannot compute principal axis: {failures}. If this cannot be resolved, set max_angle_diff=0 to disable this post-processing step")
             valid, failures = is_valid_pose_for_principal_axis(last_poses)
             if not valid:
-                raise ValueError(f"Cannot compute principal axis: {failures}. If this cannot be resolved, set angle_diff_weight=False to disable this post-processing step")
+                raise ValueError(f"Cannot compute principal axis: {failures}. If this cannot be resolved, set max_angle_diff=0 to disable this post-processing step")
             
             query_principal_axes = []
             last_principal_axes = []
@@ -430,6 +430,7 @@ class Tracker:
 
             traj_score = post_processing.weight_by_angle_diff(
                 traj_score,
+                self.max_angle_diff,
                 query_principal_axes,
                 last_principal_axes,
                 fallback,

@@ -66,6 +66,7 @@ def get_principal_axis_with_fallback(instance, orientation_prompt: list[str] | N
 
 def weight_by_angle_diff(
     asso_output: torch.Tensor,
+    max_angle_diff: float = 0,
     query_principal_axes: torch.Tensor | None = None,
     last_principal_axes: torch.Tensor | None = None,
     fallback: bool = False,
@@ -89,7 +90,7 @@ def weight_by_angle_diff(
     if fallback:
         angle_diff = torch.where(angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff)
     weight = asso_output.mean(dim=1) # row wise aggregation of association scores; used to weight the angle diff 
-    penalty = -weight * angle_diff
+    penalty = -weight * torch.where(angle_diff > max_angle_diff, angle_diff - max_angle_diff, 0)
     asso_out = asso_output + penalty
     return asso_out
 
