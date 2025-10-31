@@ -415,16 +415,19 @@ class Tracker:
             
             query_principal_axes = []
             last_principal_axes = []
+            fallbacks = []
             for instance in query_poses:
                 instance_principal_axes, fallback = post_processing.get_principal_axis_with_fallback(instance, self.orientation_prompt, logger, query_frame.frame_id.item())
+                fallbacks.append(fallback)
                 query_principal_axes.append(instance_principal_axes)
             query_principal_axes = torch.stack(query_principal_axes) # (n_query, 2)
             
             for instance in last_poses:
                 instance_principal_axes, fallback = post_processing.get_principal_axis_with_fallback(instance, self.orientation_prompt, logger, query_frame.frame_id.item())
+                fallbacks.append(fallback)
                 last_principal_axes.append(instance_principal_axes)
             last_principal_axes = torch.stack(last_principal_axes) # (n_traj, 2)
-            
+            fallback = any(fallbacks)
             if fallback:
                 logger.debug(f"Orientation prompt nodes not visible for some instances in frame {query_frame.frame_id.item()}. Used all available nodes to compute orientation of instance")
 

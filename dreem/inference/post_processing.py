@@ -49,7 +49,12 @@ def _compute_principal_axis_with_prompts(instance, orientation_prompt):
         elif node_name == orientation_prompt[1]:
             tip = node_coords
     if head is not None and tip is not None and ~torch.isnan(torch.tensor(head)).any() and ~torch.isnan(torch.tensor(tip)).any():
-        return torch.tensor(head - tip)
+        vec = torch.tensor(head - tip)
+        # Normalize to unit vector to compare to PCA derived principal axis
+        norm = torch.norm(vec)
+        if norm > 1e-8:
+            vec = vec / norm
+        return vec
     return None
 
 def get_principal_axis_with_fallback(instance, orientation_prompt: list[str] | None, logger, frame_id):
