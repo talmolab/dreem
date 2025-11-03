@@ -30,6 +30,10 @@ class Tracker:
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
+        confidence_threshold: float = 0.,
+        temperature: float = 0.1,
+        max_angle_diff: float = 0.,
+        orientation_prompt: list[str] | None = None,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -47,6 +51,10 @@ class Tracker:
             max_tracks: the maximum number of tracks that can be created while tracking.
                 We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
             verbose: Whether or not to turn on debug printing after each operation.
+            confidence_threshold: threshold for filtering out instances with high confidence. Set to 0 to disable confidence thresholding.
+            temperature: temperature for softmax.
+            max_angle_diff: maximum angle difference between pose principal axes when considering association between two instances. Set to 0 to disable angle difference filtering.
+            orientation_prompt: list of skeleton node names to be used to determine the orientation of the object. If None, computes using all available nodes.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
@@ -60,6 +68,10 @@ class Tracker:
         self.max_center_dist = max_center_dist
         self.verbose = verbose
         self.max_tracks = max_tracks
+        self.confidence_threshold = confidence_threshold
+        self.temperature = temperature
+        self.max_angle_diff = deg2rad(max_angle_diff)
+        self.orientation_prompt = orientation_prompt
 
     def __call__(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -89,6 +101,8 @@ class Tracker:
             f"decay_time={self.decay_time}, "
             f"max_center_dist={self.max_center_dist}, "
             f"verbose={self.verbose}, "
+            f"queue={self.track_queue}, "
+            f"temperature={self.temperature}"
             f"queue={self.track_queue}, "
             f"temperature={self.temperature}"
         )
@@ -392,7 +406,49 @@ class Tracker:
             query_frame.add_traj_score("max_center_dist", max_center_dist_traj_score)
         
         ################################################################################
-        scaled_traj_score = torch.softmax(traj_score, dim=1)
+
+        if self.max_angle_diff > 0:
+            last_poses = [(pose, gt_track_id, crop) for i, (pose, gt_track_id, crop) in enumerate(nonquery_poses) if i in last_inds.cpu()]
+
+            query_principal_axes = []
+            last_pred_ids = [] # the ids of the instances in last frame, in the order that asso_output is indexed
+            last_principal_axes = []
+            successes = []
+            for instance, pred_track_id, crop in query_poses:
+                instance_principal_axes, success = post_processing.get_principal_axis_with_fallback(instance, self.orientation_prompt, crop, logger, query_frame.frame_id.item())
+                query_principal_axes.append(instance_principal_axes)
+                successes.append(success)
+            query_principal_axes = torch.stack(query_principal_axes) # (n_query, 2)
+            
+            for instance, pred_track_id, crop in last_poses:
+                instance_principal_axes, success = post_processing.get_principal_axis_with_fallback(instance, self.orientation_prompt, crop, logger, query_frame.frame_id.item())
+                last_principal_axes.append(instance_principal_axes)
+                successes.append(success)
+                last_pred_ids.append(pred_track_id)
+            last_principal_axes = torch.stack(last_principal_axes) # (n_traj, 2)
+
+            if all(successes):
+                traj_score = post_processing.weight_by_angle_diff(
+                    traj_score,
+                    self.max_angle_diff,
+                    last_pred_ids,
+                    query_principal_axes,
+                    last_principal_axes,
+                )
+                angle_diff_weight_traj_score = pd.DataFrame(
+                traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+                )
+                angle_diff_weight_traj_score.index.name = "Current Frame Instances"
+                angle_diff_weight_traj_score.columns.name = "Unique IDs"
+
+                query_frame.add_traj_score("angle_diff_weight", angle_diff_weight_traj_score)
+            else:
+                logger.warning(f"Some instances had no principal axis in frame {query_frame.frame_id.item()}. Skipping instance angle based post processing.")
+
+        ################################################################################
+        scaled_traj_score = torch.nn.functional.log_softmax(
+            traj_score / self.temperature, dim=1
+        )
         scaled_traj_score_df = pd.DataFrame(
             scaled_traj_score.numpy(), columns=unique_ids.cpu().numpy()
         )
@@ -401,8 +457,48 @@ class Tracker:
 
         query_frame.add_traj_score("scaled", scaled_traj_score_df)
         ################################################################################
+        # Compute entropy for each row and filter out rows with high entropy
+        if self.confidence_threshold > 0:
+            entropy = -torch.sum(
+                scaled_traj_score * torch.exp(scaled_traj_score), axis=1
+            )
+            norm_entropy = entropy / torch.log(torch.tensor(n_query))
+            removal_threshold = 1 - self.confidence_threshold
+            # remove these rows from the cost matrix, but careful to maintain indexes of the results
+            remove = norm_entropy > removal_threshold
 
-        match_i, match_j = linear_sum_assignment((-traj_score))
+            if (remove.sum() == traj_score.shape[0]).item():
+                logger.debug(
+                    f"All instances have high entropy in frame {query_frame.frame_id.item()}, skipping assignment"
+                )
+                return query_frame
+
+            dict_remove_inds = {}
+            # post-LSA matches will have fewer rows, with remove=True indices being the removed rows
+            for idx in range(traj_score.shape[0]):
+                dict_remove_inds[idx] = True if remove[idx].item() else False
+
+            dict_old_new_map = {i: None for i in range(traj_score.shape[0])}
+            dict_new_old_map = {i: None for i in range(remove.sum())}
+            new_idx = 0
+            for idx in range(traj_score.shape[0]):
+                if remove[idx].item():
+                    pass
+                else:
+                    dict_old_new_map[idx] = new_idx
+                    dict_new_old_map[new_idx] = idx
+                    new_idx += 1
+
+            traj_score_filt = traj_score[~remove]
+        else:
+            traj_score_filt = traj_score
+            remove = torch.zeros(traj_score.shape[0])
+
+        match_i, match_j = linear_sum_assignment((-traj_score_filt))
+        if self.confidence_threshold > 0:
+            # reindex the match indices to account for removed rows; only match_i needs to be reindexed
+            for i, _ in enumerate(match_i):
+                match_i[i] = dict_new_old_map[i]
 
         track_ids = instance_ids.new_full((n_query,), -1)
         for i, j in zip(match_i, match_j):
@@ -424,7 +520,8 @@ class Tracker:
                 query_frame.instances[i].track_score = scaled_traj_score[i, j].item()
         logger.debug(f"track_ids: {track_ids}")
         for i in range(n_query):
-            if track_ids[i] < 0:
+            # True if association score was below the threshold, and we haven't reached max tracks
+            if track_ids[i] < 0 and n_traj < self.max_tracks:
                 max_track_id = max(curr_tracks)
                 logger.debug(f"Creating new track {max_track_id + 1}")
                 curr_tracks.add(max_track_id + 1)
