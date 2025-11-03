@@ -482,7 +482,7 @@ class SleapDataset(BaseDataset):
                 instances.append(instance)
 
             # nms
-            if self.detection_iou_threshold is not None and len(instances) > 0:
+            if self.detection_iou_threshold and len(instances) > 0:
                 discard = set()
                 bboxes = np.stack([instance.bbox.squeeze(0) for instance in instances])
                 ious = _pairwise_iou(Boxes(bboxes), Boxes(bboxes))
