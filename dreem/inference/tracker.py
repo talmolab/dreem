@@ -5,7 +5,7 @@ from math import inf, radians as deg2rad
 import pandas as pd
 import torch
 from scipy.optimize import linear_sum_assignment
-from dreem.datasets.data_utils import _pairwise_iou, is_valid_pose_for_principal_axis, gather_pose_array, get_pose_principal_axis
+from dreem.datasets.data_utils import _pairwise_iou, is_pose_centroid_only
 from dreem.inference import post_processing
 from dreem.inference.boxes import Boxes
 from dreem.inference.track_queue import TrackQueue
@@ -30,9 +30,9 @@ class Tracker:
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
-        confidence_threshold: float = 0,
+        confidence_threshold: float = 0.,
         temperature: float = 0.1,
-        max_angle_diff: float = 0,
+        max_angle_diff: float = 0.,
         orientation_prompt: list[str] | None = None,
         **kwargs,
     ):
@@ -238,8 +238,18 @@ class Tracker:
         n_traj = self.track_queue.n_tracks
         curr_tracks = self.track_queue.curr_track
 
+        query_poses = [(instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu()) for instance in query_frame.instances]
+        nonquery_poses = [
+                (instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu())
+                for nonquery_frame in frames
+                if nonquery_frame.frame_id != query_frame.frame_id.item()
+                for instance in nonquery_frame.instances
+            ]
+        enable_crop_saving = is_pose_centroid_only(query_poses[0][0])
+        if enable_crop_saving and query_frame.frame_id.item() == 1 and self.max_angle_diff > 0:
+            logger.warning("Crop saving is enabled due to max_angle_diff > 0. This will significantly increase memory usage. If you experience memory issues, consider setting max_angle_diff = 0. This will skip orientation based post processing.")
         with torch.no_grad():
-            asso_matrix = model(all_instances, query_instances)
+            asso_matrix = model(all_instances, query_instances, save_crops=enable_crop_saving)
 
         asso_output = asso_matrix[-1].matrix.split(
             instances_per_frame, dim=1
@@ -315,13 +325,6 @@ class Tracker:
             ],
             dim=0,
         )
-        query_poses = [(instance.pose, instance.pred_track_id.item()) for instance in query_frame.instances]
-        nonquery_poses = [
-                (instance.pose, instance.pred_track_id.item())
-                for nonquery_frame in frames
-                if nonquery_frame.frame_id != query_frame.frame_id.item()
-                for instance in nonquery_frame.instances
-            ]
 
         pred_boxes = model_utils.get_boxes(all_instances)
         query_boxes = pred_boxes[query_inds]  # n_k x 4
@@ -404,51 +407,42 @@ class Tracker:
         ################################################################################
 
         if self.max_angle_diff > 0:
-            last_poses = [(pose, gt_track_id) for i, (pose, gt_track_id) in enumerate(nonquery_poses) if i in last_inds.cpu()]
-            # check if poses are valid for PCA as we may need to fall back to this method if all orientation prompts are not available
-            valid, failures = is_valid_pose_for_principal_axis([pose for pose, _ in query_poses])
-            if not valid:
-                raise ValueError(f"Cannot compute principal axis: {failures}. If this cannot be resolved, set max_angle_diff=0 to disable this post-processing step")
-            valid, failures = is_valid_pose_for_principal_axis([pose for pose, _ in last_poses])
-            if not valid:
-                raise ValueError(f"Cannot compute principal axis: {failures}. If this cannot be resolved, set max_angle_diff=0 to disable this post-processing step")
-            
+            last_poses = [(pose, gt_track_id, crop) for i, (pose, gt_track_id, crop) in enumerate(nonquery_poses) if i in last_inds.cpu()]
+
             query_principal_axes = []
             last_pred_ids = [] # the ids of the instances in last frame, in the order that asso_output is indexed
             last_principal_axes = []
-            fallbacks = []
-            for instance, pred_track_id in query_poses:
-                instance_principal_axes, fallback = post_processing.get_principal_axis_with_fallback(instance, self.orientation_prompt, logger, query_frame.frame_id.item())
-                fallbacks.append(fallback)
+            successes = []
+            for instance, pred_track_id, crop in query_poses:
+                instance_principal_axes, success = post_processing.get_principal_axis_with_fallback(instance, self.orientation_prompt, crop, logger, query_frame.frame_id.item())
                 query_principal_axes.append(instance_principal_axes)
+                successes.append(success)
             query_principal_axes = torch.stack(query_principal_axes) # (n_query, 2)
             
-            for instance, pred_track_id in last_poses:
-                instance_principal_axes, fallback = post_processing.get_principal_axis_with_fallback(instance, self.orientation_prompt, logger, query_frame.frame_id.item())
-                fallbacks.append(fallback)
+            for instance, pred_track_id, crop in last_poses:
+                instance_principal_axes, success = post_processing.get_principal_axis_with_fallback(instance, self.orientation_prompt, crop, logger, query_frame.frame_id.item())
                 last_principal_axes.append(instance_principal_axes)
+                successes.append(success)
                 last_pred_ids.append(pred_track_id)
             last_principal_axes = torch.stack(last_principal_axes) # (n_traj, 2)
-            fallback = any(fallbacks)
-            if fallback:
-                logger.debug(f"Orientation prompt nodes not visible for some instances in frame {query_frame.frame_id.item()}. Used all available nodes to compute orientation of instance")
-            
-            traj_score = post_processing.weight_by_angle_diff(
-                traj_score,
-                self.max_angle_diff,
-                last_pred_ids,
-                query_principal_axes,
-                last_principal_axes,
-                fallback,
-            )
 
-            angle_diff_weight_traj_score = pd.DataFrame(
+            if all(successes):
+                traj_score = post_processing.weight_by_angle_diff(
+                    traj_score,
+                    self.max_angle_diff,
+                    last_pred_ids,
+                    query_principal_axes,
+                    last_principal_axes,
+                )
+                angle_diff_weight_traj_score = pd.DataFrame(
                 traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
-            )
-            angle_diff_weight_traj_score.index.name = "Current Frame Instances"
-            angle_diff_weight_traj_score.columns.name = "Unique IDs"
+                )
+                angle_diff_weight_traj_score.index.name = "Current Frame Instances"
+                angle_diff_weight_traj_score.columns.name = "Unique IDs"
 
-            query_frame.add_traj_score("angle_diff_weight", angle_diff_weight_traj_score)
+                query_frame.add_traj_score("angle_diff_weight", angle_diff_weight_traj_score)
+            else:
+                logger.warning(f"Some instances had no principal axis in frame {query_frame.frame_id.item()}. Skipping instance angle based post processing.")
 
         ################################################################################
         scaled_traj_score = torch.nn.functional.log_softmax(

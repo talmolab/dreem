@@ -92,19 +92,18 @@ def load_slp(labels_path: str, open_videos: bool = True) -> Labels:
 
     return labels, annotated_segments
 
-def is_valid_pose_for_principal_axis(poses):
+def is_pose_centroid_only(pose):
     """Check if a pose contains only a single key named "centroid".
 
     Args:
-        poses: a list of poses
+        pose: a pose
 
     Returns:
-        True if the pose contains only a single key named "centroid" or all poses have more than one key, False if any condition is met.
+        True if the pose contains only a single key named "centroid", False otherwise.
     """
-    failures = []
-    if any(len(p.keys()) <= 1 for p in poses): # all poses must have more than one key
-        failures.append("all poses must have more than one key")
-    return len(failures) == 0, ". ".join(failures)
+    if len(pose.keys()) <= 1 and pose.get("centroid") is not None:
+        return True
+    return False
 
 # Collate query_poses into a torch tensor of shape (N, num_keys, 2)
 # Assume each query_poses[i] is a dict {key: value}, where value is a 2-vector

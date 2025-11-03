@@ -26,7 +26,7 @@ def store_frame_metadata(frame, h5_path: str):
     with h5py.File(h5_path, "a") as h5f:
         frame_meta_group = h5f.require_group("frame_meta")
         frame = frame.to("cpu")
-        _ = frame.to_h5(frame_meta_group, frame.get_gt_track_ids().cpu().numpy())
+        _ = frame.to_h5(frame_meta_group, frame.get_gt_track_ids().cpu().numpy(), save={"features": True, "crop": True})
 
 
 def get_timestamp() -> str:

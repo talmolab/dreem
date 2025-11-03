@@ -1,7 +1,12 @@
 """Helper functions for post-processing association matrix pre-tracking."""
 
+import logging
+from typing import Callable
 import torch
-from dreem.datasets.data_utils import get_pose_principal_axis, gather_pose_array
+from dreem.datasets.data_utils import get_pose_principal_axis, gather_pose_array, is_pose_centroid_only
+from scipy import ndimage
+import numpy as np
+logger = logging.getLogger(__name__)
 
 
 def weight_iou(
@@ -34,40 +39,154 @@ def weight_iou(
             )
     return asso_output
 
-def _compute_principal_axis_with_pca(instance):
-    """PCA fallback method."""
+# Registry of principal axis computation methods
+# Each entry: (can_compute_func, compute_func)
+_PRINCIPAL_AXIS_METHODS = []
+
+
+def _can_compute_with_prompts(instance, **kwargs) -> bool:
+    """Check if orientation prompt method can be used.
+
+    Conditions:
+    - Skeleton must NOT be only centroid (must have more than 1 keypoint)
+    - orientation_prompt must be provided and valid
+    - Both prompt nodes must exist and be valid (non-NaN)
+    """
+    orientation_prompt = kwargs.get("orientation_prompt")
+    # Must have more than just centroid
+    if is_pose_centroid_only(instance):
+        logger.debug(f"Pose is only centroid. Cannot compute principal axis with orientation prompts.")
+        return False
+    # Must have valid orientation prompt
+    if orientation_prompt is None or len(orientation_prompt) != 2:
+        logger.debug(f"Orientation prompt is not provided or is not valid. Cannot compute principal axis with orientation prompts.")
+        return False
+    # Both nodes must exist
+    head = instance.get(orientation_prompt[0])
+    tip = instance.get(orientation_prompt[1])
+    if head is None or tip is None:
+        logger.debug(f"Orientation prompt nodes not visible. Cannot compute principal axis with orientation prompts.")
+        return False
+    # Both nodes must be valid (non-NaN)
+    head_tensor = torch.tensor(head)
+    tip_tensor = torch.tensor(tip)
+    return not (torch.isnan(head_tensor).any() or torch.isnan(tip_tensor).any())
+
+
+def _compute_with_prompts(instance, **kwargs) -> torch.Tensor:
+    """Compute principal axis using orientation prompts."""
+    orientation_prompt = kwargs.get("orientation_prompt")
+    head = instance[orientation_prompt[0]]
+    tip = instance[orientation_prompt[1]]
+    vec = torch.tensor(head - tip)
+    norm = torch.norm(vec)
+    if norm > 1e-8:
+        vec = vec / norm
+    return vec
+
+
+def _can_compute_with_pca(instance, **kwargs) -> bool:
+    """Check if PCA method can be used (always available as fallback)."""
+    result = not is_pose_centroid_only(instance)
+    if not result:
+        logger.debug(f"PCA method cannot be used. Cannot compute principal axis with PCA.")
+    return result
+
+
+def _compute_with_pca(instance, **kwargs) -> torch.Tensor:
+    """Compute principal axis using PCA."""
     instance_pose_arr = gather_pose_array([instance])
     return get_pose_principal_axis(instance_pose_arr)[0]
 
-def _compute_principal_axis_with_prompts(instance, orientation_prompt):
-    """Primary method using orientation prompts."""
-    head = None
-    tip = None
-    for node_name, node_coords in instance.items():
-        if node_name == orientation_prompt[0]:
-            head = node_coords
-        elif node_name == orientation_prompt[1]:
-            tip = node_coords
-    if head is not None and tip is not None and ~torch.isnan(torch.tensor(head)).any() and ~torch.isnan(torch.tensor(tip)).any():
-        vec = torch.tensor(head - tip)
-        # Normalize to unit vector to compare to PCA derived principal axis
-        norm = torch.norm(vec)
-        if norm > 1e-8:
-            vec = vec / norm
-        return vec
-    return None
 
-def get_principal_axis_with_fallback(instance, orientation_prompt: list[str] | None, logger, frame_id):
+def _can_compute_with_img_grad(instance, **kwargs) -> bool:
+    """Check if image gradient method can be used.
+
+    Conditions:
+    - Skeleton must be ONLY centroid (exactly 1 key, which is "centroid")
+    - Crop must be available
+    """
+    crop = kwargs.get("crop")
+    result = is_pose_centroid_only(instance) and crop is not None and len(crop) > 0
+    if not result:
+        logger.warning(f"Cannot compute principal axis with image gradient. Pose must be only centroid, and crop must be available.")
+    return result
+
+
+def _compute_with_img_grad(instance, **kwargs) -> torch.Tensor:
+    """Compute principal axis using image gradient."""
+    crop = kwargs.get("crop")
+    crop = crop.squeeze().permute(1,2,0).numpy()
+    Ix = ndimage.sobel(crop, axis=1)
+    Iy = ndimage.sobel(crop, axis=0)
+    Ixx = (Ix*Ix).mean()
+    Iyy = (Iy*Iy).mean()
+    Ixy = (Ix*Iy).mean()
+    covar_matrix = np.array([[Ixx, Ixy], [Ixy, Iyy]])
+    eigvals, eigvecs = np.linalg.eig(covar_matrix)
+    idx = eigvals.argsort()[::-1]
+    eigvals = eigvals[idx]
+    eigvecs = eigvecs[:, idx]
+    return torch.as_tensor(eigvecs[:, 1], dtype=torch.float32) # smaller eigval is tangent to instance
+
+# Register methods in priority order
+_PRINCIPAL_AXIS_METHODS.extend([
+    ("orientation_prompt", _can_compute_with_prompts, _compute_with_prompts),
+    ("img_grad", _can_compute_with_img_grad, _compute_with_img_grad),
+    ("pca", _can_compute_with_pca, _compute_with_pca),  # Always available as final fallback
+])
+
+
+def get_principal_axis_with_fallback(
+    instance, orientation_prompt: list[str] | None, crop: torch.Tensor | None, logger, frame_id
+) -> tuple[torch.Tensor, bool]:
     """Compute principal axis with automatic fallback.
 
-    Tries the preferred method first, falls back to PCA if it fails.
+    Tries registered methods in priority order until one succeeds.
+
+    Args:
+        instance: Instance dict with pose keypoints
+        orientation_prompt: Optional list of two node names for orientation-based method
+        crop: Optional crop tensor
+        logger: Logger instance
+        frame_id: Frame ID for logging
+
+    Returns:
+        Tuple of (principal_axis_vector, success) where success indicates
+        if the principal axis was successfully computed.
     """
-    if orientation_prompt is not None:
-        assert len(orientation_prompt) == 2, "Orientation prompt must be a list of only two skeleton node names, with the 'head' node first"
-        result = _compute_principal_axis_with_prompts(instance, orientation_prompt)
-        if result is not None:
-            return result, False
-    return _compute_principal_axis_with_pca(instance), True
+    kwargs = {"orientation_prompt": orientation_prompt,
+              "crop": crop}
+
+    for method_name, can_compute, compute in _PRINCIPAL_AXIS_METHODS:
+        if can_compute(instance, **kwargs):
+            result, *_ = compute(instance, **kwargs)
+            if result is not None:
+                return result, True
+    return torch.full((2,), torch.nan, dtype=torch.float32), False
+
+
+def register_principal_axis_method(
+    can_compute: Callable,
+    compute: Callable,
+    is_fallback: bool = True,
+    priority: int | None = None
+) -> None:
+    """Register a new principal axis computation method.
+
+    Args:
+        can_compute: Function that checks if method can be used for an instance.
+                    Signature: can_compute(instance, **kwargs) -> bool
+        compute: Function that computes principal axis.
+                Signature: compute(instance, **kwargs) -> torch.Tensor
+        is_fallback: Whether this is a fallback method (affects angle wrapping).
+        priority: Optional priority index. If None, appends to end. Lower index = higher priority.
+    """
+    entry = (can_compute, compute, is_fallback)
+    if priority is None:
+        _PRINCIPAL_AXIS_METHODS.append(entry)
+    else:
+        _PRINCIPAL_AXIS_METHODS.insert(priority, entry)
 
 def weight_by_angle_diff(
     asso_output: torch.Tensor,
@@ -81,9 +200,11 @@ def weight_by_angle_diff(
 
     Args:
         asso_output: An N_t x N association matrix
+        max_angle_diff: Maximum angle difference threshold in radians
         last_pred_ids: the track ids of the most recent occurrence of the instances before the query frame, in the order that asso_output is indexed
         query_principal_axes: the principal axes of the current frame instances. Shape: (q, 2)
         last_principal_axes: the principal axes of the instances in the last frame. Shape: (nq, 2)
+        fallback: Whether a fallback method was used (affects angle wrapping to [0, pi/2])
     """
     assert query_principal_axes is not None and last_principal_axes is not None, (
         "Need `query_principal_axes`, and `last_principal_axes` to weight by angle difference"
@@ -93,12 +214,11 @@ def weight_by_angle_diff(
     cross_z = query_principal_axes[:,None, 0] * last_principal_axes[None,:, 1] - query_principal_axes[:,None, 1] * last_principal_axes[None,:, 0] # (q, nq)
     # product of norms cancels out in arctan so no need to calculate
     angle_diff = torch.abs(torch.atan2(cross_z, dot))
-    # wrap angle diff to [0, pi/2] for PCA method since there is no head/tail disambiguation
-    if fallback:
-        angle_diff = torch.where(angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff)
+    # wrap angle diff to [0, pi/2] since there is no head/tail disambiguation in general
+    angle_diff = torch.where(angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff)
     # reindex the columns of the angle_diff matrix baesd on the index of last pred ids
     angle_diff = angle_diff[:,last_pred_ids]
-    weight = asso_output.mean(dim=1) # row wise aggregation of association scores; used to weight the angle diff 
+    weight = asso_output.mean(dim=1)  # row wise aggregation of association scores; used to weight the angle diff
     penalty = -weight * torch.where(angle_diff > max_angle_diff, angle_diff - max_angle_diff, 0)
     asso_out = asso_output + penalty
     return asso_out
