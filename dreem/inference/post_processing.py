@@ -227,19 +227,22 @@ def weight_by_angle_diff(
 def filter_max_center_dist(
     asso_output: torch.Tensor,
     max_center_dist: float = 0,
-    id_inds: torch.Tensor | None = None,
+    last_inds: torch.Tensor | None = None,
     query_boxes_px: torch.Tensor | None = None,
     nonquery_boxes_px: torch.Tensor | None = None,
+    instances_per_frame: torch.Tensor | None = None,
+    true_frame_ids: list[int] | None = None,
 ) -> torch.Tensor:
     """Filter trajectory score by distances between objects across frames.
 
     Args:
         asso_output: An N_t x N association matrix
         max_center_dist: The euclidean distance threshold between bboxes
-        id_inds: track ids
+        last_inds: the indices of the last instances in the nonquery frames
         query_boxes_px: the raw bbox coords of the current frame instances
         nonquery_boxes_px: the raw bbox coords of the instances in the nonquery frames (context window)
-
+        instances_per_frame: the number of instances per frame, excluding the query frame
+        true_frame_ids: the true frame ids of the nonquery and query frames (last index is the current frame)
     Returns:
         An N_t x N association matrix
     """
@@ -247,9 +250,7 @@ def filter_max_center_dist(
         assert query_boxes_px is not None and nonquery_boxes_px is not None, (
             "Need `query_boxes_px`, and `nonquery_boxes_px` to filter by `max_center_dist`"
         )
-
         k_ct = (query_boxes_px[:, :, :2] + query_boxes_px[:, :, 2:]) / 2
-        # k_s = ((curr_frame_boxes[:, :, 2:] - curr_frame_boxes[:, :, :2]) ** 2).sum(dim=2)  # n_k
         # nonk boxes are only from previous frame rather than entire window
         nonk_ct = (nonquery_boxes_px[:, :, :2] + nonquery_boxes_px[:, :, 2:]) / 2
 
@@ -257,26 +258,21 @@ def filter_max_center_dist(
         dist = ((k_ct[:, None, :, :] - nonk_ct[None, :, :, :]) ** 2).sum(dim=-1) ** (
             1 / 2
         )  # n_k x n_nonk
-        # norm_dist = dist / (k_s[:, None, :] + 1e-8)
-
-        valid = dist.squeeze() < max_center_dist  # n_k x n_nonk
-        # handle case where id_inds and valid is a single value
-        # handle this better
-        if valid.ndim == 0:
-            valid = valid.unsqueeze(0)
-        if valid.ndim == 1:
-            if id_inds.shape[0] == 1:
-                valid_mult = valid.float().unsqueeze(-1)
-            else:
-                valid_mult = valid.float().unsqueeze(0)
-        else:
-            valid_mult = valid.float()
-
-        valid_assn = (
-            torch.mm(valid_mult, id_inds.to(valid.device)).clamp_(max=1.0).long().bool()
-        )  # n_k x M
-        asso_output_filtered = asso_output.clone()
-        asso_output_filtered[~valid_assn] = 0  # n_k x M
-        return asso_output_filtered
+        dist = dist.squeeze() # n_k x n_nonk
+        max_center_dist_adjusted = torch.ones(asso_output.shape[0])
+        # find out the number of frames elapsed since each instance was seen
+        # map last_inds to frames
+        n_nonquery = sum(instances_per_frame)
+        cumulative = torch.cumsum(instances_per_frame, dim=0)
+        # bin ids are the indices (into the true_frame_ids list) of the last known position of the instances
+        bin_ids = torch.searchsorted(cumulative, last_inds + 1, right=False)
+        curr_frame_id = true_frame_ids[-1].item()
+        # scale max_center_dist by num of frames i.e. grow the possible region that the instance can be in
+        max_center_dist_adjusted = max_center_dist * (torch.max(torch.tensor(1), curr_frame_id - true_frame_ids[:-1][bin_ids]))
+        max_center_dist_adjusted = max_center_dist_adjusted.unsqueeze(-1) # compare to each row in dist
+        weight = asso_output.mean(dim=1).unsqueeze(-1) # row wise aggregation of association scores; used to weight the max center diff
+        penalty = -weight * torch.where(dist > max_center_dist_adjusted, dist - max_center_dist_adjusted, 0)   # n_k x n_nonk
+        asso_out = asso_output + penalty
+        return asso_out
     else:
-        return asso_output
+        return asso_output, None
