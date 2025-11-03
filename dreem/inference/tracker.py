@@ -369,7 +369,7 @@ class Tracker:
         last_boxes_px[:, :, [1, 3]] *= h
         last_inds = last_inds.cpu()
         true_frame_ids = torch.tensor([frame.frame_id.item() for frame in frames])
-        traj_score, valid_mult = post_processing.filter_max_center_dist(
+        traj_score = post_processing.filter_max_center_dist(
             traj_score,
             self.max_center_dist,
             last_inds,
