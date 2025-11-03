@@ -64,12 +64,12 @@ def _can_compute_with_prompts(instance, **kwargs) -> bool:
     # Both nodes must exist
     head = instance.get(orientation_prompt[0])
     tip = instance.get(orientation_prompt[1])
-    if head is None or tip is None:
-        logger.debug(f"Orientation prompt nodes not visible. Cannot compute principal axis with orientation prompts.")
-        return False
     # Both nodes must be valid (non-NaN)
     head_tensor = torch.tensor(head)
     tip_tensor = torch.tensor(tip)
+    if head is None or tip is None or torch.isnan(head_tensor).any() or torch.isnan(tip_tensor).any():
+        logger.debug(f"Orientation prompt nodes not visible. Cannot compute principal axis with orientation prompts.")
+        return False
     return not (torch.isnan(head_tensor).any() or torch.isnan(tip_tensor).any())
 
 
@@ -109,7 +109,7 @@ def _can_compute_with_img_grad(instance, **kwargs) -> bool:
     crop = kwargs.get("crop")
     result = is_pose_centroid_only(instance) and crop is not None and len(crop) > 0
     if not result:
-        logger.warning(f"Cannot compute principal axis with image gradient. Pose must be only centroid, and crop must be available.")
+        logger.debug(f"Cannot compute principal axis with image gradient. Pose must be only centroid, and crop must be available.")
     return result
 
 
@@ -133,7 +133,7 @@ def _compute_with_img_grad(instance, **kwargs) -> torch.Tensor:
 _PRINCIPAL_AXIS_METHODS.extend([
     ("orientation_prompt", _can_compute_with_prompts, _compute_with_prompts),
     ("img_grad", _can_compute_with_img_grad, _compute_with_img_grad),
-    ("pca", _can_compute_with_pca, _compute_with_pca),  # Always available as final fallback
+    ("pca", _can_compute_with_pca, _compute_with_pca),
 ])
 
 
@@ -160,16 +160,16 @@ def get_principal_axis_with_fallback(
 
     for method_name, can_compute, compute in _PRINCIPAL_AXIS_METHODS:
         if can_compute(instance, **kwargs):
-            result, *_ = compute(instance, **kwargs)
+            result = compute(instance, **kwargs)
             if result is not None:
                 return result, True
     return torch.full((2,), torch.nan, dtype=torch.float32), False
 
 
 def register_principal_axis_method(
+    name: str,
     can_compute: Callable,
     compute: Callable,
-    is_fallback: bool = True,
     priority: int | None = None
 ) -> None:
     """Register a new principal axis computation method.
@@ -179,10 +179,10 @@ def register_principal_axis_method(
                     Signature: can_compute(instance, **kwargs) -> bool
         compute: Function that computes principal axis.
                 Signature: compute(instance, **kwargs) -> torch.Tensor
-        is_fallback: Whether this is a fallback method (affects angle wrapping).
+        name: Name of the method
         priority: Optional priority index. If None, appends to end. Lower index = higher priority.
     """
-    entry = (can_compute, compute, is_fallback)
+    entry = (name, can_compute, compute)
     if priority is None:
         _PRINCIPAL_AXIS_METHODS.append(entry)
     else:
@@ -218,7 +218,7 @@ def weight_by_angle_diff(
     angle_diff = torch.where(angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff)
     # reindex the columns of the angle_diff matrix baesd on the index of last pred ids
     angle_diff = angle_diff[:,last_pred_ids]
-    weight = asso_output.mean(dim=1)  # row wise aggregation of association scores; used to weight the angle diff
+    weight = asso_output.mean(dim=1).unsqueeze(-1)  # row wise aggregation of association scores; used to weight the angle diff
     penalty = -weight * torch.where(angle_diff > max_angle_diff, angle_diff - max_angle_diff, 0)
     asso_out = asso_output + penalty
     return asso_out

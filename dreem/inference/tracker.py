@@ -247,7 +247,7 @@ class Tracker:
             ]
         enable_crop_saving = is_pose_centroid_only(query_poses[0][0])
         if enable_crop_saving and query_frame.frame_id.item() == 1 and self.max_angle_diff > 0:
-            logger.warning("Crop saving is enabled due to max_angle_diff > 0. This will significantly increase memory usage. If you experience memory issues, consider setting max_angle_diff = 0. This will skip orientation based post processing.")
+            logger.warning("Crop saving is enabled due to max_angle_diff > 0 and a centroid-only skeleton. This can increase memory usage. If you experience memory issues, consider setting max_angle_diff = 0. This will skip orientation based post processing.")
         with torch.no_grad():
             asso_matrix = model(all_instances, query_instances, save_crops=enable_crop_saving)
 
