@@ -433,17 +433,8 @@ class Tracker:
             for i, _ in enumerate(match_i):
                 match_i[i] = dict_new_old_map[i]
 
-        match_i_valid = []
-        match_j_valid = []
-        if self.max_center_dist is not None and self.max_center_dist > 0 and valid_mult is not None:
-            for i, j in zip(match_i, match_j):
-                # check if this pairing is valid, otherwise filter it out of the matches
-                if valid_mult[i, j].item():
-                    match_i_valid.append(i)
-                    match_j_valid.append(j)
-
         track_ids = instance_ids.new_full((n_query,), -1)
-        for i, j in zip(match_i_valid, match_j_valid):
+        for i, j in zip(match_i, match_j):
             # The overlap threshold is multiplied by the number of times the unique track j is matched to an
             # instance out of all instances in the window excluding the current frame.
             #
@@ -472,7 +463,7 @@ class Tracker:
                 curr_tracks.add(max_track_id + 1)
                 track_ids[i] = max_track_id + 1
 
-        query_frame.matches = (match_i_valid, match_j_valid)
+        query_frame.matches = (match_i, match_j)
 
         for instance, track_id in zip(query_frame.instances, track_ids):
             instance.pred_track_id = track_id

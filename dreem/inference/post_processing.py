@@ -119,7 +119,8 @@ def filter_max_center_dist(
         dist = ((k_ct[:, None, :, :] - nonk_ct[None, :, :, :]) ** 2).sum(dim=-1) ** (
             1 / 2
         )  # n_k x n_nonk
-        max_center_dist_adjusted = torch.ones(nonk_ct.shape[0])
+        dist = dist.squeeze() # n_k x n_nonk
+        max_center_dist_adjusted = torch.ones(asso_output.shape[0])
         # find out the number of frames elapsed since each instance was seen
         # map last_inds to frames
         n_nonquery = sum(instances_per_frame)
@@ -129,24 +130,10 @@ def filter_max_center_dist(
         curr_frame_id = true_frame_ids[-1].item()
         # scale max_center_dist by num of frames i.e. grow the possible region that the instance can be in
         max_center_dist_adjusted = max_center_dist * (torch.max(torch.tensor(1), curr_frame_id - true_frame_ids[:-1][bin_ids]))
-        valid = dist.squeeze() < max_center_dist_adjusted  # n_k x n_nonk
-
-        # handle case where id_inds and valid is a single value
-        # handle this better
-        if valid.ndim == 0:
-            valid = valid.unsqueeze(0)
-        if valid.ndim == 1:
-            if last_inds.shape[0] == 1:
-                valid_mult = valid.unsqueeze(-1)
-            else:
-                valid_mult = valid.unsqueeze(0)
-        else:
-            valid_mult = valid
-        # valid_assn = (
-        #     torch.mm(valid_mult, id_inds.to(valid.device)).clamp_(max=1.0).long().bool()
-        # )  # n_k x M
-        asso_output_filtered = asso_output.clone()
-        asso_output_filtered[~valid_mult] = 0  # n_k x M
-        return asso_output_filtered, valid_mult
+        max_center_dist_adjusted = max_center_dist_adjusted.unsqueeze(-1) # compare to each row in dist
+        weight = asso_output.mean(dim=1).unsqueeze(-1) # row wise aggregation of association scores; used to weight the max center diff
+        penalty = -weight * torch.where(dist > max_center_dist_adjusted, dist - max_center_dist_adjusted, 0)   # n_k x n_nonk
+        asso_out = asso_output + penalty
+        return asso_out
     else:
         return asso_output, None
