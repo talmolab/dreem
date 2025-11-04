@@ -216,12 +216,11 @@ def weight_by_angle_diff(
     angle_diff = torch.abs(torch.atan2(cross_z, dot))
     # wrap angle diff to [0, pi/2] since there is no head/tail disambiguation in general
     angle_diff = torch.where(angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff)
-    # normalize angle diff to [0, 1]
-    angle_diff = angle_diff / (torch.pi / 2)
     # reindex the columns of the angle_diff matrix baesd on the index of last pred ids
     angle_diff = angle_diff[:,last_pred_ids]
     weight = asso_output.mean(dim=1).unsqueeze(-1)  # row wise aggregation of association scores; used to weight the angle diff
-    penalty = -weight * torch.where(angle_diff > max_angle_diff, angle_diff - max_angle_diff, 0)
+    # normalize angle difference to [0, 1]
+    penalty = -weight * torch.where(angle_diff > max_angle_diff, (angle_diff - max_angle_diff)/(torch.pi / 2), 0)
     asso_out = asso_output + penalty
     return asso_out
 
