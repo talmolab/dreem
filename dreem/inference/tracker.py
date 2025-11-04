@@ -377,25 +377,17 @@ class Tracker:
             query_frame.add_traj_score("weight_iou", iou_traj_score)
         ################################################################################
 
-        # threshold for continuing a tracking or starting a new track -> they use 1.0
-        # todo -> should also work without pos_embed
-        _, h, w = query_frame.img_shape.flatten().cpu()
-        last_boxes_px = last_boxes.cpu()
-        last_boxes_px[:, :, [0, 2]] *= w
-        last_boxes_px[:, :, [1, 3]] *= h
-        last_inds = last_inds.cpu()
-        true_frame_ids = torch.tensor([frame.frame_id.item() for frame in frames])
-        traj_score = post_processing.filter_max_center_dist(
-            traj_score,
-            self.max_center_dist,
-            last_inds,
-            query_boxes_px,
-            last_boxes_px,
-            torch.tensor(instances_per_frame[:-1]).cpu(),
-            true_frame_ids,
-        )
-
         if self.max_center_dist is not None and self.max_center_dist > 0:
+            _, h, w = query_frame.img_shape.flatten().cpu()
+            last_boxes_px = last_boxes.cpu()
+            last_boxes_px[:, :, [0, 2]] *= w
+            last_boxes_px[:, :, [1, 3]] *= h
+            traj_score = post_processing.filter_max_center_dist(
+                traj_score,
+                self.max_center_dist,
+                query_boxes_px,
+                last_boxes_px,
+            )
             max_center_dist_traj_score = pd.DataFrame(
                 traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
             )
