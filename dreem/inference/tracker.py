@@ -223,6 +223,7 @@ class Tracker:
         _ = model.eval()
 
         query_frame = frames[query_ind]
+        _, h, w = query_frame.img_shape.flatten().cpu()
 
         query_instances = query_frame.instances
         all_instances = [instance for frame in frames for instance in frame.instances]
@@ -378,7 +379,6 @@ class Tracker:
         ################################################################################
 
         if self.max_center_dist is not None and self.max_center_dist > 0:
-            _, h, w = query_frame.img_shape.flatten().cpu()
             last_boxes_px = last_boxes.cpu()
             last_boxes_px[:, :, [0, 2]] *= w
             last_boxes_px[:, :, [1, 3]] *= h
@@ -387,6 +387,8 @@ class Tracker:
                 self.max_center_dist,
                 query_boxes_px,
                 last_boxes_px,
+                h,
+                w,
             )
             max_center_dist_traj_score = pd.DataFrame(
                 traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
