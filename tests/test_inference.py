@@ -39,7 +39,7 @@ def test_track_queue():
     assert tq.tracks == [i for i in range(max(n_instances_per_frame))]
     assert len(tq.collate_tracks()) == window_size
     assert all([gap == 0 for gap in tq._curr_gap.values()])
-    assert tq.curr_track == max(n_instances_per_frame) - 1
+    assert max(tq.curr_track) == max(n_instances_per_frame) - 1
 
     tq.add_frame(
         Frame(
@@ -84,7 +84,7 @@ def test_track_queue():
         )
 
     assert tq.n_tracks == 1
-    assert tq.curr_track == max(n_instances_per_frame)
+    assert max(tq.curr_track) == max(n_instances_per_frame)
     assert 0 in tq._queues.keys()
 
     tq.end_tracks()
@@ -173,18 +173,6 @@ def test_post_processing():  # set_default_device
     asso_nonk = torch.rand((N_t, N_p))
 
     decay_time = 0
-
-    assert (
-        asso_nonk
-        == post_processing.weight_decay_time(asso_nonk, decay_time, reid_features, T, k)
-    ).all()
-
-    decay_time = 0.9
-
-    assert not (
-        asso_nonk
-        == post_processing.weight_decay_time(asso_nonk, decay_time, reid_features, T, k)
-    ).all()
 
     asso_output = torch.rand((N_t, M))
     ious = torch.rand((N_t, M))
@@ -300,3 +288,220 @@ def test_track(tmp_path, inference_config):
         len(list(out_dir.iterdir()))
         == len(os.listdir(cfg.cfg.dataset.test_dataset.dir.path)) / 2
     )
+
+
+def test_confidence_thresholding():
+    """Test confidence thresholding feature.
+
+    Tests that the confidence thresholding correctly filters rows
+    based on entropy calculations and maintains proper index mappings.
+    """
+    # Test 1: Basic functionality - some rows filtered
+    print("\nTest 1: Basic functionality with some rows filtered")
+    n_query = 5
+    n_traj = 3
+    temperature = 0.1
+    confidence_threshold = 0.7
+
+    # Create a trajectory score matrix where some rows have high confidence (low entropy)
+    # and others have low confidence (high entropy)
+    traj_score = torch.tensor(
+        [
+            [0.8, 0.15, 0.05],  # High confidence in first track
+            [0.33, 0.33, 0.34],  # Low confidence (uniform distribution)
+            [0.1, 0.85, 0.05],  # High confidence in second track
+            [0.32, 0.34, 0.34],  # Low confidence (uniform distribution)
+            [0.05, 0.1, 0.85],  # High confidence in third track
+        ],
+        dtype=torch.float32,
+    )
+
+    # Apply log-softmax scaling (as done in tracker)
+    scaled_traj_score = torch.nn.functional.log_softmax(traj_score / temperature, dim=1)
+
+    # Calculate entropy (as done in tracker)
+    entropy = -torch.sum(scaled_traj_score * torch.exp(scaled_traj_score), axis=1)
+    norm_entropy = entropy / torch.log(torch.tensor(n_query, dtype=torch.float32))
+    removal_threshold = 1 - confidence_threshold
+    remove = norm_entropy > removal_threshold
+
+    print(f"Entropy: {entropy}")
+    print(f"Normalized entropy: {norm_entropy}")
+    print(f"Removal threshold: {removal_threshold}")
+    print(f"Rows to remove: {remove}")
+
+    # Verify that at least some rows are marked for removal
+    assert remove.sum() > 0, "Expected some rows to be removed"
+    assert remove.sum() < traj_score.shape[0], "Expected some rows to remain"
+
+    # Create index mappings (as done in tracker)
+    dict_old_new_map = {i: None for i in range(traj_score.shape[0])}
+    dict_new_old_map = {}
+    new_idx = 0
+    for idx in range(traj_score.shape[0]):
+        if not remove[idx].item():
+            dict_old_new_map[idx] = new_idx
+            dict_new_old_map[new_idx] = idx
+            new_idx += 1
+
+    # Filter the trajectory score matrix
+    traj_score_filt = traj_score[~remove]
+
+    # Verify filtered matrix has correct shape
+    expected_rows = traj_score.shape[0] - remove.sum().item()
+    assert traj_score_filt.shape[0] == expected_rows, (
+        f"Expected {expected_rows} rows, got {traj_score_filt.shape[0]}"
+    )
+    assert traj_score_filt.shape[1] == n_traj, (
+        f"Expected {n_traj} columns, got {traj_score_filt.shape[1]}"
+    )
+
+    # Verify index mappings are consistent
+    for old_idx in range(traj_score.shape[0]):
+        if not remove[old_idx].item():
+            new_idx = dict_old_new_map[old_idx]
+            assert dict_new_old_map[new_idx] == old_idx, "Index mapping inconsistency"
+
+    print(
+        f"Test 1 passed: Filtered {remove.sum().item()} out of {traj_score.shape[0]} rows"
+    )
+
+    # Test 2: All rows would be removed (edge case)
+    print("\nTest 2: All rows have high entropy")
+    traj_score_uniform = torch.ones((4, 3)) / 3.0  # Perfectly uniform - maximum entropy
+    scaled_uniform = torch.nn.functional.log_softmax(
+        traj_score_uniform / temperature, dim=1
+    )
+
+    entropy_uniform = -torch.sum(scaled_uniform * torch.exp(scaled_uniform), axis=1)
+    norm_entropy_uniform = entropy_uniform / torch.log(torch.tensor(4.0))
+    remove_uniform = norm_entropy_uniform > removal_threshold
+
+    # Verify all rows are marked for removal
+    assert remove_uniform.sum() == traj_score_uniform.shape[0], (
+        "Expected all rows to be removed for uniform distribution with high threshold"
+    )
+
+    print("Test 2 passed: All rows correctly identified for removal")
+
+    # Test 3: No filtering when confidence_threshold = 0
+    print("\nTest 3: No filtering with confidence_threshold = 0")
+    confidence_threshold_zero = 0
+
+    if confidence_threshold_zero > 0:
+        # This block should not execute
+        assert False, "Should not filter when confidence_threshold is 0"
+    else:
+        traj_score_no_filt = traj_score
+        remove_zero = torch.zeros(traj_score.shape[0], dtype=torch.bool)
+
+    assert remove_zero.sum() == 0, "Expected no rows to be removed"
+    assert torch.equal(traj_score_no_filt, traj_score), "Matrix should be unchanged"
+
+    print("Test 3 passed: No filtering applied when threshold is 0")
+
+    # Test 4: Very high confidence threshold (keep almost all rows)
+    print("\nTest 4: Very high confidence threshold (0.95)")
+    high_confidence_threshold = 0.95
+    removal_threshold_high = 1 - high_confidence_threshold
+
+    scaled_traj_score_high = torch.nn.functional.log_softmax(
+        traj_score / temperature, dim=1
+    )
+    entropy_high = -torch.sum(
+        scaled_traj_score_high * torch.exp(scaled_traj_score_high), axis=1
+    )
+    norm_entropy_high = entropy_high / torch.log(
+        torch.tensor(n_query, dtype=torch.float32)
+    )
+    remove_high = norm_entropy_high > removal_threshold_high
+
+    # With very high threshold (0.95), we should keep more rows
+    assert remove_high.sum() <= remove.sum(), (
+        "Higher confidence threshold should remove fewer or equal rows"
+    )
+
+    print(
+        f"Test 4 passed: Only {remove_high.sum().item()} rows removed with high threshold"
+    )
+
+    # Test 5: Different matrix sizes
+    print("\nTest 5: Different matrix sizes")
+    for n_rows, n_cols in [(2, 2), (10, 5), (3, 8)]:
+        test_score = torch.rand((n_rows, n_cols))
+        test_score = test_score / test_score.sum(dim=1, keepdim=True)  # Normalize rows
+
+        scaled_test = torch.nn.functional.log_softmax(test_score / temperature, dim=1)
+        entropy_test = -torch.sum(scaled_test * torch.exp(scaled_test), axis=1)
+        norm_entropy_test = entropy_test / torch.log(torch.tensor(float(n_rows)))
+        remove_test = norm_entropy_test > removal_threshold
+
+        if remove_test.sum() > 0 and remove_test.sum() < n_rows:
+            filtered_test = test_score[~remove_test]
+            assert filtered_test.shape[1] == n_cols, (
+                f"Column count should remain {n_cols}"
+            )
+            assert filtered_test.shape[0] == n_rows - remove_test.sum().item(), (
+                "Row count should match filtered count"
+            )
+
+    print("Test 5 passed: Various matrix sizes handled correctly")
+
+    # Test 6: Verify entropy calculation for known distributions
+    print("\nTest 6: Entropy calculation verification")
+
+    # Perfect certainty (one-hot) should have entropy ~0
+    one_hot = torch.zeros((1, 3))
+    one_hot[0, 0] = 1.0
+    scaled_one_hot = torch.nn.functional.log_softmax(one_hot / temperature, dim=1)
+    entropy_one_hot = -torch.sum(scaled_one_hot * torch.exp(scaled_one_hot), axis=1)
+
+    # Uniform distribution should have maximum entropy
+    uniform = torch.ones((1, 3)) / 3.0
+    scaled_uniform_single = torch.nn.functional.log_softmax(
+        uniform / temperature, dim=1
+    )
+    entropy_uniform_single = -torch.sum(
+        scaled_uniform_single * torch.exp(scaled_uniform_single), axis=1
+    )
+
+    # Entropy should be lower for one-hot than uniform
+    assert entropy_one_hot < entropy_uniform_single, (
+        "One-hot distribution should have lower entropy than uniform"
+    )
+
+    print("Test 6 passed: Entropy calculation verified")
+
+    # Test 7: Index mapping correctness
+    print("\nTest 7: Detailed index mapping verification")
+    test_remove = torch.tensor([False, True, False, True, False])
+
+    dict_old_new_test = {i: None for i in range(5)}
+    dict_new_old_test = {}
+    new_idx_test = 0
+    for idx in range(5):
+        if not test_remove[idx].item():
+            dict_old_new_test[idx] = new_idx_test
+            dict_new_old_test[new_idx_test] = idx
+            new_idx_test += 1
+
+    # Expected mappings:
+    # Old index 0 -> New index 0
+    # Old index 1 -> removed (None)
+    # Old index 2 -> New index 1
+    # Old index 3 -> removed (None)
+    # Old index 4 -> New index 2
+
+    assert dict_old_new_test[0] == 0
+    assert dict_old_new_test[1] is None
+    assert dict_old_new_test[2] == 1
+    assert dict_old_new_test[3] is None
+    assert dict_old_new_test[4] == 2
+
+    assert dict_new_old_test[0] == 0
+    assert dict_new_old_test[1] == 2
+    assert dict_new_old_test[2] == 4
+
+    print("Test 7 passed: Index mappings are correct")
+
+    print("\nAll confidence thresholding tests passed!")

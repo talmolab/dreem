@@ -4,7 +4,7 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
-
+import h5py
 import hydra
 import numpy as np
 import pandas as pd
@@ -13,13 +13,20 @@ import sleap_io as sio
 import tifffile
 import torch
 from omegaconf import DictConfig
-
+from tqdm import tqdm
 from dreem.datasets import CellTrackingDataset
-from dreem.inference import BatchTracker, Tracker
+from dreem.inference.tracker import Tracker
 from dreem.io import Config, Frame
 from dreem.models import GTRRunner
 
 logger = logging.getLogger("dreem.inference")
+
+
+def store_frame_metadata(frame, h5_path: str):
+    with h5py.File(h5_path, "a") as h5f:
+        frame_meta_group = h5f.require_group("frame_meta")
+        frame = frame.to("cpu")
+        _ = frame.to_h5(frame_meta_group, frame.get_gt_track_ids().cpu().numpy())
 
 
 def get_timestamp() -> str:
@@ -101,7 +108,11 @@ def track_ctc(
 
 
 def track(
-    model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader
+    model: GTRRunner,
+    trainer: pl.Trainer,
+    dataloader: torch.utils.data.DataLoader,
+    outdir: str,
+    save_frame_meta: bool,
 ) -> list[pd.DataFrame]:
     """Run Inference.
 
@@ -114,9 +125,18 @@ def track(
         List of DataFrames containing prediction results for each video
     """
     preds = trainer.predict(model, dataloader)
+    if save_frame_meta:
+        h5_path = os.path.join(
+            outdir,
+            f"{dataloader.dataset.slp_files[0].split('/')[-1].replace('.slp', '')}_frame_meta.h5",
+        )
+        if os.path.exists(h5_path):
+            os.remove(h5_path)
+        with h5py.File(h5_path, "a") as h5f:
+            h5f.create_dataset("vid_name", data=preds[0][0].vid_name)
     pred_slp = []
     tracks = {}
-    for batch in preds:
+    for batch in tqdm(preds, desc="Saving .slp and frame metadata"):
         for frame in batch:
             if frame.frame_id.item() == 0:
                 video = (
@@ -126,6 +146,8 @@ def track(
                 )
             lf, tracks = frame.to_slp(tracks, video=video)
             pred_slp.append(lf)
+            if save_frame_meta:
+                store_frame_metadata(frame, h5_path)
     pred_slp = sio.Labels(pred_slp)
     print(pred_slp)
     return pred_slp
@@ -165,10 +187,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     tracker_cfg = pred_cfg.get_tracker_cfg()
     logger.info("Updating tracker hparams")
     model.tracker_cfg = tracker_cfg
-    if model.tracker_cfg.get("tracker_type", "standard") == "batch":
-        model.tracker = BatchTracker(**model.tracker_cfg)
-    else:
-        model.tracker = Tracker(**model.tracker_cfg)
+    model.tracker = Tracker(**model.tracker_cfg)
     logger.info("Using the following tracker:")
     logger.info(model.tracker)
 
@@ -178,6 +197,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     trainer = pred_cfg.get_trainer()
     outdir = pred_cfg.cfg.outdir if "outdir" in pred_cfg.cfg else "./results"
     os.makedirs(outdir, exist_ok=True)
+    save_frame_meta = pred_cfg.cfg.get("save_frame_meta", False)
 
     for label_file, vid_file in zip(labels_files, vid_files):
         dataset = pred_cfg.get_dataset(
@@ -197,7 +217,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
             )
             tifffile.imwrite(outpath, preds.astype(np.uint16))
         else:
-            preds = track(model, trainer, dataloader)
+            preds = track(model, trainer, dataloader, outdir, save_frame_meta)
             outpath = os.path.join(
                 outdir,
                 f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.slp",

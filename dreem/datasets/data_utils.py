@@ -11,6 +11,7 @@ import sleap_io as sio
 import torch
 from numpy.typing import ArrayLike
 from PIL import Image
+from dreem.inference.boxes import Boxes
 from sleap_io import LabeledFrame, Labels
 from sleap_io.io.slp import (
     read_hdf5_attrs,
@@ -131,6 +132,36 @@ def crop_bbox(img: torch.Tensor, bbox: ArrayLike) -> torch.Tensor:
     return crop
 
 
+def get_mask_from_keypoints(
+    arr_pose: np.ndarray,
+    crop: torch.Tensor,
+    dilation_radius_px: int,
+    bbox: torch.Tensor,
+) -> torch.Tensor:
+    """Get a mask from keypoints.
+
+    Args:
+        arr_pose: array of keypoints
+        crop: crop of the image
+        dilation_radius_px: radius of the dilation in pixels
+        bbox: bounding box of the crop
+    Returns:
+        mask: mask of the image
+    """
+    y1, x1, y2, x2 = bbox.numpy()
+    arr_pose_transformed = arr_pose.copy()
+    arr_pose_transformed[:, 0] = arr_pose_transformed[:, 0] - x1
+    arr_pose_transformed[:, 1] = arr_pose_transformed[:, 1] - y1
+    X, Y = np.meshgrid(np.arange(crop.shape[2]), np.arange(crop.shape[1]))
+    dists = np.sqrt(
+        (X[..., None] - arr_pose_transformed[:, 0]) ** 2
+        + (Y[..., None] - arr_pose_transformed[:, 1]) ** 2
+    )
+    mask = np.min(dists, axis=-1) < dilation_radius_px
+    mask = torch.from_numpy(mask.astype(np.uint8))
+    return mask
+
+
 def pad_variable_size_crops(instance, target_size):
     """Pad or crop an instance's crop to the target size.
 
@@ -172,6 +203,73 @@ def pad_variable_size_crops(instance, target_size):
         )
 
     return instance
+
+
+def _pairwise_intersection(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
+    """Compute the intersection area between __all__ N x M pairs of boxes.
+
+    The box order must be (xmin, ymin, xmax, ymax)
+
+    Args:
+        boxes1: First set of boxes (Boxes object containing N boxes).
+        boxes2: Second set of boxes (Boxes object containing M boxes).
+
+    Returns:
+        Tensor: intersection, sized [N,M].
+    """
+    boxes1, boxes2 = boxes1.tensor, boxes2.tensor
+    width_height = torch.min(boxes1[:, None, :, 2:], boxes2[:, :, 2:]) - torch.max(
+        boxes1[:, None, :, :2], boxes2[:, :, :2]
+    )  # [N,M,n_anchors,     2]
+    width_height.clamp_(min=0)  # [N,M, n_anchors, 2]
+
+    intersection = width_height.prod(dim=3)  # [N,M, n_anchors]
+
+    return intersection
+
+
+def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
+    """Compute intersection over union between all N x M pairs of boxes.
+
+    The box order must be (xmin, ymin, xmax, ymax).
+
+    Args:
+        boxes1: First set of boxes (Boxes object containing N boxes).
+        boxes2: Second set of boxes (Boxes object containing M boxes).
+
+    Returns:
+        Tensor: IoU, sized [N,M].
+    """
+    area1 = boxes1.area()  # [N]
+    area2 = boxes2.area()  # [M]
+
+    inter = _pairwise_intersection(boxes1, boxes2)
+
+    # handle empty boxes
+    iou = torch.where(
+        inter >= 0,
+        inter / (area1[:, None, :] + area2 - inter),
+        torch.nan,
+    )
+    return iou.nanmean(dim=-1)
+
+
+def nms(ious: torch.Tensor, threshold: float) -> list[int]:
+    """Non-maximum suppression.
+
+    Args:
+        ious: IoU matrix
+        threshold: threshold for non-maximum suppression
+    Returns:
+        list of indices of the boxes to keep
+    """
+    keep_inds = []
+    x, y = np.where(ious > threshold)
+    coords = np.stack([x, y], axis=-1)
+    self_mask = coords[:, 0] == coords[:, 1]  # diagonal elements are self-ious
+    coords = coords[~self_mask]
+
+    return coords
 
 
 def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:

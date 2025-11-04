@@ -4,16 +4,16 @@ import logging
 import random
 from pathlib import Path
 from typing import Optional, Union
-
 import albumentations as A
 import imageio
 import numpy as np
 import sleap_io as sio
 import torch
 from torchvision.transforms import functional as tvf
-
 from dreem.datasets import BaseDataset, data_utils
 from dreem.io import Frame, Instance
+from dreem.datasets.data_utils import _pairwise_iou, nms
+from dreem.inference.boxes import Boxes
 
 logger = logging.getLogger("dreem.datasets")
 
@@ -40,6 +40,8 @@ class SleapDataset(BaseDataset):
         normalize_image: bool = True,
         max_batching_gap: int = 15,
         use_tight_bbox: bool = False,
+        dilation_radius_px: Union[int, list[int]] = 0,
+        detection_iou_threshold: float | None = None,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -80,6 +82,8 @@ class SleapDataset(BaseDataset):
             normalize_image: whether to normalize the image to [0, 1]
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
+            dilation_radius_px: radius of the keypoints dilation in pixels. 0 means no mask applied
+            detection_iou_threshold: the iou threshold for non-maximum suppression of detections
             **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
@@ -109,7 +113,8 @@ class SleapDataset(BaseDataset):
         self.normalize_image = normalize_image
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
-
+        self.dilation_radius_px = dilation_radius_px
+        self.detection_iou_threshold = detection_iou_threshold
         if isinstance(anchors, int):
             self.anchors = anchors
         elif isinstance(anchors, str):
@@ -126,6 +131,11 @@ class SleapDataset(BaseDataset):
                 self.crop_size = [self.crop_size] * len(self.data_dirs)
             else:
                 self.crop_size = [self.crop_size]
+
+        if not isinstance(self.dilation_radius_px, list):
+            self.dilation_radius_px = [self.dilation_radius_px] * len(self.data_dirs)
+        else:
+            self.dilation_radius_px = [self.dilation_radius_px]
 
         if len(self.data_dirs) > 0 and len(self.crop_size) != len(self.data_dirs):
             raise ValueError(
@@ -187,12 +197,15 @@ class SleapDataset(BaseDataset):
         video_par_path = Path(video_name).parent
         if len(self.data_dirs) > 0:
             crop_size = self.crop_size[0]
+            dilation_radius_px = self.dilation_radius_px[0]
             for j, data_dir in enumerate(self.data_dirs):
                 if Path(data_dir) == video_par_path:
                     crop_size = self.crop_size[j]
+                    dilation_radius_px = self.dilation_radius_px[j]
                     break
         else:
             crop_size = self.crop_size[0]
+            dilation_radius_px = self.dilation_radius_px[0]
 
         vid_reader = self.videos[label_idx]
 
@@ -397,14 +410,13 @@ class SleapDataset(BaseDataset):
                     else:
                         centroid = np.array([np.nan, np.nan])
 
+                    arr_pose = np.array(list(pose.values()))
+
                     if np.isnan(centroid).all():
                         bbox = torch.tensor([np.nan, np.nan, np.nan, np.nan])
-
                     else:
                         if self.use_tight_bbox and len(pose) > 1:
-                            # tight bbox
-                            # dont allow this for centroid-only poses!
-                            arr_pose = np.array(list(pose.values()))
+                            # tight bbox, dont allow this for centroid-only poses!
                             # note bbox will be a different size for each instance; padded at the end of the loop
                             bbox = data_utils.get_tight_bbox(arr_pose)
 
@@ -423,6 +435,17 @@ class SleapDataset(BaseDataset):
                         )
                     else:
                         crop = data_utils.crop_bbox(img, bbox)
+
+                    if dilation_radius_px > 0:
+                        if np.isnan(arr_pose).any():
+                            logger.warning("arr_pose is nan")
+                        mask = data_utils.get_mask_from_keypoints(
+                            arr_pose, crop, dilation_radius_px, bbox
+                        )
+                        crop = crop * mask
+                        # os.makedirs(f"/root/vast/mustafa/dreem-experiments/run/apply-mask-kpts-dilate/crops", exist_ok=True)
+                        # plt.imsave(f"/root/vast/mustafa/dreem-experiments/run/apply-mask-kpts-dilate/crops/frame_{frame_ind}_{j}_crop.png", crop[0].numpy())
+                        # logger.debug(f"Applying mask to crop {frame_ind}_{j}")
 
                     crops.append(crop)
                     # get max h,w for padding for tight bboxes
@@ -457,6 +480,30 @@ class SleapDataset(BaseDataset):
                 )
 
                 instances.append(instance)
+
+            # nms
+            if self.detection_iou_threshold and len(instances) > 0:
+                discard = set()
+                bboxes = np.stack([instance.bbox.squeeze(0) for instance in instances])
+                ious = _pairwise_iou(Boxes(bboxes), Boxes(bboxes))
+                high_iou_pairs = nms(ious, self.detection_iou_threshold)
+                for pair in high_iou_pairs:
+                    if pair[0] in discard or pair[1] in discard:
+                        continue
+                    # if there are multiple pose keypoints, pick the instance with the most keypoints
+                    inst_1_keypoints = len(instances[pair[0]].pose)
+                    inst_2_keypoints = len(instances[pair[1]].pose)
+                    # break ties by keeping the first instance
+                    if inst_1_keypoints >= inst_2_keypoints:
+                        id_to_discard = pair[1]
+                    else:
+                        id_to_discard = pair[0]
+                    discard.add(id_to_discard)
+                for id in sorted(discard, reverse=True):
+                    removed = instances.pop(id)
+                    logger.debug(
+                        f"Removed instance from frame {frame_ind} due to high bounding box overlap with another instance"
+                    )
 
             frame = Frame(
                 video_id=label_idx,
