@@ -191,7 +191,7 @@ def register_principal_axis_method(
 def weight_by_angle_diff(
     asso_output: torch.Tensor,
     max_angle_diff: float = 0,
-    last_pred_ids: list[int] | None = None,
+    last_inds: list[int] | None = None,
     query_principal_axes: torch.Tensor | None = None,
     last_principal_axes: torch.Tensor | None = None,
     fallback: bool = False,
@@ -216,12 +216,14 @@ def weight_by_angle_diff(
     angle_diff = torch.abs(torch.atan2(cross_z, dot))
     # wrap angle diff to [0, pi/2] since there is no head/tail disambiguation in general
     angle_diff = torch.where(angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff)
-    # reindex the columns of the angle_diff matrix baesd on the index of last pred ids
-    angle_diff = angle_diff[:,last_pred_ids]
-    weight = asso_output.mean(dim=1).unsqueeze(-1)  # row wise aggregation of association scores; used to weight the angle diff
+    # reindex the columns of the angle_diff matrix based on the index of last pred ids
+    angle_diff = angle_diff[:,last_inds]
+    weight = asso_output.mean(dim=1)  # row wise aggregation of association scores; used to weight the angle diff
+    penalty = torch.where(angle_diff > max_angle_diff, (angle_diff - max_angle_diff)/(torch.pi / 2), 0)
+    scale = weight / (penalty.mean(dim=1) + 1e-8)
     # normalize angle difference to [0, 1]
-    penalty = -weight * torch.where(angle_diff > max_angle_diff, (angle_diff - max_angle_diff)/(torch.pi / 2), 0)
-    asso_out = asso_output + penalty
+    scaled_penalty = -scale.unsqueeze(-1) * penalty
+    asso_out = asso_output + scaled_penalty
     return asso_out
 
 
@@ -230,6 +232,7 @@ def filter_max_center_dist(
     max_center_dist: float = 0,
     query_boxes_px: torch.Tensor | None = None,
     nonquery_boxes_px: torch.Tensor | None = None,
+    last_inds: list[int] | None = None,
     h: int | None = None,
     w: int | None = None,
 ) -> torch.Tensor:
@@ -240,6 +243,7 @@ def filter_max_center_dist(
         max_center_dist: The euclidean distance threshold between bboxes
         query_boxes_px: the raw bbox coords of the current frame instances
         nonquery_boxes_px: the raw bbox coords of the instances in the nonquery frames (context window)
+        last_inds: the track ids of the most recent occurrence of the instances before the query frame, in the order that asso_output is indexed
         h: the height of the image in pixels
         w: the width of the image in pixels
     Returns:
@@ -249,6 +253,7 @@ def filter_max_center_dist(
         "Need `query_boxes_px`, `nonquery_boxes_px`, and `h`, `w` to filter by `max_center_dist`"
     )
     diag_length = (h**2 + w**2)**(1/2) # diagonal length of the image in pixels
+    max_center_dist_normalized = max_center_dist/diag_length
     k_ct = (query_boxes_px[:, :, :2] + query_boxes_px[:, :, 2:]) / 2
     # nonquery boxes are the most recent occurrence of each instance; could be many frames ago
     nonk_ct = (nonquery_boxes_px[:, :, :2] + nonquery_boxes_px[:, :, 2:]) / 2
@@ -256,8 +261,11 @@ def filter_max_center_dist(
     dist = ((k_ct[:, None, :, :] - nonk_ct[None, :, :, :]) ** 2).sum(dim=-1) ** (
         1 / 2
     )  # n_k x n_nonk
-    dist = dist.squeeze() # n_k x n_nonk
-    weight = asso_output.mean(dim=1).unsqueeze(-1) # row wise aggregation of association scores; used to weight the max center diff
-    penalty = -weight * torch.where(dist > max_center_dist, (dist - max_center_dist)/diag_length, 0)   # n_k x n_nonk
-    asso_out = asso_output + penalty
+    dist = dist.squeeze()/diag_length # n_k x n_nonk
+    dist = dist[:,last_inds]
+    asso_scale = asso_output.mean(dim=1)
+    penalty = torch.where(dist > max_center_dist_normalized, dist - max_center_dist_normalized, 0) # n_k x n_nonk
+    scale = asso_scale / (penalty.mean(dim=1) + 1e-8)
+    scaled_penalty = -scale.unsqueeze(-1) * penalty   # n_k x n_nonk
+    asso_out = asso_output + scaled_penalty
     return asso_out

@@ -163,8 +163,8 @@ class Tracker:
 
                     for i, instance in enumerate(frames[batch_idx].instances):
                         if instance.pred_track_id == -1:
-                            curr_track_id += 1
                             instance.pred_track_id = curr_track_id
+                            curr_track_id += 1
 
             else:
                 if frame_to_track.has_instances():  # Check if there are detections. If there are skip and increment gap count
@@ -377,7 +377,9 @@ class Tracker:
 
             query_frame.add_traj_score("weight_iou", iou_traj_score)
         ################################################################################
-
+        last_poses = [(pose, pred_track_id, crop) for i, (pose, pred_track_id, crop) in enumerate(nonquery_poses) if i in last_inds.cpu()]
+        last_pred_ids = [pred_track_id for _, pred_track_id, _ in last_poses]
+        
         if self.max_center_dist is not None and self.max_center_dist > 0:
             last_boxes_px = last_boxes.cpu()
             last_boxes_px[:, :, [0, 2]] *= w
@@ -387,6 +389,7 @@ class Tracker:
                 self.max_center_dist,
                 query_boxes_px,
                 last_boxes_px,
+                last_pred_ids,
                 h,
                 w,
             )
@@ -402,10 +405,7 @@ class Tracker:
         ################################################################################
 
         if self.max_angle_diff > 0:
-            last_poses = [(pose, gt_track_id, crop) for i, (pose, gt_track_id, crop) in enumerate(nonquery_poses) if i in last_inds.cpu()]
-
             query_principal_axes = []
-            last_pred_ids = [] # the ids of the instances in last frame, in the order that asso_output is indexed
             last_principal_axes = []
             successes = []
             for instance, pred_track_id, crop in query_poses:
@@ -418,7 +418,6 @@ class Tracker:
                 instance_principal_axes, success = post_processing.get_principal_axis_with_fallback(instance, self.orientation_prompt, crop, logger, query_frame.frame_id.item())
                 last_principal_axes.append(instance_principal_axes)
                 successes.append(success)
-                last_pred_ids.append(pred_track_id)
             last_principal_axes = torch.stack(last_principal_axes) # (n_traj, 2)
 
             if all(successes):
