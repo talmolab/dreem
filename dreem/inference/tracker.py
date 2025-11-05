@@ -217,6 +217,8 @@ class Tracker:
         _ = model.eval()
 
         query_frame = frames[query_ind]
+        _, h, w = query_frame.img_shape.flatten().cpu()
+
 
         query_instances = query_frame.instances
         all_instances = [instance for frame in frames for instance in frame.instances]
@@ -233,6 +235,14 @@ class Tracker:
         mult_thresh = self.mult_thresh
         n_traj = self.track_queue.n_tracks
         curr_tracks = self.track_queue.curr_track
+
+        query_poses = [(instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu()) for instance in query_frame.instances]
+        nonquery_poses = [
+                (instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu())
+                for nonquery_frame in frames
+                if nonquery_frame.frame_id != query_frame.frame_id.item()
+                for instance in nonquery_frame.instances
+            ]
 
         with torch.no_grad():
             asso_matrix = model(frames, all_instances, query_instances)
@@ -370,17 +380,22 @@ class Tracker:
             query_frame.add_traj_score("weight_iou", iou_traj_score)
         ################################################################################
 
-        # threshold for continuing a tracking or starting a new track -> they use 1.0
-        # todo -> should also work without pos_embed
-        traj_score = post_processing.filter_max_center_dist(
-            traj_score,
-            self.max_center_dist,
-            id_inds,
-            query_boxes_px,
-            nonquery_boxes_px,
-        )
-
+        last_poses = [(pose, pred_track_id, crop) for i, (pose, pred_track_id, crop) in enumerate(nonquery_poses) if i in last_inds.cpu()]
+        last_pred_ids = [pred_track_id for _, pred_track_id, _ in last_poses]
+        
         if self.max_center_dist is not None and self.max_center_dist > 0:
+            last_boxes_px = last_boxes
+            last_boxes_px[:, :, [0, 2]] *= w
+            last_boxes_px[:, :, [1, 3]] *= h
+            traj_score = post_processing.filter_max_center_dist(
+                traj_score,
+                self.max_center_dist,
+                query_boxes_px,
+                last_boxes_px,
+                last_pred_ids,
+                h,
+                w,
+            )
             max_center_dist_traj_score = pd.DataFrame(
                 traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
             )
