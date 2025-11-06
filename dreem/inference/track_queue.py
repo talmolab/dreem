@@ -226,9 +226,10 @@ class TrackQueue:
                 popped = self._queues[pred_track_id].popleft()
                 inst = popped[-1].to("cpu")
                 del inst, popped
-        self.increment_gaps(
+        gap = self.increment_gaps(
             pred_tracks
         )  # should this be done in the tracker or the queue?
+        return gap
 
     def collate_tracks(
         self,

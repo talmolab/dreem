@@ -216,6 +216,8 @@ def weight_by_angle_diff(
     angle_diff = torch.abs(torch.atan2(cross_z, dot))
     # wrap angle diff to [0, pi/2] since there is no head/tail disambiguation in general
     angle_diff = torch.where(angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff)
+    if torch.tensor(last_inds).max().item() >= angle_diff.shape[1]:
+        last_inds = list(range(angle_diff.shape[1]))
     # reindex the columns of the angle_diff matrix based on the index of last pred ids
     angle_diff = angle_diff[:,last_inds]
     weight = asso_output.mean(dim=1)  # row wise aggregation of association scores; used to weight the angle diff
@@ -262,6 +264,9 @@ def filter_max_center_dist(
         1 / 2
     )  # n_k x n_nonk
     dist = dist.squeeze()/diag_length # n_k x n_nonk
+    # if the last_inds max value is greater than the number of last instances, there has been a track removal due to max gap
+    if torch.tensor(last_inds).max().item() >= dist.shape[1]:
+        last_inds = list(range(dist.shape[1]))
     dist = dist[:,last_inds]
     asso_scale = asso_output.mean(dim=1)
     penalty = torch.where(dist > max_center_dist_normalized, dist - max_center_dist_normalized, 0) # n_k x n_nonk

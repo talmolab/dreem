@@ -141,7 +141,6 @@ class Tracker:
         # nc: number of channels.
         # H: height.
         # W: width.
-
         for batch_idx, frame_to_track in enumerate(frames):
             tracked_frames = self.track_queue.collate_tracks(
                 device=frame_to_track.device
@@ -180,7 +179,7 @@ class Tracker:
                     del frames_to_track
 
             if frame_to_track.has_instances():
-                self.track_queue.add_frame(frame_to_track)
+                gap = self.track_queue.add_frame(frame_to_track)
             else:
                 self.track_queue.increment_gaps([])
 
@@ -201,7 +200,6 @@ class Tracker:
             model: the pretrained GlobalTrackingTransformer to be used for inference
             frames: A list of Frames containing reid features. See `dreem.io.data_structures` for more info.
             query_ind: An integer for the query frame within the window of instances.
-
         Returns:
             query_frame: The query frame now populated with the pred_track_ids.
         """
