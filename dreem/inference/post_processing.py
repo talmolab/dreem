@@ -219,8 +219,8 @@ def weight_by_angle_diff(
     # reindex the columns of the angle_diff matrix based on the index of last pred ids
     angle_diff = angle_diff[:,last_inds]
     weight = asso_output.mean(dim=1)  # row wise aggregation of association scores; used to weight the angle diff
-    penalty = torch.where(angle_diff > max_angle_diff, (angle_diff - max_angle_diff)/(torch.pi / 2), 0)
-    scale = weight / (penalty.mean(dim=1) + 1e-8)
+    penalty = torch.where(angle_diff > max_angle_diff, angle_diff - max_angle_diff, 0)
+    scale = weight # / (penalty.mean(dim=1) + 1e-8)
     # normalize angle difference to [0, 1]
     scaled_penalty = -scale.unsqueeze(-1) * penalty
     asso_out = asso_output + scaled_penalty
