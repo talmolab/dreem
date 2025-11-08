@@ -4,16 +4,18 @@ import logging
 import random
 from pathlib import Path
 from typing import Optional, Union
+
 import albumentations as A
 import imageio
 import numpy as np
 import sleap_io as sio
 import torch
 from torchvision.transforms import functional as tvf
+
 from dreem.datasets import BaseDataset, data_utils
-from dreem.io import Frame, Instance
-from dreem.datasets.data_utils import _pairwise_iou, nms
+from dreem.datasets.data_utils import pairwise_iom, nms
 from dreem.inference.boxes import Boxes
+from dreem.io import Frame, Instance
 
 logger = logging.getLogger("dreem.datasets")
 
@@ -483,9 +485,9 @@ class SleapDataset(BaseDataset):
             if self.detection_iou_threshold and len(instances) > 0:
                 discard = set()
                 bboxes = np.stack([instance.bbox.squeeze(0) for instance in instances])
-                ious = _pairwise_iou(Boxes(bboxes), Boxes(bboxes))
-                high_iou_pairs = nms(ious, self.detection_iou_threshold)
-                for pair in high_iou_pairs:
+                ioms = pairwise_iom(Boxes(bboxes), Boxes(bboxes))
+                high_iom_pairs = nms(ioms, self.detection_iou_threshold)
+                for pair in high_iom_pairs:
                     if pair[0] in discard or pair[1] in discard:
                         continue
                     # if there are multiple pose keypoints, pick the instance with the most keypoints
@@ -499,8 +501,8 @@ class SleapDataset(BaseDataset):
                     discard.add(id_to_discard)
                 for id in sorted(discard, reverse=True):
                     removed = instances.pop(id)
-                    logger.debug(
-                        f"Removed instance from frame {frame_ind} due to high bounding box overlap with another instance"
+                    logger.warning(
+                        f"Removed instance with bounding box {removed.bbox.squeeze(0)} format [ymin, xmin, ymax, xmax] from frame {frame_ind} due to high bounding box overlap with another instance"
                     )
 
             frame = Frame(

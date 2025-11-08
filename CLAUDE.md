@@ -2,14 +2,23 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL CONSTRAINTS
+**NEVER** do the following:
+- Do not automatically commit any changes you make to the repository until the user has provided approval. Always ask the user for approval before committing any changes.
+- Do not access any file containing credentials (e.g., `.env` files, `secrets/` directories).
+- Do not leave empty placeholders in the code where the finished implementation should be.
+- Do not flatter or give compliments unless specifically asked for judgment.
+- Do not guess if you are unsure of my intent; always ask for clarification.
+- Avoid generating new documentation unless explicitly requested; update existing docs instead
+
 ## Commands
 
 ### Build, Lint, and Test
 
 - **Run tests**: `pytest`
 - **Run tests with coverage**: `pytest --cov=dreem --cov-report=xml tests/`
-- **Lint code**: `black dreem tests`
-- **Check linting**: `black --check dreem tests`
+- **Lint code**: `ruff format .`
+- **Check linting**: `ruff check .`
 - **Check docstring style**: `pydocstyle --convention=google dreem/`
 
 ### Development Scripts
@@ -17,7 +26,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Train a model**: `dreem-train --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
 - **Run inference**: `dreem-track --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
 - **Evaluate model**: `dreem-eval --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
-- **Visualize results**: `dreem-visualize`
 
 ## Architecture Overview
 
@@ -38,7 +46,6 @@ DREEM (Relates Every Entities' Motion) is a Global Tracking Transformer system f
 
 - **`dreem/datasets/`** - Data loading and preprocessing
   - `sleap_dataset.py` - For animal pose tracking with SLEAP annotations
-  - `microscopy_dataset.py` - For microscopy cell tracking
   - `cell_tracking_dataset.py` - For Cell Tracking Challenge format data
   - `base_dataset.py` - Abstract base class for all datasets
 
@@ -59,9 +66,7 @@ DREEM (Relates Every Entities' Motion) is a Global Tracking Transformer system f
 
 2. **Sliding Window Inference**: Tracking uses configurable window sizes to handle long videos efficiently while maintaining temporal context.
 
-3. **Multi-anchor Crops**: For pose data, the system can crop around multiple body parts simultaneously to capture more spatial context.
-
-4. **Flexible Visual Encoders**: Supports both timm and torchvision backends with easy swapping via config.
+3. **Flexible Visual Encoders**: Supports both timm and torchvision backends with easy swapping via config.
 
 ### Configuration System
 
@@ -75,5 +80,4 @@ All training/inference parameters are managed through Hydra configs. Key config 
 Configs support hierarchical overrides via CLI using dot notation (e.g., `model.nhead=8`).
 
 ## GitHub Workflow
-
 - Always use the `gh` CLI to do GitHub related tasks like opening PRs, inspecting issues, and anything that interacts with GitHub. Always prefer using the `gh` CLI over fetching the entire page if URLs with `https://github.com` are provided as part of your task.

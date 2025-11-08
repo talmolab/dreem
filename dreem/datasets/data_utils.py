@@ -294,17 +294,30 @@ def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     return iou.nanmean(dim=-1)
 
 
-def nms(ious: torch.Tensor, threshold: float) -> list[int]:
+def pairwise_iom(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
+    """Compute the intersection over minimum area between all N x M pairs of boxes."""
+    area1 = boxes1.area()  # [N]
+    area2 = boxes2.area()  # [M]
+    inter = _pairwise_intersection(boxes1, boxes2)
+    iom = torch.where(
+        inter >= 0,
+        inter / torch.min(area1, area2),
+        torch.nan,
+    )
+    return iom.nanmean(dim=-1)
+
+
+def nms(ioms: torch.Tensor, threshold: float) -> list[int]:
     """Non-maximum suppression.
 
     Args:
-        ious: IoU matrix
+        ioms: IoM matrix
         threshold: threshold for non-maximum suppression
     Returns:
         list of indices of the boxes to keep
     """
     keep_inds = []
-    x, y = np.where(ious > threshold)
+    x, y = np.where(ioms > threshold)
     coords = np.stack([x, y], axis=-1)
     self_mask = coords[:, 0] == coords[:, 1]  # diagonal elements are self-ious
     coords = coords[~self_mask]
