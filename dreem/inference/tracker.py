@@ -341,7 +341,7 @@ class Tracker:
 
         # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj
         traj_score = torch.mm(asso_nonquery, id_inds.cpu())  # (n_query, n_traj)
-
+        assoc_col_pred_id_map = {i: unique_ids[i].item() for i in range(unique_ids.shape[0])}
         traj_score_df = pd.DataFrame(
             traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
         )
@@ -381,9 +381,11 @@ class Tracker:
 
             query_frame.add_traj_score("weight_iou", iou_traj_score)
         ################################################################################
-        last_poses = [(pose, pred_track_id, crop) for i, (pose, pred_track_id, crop) in enumerate(nonquery_poses) if i in last_inds.cpu()]
+        last_poses = []
+        for ind in last_inds.cpu(): # its important to index nonquery_poses by last_inds as this maintains ordering that matches the association matrix ordering
+            last_poses.append(nonquery_poses[ind])
         last_pred_ids = [pred_track_id for _, pred_track_id, _ in last_poses]
-        
+
         if self.max_center_dist is not None and self.max_center_dist > 0:
             last_boxes_px = last_boxes.cpu()
             last_boxes_px[:, :, [0, 2]] *= w
@@ -393,7 +395,6 @@ class Tracker:
                 self.max_center_dist,
                 query_boxes_px,
                 last_boxes_px,
-                last_pred_ids,
                 h,
                 w,
             )
@@ -428,7 +429,6 @@ class Tracker:
                 traj_score = post_processing.weight_by_angle_diff(
                     traj_score,
                     self.max_angle_diff,
-                    last_pred_ids,
                     query_principal_axes,
                     last_principal_axes,
                 )

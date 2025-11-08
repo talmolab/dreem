@@ -210,20 +210,16 @@ def register_principal_axis_method(
 def weight_by_angle_diff(
     asso_output: torch.Tensor,
     max_angle_diff: float = 0,
-    last_inds: list[int] | None = None,
     query_principal_axes: torch.Tensor | None = None,
     last_principal_axes: torch.Tensor | None = None,
-    fallback: bool = False,
 ) -> torch.Tensor:
     """Weight trajectory score by angle difference between objects across frames.
 
     Args:
         asso_output: An N_t x N association matrix
         max_angle_diff: Maximum angle difference threshold in radians
-        last_pred_ids: the track ids of the most recent occurrence of the instances before the query frame, in the order that asso_output is indexed
         query_principal_axes: the principal axes of the current frame instances. Shape: (q, 2)
         last_principal_axes: the principal axes of the instances in the last frame. Shape: (nq, 2)
-        fallback: Whether a fallback method was used (affects angle wrapping to [0, pi/2])
     """
     assert query_principal_axes is not None and last_principal_axes is not None, (
         "Need `query_principal_axes`, and `last_principal_axes` to weight by angle difference"
@@ -237,10 +233,6 @@ def weight_by_angle_diff(
     angle_diff = torch.where(angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff)
     if angle_diff.dim() == 1:
         angle_diff = angle_diff.unsqueeze(0)
-    # if torch.tensor(last_inds).max().item() >= angle_diff.shape[1]:
-    #     last_inds = list(range(angle_diff.shape[1]))
-    # reindex the columns of the angle_diff matrix based on the index of last pred ids
-    # angle_diff = angle_diff[:,last_inds]
     weight = asso_output.mean(dim=1)  # row wise aggregation of association scores; used to weight the angle diff
     penalty = torch.where(angle_diff > max_angle_diff, angle_diff - max_angle_diff, 0)
     scale = weight # / (penalty.mean(dim=1) + 1e-8)
@@ -255,7 +247,6 @@ def filter_max_center_dist(
     max_center_dist: float = 0,
     query_boxes_px: torch.Tensor | None = None,
     nonquery_boxes_px: torch.Tensor | None = None,
-    last_inds: list[int] | None = None,
     h: int | None = None,
     w: int | None = None,
 ) -> torch.Tensor:
@@ -266,7 +257,6 @@ def filter_max_center_dist(
         max_center_dist: The euclidean distance threshold between bboxes
         query_boxes_px: the raw bbox coords of the current frame instances
         nonquery_boxes_px: the raw bbox coords of the instances in the nonquery frames (context window)
-        last_inds: the track ids of the most recent occurrence of the instances before the query frame, in the order that asso_output is indexed
         h: the height of the image in pixels
         w: the width of the image in pixels
     Returns:
@@ -287,10 +277,6 @@ def filter_max_center_dist(
     dist = dist.squeeze()/diag_length # n_k x n_nonk
     if dist.dim() == 1:
         dist = dist.unsqueeze(0)
-    # if the last_inds max value is greater than the number of last instances, there has been a track removal due to max gap
-    # if torch.tensor(last_inds).max().item() >= dist.shape[1]:
-    #     last_inds = list(range(dist.shape[1]))
-    # dist = dist[:,last_inds]
     asso_scale = asso_output.mean(dim=1)
     penalty = torch.where(dist > max_center_dist_normalized, dist - max_center_dist_normalized, 0) # n_k x n_nonk
     scale = asso_scale / (penalty.mean(dim=1) + 1e-8)
