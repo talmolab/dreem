@@ -12,6 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Avoid generating new documentation unless explicitly requested; update existing docs instead
 
 ## Commands
+- Always activate the conda environment `dreem` before running any commands such as building, linting, testing, etc. Use the command `conda activate dreem` to activate the environment.
 
 ### Build, Lint, and Test
 
