@@ -22,33 +22,6 @@ from dreem.models import GTRRunner
 logger = logging.getLogger("dreem.inference")
 
 def store_frame_metadata(frame, h5_path: str):
-    with h5py.File(h5_path, 'a') as h5f:
-        # Create a group for each frame
-        frame_group = h5f.create_group(f'frame_{frame.frame_id.item()}')
-        
-        # Store frame metadata
-        frame_group.create_dataset('frame_id', data=frame.frame_id.item())
-        frame_group.create_dataset('img_shape', data=frame.img_shape.cpu().numpy())
-        frame_group.create_dataset('num_instances', data=len(frame.instances))
-        traj_scores_group = frame_group.create_group('traj_scores')
-        for key, value in frame.get_traj_score().items():
-            traj_scores_group.create_dataset(
-                key, data=value.to_numpy() if value is not None else []
-            )
-        
-        # Store instance data
-        instances_group = frame_group.create_group('instances')
-        for i, instance in enumerate(frame.instances):
-            instance_group = instances_group.create_group(f'instance_{i}')
-            # instance_group.create_dataset('crop', data=instance.crop.cpu().numpy())
-            instance_group.create_dataset('gt_track_id', data=instance.gt_track_id.cpu().numpy())
-            instance_group.create_dataset('pred_track_id', data=instance.pred_track_id.cpu().numpy())
-            # for key, value in instance.pose.items():
-                # instance_group.create_dataset(key, data=np.array(value))
-            # instance_group.create_dataset('features', data=instance.features.cpu().numpy())
-
-
-def store_frame_metadata(frame, h5_path: str):
     with h5py.File(h5_path, "a") as h5f:
         frame_meta_group = h5f.require_group("frame_meta")
         frame = frame.to("cpu")
@@ -211,8 +184,10 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
 
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     tracker_cfg = pred_cfg.get_tracker_cfg()
+    save_frame_meta = pred_cfg.cfg.get("save_frame_meta", False)
     logger.info("Updating tracker hparams")
     model.tracker_cfg = tracker_cfg
+    model.tracker_cfg["enable_crop_saving"] = save_frame_meta # to save frame metadata, need to disable crop=None in GTR (memory saving)
     model.tracker = Tracker(**model.tracker_cfg)
     logger.info("Using the following tracker:")
     logger.info(model.tracker)
@@ -223,7 +198,6 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     trainer = pred_cfg.get_trainer()
     outdir = pred_cfg.cfg.outdir if "outdir" in pred_cfg.cfg else "./results"
     os.makedirs(outdir, exist_ok=True)
-    save_frame_meta = pred_cfg.cfg.get("save_frame_meta", False)
 
     for label_file, vid_file in zip(labels_files, vid_files):
         dataset = pred_cfg.get_dataset(

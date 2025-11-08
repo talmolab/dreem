@@ -33,7 +33,9 @@ class Tracker:
         confidence_threshold: float = 0.,
         temperature: float = 0.1,
         max_angle_diff: float = 0.,
-        orientation_prompt: list[str] | None = None,
+        front_nodes: list[str] | None = None,
+        enable_crop_saving: bool = False,
+        back_nodes: list[str] | None = None,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -54,7 +56,9 @@ class Tracker:
             confidence_threshold: threshold for filtering out instances with high confidence. Set to 0 to disable confidence thresholding.
             temperature: temperature for softmax.
             max_angle_diff: maximum angle difference between pose principal axes when considering association between two instances. Set to 0 to disable angle difference filtering.
-            orientation_prompt: list of skeleton node names to be used to determine the orientation of the object. If None, computes using all available nodes.
+            front_nodes: list of skeleton node names to be used to determine the orientation of the object. If None, computes using all available nodes.
+            back_nodes: list of skeleton node names to be used to determine the orientation of the object. If None, computes using all available nodes.
+            enable_crop_saving: Whether to save crops to frame metadata.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
@@ -71,7 +75,9 @@ class Tracker:
         self.confidence_threshold = confidence_threshold
         self.temperature = temperature
         self.max_angle_diff = deg2rad(max_angle_diff)
-        self.orientation_prompt = orientation_prompt
+        self.front_nodes = front_nodes
+        self.back_nodes = back_nodes
+        self.enable_crop_saving = enable_crop_saving
 
     def __call__(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -246,7 +252,7 @@ class Tracker:
                 if nonquery_frame.frame_id != query_frame.frame_id.item()
                 for instance in nonquery_frame.instances
             ]
-        enable_crop_saving = is_pose_centroid_only(query_poses[0][0])
+        enable_crop_saving = self.enable_crop_saving or is_pose_centroid_only(query_poses[0][0])
         if enable_crop_saving and query_frame.frame_id.item() == 1 and self.max_angle_diff > 0:
             logger.warning("Crop saving is enabled due to max_angle_diff > 0 and a centroid-only skeleton. This can increase memory usage. If you experience memory issues, consider setting max_angle_diff = 0. This will skip orientation based post processing.")
         with torch.no_grad():
@@ -407,13 +413,13 @@ class Tracker:
             last_principal_axes = []
             successes = []
             for instance, pred_track_id, crop in query_poses:
-                instance_principal_axes, success = post_processing.get_principal_axis_with_fallback(instance, self.orientation_prompt, crop, logger, query_frame.frame_id.item())
+                instance_principal_axes, success = post_processing.get_principal_axis_with_fallback(instance, self.front_nodes, self.back_nodes, crop, logger, query_frame.frame_id.item())
                 query_principal_axes.append(instance_principal_axes)
                 successes.append(success)
             query_principal_axes = torch.stack(query_principal_axes) # (n_query, 2)
             
             for instance, pred_track_id, crop in last_poses:
-                instance_principal_axes, success = post_processing.get_principal_axis_with_fallback(instance, self.orientation_prompt, crop, logger, query_frame.frame_id.item())
+                instance_principal_axes, success = post_processing.get_principal_axis_with_fallback(instance, self.front_nodes, self.back_nodes, crop, logger, query_frame.frame_id.item())
                 last_principal_axes.append(instance_principal_axes)
                 successes.append(success)
             last_principal_axes = torch.stack(last_principal_axes) # (n_traj, 2)

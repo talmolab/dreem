@@ -49,36 +49,53 @@ def _can_compute_with_prompts(instance, **kwargs) -> bool:
 
     Conditions:
     - Skeleton must NOT be only centroid (must have more than 1 keypoint)
-    - orientation_prompt must be provided and valid
+    - front_nodes and back_nodes must be provided and valid
     - Both prompt nodes must exist and be valid (non-NaN)
     """
-    orientation_prompt = kwargs.get("orientation_prompt")
+    front_nodes = kwargs.get("front_nodes")
+    back_nodes = kwargs.get("back_nodes")
     # Must have more than just centroid
     if is_pose_centroid_only(instance):
         logger.debug(f"Pose is only centroid. Cannot compute principal axis with orientation prompts.")
         return False
     # Must have valid orientation prompt
-    if orientation_prompt is None or len(orientation_prompt) != 2:
+    if front_nodes is None or back_nodes is None or len(front_nodes) < 1 or len(back_nodes) < 1:
         logger.debug(f"Orientation prompt is not provided or is not valid. Cannot compute principal axis with orientation prompts.")
         return False
     # Both nodes must exist
-    head = instance.get(orientation_prompt[0])
-    tip = instance.get(orientation_prompt[1])
+    front = None
+    back = None
+    for front_node in front_nodes:
+        if front_node in instance:
+            front = instance.get(front_node)
+            break
+    for back_node in back_nodes:
+        if back_node in instance:
+            back = instance.get(back_node)
+            break
     # Both nodes must be valid (non-NaN)
-    head_tensor = torch.tensor(head)
-    tip_tensor = torch.tensor(tip)
-    if head is None or tip is None or torch.isnan(head_tensor).any() or torch.isnan(tip_tensor).any():
+    front_tensor = torch.tensor(front)
+    back_tensor = torch.tensor(back)
+    if front is None or back is None or torch.isnan(front_tensor).any() or torch.isnan(back_tensor).any():
         logger.debug(f"Orientation prompt nodes not visible. Cannot compute principal axis with orientation prompts.")
         return False
-    return not (torch.isnan(head_tensor).any() or torch.isnan(tip_tensor).any())
+    return not (torch.isnan(front_tensor).any() or torch.isnan(back_tensor).any())
 
 
 def _compute_with_prompts(instance, **kwargs) -> torch.Tensor:
     """Compute principal axis using orientation prompts."""
-    orientation_prompt = kwargs.get("orientation_prompt")
-    head = instance[orientation_prompt[0]]
-    tip = instance[orientation_prompt[1]]
-    vec = torch.tensor(head - tip)
+    front_nodes = kwargs.get("front_nodes")
+    back_nodes = kwargs.get("back_nodes")
+    # we've already checked that front_nodes and back_nodes are valid
+    for node in front_nodes:
+        if node in instance:
+            front = instance.get(node)
+            break
+    for node in back_nodes:
+        if node in instance:
+            back = instance.get(node)
+            break
+    vec = torch.tensor(front - back)
     norm = torch.norm(vec)
     if norm > 1e-8:
         vec = vec / norm
@@ -138,7 +155,7 @@ _PRINCIPAL_AXIS_METHODS.extend([
 
 
 def get_principal_axis_with_fallback(
-    instance, orientation_prompt: list[str] | None, crop: torch.Tensor | None, logger, frame_id
+    instance, front_nodes: list[str] | None, back_nodes: list[str] | None, crop: torch.Tensor | None, logger, frame_id
 ) -> tuple[torch.Tensor, bool]:
     """Compute principal axis with automatic fallback.
 
@@ -146,7 +163,8 @@ def get_principal_axis_with_fallback(
 
     Args:
         instance: Instance dict with pose keypoints
-        orientation_prompt: Optional list of two node names for orientation-based method
+        front_nodes: List of front nodes
+        back_nodes: List of back nodes
         crop: Optional crop tensor
         logger: Logger instance
         frame_id: Frame ID for logging
@@ -155,7 +173,8 @@ def get_principal_axis_with_fallback(
         Tuple of (principal_axis_vector, success) where success indicates
         if the principal axis was successfully computed.
     """
-    kwargs = {"orientation_prompt": orientation_prompt,
+    kwargs = {"front_nodes": front_nodes,
+              "back_nodes": back_nodes,
               "crop": crop}
 
     for method_name, can_compute, compute in _PRINCIPAL_AXIS_METHODS:
@@ -216,10 +235,12 @@ def weight_by_angle_diff(
     angle_diff = torch.abs(torch.atan2(cross_z, dot))
     # wrap angle diff to [0, pi/2] since there is no head/tail disambiguation in general
     angle_diff = torch.where(angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff)
-    if torch.tensor(last_inds).max().item() >= angle_diff.shape[1]:
-        last_inds = list(range(angle_diff.shape[1]))
+    if angle_diff.dim() == 1:
+        angle_diff = angle_diff.unsqueeze(0)
+    # if torch.tensor(last_inds).max().item() >= angle_diff.shape[1]:
+    #     last_inds = list(range(angle_diff.shape[1]))
     # reindex the columns of the angle_diff matrix based on the index of last pred ids
-    angle_diff = angle_diff[:,last_inds]
+    # angle_diff = angle_diff[:,last_inds]
     weight = asso_output.mean(dim=1)  # row wise aggregation of association scores; used to weight the angle diff
     penalty = torch.where(angle_diff > max_angle_diff, angle_diff - max_angle_diff, 0)
     scale = weight # / (penalty.mean(dim=1) + 1e-8)
@@ -264,10 +285,12 @@ def filter_max_center_dist(
         1 / 2
     )  # n_k x n_nonk
     dist = dist.squeeze()/diag_length # n_k x n_nonk
+    if dist.dim() == 1:
+        dist = dist.unsqueeze(0)
     # if the last_inds max value is greater than the number of last instances, there has been a track removal due to max gap
-    if torch.tensor(last_inds).max().item() >= dist.shape[1]:
-        last_inds = list(range(dist.shape[1]))
-    dist = dist[:,last_inds]
+    # if torch.tensor(last_inds).max().item() >= dist.shape[1]:
+    #     last_inds = list(range(dist.shape[1]))
+    # dist = dist[:,last_inds]
     asso_scale = asso_output.mean(dim=1)
     penalty = torch.where(dist > max_center_dist_normalized, dist - max_center_dist_normalized, 0) # n_k x n_nonk
     scale = asso_scale / (penalty.mean(dim=1) + 1e-8)
