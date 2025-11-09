@@ -21,11 +21,16 @@ from dreem.models import GTRRunner
 
 logger = logging.getLogger("dreem.inference")
 
+
 def store_frame_metadata(frame, h5_path: str):
     with h5py.File(h5_path, "a") as h5f:
         frame_meta_group = h5f.require_group("frame_meta")
         frame = frame.to("cpu")
-        _ = frame.to_h5(frame_meta_group, frame.get_gt_track_ids().cpu().numpy(), save={"features": True, "crop": True})
+        _ = frame.to_h5(
+            frame_meta_group,
+            frame.get_gt_track_ids().cpu().numpy(),
+            save={"features": True, "crop": True},
+        )
 
 
 def get_timestamp() -> str:
@@ -184,10 +189,16 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
 
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     tracker_cfg = pred_cfg.get_tracker_cfg()
+    max_tracks = tracker_cfg.get("max_tracks", None)
+    dataset_overrides = {}
+    # for excess detection removal
+    dataset_overrides["max_tracks"] = max_tracks
     save_frame_meta = pred_cfg.cfg.get("save_frame_meta", False)
     logger.info("Updating tracker hparams")
     model.tracker_cfg = tracker_cfg
-    model.tracker_cfg["enable_crop_saving"] = save_frame_meta # to save frame metadata, need to disable crop=None in GTR (memory saving)
+    model.tracker_cfg["enable_crop_saving"] = (
+        save_frame_meta  # to save frame metadata, need to disable crop=None in GTR (memory saving)
+    )
     model.tracker = Tracker(**model.tracker_cfg)
     logger.info("Using the following tracker:")
     logger.info(model.tracker)
@@ -201,7 +212,10 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
 
     for label_file, vid_file in zip(labels_files, vid_files):
         dataset = pred_cfg.get_dataset(
-            label_files=[label_file], vid_files=[vid_file], mode="test"
+            label_files=[label_file],
+            vid_files=[vid_file],
+            mode="test",
+            overrides=dataset_overrides,
         )
         dataloader = pred_cfg.get_dataloader(dataset, mode="test")
         if isinstance(vid_file, list):

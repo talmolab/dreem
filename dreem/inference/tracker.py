@@ -30,9 +30,9 @@ class Tracker:
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
-        confidence_threshold: float = 0.,
+        confidence_threshold: float = 0.0,
         temperature: float = 0.1,
-        max_angle_diff: float = 0.,
+        max_angle_diff: float = 0.0,
         front_nodes: list[str] | None = None,
         enable_crop_saving: bool = False,
         back_nodes: list[str] | None = None,
@@ -245,18 +245,31 @@ class Tracker:
         n_traj = self.track_queue.n_tracks
         curr_tracks = self.track_queue.curr_track
 
-        query_poses = [(instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu()) for instance in query_frame.instances]
+        query_poses = [
+            (instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu())
+            for instance in query_frame.instances
+        ]
         nonquery_poses = [
-                (instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu())
-                for nonquery_frame in frames
-                if nonquery_frame.frame_id != query_frame.frame_id.item()
-                for instance in nonquery_frame.instances
-            ]
-        enable_crop_saving = self.enable_crop_saving or is_pose_centroid_only(query_poses[0][0])
-        if enable_crop_saving and query_frame.frame_id.item() == 1 and self.max_angle_diff > 0:
-            logger.warning("Crop saving is enabled due to max_angle_diff > 0 and a centroid-only skeleton. This can increase memory usage. If you experience memory issues, consider setting max_angle_diff = 0. This will skip orientation based post processing.")
+            (instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu())
+            for nonquery_frame in frames
+            if nonquery_frame.frame_id != query_frame.frame_id.item()
+            for instance in nonquery_frame.instances
+        ]
+        enable_crop_saving = self.enable_crop_saving or is_pose_centroid_only(
+            query_poses[0][0]
+        )
+        if (
+            is_pose_centroid_only(query_poses[0][0])
+            and query_frame.frame_id.item() == 1
+            and self.max_angle_diff > 0
+        ):
+            logger.warning(
+                "Crop saving is enabled due to max_angle_diff > 0 and a centroid-only skeleton. This can increase memory usage. If you experience memory issues, consider setting max_angle_diff = 0. This will skip orientation based post processing."
+            )
         with torch.no_grad():
-            asso_matrix = model(all_instances, query_instances, save_crops=enable_crop_saving)
+            asso_matrix = model(
+                all_instances, query_instances, save_crops=enable_crop_saving
+            )
 
         asso_output = asso_matrix[-1].matrix.split(
             instances_per_frame, dim=1
@@ -288,14 +301,18 @@ class Tracker:
         logger.debug(f"n_nonquery: {n_nonquery}")
         logger.debug(f"n_query: {n_query}")
 
-        instance_ids = torch.cat(
-            [
-                x.get_pred_track_ids()
-                for batch_idx, x in enumerate(frames)
-                if batch_idx != query_ind
-            ],
-            dim=0,
-        ).view(n_nonquery).cpu()  # (n_nonquery,)
+        instance_ids = (
+            torch.cat(
+                [
+                    x.get_pred_track_ids()
+                    for batch_idx, x in enumerate(frames)
+                    if batch_idx != query_ind
+                ],
+                dim=0,
+            )
+            .view(n_nonquery)
+            .cpu()
+        )  # (n_nonquery,)
 
         query_inds = [
             x
@@ -341,7 +358,9 @@ class Tracker:
 
         # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj
         traj_score = torch.mm(asso_nonquery, id_inds.cpu())  # (n_query, n_traj)
-        assoc_col_pred_id_map = {i: unique_ids[i].item() for i in range(unique_ids.shape[0])}
+        assoc_col_pred_id_map = {
+            i: unique_ids[i].item() for i in range(unique_ids.shape[0])
+        }
         traj_score_df = pd.DataFrame(
             traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
         )
@@ -360,9 +379,7 @@ class Tracker:
             # last_inds = (id_inds * torch.arange(
             #    n_nonquery, device=id_inds.device)[:, None]).max(dim=0)[1] # n_traj
 
-            last_inds = (
-                id_inds * torch.arange(n_nonquery)[:, None]
-            ).max(dim=0)[1]  # M
+            last_inds = (id_inds * torch.arange(n_nonquery)[:, None]).max(dim=0)[1]  # M
 
             last_boxes = nonquery_boxes[last_inds]  # n_traj x 4
             last_ious = _pairwise_iou(Boxes(query_boxes), Boxes(last_boxes))  # n_k x M
@@ -382,7 +399,7 @@ class Tracker:
             query_frame.add_traj_score("weight_iou", iou_traj_score)
         ################################################################################
         last_poses = []
-        for ind in last_inds.cpu(): # its important to index nonquery_poses by last_inds as this maintains ordering that matches the association matrix ordering
+        for ind in last_inds.cpu():  # its important to index nonquery_poses by last_inds as this maintains ordering that matches the association matrix ordering
             last_poses.append(nonquery_poses[ind])
         last_pred_ids = [pred_track_id for _, pred_track_id, _ in last_poses]
 
@@ -406,7 +423,7 @@ class Tracker:
             max_center_dist_traj_score.columns.name = "Unique IDs"
 
             query_frame.add_traj_score("max_center_dist", max_center_dist_traj_score)
-        
+
         ################################################################################
 
         if self.max_angle_diff > 0:
@@ -414,16 +431,34 @@ class Tracker:
             last_principal_axes = []
             successes = []
             for instance, pred_track_id, crop in query_poses:
-                instance_principal_axes, success = post_processing.get_principal_axis_with_fallback(instance, self.front_nodes, self.back_nodes, crop, logger, query_frame.frame_id.item())
+                instance_principal_axes, success = (
+                    post_processing.get_principal_axis_with_fallback(
+                        instance,
+                        self.front_nodes,
+                        self.back_nodes,
+                        crop,
+                        logger,
+                        query_frame.frame_id.item(),
+                    )
+                )
                 query_principal_axes.append(instance_principal_axes)
                 successes.append(success)
-            query_principal_axes = torch.stack(query_principal_axes) # (n_query, 2)
-            
+            query_principal_axes = torch.stack(query_principal_axes)  # (n_query, 2)
+
             for instance, pred_track_id, crop in last_poses:
-                instance_principal_axes, success = post_processing.get_principal_axis_with_fallback(instance, self.front_nodes, self.back_nodes, crop, logger, query_frame.frame_id.item())
+                instance_principal_axes, success = (
+                    post_processing.get_principal_axis_with_fallback(
+                        instance,
+                        self.front_nodes,
+                        self.back_nodes,
+                        crop,
+                        logger,
+                        query_frame.frame_id.item(),
+                    )
+                )
                 last_principal_axes.append(instance_principal_axes)
                 successes.append(success)
-            last_principal_axes = torch.stack(last_principal_axes) # (n_traj, 2)
+            last_principal_axes = torch.stack(last_principal_axes)  # (n_traj, 2)
 
             if all(successes):
                 traj_score = post_processing.weight_by_angle_diff(
@@ -433,14 +468,18 @@ class Tracker:
                     last_principal_axes,
                 )
                 angle_diff_weight_traj_score = pd.DataFrame(
-                traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+                    traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
                 )
                 angle_diff_weight_traj_score.index.name = "Current Frame Instances"
                 angle_diff_weight_traj_score.columns.name = "Unique IDs"
 
-                query_frame.add_traj_score("angle_diff_weight", angle_diff_weight_traj_score)
+                query_frame.add_traj_score(
+                    "angle_diff_weight", angle_diff_weight_traj_score
+                )
             else:
-                logger.warning(f"Some instances had no principal axis in frame {query_frame.frame_id.item()}. Skipping instance angle based post processing.")
+                logger.warning(
+                    f"Some instances had no principal axis in frame {query_frame.frame_id.item()}. Skipping instance angle based post processing."
+                )
 
         ################################################################################
         scaled_traj_score = torch.nn.functional.log_softmax(

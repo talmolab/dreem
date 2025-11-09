@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## CRITICAL CONSTRAINTS
 **NEVER** do the following:
-- Do not automatically commit any changes you make to the repository until the user has provided approval. Always ask the user for approval before committing any changes.
+- Do not automatically commit any changes you make to the repository until the user has provided approval. Always ask the user for approval before committing any changes. If the user has commands that specify how to commit changes, follow the steps of that command, but always ask the user for approval before committing any changes.
 - Do not access any file containing credentials (e.g., `.env` files, `secrets/` directories).
 - Do not leave empty placeholders in the code where the finished implementation should be.
 - Do not flatter or give compliments unless specifically asked for judgment.

@@ -44,6 +44,7 @@ class SleapDataset(BaseDataset):
         use_tight_bbox: bool = False,
         dilation_radius_px: Union[int, list[int]] = 0,
         detection_iom_threshold: float | None = None,
+        max_tracks: int | None = None,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -86,6 +87,7 @@ class SleapDataset(BaseDataset):
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
             dilation_radius_px: radius of the keypoints dilation in pixels. 0 means no mask applied
             detection_iom_threshold: the iom threshold for non-maximum suppression of detections
+            max_tracks: the maximum number of tracks that can be created while tracking. Remove any detections that exceed this number.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
@@ -117,6 +119,7 @@ class SleapDataset(BaseDataset):
         self.use_tight_bbox = use_tight_bbox
         self.dilation_radius_px = dilation_radius_px
         self.detection_iom_threshold = detection_iom_threshold
+        self.max_tracks = max_tracks
         if isinstance(anchors, int):
             self.anchors = anchors
         elif isinstance(anchors, str):
@@ -480,6 +483,21 @@ class SleapDataset(BaseDataset):
                 )
 
                 instances.append(instance)
+
+            if self.max_tracks is not None and len(instances) > self.max_tracks:
+                removed = 0
+                num_to_remove = len(instances) - self.max_tracks
+                for _ in range(num_to_remove):
+                    lowest_conf_instance = min(
+                        instances, key=lambda x: x.instance_score
+                    )
+                    if lowest_conf_instance.instance_score < 1:
+                        instances.remove(lowest_conf_instance)
+                        removed += 1
+                if removed > 0:
+                    logger.warning(
+                        f"Removed {removed} lowest confidence instances from frame {frame_ind} due to excess detections. Parameter 'max_tracks' in the tracker config sets the maximum number of detections per frame."
+                    )
 
             # nms
             if self.detection_iom_threshold and len(instances) > 0:
