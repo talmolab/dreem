@@ -52,6 +52,12 @@ def two_flies(sleap_data_dir):
     video_file = Path(sleap_data_dir) / "two_flies.mp4"
     return [slp_file, video_file]
 
+@pytest.fixture
+def two_flies_overlapping(sleap_data_dir):
+    """Sleap two flies .slp and video file paths with overlapping instances."""
+    slp_file = Path(sleap_data_dir) / "two_flies_noisy_detections.slp"
+    video_file = Path(sleap_data_dir) / "two_flies.mp4"
+    return [slp_file, video_file]
 
 @pytest.fixture
 def three_flies(sleap_data_dir):

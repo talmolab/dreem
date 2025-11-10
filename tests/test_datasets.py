@@ -3,7 +3,7 @@
 import pytest
 import torch
 from torch.utils.data import DataLoader
-
+import sleap_io as sio
 from dreem.datasets import (
     BaseDataset,
     CellTrackingDataset,
@@ -12,6 +12,34 @@ from dreem.datasets import (
     TrackingDataset,
 )
 from dreem.datasets.data_utils import NodeDropout, get_max_padding
+
+
+def _prepare_duplicate_instances(dataset, scenario):
+    """Placeholder for configuring dataset state prior to iteration.
+
+    Args:
+        dataset: `SleapDataset` instance to be customized for the scenario.
+        scenario: String key selecting the desired duplicate-detection setup.
+
+    Returns:
+        A dictionary containing any metadata required by the tests. Expected keys:
+            - 'expected_instance_count': int indicating how many instances should
+              remain in the inspected frame after iteration.
+            - 'expected_keypoint_counts': list[int] describing the pose sizes that
+              should remain after NMS runs.
+            - Optional 'removed_keypoint_count': int describing the pose size that
+              should be removed by NMS.
+            - Optional 'removed_track_ids': list of track ids that should be absent
+              after NMS.
+            - Optional 'expected_instance_order': list of track ids capturing the
+              expected ordering of instances.
+            - Optional 'frame_index': int pointing to the frame within the chunk
+              that should be inspected (defaults to 0).
+    """
+    raise NotImplementedError(
+        "Implement duplicate instance setup for scenario "
+        f"'{scenario}' before running these tests."
+    )
 
 
 def test_base_dataset():
@@ -261,6 +289,71 @@ def test_sleap_dataset(two_flies):
             _, c, h, w = instance.crop.shape
             assert h <= crop_size and w <= crop_size
 
+
+def test_sleap_dataset_nms_removes_sparse_duplicate(two_flies_overlapping):
+    """High-overlap duplicate with fewer keypoints should be removed."""
+
+    clip_length = 16
+    train_ds = SleapDataset(
+        slp_files=[two_flies_overlapping[0]],
+        video_files=[two_flies_overlapping[1]],
+        data_dirs=["./data/sleap"],
+        crop_size=70,
+        chunk=True,
+        clip_length=clip_length,
+        anchors=["thorax"],
+        max_detection_overlap=0.7,
+    )
+    frames = next(iter(train_ds))
+    frame0 = frames[0]
+    frame1 = frames[1]
+    assert len(frame0.instances) == 2
+    assert len(frame1.instances) == 3
+    for instance in frame0.instances:
+        assert instance.gt_track_id != -1
+        pose_arr = torch.stack([torch.tensor(v) for v in instance.pose.values()])
+        assert len(pose_arr[~pose_arr.isnan().any(dim=1)]) > 5
+
+
+def test_sleap_dataset_nms_retains_instances_below_threshold(two_flies_overlapping):
+    """Moderate overlap should not trigger NMS removals."""
+    clip_length = 16
+    train_ds = SleapDataset(
+        slp_files=[two_flies_overlapping[0]],
+        video_files=[two_flies_overlapping[1]],
+        data_dirs=["./data/sleap"],
+        crop_size=70,
+        chunk=True,
+        clip_length=clip_length,
+        anchors=["thorax"],
+        max_detection_overlap=0.9,
+    )
+
+    frames = next(iter(train_ds))
+    frame0 = frames[0]
+    frame1 = frames[1]
+    assert len(frame0.instances) == 3
+    assert len(frame1.instances) == 3
+
+def test_sleap_dataset_nms_off_without_arg(two_flies_overlapping):
+    """NMS should be off without max_detection_overlap argument."""
+    clip_length = 16
+    train_ds = SleapDataset(
+        slp_files=[two_flies_overlapping[0]],
+        video_files=[two_flies_overlapping[1]],
+        data_dirs=["./data/sleap"],
+        crop_size=70,
+        chunk=True,
+        clip_length=clip_length,
+        anchors=["thorax"],
+        max_detection_overlap=None,
+    )
+
+    frames = next(iter(train_ds))
+    frame0 = frames[0]
+    frame1 = frames[1]
+    assert len(frame0.instances) == 3
+    assert len(frame1.instances) == 3
 
 def test_icy_dataset(ten_icy_particles):
     """Test icy dataset logic.
