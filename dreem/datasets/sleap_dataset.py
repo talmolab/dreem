@@ -43,7 +43,7 @@ class SleapDataset(BaseDataset):
         max_batching_gap: int = 15,
         use_tight_bbox: bool = False,
         dilation_radius_px: Union[int, list[int]] = 0,
-        detection_iom_threshold: float | None = None,
+        max_detection_overlap: float | None = None,
         max_tracks: int | None = None,
         **kwargs,
     ):
@@ -86,7 +86,7 @@ class SleapDataset(BaseDataset):
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
             dilation_radius_px: radius of the keypoints dilation in pixels. 0 means no mask applied
-            detection_iom_threshold: the iom threshold for non-maximum suppression of detections
+            max_detection_overlap: the iom threshold for non-maximum suppression of detections
             max_tracks: the maximum number of tracks that can be created while tracking. Remove any detections that exceed this number.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
@@ -118,7 +118,7 @@ class SleapDataset(BaseDataset):
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
         self.dilation_radius_px = dilation_radius_px
-        self.detection_iom_threshold = detection_iom_threshold
+        self.max_detection_overlap = max_detection_overlap
         self.max_tracks = max_tracks
         if isinstance(anchors, int):
             self.anchors = anchors
@@ -500,11 +500,11 @@ class SleapDataset(BaseDataset):
                     )
 
             # nms
-            if self.detection_iom_threshold and len(instances) > 0:
+            if self.max_detection_overlap and len(instances) > 0:
                 discard = set()
                 bboxes = np.stack([instance.bbox.squeeze(0) for instance in instances])
                 ioms = pairwise_iom(Boxes(bboxes), Boxes(bboxes))
-                high_iom_pairs = nms(ioms, self.detection_iom_threshold)
+                high_iom_pairs = nms(ioms, self.max_detection_overlap)
                 for pair in high_iom_pairs:
                     if pair[0] in discard or pair[1] in discard:
                         continue

@@ -337,6 +337,8 @@ class GTRRunner(LightningModule):
                     # For num_switches, save mot_summary and mot_events separately
                     mot_summary = value[0]
                     frame_switch_map = value[1]
+                    motevents = value[2]
+                    motevents.to_csv(os.path.join(self.test_results["save_path"], f"{vid_name}.motevents.csv"))
                     mot_summary_group = vid_group.require_group("mot_summary")
                     # Loop through each row in mot_summary and save as attributes
                     for _, row in mot_summary.iterrows():

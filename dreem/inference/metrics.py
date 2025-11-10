@@ -173,10 +173,12 @@ def compute_motmetrics(df):
     # filter out -1 track_ids; these are untracked instances due to confidence thresholding
     df = df[df["pred_track_id"] != -1]
     preds_motevents_map = {}
+    motevents_frame_id_map = {}
     motevents_frame_id = 0
     for frame, framedf in df.groupby("frame_id"):
         # if a frame has no preds, motevents just enumerates in order, leading to mismatch in frame ids
         preds_motevents_map[frame] = motevents_frame_id
+        motevents_frame_id_map[motevents_frame_id] = frame
         motevents_frame_id += 1
         gt_ids = framedf["gt_track_id"].values
         gt_ids = [track_name_mapping[trk] for trk in gt_ids]
@@ -209,8 +211,10 @@ def compute_motmetrics(df):
 
     for i, switch_frame in enumerate(switch_frames):
         frame_switch_map[switch_frame] = True
+    for idx, row in motevents.iterrows():
+        motevents.loc[idx, "FrameId"] = motevents_frame_id_map[row["FrameId"]]
 
-    return summary_dreem, frame_switch_map
+    return summary_dreem, frame_switch_map, motevents
 
 
 def compute_global_tracking_accuracy(df):
