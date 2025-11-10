@@ -2336,6 +2336,7 @@
     <div class="doc doc-contents ">
 
 
+
         <p>Class handling track local queue system for sliding window.</p>
 <p>Each trajectory has its own deque based queue of size <code>window_size - 1</code>.
 Elements of the queue are Instance objects that have already been tracked
@@ -2530,7 +2531,7 @@ and will be compared against later frames for assignment.</p>
       </tbody>
     </table>
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/inference/track_queue.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-13" name="__codelineno-0-13"></a><a href="#__codelineno-0-13"><span class="linenos" data-linenos=" 13 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">TrackQueue</span><span class="p">:</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14"></a><a href="#__codelineno-0-14"><span class="linenos" data-linenos=" 14 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Class handling track local queue system for sliding window.</span>
@@ -3215,7 +3216,7 @@ appear in before terminating the track.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/track_queue.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-21" name="__codelineno-0-21"></a><a href="#__codelineno-0-21"><span class="linenos" data-linenos="21 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 <a id="__codelineno-0-22" name="__codelineno-0-22"></a><a href="#__codelineno-0-22"><span class="linenos" data-linenos="22 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">window_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_gap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
@@ -3280,7 +3281,7 @@ appear in before terminating the track.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/track_queue.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-42" name="__codelineno-0-42"></a><a href="#__codelineno-0-42"><span class="linenos" data-linenos="42 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <a id="__codelineno-0-43" name="__codelineno-0-43"></a><a href="#__codelineno-0-43"><span class="linenos" data-linenos="43 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get length of the queue.</span>
@@ -3332,7 +3333,7 @@ appear in before terminating the track.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/track_queue.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-50" name="__codelineno-0-50"></a><a href="#__codelineno-0-50"><span class="linenos" data-linenos="50 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-0-51" name="__codelineno-0-51"></a><a href="#__codelineno-0-51"><span class="linenos" data-linenos="51 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the string representation of the TrackQueue.</span>
@@ -3402,7 +3403,7 @@ If the corresponding trajectory is not already in the queue then create a new qu
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/track_queue.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-185" name="__codelineno-0-185"></a><a href="#__codelineno-0-185"><span class="linenos" data-linenos="185 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">add_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span> <span class="n">Frame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-186" name="__codelineno-0-186"></a><a href="#__codelineno-0-186"><span class="linenos" data-linenos="186 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Add frames to the queue.</span>
@@ -3543,7 +3544,7 @@ containing the corresponding instances.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/track_queue.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-234" name="__codelineno-0-234"></a><a href="#__codelineno-0-234"><span class="linenos" data-linenos="234 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">collate_tracks</span><span class="p">(</span>
 <a id="__codelineno-0-235" name="__codelineno-0-235"></a><a href="#__codelineno-0-235"><span class="linenos" data-linenos="235 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -3663,7 +3664,7 @@ If <code>None</code> then then every trajectory is removed and the track queue i
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/track_queue.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-160" name="__codelineno-0-160"></a><a href="#__codelineno-0-160"><span class="linenos" data-linenos="160 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">end_tracks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">track_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-161" name="__codelineno-0-161"></a><a href="#__codelineno-0-161"><span class="linenos" data-linenos="161 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Terminate tracks and removing them from the queue.</span>
@@ -3768,7 +3769,7 @@ terminated.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/track_queue.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-277" name="__codelineno-0-277"></a><a href="#__codelineno-0-277"><span class="linenos" data-linenos="277 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">increment_gaps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred_track_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
 <a id="__codelineno-0-278" name="__codelineno-0-278"></a><a href="#__codelineno-0-278"><span class="linenos" data-linenos="278 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Keep track of number of consecutive frames each trajectory has been missing from the queue.</span>

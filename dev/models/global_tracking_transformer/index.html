@@ -2320,6 +2320,7 @@
               Bases: <code><span title="torch.nn.Module">Module</span></code></p>
 
 
+
         <p>Modular GTR model composed of visual encoder + transformer used for tracking.</p>
 
 
@@ -2371,7 +2372,7 @@
 
 
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/models/global_tracking_transformer.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-16" name="__codelineno-0-16"></a><a href="#__codelineno-0-16"><span class="linenos" data-linenos=" 16 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">GlobalTrackingTransformer</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17"></a><a href="#__codelineno-0-17"><span class="linenos" data-linenos=" 17 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Modular GTR model composed of visual encoder + transformer used for tracking.&quot;&quot;&quot;</span>
@@ -2774,7 +2775,7 @@ e.g: <code>cfg = {"model_name": "resnet18", "pretrained": False, "in_chans": 3}<
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/models/global_tracking_transformer.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-19" name="__codelineno-0-19"></a><a href="#__codelineno-0-19"><span class="linenos" data-linenos="19 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a><a href="#__codelineno-0-20"><span class="linenos" data-linenos="20 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -2909,7 +2910,7 @@ e.g: <code>cfg = {"model_name": "resnet18", "pretrained": False, "in_chans": 3}<
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/models/global_tracking_transformer.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-109" name="__codelineno-0-109"></a><a href="#__codelineno-0-109"><span class="linenos" data-linenos="109 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">extract_features</span><span class="p">(</span>
 <a id="__codelineno-0-110" name="__codelineno-0-110"></a><a href="#__codelineno-0-110"><span class="linenos" data-linenos="110 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Instance&quot;</span><span class="p">],</span> <span class="n">force_recompute</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">save_crops</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
@@ -3032,7 +3033,7 @@ e.g: <code>cfg = {"model_name": "resnet18", "pretrained": False, "in_chans": 3}<
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/models/global_tracking_transformer.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-86" name="__codelineno-0-86"></a><a href="#__codelineno-0-86"><span class="linenos" data-linenos=" 86 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
 <a id="__codelineno-0-87" name="__codelineno-0-87"></a><a href="#__codelineno-0-87"><span class="linenos" data-linenos=" 87 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">ref_instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Instance&quot;</span><span class="p">],</span> <span class="n">query_instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Instance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>

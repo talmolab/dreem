@@ -2403,6 +2403,7 @@
     <div class="doc doc-contents ">
 
 
+
         <p>Class representing the associations between detections.</p>
 
 
@@ -2541,7 +2542,7 @@
 
 
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-16" name="__codelineno-0-16"></a><a href="#__codelineno-0-16"><span class="linenos" data-linenos=" 16 "></span></a><span class="nd">@attrs</span><span class="o">.</span><span class="n">define</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17"></a><a href="#__codelineno-0-17"><span class="linenos" data-linenos=" 17 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">AssociationMatrix</span><span class="p">:</span>
@@ -2985,7 +2986,7 @@ Can either be a single int/instance or a list of int/instances</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-255" name="__codelineno-0-255"></a><a href="#__codelineno-0-255"><span class="linenos" data-linenos="255 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">__getindices__</span><span class="p">(</span>
 <a id="__codelineno-0-256" name="__codelineno-0-256"></a><a href="#__codelineno-0-256"><span class="linenos" data-linenos="256 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -3106,7 +3107,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-226" name="__codelineno-0-226"></a><a href="#__codelineno-0-226"><span class="linenos" data-linenos="226 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span>
 <a id="__codelineno-0-227" name="__codelineno-0-227"></a><a href="#__codelineno-0-227"><span class="linenos" data-linenos="227 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">inds</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">Instance</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">Instance</span><span class="p">]]</span>
@@ -3179,7 +3180,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-68" name="__codelineno-0-68"></a><a href="#__codelineno-0-68"><span class="linenos" data-linenos="68 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-0-69" name="__codelineno-0-69"></a><a href="#__codelineno-0-69"><span class="linenos" data-linenos="69 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the string representation of the Association Matrix.</span>
@@ -3282,7 +3283,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-298" name="__codelineno-0-298"></a><a href="#__codelineno-0-298"><span class="linenos" data-linenos="298 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_tracks</span><span class="p">(</span>
 <a id="__codelineno-0-299" name="__codelineno-0-299"></a><a href="#__codelineno-0-299"><span class="linenos" data-linenos="299 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Instance&quot;</span><span class="p">],</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pred&quot;</span>
@@ -3367,7 +3368,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-80" name="__codelineno-0-80"></a><a href="#__codelineno-0-80"><span class="linenos" data-linenos="80 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <a id="__codelineno-0-81" name="__codelineno-0-81"></a><a href="#__codelineno-0-81"><span class="linenos" data-linenos="81 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert association matrix to a numpy array.</span>
@@ -3518,7 +3519,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-168" name="__codelineno-0-168"></a><a href="#__codelineno-0-168"><span class="linenos" data-linenos="168 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">reduce</span><span class="p">(</span>
 <a id="__codelineno-0-169" name="__codelineno-0-169"></a><a href="#__codelineno-0-169"><span class="linenos" data-linenos="169 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -3651,7 +3652,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-339" name="__codelineno-0-339"></a><a href="#__codelineno-0-339"><span class="linenos" data-linenos="339 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <a id="__codelineno-0-340" name="__codelineno-0-340"></a><a href="#__codelineno-0-340"><span class="linenos" data-linenos="340 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Move instance to different device or change dtype. (See `torch.to` for more info).</span>
@@ -3769,7 +3770,7 @@ Otherwise label by the ref_instance indices</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-90" name="__codelineno-0-90"></a><a href="#__codelineno-0-90"><span class="linenos" data-linenos=" 90 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_dataframe</span><span class="p">(</span>
 <a id="__codelineno-0-91" name="__codelineno-0-91"></a><a href="#__codelineno-0-91"><span class="linenos" data-linenos=" 91 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">row_labels</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gt&quot;</span><span class="p">,</span> <span class="n">col_labels</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gt&quot;</span>
@@ -3874,6 +3875,7 @@ Otherwise label by the ref_instance indices</p>
 
 
     <div class="doc doc-contents ">
+
 
 
         <p>Class handling loading components based on config params.</p>
@@ -4096,7 +4098,7 @@ Otherwise label by the ref_instance indices</p>
       </tbody>
     </table>
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/io/config.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-24" name="__codelineno-0-24"></a><a href="#__codelineno-0-24"><span class="linenos" data-linenos=" 24 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
 <a id="__codelineno-0-25" name="__codelineno-0-25"></a><a href="#__codelineno-0-25"><span class="linenos" data-linenos=" 25 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Class handling loading components based on config params.&quot;&quot;&quot;</span>
@@ -4785,7 +4787,7 @@ training/evaluation</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-27" name="__codelineno-0-27"></a><a href="#__codelineno-0-27"><span class="linenos" data-linenos="27 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">DictConfig</span><span class="p">,</span> <span class="n">params_cfg</span><span class="p">:</span> <span class="n">DictConfig</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <a id="__codelineno-0-28" name="__codelineno-0-28"></a><a href="#__codelineno-0-28"><span class="linenos" data-linenos="28 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize the class with config from hydra/omega conf.</span>
@@ -4834,7 +4836,7 @@ training/evaluation</p>
         <p>Object representation of config class.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-55" name="__codelineno-0-55"></a><a href="#__codelineno-0-55"><span class="linenos" data-linenos="55 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <a id="__codelineno-0-56" name="__codelineno-0-56"></a><a href="#__codelineno-0-56"><span class="linenos" data-linenos="56 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Object representation of config class.&quot;&quot;&quot;</span>
@@ -4859,7 +4861,7 @@ training/evaluation</p>
         <p>Return a string representation of config class.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-59" name="__codelineno-0-59"></a><a href="#__codelineno-0-59"><span class="linenos" data-linenos="59 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <a id="__codelineno-0-60" name="__codelineno-0-60"></a><a href="#__codelineno-0-60"><span class="linenos" data-linenos="60 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a string representation of config class.&quot;&quot;&quot;</span>
@@ -4935,7 +4937,7 @@ training/evaluation</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-63" name="__codelineno-0-63"></a><a href="#__codelineno-0-63"><span class="linenos" data-linenos="63 "></span></a><span class="nd">@classmethod</span>
 <a id="__codelineno-0-64" name="__codelineno-0-64"></a><a href="#__codelineno-0-64"><span class="linenos" data-linenos="64 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">from_yaml</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">base_cfg_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params_cfg_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -5030,7 +5032,7 @@ training/evaluation</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-98" name="__codelineno-0-98"></a><a href="#__codelineno-0-98"><span class="linenos" data-linenos=" 98 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <a id="__codelineno-0-99" name="__codelineno-0-99"></a><a href="#__codelineno-0-99"><span class="linenos" data-linenos=" 99 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get config item.</span>
@@ -5092,7 +5094,7 @@ training/evaluation</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-507" name="__codelineno-0-507"></a><a href="#__codelineno-0-507"><span class="linenos" data-linenos="507 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_checkpointing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pl</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">ModelCheckpoint</span><span class="p">:</span>
 <a id="__codelineno-0-508" name="__codelineno-0-508"></a><a href="#__codelineno-0-508"><span class="linenos" data-linenos="508 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Getter for lightning checkpointing callback.</span>
@@ -5215,7 +5217,7 @@ training/evaluation</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-183" name="__codelineno-0-183"></a><a href="#__codelineno-0-183"><span class="linenos" data-linenos="183 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_ctc_paths</span><span class="p">(</span>
 <a id="__codelineno-0-184" name="__codelineno-0-184"></a><a href="#__codelineno-0-184"><span class="linenos" data-linenos="184 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">list_dir_path</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
@@ -5343,7 +5345,7 @@ train, val, or test params for dataset</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-219" name="__codelineno-0-219"></a><a href="#__codelineno-0-219"><span class="linenos" data-linenos="219 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_data_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
 <a id="__codelineno-0-220" name="__codelineno-0-220"></a><a href="#__codelineno-0-220"><span class="linenos" data-linenos="220 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get file paths from directory. Only for SLEAP datasets.</span>
@@ -5490,7 +5492,7 @@ config to use</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-376" name="__codelineno-0-376"></a><a href="#__codelineno-0-376"><span class="linenos" data-linenos="376 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_dataloader</span><span class="p">(</span>
 <a id="__codelineno-0-377" name="__codelineno-0-377"></a><a href="#__codelineno-0-377"><span class="linenos" data-linenos="377 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -5634,7 +5636,7 @@ train, val, or test params for dataset</p>
     Either a <code>SleapDataset</code> or <code>CellTrackingDataset</code> with params indicated by cfg</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-274" name="__codelineno-0-274"></a><a href="#__codelineno-0-274"><span class="linenos" data-linenos="274 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_dataset</span><span class="p">(</span>
 <a id="__codelineno-0-275" name="__codelineno-0-275"></a><a href="#__codelineno-0-275"><span class="linenos" data-linenos="275 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -5765,7 +5767,7 @@ train, val, or test params for dataset</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-490" name="__codelineno-0-490"></a><a href="#__codelineno-0-490"><span class="linenos" data-linenos="490 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_early_stopping</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pl</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">EarlyStopping</span><span class="p">:</span>
 <a id="__codelineno-0-491" name="__codelineno-0-491"></a><a href="#__codelineno-0-491"><span class="linenos" data-linenos="491 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Getter for lightning early stopping callback.</span>
@@ -5857,7 +5859,7 @@ train, val, or test params for dataset</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-141" name="__codelineno-0-141"></a><a href="#__codelineno-0-141"><span class="linenos" data-linenos="141 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_gtr_runner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ckpt_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GTRRunner</span><span class="p">:</span>
 <a id="__codelineno-0-142" name="__codelineno-0-142"></a><a href="#__codelineno-0-142"><span class="linenos" data-linenos="142 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get lightning module for training, validation, and inference.</span>
@@ -5943,7 +5945,7 @@ train, val, or test params for dataset</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-472" name="__codelineno-0-472"></a><a href="#__codelineno-0-472"><span class="linenos" data-linenos="472 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_logger</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pl</span><span class="o">.</span><span class="n">loggers</span><span class="o">.</span><span class="n">Logger</span><span class="p">:</span>
 <a id="__codelineno-0-473" name="__codelineno-0-473"></a><a href="#__codelineno-0-473"><span class="linenos" data-linenos="473 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Getter for logging callback.</span>
@@ -6005,7 +6007,7 @@ train, val, or test params for dataset</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-455" name="__codelineno-0-455"></a><a href="#__codelineno-0-455"><span class="linenos" data-linenos="455 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AssoLoss</span><span class="p">:</span>
 <a id="__codelineno-0-456" name="__codelineno-0-456"></a><a href="#__codelineno-0-456"><span class="linenos" data-linenos="456 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Getter for loss functions.</span>
@@ -6066,7 +6068,7 @@ train, val, or test params for dataset</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-116" name="__codelineno-0-116"></a><a href="#__codelineno-0-116"><span class="linenos" data-linenos="116 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GlobalTrackingTransformer</span><span class="p">:</span>
 <a id="__codelineno-0-117" name="__codelineno-0-117"></a><a href="#__codelineno-0-117"><span class="linenos" data-linenos="117 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Getter for gtr model.</span>
@@ -6159,7 +6161,7 @@ parameter groups</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-417" name="__codelineno-0-417"></a><a href="#__codelineno-0-417"><span class="linenos" data-linenos="417 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_optimizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">:</span>
 <a id="__codelineno-0-418" name="__codelineno-0-418"></a><a href="#__codelineno-0-418"><span class="linenos" data-linenos="418 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Getter for optimizer.</span>
@@ -6250,7 +6252,7 @@ parameter groups</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-433" name="__codelineno-0-433"></a><a href="#__codelineno-0-433"><span class="linenos" data-linenos="433 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_scheduler</span><span class="p">(</span>
 <a id="__codelineno-0-434" name="__codelineno-0-434"></a><a href="#__codelineno-0-434"><span class="linenos" data-linenos="434 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span>
@@ -6316,7 +6318,7 @@ parameter groups</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-133" name="__codelineno-0-133"></a><a href="#__codelineno-0-133"><span class="linenos" data-linenos="133 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_tracker_cfg</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <a id="__codelineno-0-134" name="__codelineno-0-134"></a><a href="#__codelineno-0-134"><span class="linenos" data-linenos="134 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Getter for tracker config params.</span>
@@ -6448,7 +6450,7 @@ for training</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-555" name="__codelineno-0-555"></a><a href="#__codelineno-0-555"><span class="linenos" data-linenos="555 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_trainer</span><span class="p">(</span>
 <a id="__codelineno-0-556" name="__codelineno-0-556"></a><a href="#__codelineno-0-556"><span class="linenos" data-linenos="556 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -6579,7 +6581,7 @@ the value to be changed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/config.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-75" name="__codelineno-0-75"></a><a href="#__codelineno-0-75"><span class="linenos" data-linenos="75 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">set_hparams</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hparams</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-76" name="__codelineno-0-76"></a><a href="#__codelineno-0-76"><span class="linenos" data-linenos="76 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Setter function for overwriting specific hparams.</span>
@@ -6629,6 +6631,7 @@ the value to be changed</p>
 
 
     <div class="doc doc-contents ">
+
 
 
         <p>Data structure containing metadata for a single frame of a video.</p>
@@ -7006,7 +7009,7 @@ or a single association matrix.</p>
 
 
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/io/frame.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-40" name="__codelineno-0-40"></a><a href="#__codelineno-0-40"><span class="linenos" data-linenos=" 40 "></span></a><span class="nd">@attrs</span><span class="o">.</span><span class="n">define</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <a id="__codelineno-0-41" name="__codelineno-0-41"></a><a href="#__codelineno-0-41"><span class="linenos" data-linenos=" 41 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">Frame</span><span class="p">:</span>
@@ -8056,7 +8059,7 @@ if it is not possible to create the sio.Video</p>
         <p>Handle more intricate default initializations and moving to device.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-75" name="__codelineno-0-75"></a><a href="#__codelineno-0-75"><span class="linenos" data-linenos="75 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">__attrs_post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-76" name="__codelineno-0-76"></a><a href="#__codelineno-0-76"><span class="linenos" data-linenos="76 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle more intricate default initializations and moving to device.&quot;&quot;&quot;</span>
@@ -8110,7 +8113,7 @@ if it is not possible to create the sio.Video</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-85" name="__codelineno-0-85"></a><a href="#__codelineno-0-85"><span class="linenos" data-linenos=" 85 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-0-86" name="__codelineno-0-86"></a><a href="#__codelineno-0-86"><span class="linenos" data-linenos=" 86 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return String representation of the Frame.</span>
@@ -8199,7 +8202,7 @@ if it is not possible to create the sio.Video</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-495" name="__codelineno-0-495"></a><a href="#__codelineno-0-495"><span class="linenos" data-linenos="495 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">add_traj_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">traj_score</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-496" name="__codelineno-0-496"></a><a href="#__codelineno-0-496"><span class="linenos" data-linenos="496 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Add trajectory score to dictionary.</span>
@@ -8334,7 +8337,7 @@ if it is not possible to create the sio.Video</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-136" name="__codelineno-0-136"></a><a href="#__codelineno-0-136"><span class="linenos" data-linenos="136 "></span></a><span class="nd">@classmethod</span>
 <a id="__codelineno-0-137" name="__codelineno-0-137"></a><a href="#__codelineno-0-137"><span class="linenos" data-linenos="137 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">from_slp</span><span class="p">(</span>
@@ -8417,7 +8420,7 @@ if it is not possible to create the sio.Video</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-615" name="__codelineno-0-615"></a><a href="#__codelineno-0-615"><span class="linenos" data-linenos="615 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_anchors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <a id="__codelineno-0-616" name="__codelineno-0-616"></a><a href="#__codelineno-0-616"><span class="linenos" data-linenos="616 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the anchor names of instances in the frame.</span>
@@ -8469,7 +8472,7 @@ if it is not possible to create the sio.Video</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-564" name="__codelineno-0-564"></a><a href="#__codelineno-0-564"><span class="linenos" data-linenos="564 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_bboxes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-565" name="__codelineno-0-565"></a><a href="#__codelineno-0-565"><span class="linenos" data-linenos="565 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the bounding boxes of all instances in the frame.</span>
@@ -8524,7 +8527,7 @@ points: an n_instances x 2 array containing the centroids</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-623" name="__codelineno-0-623"></a><a href="#__codelineno-0-623"><span class="linenos" data-linenos="623 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_centroids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">ArrayLike</span><span class="p">]:</span>
 <a id="__codelineno-0-624" name="__codelineno-0-624"></a><a href="#__codelineno-0-624"><span class="linenos" data-linenos="624 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the centroids around which each instance&#39;s crop was formed.</span>
@@ -8589,7 +8592,7 @@ points: an n_instances x 2 array containing the centroids</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-584" name="__codelineno-0-584"></a><a href="#__codelineno-0-584"><span class="linenos" data-linenos="584 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_crops</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-585" name="__codelineno-0-585"></a><a href="#__codelineno-0-585"><span class="linenos" data-linenos="585 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the crops of all instances in the frame.</span>
@@ -8644,7 +8647,7 @@ points: an n_instances x 2 array containing the centroids</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-605" name="__codelineno-0-605"></a><a href="#__codelineno-0-605"><span class="linenos" data-linenos="605 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-606" name="__codelineno-0-606"></a><a href="#__codelineno-0-606"><span class="linenos" data-linenos="606 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the reid feature vectors of all instances in the frame.</span>
@@ -8698,7 +8701,7 @@ points: an n_instances x 2 array containing the centroids</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-524" name="__codelineno-0-524"></a><a href="#__codelineno-0-524"><span class="linenos" data-linenos="524 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_gt_track_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-525" name="__codelineno-0-525"></a><a href="#__codelineno-0-525"><span class="linenos" data-linenos="525 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the gt track ids of all instances in the frame.</span>
@@ -8752,7 +8755,7 @@ points: an n_instances x 2 array containing the centroids</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-544" name="__codelineno-0-544"></a><a href="#__codelineno-0-544"><span class="linenos" data-linenos="544 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_pred_track_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-545" name="__codelineno-0-545"></a><a href="#__codelineno-0-545"><span class="linenos" data-linenos="545 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the pred track ids of all instances in the frame.</span>
@@ -8842,7 +8845,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-474" name="__codelineno-0-474"></a><a href="#__codelineno-0-474"><span class="linenos" data-linenos="474 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_traj_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="n">ArrayLike</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-475" name="__codelineno-0-475"></a><a href="#__codelineno-0-475"><span class="linenos" data-linenos="475 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get dictionary containing association matrix between instances and trajectories along postprocessing pipeline.</span>
@@ -8907,7 +8910,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-427" name="__codelineno-0-427"></a><a href="#__codelineno-0-427"><span class="linenos" data-linenos="427 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_asso_output</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-428" name="__codelineno-0-428"></a><a href="#__codelineno-0-428"><span class="linenos" data-linenos="428 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine whether the frame has an association matrix computed.</span>
@@ -8961,7 +8964,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-554" name="__codelineno-0-554"></a><a href="#__codelineno-0-554"><span class="linenos" data-linenos="554 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_bboxes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-555" name="__codelineno-0-555"></a><a href="#__codelineno-0-555"><span class="linenos" data-linenos="555 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any of frames instances has a bounding box.</span>
@@ -9015,7 +9018,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-574" name="__codelineno-0-574"></a><a href="#__codelineno-0-574"><span class="linenos" data-linenos="574 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_crops</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-575" name="__codelineno-0-575"></a><a href="#__codelineno-0-575"><span class="linenos" data-linenos="575 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any of frames instances has a crop.</span>
@@ -9069,7 +9072,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-595" name="__codelineno-0-595"></a><a href="#__codelineno-0-595"><span class="linenos" data-linenos="595 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-596" name="__codelineno-0-596"></a><a href="#__codelineno-0-596"><span class="linenos" data-linenos="596 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any of frames instances has reid features already computed.</span>
@@ -9123,7 +9126,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-514" name="__codelineno-0-514"></a><a href="#__codelineno-0-514"><span class="linenos" data-linenos="514 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_gt_track_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-515" name="__codelineno-0-515"></a><a href="#__codelineno-0-515"><span class="linenos" data-linenos="515 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any of frames instances has a gt track id.</span>
@@ -9177,7 +9180,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-399" name="__codelineno-0-399"></a><a href="#__codelineno-0-399"><span class="linenos" data-linenos="399 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_instances</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-400" name="__codelineno-0-400"></a><a href="#__codelineno-0-400"><span class="linenos" data-linenos="400 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine whether there are instances in the frame.</span>
@@ -9231,7 +9234,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-464" name="__codelineno-0-464"></a><a href="#__codelineno-0-464"><span class="linenos" data-linenos="464 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_matches</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-465" name="__codelineno-0-465"></a><a href="#__codelineno-0-465"><span class="linenos" data-linenos="465 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check whether or not matches have been computed for frame.</span>
@@ -9285,7 +9288,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-534" name="__codelineno-0-534"></a><a href="#__codelineno-0-534"><span class="linenos" data-linenos="534 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_pred_track_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-535" name="__codelineno-0-535"></a><a href="#__codelineno-0-535"><span class="linenos" data-linenos="535 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any of frames instances has a pred track id.</span>
@@ -9339,7 +9342,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-504" name="__codelineno-0-504"></a><a href="#__codelineno-0-504"><span class="linenos" data-linenos="504 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_traj_score</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-505" name="__codelineno-0-505"></a><a href="#__codelineno-0-505"><span class="linenos" data-linenos="505 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any trajectory association matrix has been saved.</span>
@@ -9424,7 +9427,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-106" name="__codelineno-0-106"></a><a href="#__codelineno-0-106"><span class="linenos" data-linenos="106 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <a id="__codelineno-0-107" name="__codelineno-0-107"></a><a href="#__codelineno-0-107"><span class="linenos" data-linenos="107 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Move frame to different device or dtype (See `torch.to` for more info).</span>
@@ -9540,7 +9543,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     An h5py group containing the frame</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-213" name="__codelineno-0-213"></a><a href="#__codelineno-0-213"><span class="linenos" data-linenos="213 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_h5</span><span class="p">(</span>
 <a id="__codelineno-0-214" name="__codelineno-0-214"></a><a href="#__codelineno-0-214"><span class="linenos" data-linenos="214 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -9657,7 +9660,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
 a lookup dictionary containing the track_id and sio.Track for persistence</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-175" name="__codelineno-0-175"></a><a href="#__codelineno-0-175"><span class="linenos" data-linenos="175 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_slp</span><span class="p">(</span>
 <a id="__codelineno-0-176" name="__codelineno-0-176"></a><a href="#__codelineno-0-176"><span class="linenos" data-linenos="176 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -9722,6 +9725,7 @@ a lookup dictionary containing the track_id and sio.Track for persistence</p>
 
 
     <div class="doc doc-contents ">
+
 
 
         <p>Class representing a single instance to be tracked.</p>
@@ -10081,7 +10085,7 @@ a lookup dictionary containing the track_id and sio.Track for persistence</p>
 
 
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/io/instance.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-64" name="__codelineno-0-64"></a><a href="#__codelineno-0-64"><span class="linenos" data-linenos=" 64 "></span></a><span class="nd">@attrs</span><span class="o">.</span><span class="n">define</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <a id="__codelineno-0-65" name="__codelineno-0-65"></a><a href="#__codelineno-0-65"><span class="linenos" data-linenos=" 65 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">Instance</span><span class="p">:</span>
@@ -11409,7 +11413,7 @@ the list of anchors around which each crop was formed</p>
         <p>Handle dimensionality and more intricate default initializations post-init.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-107" name="__codelineno-0-107"></a><a href="#__codelineno-0-107"><span class="linenos" data-linenos="107 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">__attrs_post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-108" name="__codelineno-0-108"></a><a href="#__codelineno-0-108"><span class="linenos" data-linenos="108 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle dimensionality and more intricate default initializations post-init.&quot;&quot;&quot;</span>
@@ -11455,7 +11459,7 @@ the list of anchors around which each crop was formed</p>
         <p>Return string representation of the Instance.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-132" name="__codelineno-0-132"></a><a href="#__codelineno-0-132"><span class="linenos" data-linenos="132 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-0-133" name="__codelineno-0-133"></a><a href="#__codelineno-0-133"><span class="linenos" data-linenos="133 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return string representation of the Instance.&quot;&quot;&quot;</span>
@@ -11537,7 +11541,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-593" name="__codelineno-0-593"></a><a href="#__codelineno-0-593"><span class="linenos" data-linenos="593 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">add_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">embedding</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-594" name="__codelineno-0-594"></a><a href="#__codelineno-0-594"><span class="linenos" data-linenos="594 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Save embedding to instance embedding dictionary.</span>
@@ -11653,7 +11657,7 @@ the list of anchors around which each crop was formed</p>
     A dreem.Instance object with a pose-centered bbox and no crop.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-166" name="__codelineno-0-166"></a><a href="#__codelineno-0-166"><span class="linenos" data-linenos="166 "></span></a><span class="nd">@classmethod</span>
 <a id="__codelineno-0-167" name="__codelineno-0-167"></a><a href="#__codelineno-0-167"><span class="linenos" data-linenos="167 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">from_slp</span><span class="p">(</span>
@@ -11788,7 +11792,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-570" name="__codelineno-0-570"></a><a href="#__codelineno-0-570"><span class="linenos" data-linenos="570 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_embedding</span><span class="p">(</span>
 <a id="__codelineno-0-571" name="__codelineno-0-571"></a><a href="#__codelineno-0-571"><span class="linenos" data-linenos="571 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">emb_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
@@ -11855,7 +11859,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-416" name="__codelineno-0-416"></a><a href="#__codelineno-0-416"><span class="linenos" data-linenos="416 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_bbox</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-417" name="__codelineno-0-417"></a><a href="#__codelineno-0-417"><span class="linenos" data-linenos="417 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if the instance has a bbox.</span>
@@ -11910,7 +11914,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-510" name="__codelineno-0-510"></a><a href="#__codelineno-0-510"><span class="linenos" data-linenos="510 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_crop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-511" name="__codelineno-0-511"></a><a href="#__codelineno-0-511"><span class="linenos" data-linenos="511 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if the instance has a crop.</span>
@@ -11996,7 +12000,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-559" name="__codelineno-0-559"></a><a href="#__codelineno-0-559"><span class="linenos" data-linenos="559 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-560" name="__codelineno-0-560"></a><a href="#__codelineno-0-560"><span class="linenos" data-linenos="560 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if the instance has embedding type requested.</span>
@@ -12051,7 +12055,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-548" name="__codelineno-0-548"></a><a href="#__codelineno-0-548"><span class="linenos" data-linenos="548 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-549" name="__codelineno-0-549"></a><a href="#__codelineno-0-549"><span class="linenos" data-linenos="549 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if the instance has computed reid features.</span>
@@ -12106,7 +12110,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-344" name="__codelineno-0-344"></a><a href="#__codelineno-0-344"><span class="linenos" data-linenos="344 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_gt_track_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-345" name="__codelineno-0-345"></a><a href="#__codelineno-0-345"><span class="linenos" data-linenos="345 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if instance has a gt track assignment.</span>
@@ -12139,7 +12143,7 @@ the list of anchors around which each crop was formed</p>
 <p>Returns True if the instance has a pose.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-649" name="__codelineno-0-649"></a><a href="#__codelineno-0-649"><span class="linenos" data-linenos="649 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-650" name="__codelineno-0-650"></a><a href="#__codelineno-0-650"><span class="linenos" data-linenos="650 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if the instance has a pose.</span>
@@ -12192,7 +12196,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-376" name="__codelineno-0-376"></a><a href="#__codelineno-0-376"><span class="linenos" data-linenos="376 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_pred_track_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-377" name="__codelineno-0-377"></a><a href="#__codelineno-0-377"><span class="linenos" data-linenos="377 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine whether instance has predicted track id.</span>
@@ -12278,7 +12282,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-146" name="__codelineno-0-146"></a><a href="#__codelineno-0-146"><span class="linenos" data-linenos="146 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <a id="__codelineno-0-147" name="__codelineno-0-147"></a><a href="#__codelineno-0-147"><span class="linenos" data-linenos="147 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Move instance to different device or change dtype. (See `torch.to` for more info).</span>
@@ -12417,7 +12421,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-257" name="__codelineno-0-257"></a><a href="#__codelineno-0-257"><span class="linenos" data-linenos="257 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_h5</span><span class="p">(</span>
 <a id="__codelineno-0-258" name="__codelineno-0-258"></a><a href="#__codelineno-0-258"><span class="linenos" data-linenos="258 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">frame_group</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Group</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span>
@@ -12519,7 +12523,7 @@ the list of anchors around which each crop was formed</p>
     and a track_lookup dictionary to persist tracks.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-223" name="__codelineno-0-223"></a><a href="#__codelineno-0-223"><span class="linenos" data-linenos="223 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_slp</span><span class="p">(</span>
 <a id="__codelineno-0-224" name="__codelineno-0-224"></a><a href="#__codelineno-0-224"><span class="linenos" data-linenos="224 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">track_lookup</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">sio</span><span class="o">.</span><span class="n">Track</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -12580,6 +12584,7 @@ the list of anchors around which each crop was formed</p>
 
 
     <div class="doc doc-contents ">
+
 
 
         <p>Object for storing instances of the same track.</p>
@@ -12673,7 +12678,7 @@ the list of anchors around which each crop was formed</p>
 
 
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/io/track.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-13" name="__codelineno-0-13"></a><a href="#__codelineno-0-13"><span class="linenos" data-linenos=" 13 "></span></a><span class="nd">@attrs</span><span class="o">.</span><span class="n">define</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14"></a><a href="#__codelineno-0-14"><span class="linenos" data-linenos=" 14 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">Track</span><span class="p">:</span>
@@ -12984,7 +12989,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/track.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-86" name="__codelineno-0-86"></a><a href="#__codelineno-0-86"><span class="linenos" data-linenos=" 86 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ind</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;Instance&quot;</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Instance&quot;</span><span class="p">]:</span>
 <a id="__codelineno-0-87" name="__codelineno-0-87"></a><a href="#__codelineno-0-87"><span class="linenos" data-linenos=" 87 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get an instance from the track.</span>
@@ -13044,7 +13049,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/track.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-78" name="__codelineno-0-78"></a><a href="#__codelineno-0-78"><span class="linenos" data-linenos="78 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <a id="__codelineno-0-79" name="__codelineno-0-79"></a><a href="#__codelineno-0-79"><span class="linenos" data-linenos="79 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the length of the track.</span>
@@ -13096,7 +13101,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/track.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-25" name="__codelineno-0-25"></a><a href="#__codelineno-0-25"><span class="linenos" data-linenos="25 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-0-26" name="__codelineno-0-26"></a><a href="#__codelineno-0-26"><span class="linenos" data-linenos="26 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the string representation of the track.</span>

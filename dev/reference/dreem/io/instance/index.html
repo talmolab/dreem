@@ -2336,6 +2336,7 @@
     <div class="doc doc-contents ">
 
 
+
         <p>Class representing a single instance to be tracked.</p>
 
 
@@ -2693,7 +2694,7 @@
 
 
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/io/instance.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-64" name="__codelineno-0-64"></a><a href="#__codelineno-0-64"><span class="linenos" data-linenos=" 64 "></span></a><span class="nd">@attrs</span><span class="o">.</span><span class="n">define</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <a id="__codelineno-0-65" name="__codelineno-0-65"></a><a href="#__codelineno-0-65"><span class="linenos" data-linenos=" 65 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">Instance</span><span class="p">:</span>
@@ -4021,7 +4022,7 @@ the list of anchors around which each crop was formed</p>
         <p>Handle dimensionality and more intricate default initializations post-init.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-107" name="__codelineno-0-107"></a><a href="#__codelineno-0-107"><span class="linenos" data-linenos="107 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">__attrs_post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-108" name="__codelineno-0-108"></a><a href="#__codelineno-0-108"><span class="linenos" data-linenos="108 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle dimensionality and more intricate default initializations post-init.&quot;&quot;&quot;</span>
@@ -4067,7 +4068,7 @@ the list of anchors around which each crop was formed</p>
         <p>Return string representation of the Instance.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-132" name="__codelineno-0-132"></a><a href="#__codelineno-0-132"><span class="linenos" data-linenos="132 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-0-133" name="__codelineno-0-133"></a><a href="#__codelineno-0-133"><span class="linenos" data-linenos="133 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return string representation of the Instance.&quot;&quot;&quot;</span>
@@ -4149,7 +4150,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-593" name="__codelineno-0-593"></a><a href="#__codelineno-0-593"><span class="linenos" data-linenos="593 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">add_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">embedding</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-594" name="__codelineno-0-594"></a><a href="#__codelineno-0-594"><span class="linenos" data-linenos="594 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Save embedding to instance embedding dictionary.</span>
@@ -4265,7 +4266,7 @@ the list of anchors around which each crop was formed</p>
     A dreem.Instance object with a pose-centered bbox and no crop.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-166" name="__codelineno-0-166"></a><a href="#__codelineno-0-166"><span class="linenos" data-linenos="166 "></span></a><span class="nd">@classmethod</span>
 <a id="__codelineno-0-167" name="__codelineno-0-167"></a><a href="#__codelineno-0-167"><span class="linenos" data-linenos="167 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">from_slp</span><span class="p">(</span>
@@ -4400,7 +4401,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-570" name="__codelineno-0-570"></a><a href="#__codelineno-0-570"><span class="linenos" data-linenos="570 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_embedding</span><span class="p">(</span>
 <a id="__codelineno-0-571" name="__codelineno-0-571"></a><a href="#__codelineno-0-571"><span class="linenos" data-linenos="571 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">emb_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
@@ -4467,7 +4468,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-416" name="__codelineno-0-416"></a><a href="#__codelineno-0-416"><span class="linenos" data-linenos="416 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_bbox</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-417" name="__codelineno-0-417"></a><a href="#__codelineno-0-417"><span class="linenos" data-linenos="417 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if the instance has a bbox.</span>
@@ -4522,7 +4523,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-510" name="__codelineno-0-510"></a><a href="#__codelineno-0-510"><span class="linenos" data-linenos="510 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_crop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-511" name="__codelineno-0-511"></a><a href="#__codelineno-0-511"><span class="linenos" data-linenos="511 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if the instance has a crop.</span>
@@ -4608,7 +4609,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-559" name="__codelineno-0-559"></a><a href="#__codelineno-0-559"><span class="linenos" data-linenos="559 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-560" name="__codelineno-0-560"></a><a href="#__codelineno-0-560"><span class="linenos" data-linenos="560 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if the instance has embedding type requested.</span>
@@ -4663,7 +4664,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-548" name="__codelineno-0-548"></a><a href="#__codelineno-0-548"><span class="linenos" data-linenos="548 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-549" name="__codelineno-0-549"></a><a href="#__codelineno-0-549"><span class="linenos" data-linenos="549 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if the instance has computed reid features.</span>
@@ -4718,7 +4719,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-344" name="__codelineno-0-344"></a><a href="#__codelineno-0-344"><span class="linenos" data-linenos="344 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_gt_track_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-345" name="__codelineno-0-345"></a><a href="#__codelineno-0-345"><span class="linenos" data-linenos="345 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if instance has a gt track assignment.</span>
@@ -4751,7 +4752,7 @@ the list of anchors around which each crop was formed</p>
 <p>Returns True if the instance has a pose.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-649" name="__codelineno-0-649"></a><a href="#__codelineno-0-649"><span class="linenos" data-linenos="649 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_pose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-650" name="__codelineno-0-650"></a><a href="#__codelineno-0-650"><span class="linenos" data-linenos="650 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if the instance has a pose.</span>
@@ -4804,7 +4805,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-376" name="__codelineno-0-376"></a><a href="#__codelineno-0-376"><span class="linenos" data-linenos="376 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_pred_track_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-377" name="__codelineno-0-377"></a><a href="#__codelineno-0-377"><span class="linenos" data-linenos="377 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine whether instance has predicted track id.</span>
@@ -4890,7 +4891,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-146" name="__codelineno-0-146"></a><a href="#__codelineno-0-146"><span class="linenos" data-linenos="146 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <a id="__codelineno-0-147" name="__codelineno-0-147"></a><a href="#__codelineno-0-147"><span class="linenos" data-linenos="147 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Move instance to different device or change dtype. (See `torch.to` for more info).</span>
@@ -5029,7 +5030,7 @@ the list of anchors around which each crop was formed</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-257" name="__codelineno-0-257"></a><a href="#__codelineno-0-257"><span class="linenos" data-linenos="257 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_h5</span><span class="p">(</span>
 <a id="__codelineno-0-258" name="__codelineno-0-258"></a><a href="#__codelineno-0-258"><span class="linenos" data-linenos="258 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">frame_group</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Group</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span>
@@ -5131,7 +5132,7 @@ the list of anchors around which each crop was formed</p>
     and a track_lookup dictionary to persist tracks.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/instance.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-223" name="__codelineno-0-223"></a><a href="#__codelineno-0-223"><span class="linenos" data-linenos="223 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_slp</span><span class="p">(</span>
 <a id="__codelineno-0-224" name="__codelineno-0-224"></a><a href="#__codelineno-0-224"><span class="linenos" data-linenos="224 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">track_lookup</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">sio</span><span class="o">.</span><span class="n">Track</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>

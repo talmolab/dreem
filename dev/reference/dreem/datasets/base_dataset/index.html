@@ -2338,6 +2338,7 @@
               Bases: <code><span title="torch.utils.data.Dataset">Dataset</span></code></p>
 
 
+
         <p>Base Dataset for microscopy and sleap datasets to override.</p>
 
 
@@ -2437,7 +2438,7 @@
 
 
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/datasets/base_dataset.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-16" name="__codelineno-0-16"></a><a href="#__codelineno-0-16"><span class="linenos" data-linenos=" 16 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">BaseDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17"></a><a href="#__codelineno-0-17"><span class="linenos" data-linenos=" 17 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Base Dataset for microscopy and sleap datasets to override.&quot;&quot;&quot;</span>
@@ -2803,7 +2804,7 @@ or the frame.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/base_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-255" name="__codelineno-0-255"></a><a href="#__codelineno-0-255"><span class="linenos" data-linenos="255 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Frame</span><span class="p">]:</span>
 <a id="__codelineno-0-256" name="__codelineno-0-256"></a><a href="#__codelineno-0-256"><span class="linenos" data-linenos="256 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get an element of the dataset.</span>
@@ -3034,7 +3035,7 @@ cell tracking challenge datasets.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/base_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-19" name="__codelineno-0-19"></a><a href="#__codelineno-0-19"><span class="linenos" data-linenos="19 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a><a href="#__codelineno-0-20"><span class="linenos" data-linenos="20 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -3143,7 +3144,7 @@ cell tracking challenge datasets.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/base_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-236" name="__codelineno-0-236"></a><a href="#__codelineno-0-236"><span class="linenos" data-linenos="236 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <a id="__codelineno-0-237" name="__codelineno-0-237"></a><a href="#__codelineno-0-237"><span class="linenos" data-linenos="237 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the size of the dataset.</span>
@@ -3177,7 +3178,7 @@ containing chunk frames for indexing. This is useful for computational
 efficiency and data shuffling. To be called by subclass <strong>init</strong>()</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/base_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-180" name="__codelineno-0-180"></a><a href="#__codelineno-0-180"><span class="linenos" data-linenos="180 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">create_chunks_other</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-181" name="__codelineno-0-181"></a><a href="#__codelineno-0-181"><span class="linenos" data-linenos="181 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Legacy chunking logic. Does not support unannotated segments.</span>
@@ -3259,7 +3260,7 @@ containing chunk frames for indexing. This is useful for computational
 efficiency and data shuffling. To be called by subclass <strong>init</strong>()</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/base_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-102" name="__codelineno-0-102"></a><a href="#__codelineno-0-102"><span class="linenos" data-linenos="102 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">create_chunks_slp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-103" name="__codelineno-0-103"></a><a href="#__codelineno-0-103"><span class="linenos" data-linenos="103 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get indexing for data.</span>
@@ -3413,7 +3414,7 @@ efficiency and data shuffling. To be called by subclass <strong>init</strong>()<
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/base_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-269" name="__codelineno-0-269"></a><a href="#__codelineno-0-269"><span class="linenos" data-linenos="269 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <a id="__codelineno-0-270" name="__codelineno-0-270"></a><a href="#__codelineno-0-270"><span class="linenos" data-linenos="270 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve label and frame indices given batch index.</span>
@@ -3518,7 +3519,7 @@ efficiency and data shuffling. To be called by subclass <strong>init</strong>()<
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/base_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-282" name="__codelineno-0-282"></a><a href="#__codelineno-0-282"><span class="linenos" data-linenos="282 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_instances</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">frame_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
 <a id="__codelineno-0-283" name="__codelineno-0-283"></a><a href="#__codelineno-0-283"><span class="linenos" data-linenos="283 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Build chunk of frames.</span>
@@ -3607,7 +3608,7 @@ efficiency and data shuffling. To be called by subclass <strong>init</strong>()<
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/base_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-244" name="__codelineno-0-244"></a><a href="#__codelineno-0-244"><span class="linenos" data-linenos="244 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">no_batching_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Frame</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Frame</span><span class="p">]:</span>
 <a id="__codelineno-0-245" name="__codelineno-0-245"></a><a href="#__codelineno-0-245"><span class="linenos" data-linenos="245 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Collate function used to overwrite dataloader batching function.</span>
@@ -3704,7 +3705,7 @@ efficiency and data shuffling. To be called by subclass <strong>init</strong>()<
         <p>Returns: None</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/base_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-84" name="__codelineno-0-84"></a><a href="#__codelineno-0-84"><span class="linenos" data-linenos=" 84 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">process_segments</span><span class="p">(</span>
 <a id="__codelineno-0-85" name="__codelineno-0-85"></a><a href="#__codelineno-0-85"><span class="linenos" data-linenos=" 85 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">segments_to_stitch</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">clip_length</span><span class="p">:</span> <span class="nb">int</span>

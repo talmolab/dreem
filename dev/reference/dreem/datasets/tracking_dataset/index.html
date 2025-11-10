@@ -2338,6 +2338,7 @@
               Bases: <code><span title="pytorch_lightning.LightningDataModule">LightningDataModule</span></code></p>
 
 
+
         <p>Lightning dataset used to load dataloaders for train, test and validation.</p>
 <p>Nice for wrapping around other data formats.</p>
 
@@ -2406,7 +2407,7 @@
 
 
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/datasets/tracking_dataset.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-16" name="__codelineno-0-16"></a><a href="#__codelineno-0-16"><span class="linenos" data-linenos=" 16 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">TrackingDataset</span><span class="p">(</span><span class="n">LightningDataModule</span><span class="p">):</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17"></a><a href="#__codelineno-0-17"><span class="linenos" data-linenos=" 17 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Lightning dataset used to load dataloaders for train, test and validation.</span>
@@ -2650,7 +2651,7 @@
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/tracking_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-22" name="__codelineno-0-22"></a><a href="#__codelineno-0-22"><span class="linenos" data-linenos="22 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 <a id="__codelineno-0-23" name="__codelineno-0-23"></a><a href="#__codelineno-0-23"><span class="linenos" data-linenos="23 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -2699,7 +2700,7 @@
 <p>UNUSED.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/tracking_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-49" name="__codelineno-0-49"></a><a href="#__codelineno-0-49"><span class="linenos" data-linenos="49 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <a id="__codelineno-0-50" name="__codelineno-0-50"></a><a href="#__codelineno-0-50"><span class="linenos" data-linenos="50 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Set up lightning dataset.</span>
@@ -2728,7 +2729,7 @@
 <p>Returns: The test dataloader</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/tracking_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-100" name="__codelineno-0-100"></a><a href="#__codelineno-0-100"><span class="linenos" data-linenos="100 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataLoader</span><span class="p">:</span>
 <a id="__codelineno-0-101" name="__codelineno-0-101"></a><a href="#__codelineno-0-101"><span class="linenos" data-linenos="101 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get.</span>
@@ -2770,7 +2771,7 @@
 <p>Returns: The Training Dataloader.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/tracking_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-56" name="__codelineno-0-56"></a><a href="#__codelineno-0-56"><span class="linenos" data-linenos="56 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">train_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataLoader</span><span class="p">:</span>
 <a id="__codelineno-0-57" name="__codelineno-0-57"></a><a href="#__codelineno-0-57"><span class="linenos" data-linenos="57 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get train_dataloader.</span>
@@ -2816,7 +2817,7 @@
 <p>Returns: The validation dataloader.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/datasets/tracking_dataset.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-80" name="__codelineno-0-80"></a><a href="#__codelineno-0-80"><span class="linenos" data-linenos="80 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">val_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataLoader</span><span class="p">:</span>
 <a id="__codelineno-0-81" name="__codelineno-0-81"></a><a href="#__codelineno-0-81"><span class="linenos" data-linenos="81 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get val dataloader.</span>

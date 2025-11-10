@@ -2554,7 +2554,7 @@
     An N_t x N association matrix</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/post_processing.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-245" name="__codelineno-0-245"></a><a href="#__codelineno-0-245"><span class="linenos" data-linenos="245 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">filter_max_center_dist</span><span class="p">(</span>
 <a id="__codelineno-0-246" name="__codelineno-0-246"></a><a href="#__codelineno-0-246"><span class="linenos" data-linenos="246 "></span></a>    <span class="n">asso_output</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -2750,7 +2750,7 @@ if the principal axis was successfully computed.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/post_processing.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-157" name="__codelineno-0-157"></a><a href="#__codelineno-0-157"><span class="linenos" data-linenos="157 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_principal_axis_with_fallback</span><span class="p">(</span>
 <a id="__codelineno-0-158" name="__codelineno-0-158"></a><a href="#__codelineno-0-158"><span class="linenos" data-linenos="158 "></span></a>    <span class="n">instance</span><span class="p">,</span> <span class="n">front_nodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">back_nodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">crop</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">frame_id</span>
@@ -2882,7 +2882,7 @@ if the principal axis was successfully computed.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/post_processing.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-188" name="__codelineno-0-188"></a><a href="#__codelineno-0-188"><span class="linenos" data-linenos="188 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">register_principal_axis_method</span><span class="p">(</span>
 <a id="__codelineno-0-189" name="__codelineno-0-189"></a><a href="#__codelineno-0-189"><span class="linenos" data-linenos="189 "></span></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -3004,7 +3004,7 @@ if the principal axis was successfully computed.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/post_processing.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-210" name="__codelineno-0-210"></a><a href="#__codelineno-0-210"><span class="linenos" data-linenos="210 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">weight_by_angle_diff</span><span class="p">(</span>
 <a id="__codelineno-0-211" name="__codelineno-0-211"></a><a href="#__codelineno-0-211"><span class="linenos" data-linenos="211 "></span></a>    <span class="n">asso_output</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -3147,7 +3147,7 @@ if the principal axis was successfully computed.</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/post_processing.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-12" name="__codelineno-0-12"></a><a href="#__codelineno-0-12"><span class="linenos" data-linenos="12 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">weight_iou</span><span class="p">(</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13"></a><a href="#__codelineno-0-13"><span class="linenos" data-linenos="13 "></span></a>    <span class="n">asso_output</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">last_ious</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span>

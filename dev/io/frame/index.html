@@ -2876,6 +2876,7 @@
     <div class="doc doc-contents first">
 
 
+
         <p>Data structure containing metadata for a single frame of a video.</p>
 
 
@@ -3251,7 +3252,7 @@ or a single association matrix.</p>
 
 
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/io/frame.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-40" name="__codelineno-0-40"></a><a href="#__codelineno-0-40"><span class="linenos" data-linenos=" 40 "></span></a><span class="nd">@attrs</span><span class="o">.</span><span class="n">define</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <a id="__codelineno-0-41" name="__codelineno-0-41"></a><a href="#__codelineno-0-41"><span class="linenos" data-linenos=" 41 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">Frame</span><span class="p">:</span>
@@ -4301,7 +4302,7 @@ if it is not possible to create the sio.Video</p>
         <p>Handle more intricate default initializations and moving to device.</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-75" name="__codelineno-0-75"></a><a href="#__codelineno-0-75"><span class="linenos" data-linenos="75 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">__attrs_post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-76" name="__codelineno-0-76"></a><a href="#__codelineno-0-76"><span class="linenos" data-linenos="76 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle more intricate default initializations and moving to device.&quot;&quot;&quot;</span>
@@ -4355,7 +4356,7 @@ if it is not possible to create the sio.Video</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-85" name="__codelineno-0-85"></a><a href="#__codelineno-0-85"><span class="linenos" data-linenos=" 85 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-0-86" name="__codelineno-0-86"></a><a href="#__codelineno-0-86"><span class="linenos" data-linenos=" 86 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return String representation of the Frame.</span>
@@ -4444,7 +4445,7 @@ if it is not possible to create the sio.Video</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-495" name="__codelineno-0-495"></a><a href="#__codelineno-0-495"><span class="linenos" data-linenos="495 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">add_traj_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">traj_score</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-496" name="__codelineno-0-496"></a><a href="#__codelineno-0-496"><span class="linenos" data-linenos="496 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Add trajectory score to dictionary.</span>
@@ -4579,7 +4580,7 @@ if it is not possible to create the sio.Video</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-136" name="__codelineno-0-136"></a><a href="#__codelineno-0-136"><span class="linenos" data-linenos="136 "></span></a><span class="nd">@classmethod</span>
 <a id="__codelineno-0-137" name="__codelineno-0-137"></a><a href="#__codelineno-0-137"><span class="linenos" data-linenos="137 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">from_slp</span><span class="p">(</span>
@@ -4662,7 +4663,7 @@ if it is not possible to create the sio.Video</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-615" name="__codelineno-0-615"></a><a href="#__codelineno-0-615"><span class="linenos" data-linenos="615 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_anchors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <a id="__codelineno-0-616" name="__codelineno-0-616"></a><a href="#__codelineno-0-616"><span class="linenos" data-linenos="616 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the anchor names of instances in the frame.</span>
@@ -4714,7 +4715,7 @@ if it is not possible to create the sio.Video</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-564" name="__codelineno-0-564"></a><a href="#__codelineno-0-564"><span class="linenos" data-linenos="564 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_bboxes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-565" name="__codelineno-0-565"></a><a href="#__codelineno-0-565"><span class="linenos" data-linenos="565 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the bounding boxes of all instances in the frame.</span>
@@ -4769,7 +4770,7 @@ points: an n_instances x 2 array containing the centroids</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-623" name="__codelineno-0-623"></a><a href="#__codelineno-0-623"><span class="linenos" data-linenos="623 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_centroids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">ArrayLike</span><span class="p">]:</span>
 <a id="__codelineno-0-624" name="__codelineno-0-624"></a><a href="#__codelineno-0-624"><span class="linenos" data-linenos="624 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the centroids around which each instance&#39;s crop was formed.</span>
@@ -4834,7 +4835,7 @@ points: an n_instances x 2 array containing the centroids</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-584" name="__codelineno-0-584"></a><a href="#__codelineno-0-584"><span class="linenos" data-linenos="584 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_crops</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-585" name="__codelineno-0-585"></a><a href="#__codelineno-0-585"><span class="linenos" data-linenos="585 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the crops of all instances in the frame.</span>
@@ -4889,7 +4890,7 @@ points: an n_instances x 2 array containing the centroids</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-605" name="__codelineno-0-605"></a><a href="#__codelineno-0-605"><span class="linenos" data-linenos="605 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-606" name="__codelineno-0-606"></a><a href="#__codelineno-0-606"><span class="linenos" data-linenos="606 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the reid feature vectors of all instances in the frame.</span>
@@ -4943,7 +4944,7 @@ points: an n_instances x 2 array containing the centroids</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-524" name="__codelineno-0-524"></a><a href="#__codelineno-0-524"><span class="linenos" data-linenos="524 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_gt_track_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-525" name="__codelineno-0-525"></a><a href="#__codelineno-0-525"><span class="linenos" data-linenos="525 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the gt track ids of all instances in the frame.</span>
@@ -4997,7 +4998,7 @@ points: an n_instances x 2 array containing the centroids</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-544" name="__codelineno-0-544"></a><a href="#__codelineno-0-544"><span class="linenos" data-linenos="544 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_pred_track_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-545" name="__codelineno-0-545"></a><a href="#__codelineno-0-545"><span class="linenos" data-linenos="545 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the pred track ids of all instances in the frame.</span>
@@ -5087,7 +5088,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-474" name="__codelineno-0-474"></a><a href="#__codelineno-0-474"><span class="linenos" data-linenos="474 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_traj_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="n">ArrayLike</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-475" name="__codelineno-0-475"></a><a href="#__codelineno-0-475"><span class="linenos" data-linenos="475 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get dictionary containing association matrix between instances and trajectories along postprocessing pipeline.</span>
@@ -5152,7 +5153,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-427" name="__codelineno-0-427"></a><a href="#__codelineno-0-427"><span class="linenos" data-linenos="427 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_asso_output</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-428" name="__codelineno-0-428"></a><a href="#__codelineno-0-428"><span class="linenos" data-linenos="428 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine whether the frame has an association matrix computed.</span>
@@ -5206,7 +5207,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-554" name="__codelineno-0-554"></a><a href="#__codelineno-0-554"><span class="linenos" data-linenos="554 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_bboxes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-555" name="__codelineno-0-555"></a><a href="#__codelineno-0-555"><span class="linenos" data-linenos="555 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any of frames instances has a bounding box.</span>
@@ -5260,7 +5261,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-574" name="__codelineno-0-574"></a><a href="#__codelineno-0-574"><span class="linenos" data-linenos="574 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_crops</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-575" name="__codelineno-0-575"></a><a href="#__codelineno-0-575"><span class="linenos" data-linenos="575 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any of frames instances has a crop.</span>
@@ -5314,7 +5315,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-595" name="__codelineno-0-595"></a><a href="#__codelineno-0-595"><span class="linenos" data-linenos="595 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-596" name="__codelineno-0-596"></a><a href="#__codelineno-0-596"><span class="linenos" data-linenos="596 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any of frames instances has reid features already computed.</span>
@@ -5368,7 +5369,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-514" name="__codelineno-0-514"></a><a href="#__codelineno-0-514"><span class="linenos" data-linenos="514 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_gt_track_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-515" name="__codelineno-0-515"></a><a href="#__codelineno-0-515"><span class="linenos" data-linenos="515 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any of frames instances has a gt track id.</span>
@@ -5422,7 +5423,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-399" name="__codelineno-0-399"></a><a href="#__codelineno-0-399"><span class="linenos" data-linenos="399 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_instances</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-400" name="__codelineno-0-400"></a><a href="#__codelineno-0-400"><span class="linenos" data-linenos="400 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine whether there are instances in the frame.</span>
@@ -5476,7 +5477,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-464" name="__codelineno-0-464"></a><a href="#__codelineno-0-464"><span class="linenos" data-linenos="464 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_matches</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-465" name="__codelineno-0-465"></a><a href="#__codelineno-0-465"><span class="linenos" data-linenos="465 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check whether or not matches have been computed for frame.</span>
@@ -5530,7 +5531,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-534" name="__codelineno-0-534"></a><a href="#__codelineno-0-534"><span class="linenos" data-linenos="534 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_pred_track_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-535" name="__codelineno-0-535"></a><a href="#__codelineno-0-535"><span class="linenos" data-linenos="535 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any of frames instances has a pred track id.</span>
@@ -5584,7 +5585,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-504" name="__codelineno-0-504"></a><a href="#__codelineno-0-504"><span class="linenos" data-linenos="504 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">has_traj_score</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-505" name="__codelineno-0-505"></a><a href="#__codelineno-0-505"><span class="linenos" data-linenos="505 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any trajectory association matrix has been saved.</span>
@@ -5669,7 +5670,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-106" name="__codelineno-0-106"></a><a href="#__codelineno-0-106"><span class="linenos" data-linenos="106 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <a id="__codelineno-0-107" name="__codelineno-0-107"></a><a href="#__codelineno-0-107"><span class="linenos" data-linenos="107 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Move frame to different device or dtype (See `torch.to` for more info).</span>
@@ -5785,7 +5786,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
     An h5py group containing the frame</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-213" name="__codelineno-0-213"></a><a href="#__codelineno-0-213"><span class="linenos" data-linenos="213 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_h5</span><span class="p">(</span>
 <a id="__codelineno-0-214" name="__codelineno-0-214"></a><a href="#__codelineno-0-214"><span class="linenos" data-linenos="214 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -5902,7 +5903,7 @@ Can be one of {None, 'initial', 'decay_time', 'max_center_dist', 'iou', 'final'}
 a lookup dictionary containing the track_id and sio.Track for persistence</p>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/frame.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-175" name="__codelineno-0-175"></a><a href="#__codelineno-0-175"><span class="linenos" data-linenos="175 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_slp</span><span class="p">(</span>
 <a id="__codelineno-0-176" name="__codelineno-0-176"></a><a href="#__codelineno-0-176"><span class="linenos" data-linenos="176 "></span></a>    <span class="bp">self</span><span class="p">,</span>

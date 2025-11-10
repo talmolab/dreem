@@ -2338,6 +2338,7 @@
               Bases: <code><span title="torch.nn.Module">Module</span></code></p>
 
 
+
         <p>Default association loss used for training GTR model.</p>
 
 
@@ -2389,7 +2390,7 @@
 
 
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/training/losses.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-19" name="__codelineno-0-19"></a><a href="#__codelineno-0-19"><span class="linenos" data-linenos=" 19 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">AssoLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a><a href="#__codelineno-0-20"><span class="linenos" data-linenos=" 20 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Default association loss used for training GTR model.&quot;&quot;&quot;</span>
@@ -2722,7 +2723,7 @@
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/training/losses.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-22" name="__codelineno-0-22"></a><a href="#__codelineno-0-22"><span class="linenos" data-linenos="22 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 <a id="__codelineno-0-23" name="__codelineno-0-23"></a><a href="#__codelineno-0-23"><span class="linenos" data-linenos="23 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -2867,7 +2868,7 @@ detection (K x 3) or (N,)</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/training/losses.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-179" name="__codelineno-0-179"></a><a href="#__codelineno-0-179"><span class="linenos" data-linenos="179 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">detr_asso_loss</span><span class="p">(</span>
 <a id="__codelineno-0-180" name="__codelineno-0-180"></a><a href="#__codelineno-0-180"><span class="linenos" data-linenos="180 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -3009,7 +3010,7 @@ detection (K x 3) or (N,)</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/training/losses.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-41" name="__codelineno-0-41"></a><a href="#__codelineno-0-41"><span class="linenos" data-linenos=" 41 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
 <a id="__codelineno-0-42" name="__codelineno-0-42"></a><a href="#__codelineno-0-42"><span class="linenos" data-linenos=" 42 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">asso_preds</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">frames</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Frame&quot;</span><span class="p">]</span>

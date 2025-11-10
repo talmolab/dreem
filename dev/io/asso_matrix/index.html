@@ -2408,6 +2408,7 @@
     <div class="doc doc-contents first">
 
 
+
         <p>Class representing the associations between detections.</p>
 
 
@@ -2546,7 +2547,7 @@
 
 
 
-              <details class="quote">
+              <details class="mkdocstrings-source">
                 <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
                 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-16" name="__codelineno-0-16"></a><a href="#__codelineno-0-16"><span class="linenos" data-linenos=" 16 "></span></a><span class="nd">@attrs</span><span class="o">.</span><span class="n">define</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17"></a><a href="#__codelineno-0-17"><span class="linenos" data-linenos=" 17 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">AssociationMatrix</span><span class="p">:</span>
@@ -2990,7 +2991,7 @@ Can either be a single int/instance or a list of int/instances</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-255" name="__codelineno-0-255"></a><a href="#__codelineno-0-255"><span class="linenos" data-linenos="255 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">__getindices__</span><span class="p">(</span>
 <a id="__codelineno-0-256" name="__codelineno-0-256"></a><a href="#__codelineno-0-256"><span class="linenos" data-linenos="256 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -3111,7 +3112,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-226" name="__codelineno-0-226"></a><a href="#__codelineno-0-226"><span class="linenos" data-linenos="226 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span>
 <a id="__codelineno-0-227" name="__codelineno-0-227"></a><a href="#__codelineno-0-227"><span class="linenos" data-linenos="227 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">inds</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">Instance</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">Instance</span><span class="p">]]</span>
@@ -3184,7 +3185,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-68" name="__codelineno-0-68"></a><a href="#__codelineno-0-68"><span class="linenos" data-linenos="68 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-0-69" name="__codelineno-0-69"></a><a href="#__codelineno-0-69"><span class="linenos" data-linenos="69 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the string representation of the Association Matrix.</span>
@@ -3287,7 +3288,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-298" name="__codelineno-0-298"></a><a href="#__codelineno-0-298"><span class="linenos" data-linenos="298 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">get_tracks</span><span class="p">(</span>
 <a id="__codelineno-0-299" name="__codelineno-0-299"></a><a href="#__codelineno-0-299"><span class="linenos" data-linenos="299 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Instance&quot;</span><span class="p">],</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pred&quot;</span>
@@ -3372,7 +3373,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-80" name="__codelineno-0-80"></a><a href="#__codelineno-0-80"><span class="linenos" data-linenos="80 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <a id="__codelineno-0-81" name="__codelineno-0-81"></a><a href="#__codelineno-0-81"><span class="linenos" data-linenos="81 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert association matrix to a numpy array.</span>
@@ -3523,7 +3524,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-168" name="__codelineno-0-168"></a><a href="#__codelineno-0-168"><span class="linenos" data-linenos="168 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">reduce</span><span class="p">(</span>
 <a id="__codelineno-0-169" name="__codelineno-0-169"></a><a href="#__codelineno-0-169"><span class="linenos" data-linenos="169 "></span></a>    <span class="bp">self</span><span class="p">,</span>
@@ -3656,7 +3657,7 @@ Indices can be either:
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-339" name="__codelineno-0-339"></a><a href="#__codelineno-0-339"><span class="linenos" data-linenos="339 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <a id="__codelineno-0-340" name="__codelineno-0-340"></a><a href="#__codelineno-0-340"><span class="linenos" data-linenos="340 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Move instance to different device or change dtype. (See `torch.to` for more info).</span>
@@ -3774,7 +3775,7 @@ Otherwise label by the ref_instance indices</p>
     </table>
 
 
-            <details class="quote">
+            <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/io/association_matrix.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-90" name="__codelineno-0-90"></a><a href="#__codelineno-0-90"><span class="linenos" data-linenos=" 90 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_dataframe</span><span class="p">(</span>
 <a id="__codelineno-0-91" name="__codelineno-0-91"></a><a href="#__codelineno-0-91"><span class="linenos" data-linenos=" 91 "></span></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">row_labels</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gt&quot;</span><span class="p">,</span> <span class="n">col_labels</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gt&quot;</span>
