@@ -84,8 +84,10 @@ class GlobalTrackingTransformer(torch.nn.Module):
         )
 
     def forward(
-        self, ref_instances: list["Instance"], query_instances: list["Instance"] = None,
-        save_crops: bool = False
+        self,
+        ref_instances: list["Instance"],
+        query_instances: list["Instance"] = None,
+        save_crops: bool = False,
     ) -> list["AssociationMatrix"]:
         """Execute forward pass of GTR Model to get asso matrix.
 
@@ -107,7 +109,10 @@ class GlobalTrackingTransformer(torch.nn.Module):
         return asso_preds
 
     def extract_features(
-        self, instances: list["Instance"], force_recompute: bool = False, save_crops: bool = False
+        self,
+        instances: list["Instance"],
+        force_recompute: bool = False,
+        save_crops: bool = False,
     ) -> None:
         """Extract features from instances using visual encoder backbone.
 
@@ -135,5 +140,5 @@ class GlobalTrackingTransformer(torch.nn.Module):
 
         for i, z_i in enumerate(features):
             instances_to_compute[i].features = z_i
-            if not save_crops: # crops are an attribute of instance by default
+            if not save_crops:  # crops are an attribute of instance by default
                 instances_to_compute[i].crop = None

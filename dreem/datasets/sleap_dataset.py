@@ -509,10 +509,18 @@ class SleapDataset(BaseDataset):
                     if pair[0] in discard or pair[1] in discard:
                         continue
                     # Collect the 'pose' dictionary values for both instances and stack them into tensors
-                    inst_1_pose_tensor = torch.stack([torch.tensor(v) for v in instances[pair[0]].pose.values()])
-                    inst_2_pose_tensor = torch.stack([torch.tensor(v) for v in instances[pair[1]].pose.values()])
-                    inst_1_keypoints = len(inst_1_pose_tensor[~inst_1_pose_tensor.isnan().any(dim=1)])
-                    inst_2_keypoints = len(inst_2_pose_tensor[~inst_2_pose_tensor.isnan().any(dim=1)])
+                    inst_1_pose_tensor = torch.stack(
+                        [torch.tensor(v) for v in instances[pair[0]].pose.values()]
+                    )
+                    inst_2_pose_tensor = torch.stack(
+                        [torch.tensor(v) for v in instances[pair[1]].pose.values()]
+                    )
+                    inst_1_keypoints = len(
+                        inst_1_pose_tensor[~inst_1_pose_tensor.isnan().any(dim=1)]
+                    )
+                    inst_2_keypoints = len(
+                        inst_2_pose_tensor[~inst_2_pose_tensor.isnan().any(dim=1)]
+                    )
                     # break ties by keeping the first instance
                     if inst_1_keypoints >= inst_2_keypoints:
                         id_to_discard = pair[1]

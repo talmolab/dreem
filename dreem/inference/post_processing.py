@@ -3,9 +3,14 @@
 import logging
 from typing import Callable
 import torch
-from dreem.datasets.data_utils import get_pose_principal_axis, gather_pose_array, is_pose_centroid_only
+from dreem.datasets.data_utils import (
+    get_pose_principal_axis,
+    gather_pose_array,
+    is_pose_centroid_only,
+)
 from scipy import ndimage
 import numpy as np
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,6 +44,7 @@ def weight_iou(
             )
     return asso_output
 
+
 # Registry of principal axis computation methods
 # Each entry: (can_compute_func, compute_func)
 _PRINCIPAL_AXIS_METHODS = []
@@ -56,11 +62,20 @@ def _can_compute_with_prompts(instance, **kwargs) -> bool:
     back_nodes = kwargs.get("back_nodes")
     # Must have more than just centroid
     if is_pose_centroid_only(instance):
-        logger.debug(f"Pose is only centroid. Cannot compute principal axis with orientation prompts.")
+        logger.debug(
+            f"Pose is only centroid. Cannot compute principal axis with orientation prompts."
+        )
         return False
     # Must have valid orientation prompt
-    if front_nodes is None or back_nodes is None or len(front_nodes) < 1 or len(back_nodes) < 1:
-        logger.debug(f"Orientation prompt is not provided or is not valid. Cannot compute principal axis with orientation prompts.")
+    if (
+        front_nodes is None
+        or back_nodes is None
+        or len(front_nodes) < 1
+        or len(back_nodes) < 1
+    ):
+        logger.debug(
+            f"Orientation prompt is not provided or is not valid. Cannot compute principal axis with orientation prompts."
+        )
         return False
     # Both nodes must exist
     front = None
@@ -76,8 +91,15 @@ def _can_compute_with_prompts(instance, **kwargs) -> bool:
     # Both nodes must be valid (non-NaN)
     front_tensor = torch.tensor(front)
     back_tensor = torch.tensor(back)
-    if front is None or back is None or torch.isnan(front_tensor).any() or torch.isnan(back_tensor).any():
-        logger.debug(f"Orientation prompt nodes not visible. Cannot compute principal axis with orientation prompts.")
+    if (
+        front is None
+        or back is None
+        or torch.isnan(front_tensor).any()
+        or torch.isnan(back_tensor).any()
+    ):
+        logger.debug(
+            f"Orientation prompt nodes not visible. Cannot compute principal axis with orientation prompts."
+        )
         return False
     return not (torch.isnan(front_tensor).any() or torch.isnan(back_tensor).any())
 
@@ -106,7 +128,9 @@ def _can_compute_with_pca(instance, **kwargs) -> bool:
     """Check if PCA method can be used (always available as fallback)."""
     result = not is_pose_centroid_only(instance)
     if not result:
-        logger.debug(f"PCA method cannot be used. Cannot compute principal axis with PCA.")
+        logger.debug(
+            f"PCA method cannot be used. Cannot compute principal axis with PCA."
+        )
     return result
 
 
@@ -126,36 +150,48 @@ def _can_compute_with_img_grad(instance, **kwargs) -> bool:
     crop = kwargs.get("crop")
     result = is_pose_centroid_only(instance) and crop is not None and len(crop) > 0
     if not result:
-        logger.debug(f"Cannot compute principal axis with image gradient. Pose must be only centroid, and crop must be available.")
+        logger.debug(
+            f"Cannot compute principal axis with image gradient. Pose must be only centroid, and crop must be available."
+        )
     return result
 
 
 def _compute_with_img_grad(instance, **kwargs) -> torch.Tensor:
     """Compute principal axis using image gradient."""
     crop = kwargs.get("crop")
-    crop = crop.squeeze().permute(1,2,0).numpy()
+    crop = crop.squeeze().permute(1, 2, 0).numpy()
     Ix = ndimage.sobel(crop, axis=1)
     Iy = ndimage.sobel(crop, axis=0)
-    Ixx = (Ix*Ix).mean()
-    Iyy = (Iy*Iy).mean()
-    Ixy = (Ix*Iy).mean()
+    Ixx = (Ix * Ix).mean()
+    Iyy = (Iy * Iy).mean()
+    Ixy = (Ix * Iy).mean()
     covar_matrix = np.array([[Ixx, Ixy], [Ixy, Iyy]])
     eigvals, eigvecs = np.linalg.eig(covar_matrix)
     idx = eigvals.argsort()[::-1]
     eigvals = eigvals[idx]
     eigvecs = eigvecs[:, idx]
-    return torch.as_tensor(eigvecs[:, 1], dtype=torch.float32) # smaller eigval is tangent to instance
+    return torch.as_tensor(
+        eigvecs[:, 1], dtype=torch.float32
+    )  # smaller eigval is tangent to instance
+
 
 # Register methods in priority order
-_PRINCIPAL_AXIS_METHODS.extend([
-    ("orientation_prompt", _can_compute_with_prompts, _compute_with_prompts),
-    ("img_grad", _can_compute_with_img_grad, _compute_with_img_grad),
-    ("pca", _can_compute_with_pca, _compute_with_pca),
-])
+_PRINCIPAL_AXIS_METHODS.extend(
+    [
+        ("orientation_prompt", _can_compute_with_prompts, _compute_with_prompts),
+        ("img_grad", _can_compute_with_img_grad, _compute_with_img_grad),
+        ("pca", _can_compute_with_pca, _compute_with_pca),
+    ]
+)
 
 
 def get_principal_axis_with_fallback(
-    instance, front_nodes: list[str] | None, back_nodes: list[str] | None, crop: torch.Tensor | None, logger, frame_id
+    instance,
+    front_nodes: list[str] | None,
+    back_nodes: list[str] | None,
+    crop: torch.Tensor | None,
+    logger,
+    frame_id,
 ) -> tuple[torch.Tensor, bool]:
     """Compute principal axis with automatic fallback.
 
@@ -173,9 +209,7 @@ def get_principal_axis_with_fallback(
         Tuple of (principal_axis_vector, success) where success indicates
         if the principal axis was successfully computed.
     """
-    kwargs = {"front_nodes": front_nodes,
-              "back_nodes": back_nodes,
-              "crop": crop}
+    kwargs = {"front_nodes": front_nodes, "back_nodes": back_nodes, "crop": crop}
 
     for method_name, can_compute, compute in _PRINCIPAL_AXIS_METHODS:
         if can_compute(instance, **kwargs):
@@ -186,10 +220,7 @@ def get_principal_axis_with_fallback(
 
 
 def register_principal_axis_method(
-    name: str,
-    can_compute: Callable,
-    compute: Callable,
-    priority: int | None = None
+    name: str, can_compute: Callable, compute: Callable, priority: int | None = None
 ) -> None:
     """Register a new principal axis computation method.
 
@@ -206,6 +237,7 @@ def register_principal_axis_method(
         _PRINCIPAL_AXIS_METHODS.append(entry)
     else:
         _PRINCIPAL_AXIS_METHODS.insert(priority, entry)
+
 
 def weight_by_angle_diff(
     asso_output: torch.Tensor,
@@ -224,18 +256,29 @@ def weight_by_angle_diff(
     assert query_principal_axes is not None and last_principal_axes is not None, (
         "Need `query_principal_axes`, and `last_principal_axes` to weight by angle difference"
     )
-    dot = (query_principal_axes[:,None,:] * last_principal_axes[None,:,:]).sum(dim=-1) # (q, nq)
+    dot = (query_principal_axes[:, None, :] * last_principal_axes[None, :, :]).sum(
+        dim=-1
+    )  # (q, nq)
     # cross product is scalar in 2D
-    cross_z = query_principal_axes[:,None, 0] * last_principal_axes[None,:, 1] - query_principal_axes[:,None, 1] * last_principal_axes[None,:, 0] # (q, nq)
+    cross_z = (
+        query_principal_axes[:, None, 0] * last_principal_axes[None, :, 1]
+        - query_principal_axes[:, None, 1] * last_principal_axes[None, :, 0]
+    )  # (q, nq)
     # product of norms cancels out in arctan so no need to calculate
     angle_diff = torch.abs(torch.atan2(cross_z, dot))
     # wrap angle diff to [0, pi/2] since there is no head/tail disambiguation in general
-    angle_diff = torch.where(angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff)
+    angle_diff = torch.where(
+        angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff
+    )
     if angle_diff.dim() == 1:
         angle_diff = angle_diff.unsqueeze(0)
-    weight = asso_output.mean(dim=1)  # row wise aggregation of association scores; used to weight the angle diff
-    penalty = torch.where(angle_diff > max_angle_diff, angle_diff - max_angle_diff, 0)
-    scale = weight # / (penalty.mean(dim=1) + 1e-8)
+    weight = asso_output.mean(
+        dim=1
+    )  # row wise aggregation of association scores; used to weight the angle diff
+    penalty = torch.where(
+        angle_diff > max_angle_diff, angle_diff - max_angle_diff, 0
+    )  # gracefully handles nans by settingn diff to 0
+    scale = weight  # / (penalty.mean(dim=1) + 1e-8)
     # normalize angle difference to [0, 1]
     scaled_penalty = -scale.unsqueeze(-1) * penalty
     asso_out = asso_output + scaled_penalty
@@ -262,11 +305,16 @@ def filter_max_center_dist(
     Returns:
         An N_t x N association matrix
     """
-    assert query_boxes_px is not None and nonquery_boxes_px is not None and h is not None and w is not None, (
+    assert (
+        query_boxes_px is not None
+        and nonquery_boxes_px is not None
+        and h is not None
+        and w is not None
+    ), (
         "Need `query_boxes_px`, `nonquery_boxes_px`, and `h`, `w` to filter by `max_center_dist`"
     )
-    diag_length = (h**2 + w**2)**(1/2) # diagonal length of the image in pixels
-    max_center_dist_normalized = max_center_dist/diag_length
+    diag_length = (h**2 + w**2) ** (1 / 2)  # diagonal length of the image in pixels
+    max_center_dist_normalized = max_center_dist / diag_length
     k_ct = (query_boxes_px[:, :, :2] + query_boxes_px[:, :, 2:]) / 2
     # nonquery boxes are the most recent occurrence of each instance; could be many frames ago
     nonk_ct = (nonquery_boxes_px[:, :, :2] + nonquery_boxes_px[:, :, 2:]) / 2
@@ -274,12 +322,14 @@ def filter_max_center_dist(
     dist = ((k_ct[:, None, :, :] - nonk_ct[None, :, :, :]) ** 2).sum(dim=-1) ** (
         1 / 2
     )  # n_k x n_nonk
-    dist = dist.squeeze()/diag_length # n_k x n_nonk
-    if dist.dim() == 1:
+    dist = dist.squeeze() / diag_length  # n_k x n_nonk
+    while dist.dim() < 2:
         dist = dist.unsqueeze(0)
     asso_scale = asso_output.mean(dim=1)
-    penalty = torch.where(dist > max_center_dist_normalized, dist - max_center_dist_normalized, 0) # n_k x n_nonk
+    penalty = torch.where(
+        dist > max_center_dist_normalized, dist - max_center_dist_normalized, 0
+    )  # n_k x n_nonk
     scale = asso_scale / (penalty.mean(dim=1) + 1e-8)
-    scaled_penalty = -scale.unsqueeze(-1) * penalty   # n_k x n_nonk
+    scaled_penalty = -scale.unsqueeze(-1) * penalty  # n_k x n_nonk
     asso_out = asso_output + scaled_penalty
     return asso_out

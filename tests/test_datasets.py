@@ -335,6 +335,7 @@ def test_sleap_dataset_nms_retains_instances_below_threshold(two_flies_overlappi
     assert len(frame0.instances) == 3
     assert len(frame1.instances) == 3
 
+
 def test_sleap_dataset_nms_off_without_arg(two_flies_overlapping):
     """NMS should be off without max_detection_overlap argument."""
     clip_length = 16
@@ -354,6 +355,7 @@ def test_sleap_dataset_nms_off_without_arg(two_flies_overlapping):
     frame1 = frames[1]
     assert len(frame0.instances) == 3
     assert len(frame1.instances) == 3
+
 
 def test_icy_dataset(ten_icy_particles):
     """Test icy dataset logic.

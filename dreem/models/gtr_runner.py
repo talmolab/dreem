@@ -159,9 +159,7 @@ class GTRRunner(LightningModule):
             None
         """
         frames_pred = self.tracker(self.model, test_batch[0])
-        self.test_results["preds"].extend(
-            [frame.to("cpu") for frame in frames_pred]
-        )
+        self.test_results["preds"].extend([frame.to("cpu") for frame in frames_pred])
         self.log_metrics(None, len(test_batch[0]), "test")
         return None
 
@@ -269,17 +267,24 @@ class GTRRunner(LightningModule):
     def setup_eval(self, eval_cfg: DictConfig):
         from dreem.inference.tracker import Tracker
 
-        self.tracker_cfg = eval_cfg.cfg.tracker
+        save_frame_meta = eval_cfg.cfg.get("save_frame_meta", False)
+        self.tracker_cfg = eval_cfg.get_tracker_cfg()
+        self.tracker_cfg["enable_crop_saving"] = (
+            save_frame_meta  # to save frame metadata, need to disable crop=None in GTR (memory saving)
+        )
         self.tracker = Tracker(**self.tracker_cfg)
         logger.info("Using the following tracker:")
         logger.info(self.tracker)
         self.metrics["test"] = eval_cfg.get("metrics", {}).get("test", "all")
         logger.info("Computing the following metrics:")
         logger.info(self.metrics["test"])
-        save_frame_meta = eval_cfg.cfg.get("save_frame_meta", False)
         self.test_results["save_frame_meta"] = save_frame_meta
         self.test_results["save_path"] = eval_cfg.get("outdir", ".")
         os.makedirs(self.test_results["save_path"], exist_ok=True)
+        overrides_dict = {
+            "max_tracks": self.tracker_cfg.get("max_tracks", None),
+        }
+        return overrides_dict
 
     def on_test_end(self):
         """Run inference and metrics pipeline to compute metrics for test set.
@@ -338,7 +343,12 @@ class GTRRunner(LightningModule):
                     mot_summary = value[0]
                     frame_switch_map = value[1]
                     motevents = value[2]
-                    motevents.to_csv(os.path.join(self.test_results["save_path"], f"{vid_name}.motevents.csv"), index=False)
+                    motevents.to_csv(
+                        os.path.join(
+                            self.test_results["save_path"], f"{vid_name}.motevents.csv"
+                        ),
+                        index=False,
+                    )
                     mot_summary_group = vid_group.require_group("mot_summary")
                     # Loop through each row in mot_summary and save as attributes
                     for _, row in mot_summary.iterrows():

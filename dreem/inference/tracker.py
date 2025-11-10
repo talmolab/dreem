@@ -34,8 +34,8 @@ class Tracker:
         temperature: float = 0.1,
         max_angle_diff: float = 0.0,
         front_nodes: list[str] | None = None,
-        enable_crop_saving: bool = False,
         back_nodes: list[str] | None = None,
+        enable_crop_saving: bool = False,
         **kwargs,
     ):
         """Initialize a tracker to run inference.

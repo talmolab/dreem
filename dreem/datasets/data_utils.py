@@ -92,6 +92,7 @@ def load_slp(labels_path: str, open_videos: bool = True) -> Labels:
 
     return labels, annotated_segments
 
+
 def is_pose_centroid_only(pose):
     """Check if a pose contains only a single key named "centroid".
 
@@ -105,6 +106,7 @@ def is_pose_centroid_only(pose):
         return True
     return False
 
+
 # Collate query_poses into a torch tensor of shape (N, num_keys, 2)
 # Assume each query_poses[i] is a dict {key: value}, where value is a 2-vector
 def gather_pose_array(poses):
@@ -115,6 +117,7 @@ def gather_pose_array(poses):
         for j, node_name in enumerate(instance.keys()):
             pose_arr[i, j, :] = torch.tensor(instance[node_name])
     return pose_arr
+
 
 def pad_bbox(bbox: ArrayLike, padding: int = 16) -> torch.Tensor:
     """Pad bounding box coordinates.
@@ -184,6 +187,7 @@ def get_mask_from_keypoints(
     mask = torch.from_numpy(mask.astype(np.uint8))
     return mask
 
+
 def get_pose_principal_axis(pose_arr: torch.Tensor) -> torch.Tensor:
     """Get the principal axis of a pose.
 
@@ -201,6 +205,7 @@ def get_pose_principal_axis(pose_arr: torch.Tensor) -> torch.Tensor:
         U, S, Vt = torch.linalg.svd(instance_filt - instance_filt.mean(dim=0))
         principal_axes.append(Vt[:, 0])
     return torch.stack(principal_axes)
+
 
 def pad_variable_size_crops(instance, target_size):
     """Pad or crop an instance's crop to the target size.
