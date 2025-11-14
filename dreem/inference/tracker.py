@@ -127,7 +127,6 @@ class Tracker:
         """
         _ = model.eval()
         instances_pred = self.sliding_inference(model, frames)
-        self.track_queue.end_tracks()
         return instances_pred
 
     def sliding_inference(
@@ -152,9 +151,11 @@ class Tracker:
                 device=frame_to_track.device
             )
             logger.debug(f"Current number of tracks is {self.track_queue.n_tracks}")
-            """
-            Initialize tracks on first frame where detections appear.
-            """
+            if frame_to_track.frame_id == 0:  # clear queue on new video
+                logger.debug("New Video! Resetting Track Queue.")
+                self.track_queue.end_tracks()
+                
+            # Initialize tracks on first frame where detections appear
             if len(self.track_queue) == 0:
                 if frame_to_track.has_instances():
                     logger.debug(
