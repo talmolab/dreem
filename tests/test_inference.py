@@ -680,3 +680,89 @@ def test_filter_max_center_dist_with_nans():
     assert result.shape == asso_output.shape
     assert not torch.isnan(result).all()
     assert not torch.isinf(result).all()
+
+def test_filter_max_center_dist_with_different_sizes():
+    """Test 5: Handling of different matrix sizes."""
+    ######### more query instances than nonquery instances #########
+    asso_output = torch.tensor([[0.8], [0.9]], dtype=torch.float32)  # shape (2,1)
+    query_boxes_px = torch.tensor([
+        [[0.0, 0.0, 20.0, 20.0]],
+        [[10.0, 10.0, 30.0, 30.0]]
+    ], dtype=torch.float32)  # shape (2,1,4)
+    nonquery_boxes_px = torch.tensor([
+        [[0.0, 0.0, 20.0, 20.0]]
+    ], dtype=torch.float32)  # shape (1,1,4)
+    result = post_processing.filter_max_center_dist(
+        asso_output,
+        max_center_dist=5.0,
+        query_boxes_px=query_boxes_px,
+        nonquery_boxes_px=nonquery_boxes_px,
+        h=100,
+        w=100,
+    )
+    # assert result.shape == asso_output.shape
+    assert not torch.isnan(result).all()
+    assert not torch.isinf(result).all()
+
+    ######### less query instances than nonquery instances #########
+    asso_output = torch.tensor([[0.8, 0.9]], dtype=torch.float32)  # shape (1,2)
+    query_boxes_px = torch.tensor([
+        [[0.0, 0.0, 20.0, 20.0]]
+    ], dtype=torch.float32)  # shape (1,1,4)
+    nonquery_boxes_px = torch.tensor([
+        [[0.0, 0.0, 20.0, 20.0]],
+        [[10.0, 10.0, 30.0, 30.0]]
+    ], dtype=torch.float32)  # shape (2,1,4)
+    result = post_processing.filter_max_center_dist(
+        asso_output,
+        max_center_dist=5.0,
+        query_boxes_px=query_boxes_px,
+        nonquery_boxes_px=nonquery_boxes_px,
+        h=100,
+        w=100,
+    )
+    assert result.shape == asso_output.shape
+    assert not torch.isnan(result).all()
+    assert not torch.isinf(result).all()
+
+    ######### same number of query and nonquery instances #########
+    asso_output = torch.tensor([[0.8, 0.9], [0.7, 0.6]], dtype=torch.float32)  # shape (2,2)
+    query_boxes_px = torch.tensor([
+        [[0.0, 0.0, 20.0, 20.0]],
+        [[10.0, 10.0, 30.0, 30.0]]
+    ], dtype=torch.float32)  # shape (2,1,4)
+    nonquery_boxes_px = torch.tensor([
+        [[0.0, 0.0, 20.0, 20.0]],
+        [[10.0, 10.0, 30.0, 30.0]]
+    ], dtype=torch.float32)  # shape (2,1,4)
+    result = post_processing.filter_max_center_dist(
+        asso_output,
+        max_center_dist=5.0,
+        query_boxes_px=query_boxes_px,
+        nonquery_boxes_px=nonquery_boxes_px,
+        h=100,
+        w=100,
+    )
+    assert result.shape == asso_output.shape
+    assert not torch.isnan(result).all()
+    assert not torch.isinf(result).all()
+
+    ######### 1 query and nonquery instance #########
+    asso_output = torch.tensor([[0.8]], dtype=torch.float32)  # shape (1,1)
+    query_boxes_px = torch.tensor([
+        [[0.0, 0.0, 20.0, 20.0]]
+    ], dtype=torch.float32)  # shape (1,1,4)
+    nonquery_boxes_px = torch.tensor([
+        [[0.0, 0.0, 20.0, 20.0]],
+    ], dtype=torch.float32)  # shape (1,1,4)
+    result = post_processing.filter_max_center_dist(
+        asso_output,
+        max_center_dist=5.0,
+        query_boxes_px=query_boxes_px,
+        nonquery_boxes_px=nonquery_boxes_px,
+        h=100,
+        w=100,
+    )
+    assert result.shape == asso_output.shape
+    assert not torch.isnan(result).all()
+    assert not torch.isinf(result).all()

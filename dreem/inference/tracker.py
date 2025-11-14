@@ -127,7 +127,7 @@ class Tracker:
         """
         _ = model.eval()
         instances_pred = self.sliding_inference(model, frames)
-
+        self.track_queue.end_tracks()
         return instances_pred
 
     def sliding_inference(

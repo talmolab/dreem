@@ -322,7 +322,7 @@ def filter_max_center_dist(
     dist = ((k_ct[:, None, :, :] - nonk_ct[None, :, :, :]) ** 2).sum(dim=-1) ** (
         1 / 2
     )  # n_k x n_nonk
-    dist = dist.squeeze() / diag_length  # n_k x n_nonk
+    dist = dist.squeeze(-1) / diag_length  # n_k x n_nonk
     while dist.dim() < 2:
         dist = dist.unsqueeze(0)
     asso_scale = asso_output.mean(dim=1)
