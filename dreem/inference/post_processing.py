@@ -287,11 +287,11 @@ def weight_by_angle_diff(
 
 def filter_max_center_dist(
     asso_output: torch.Tensor,
-    max_center_dist: float = 0,
-    query_boxes_px: torch.Tensor | None = None,
-    nonquery_boxes_px: torch.Tensor | None = None,
-    h: int | None = None,
-    w: int | None = None,
+    max_center_dist: float,
+    query_boxes_px: torch.Tensor,
+    nonquery_boxes_px: torch.Tensor,
+    h: int,
+    w: int,
 ) -> torch.Tensor:
     """Filter trajectory score by distances between objects across frames.
 

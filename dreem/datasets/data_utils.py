@@ -2,7 +2,7 @@
 
 import math
 from xml.etree import cElementTree as et
-
+from typing import Dict
 import albumentations as A
 import matplotlib.pyplot as plt
 import numpy as np
@@ -93,23 +93,31 @@ def load_slp(labels_path: str, open_videos: bool = True) -> Labels:
     return labels, annotated_segments
 
 
-def is_pose_centroid_only(pose):
+def is_pose_centroid_only(pose: Dict[str, torch.Tensor]) -> bool:
     """Check if a pose contains only a single key named "centroid".
 
     Args:
-        pose: a pose
+        pose: a pose as a dictionary mapping keypoint names to 2D coordinates.
 
     Returns:
-        True if the pose contains only a single key named "centroid", False otherwise.
+        bool: True if the pose contains only a single key named "centroid", False otherwise.
     """
     if len(pose.keys()) <= 1 and pose.get("centroid") is not None:
         return True
     return False
 
 
-# Collate query_poses into a torch tensor of shape (N, num_keys, 2)
-# Assume each query_poses[i] is a dict {key: value}, where value is a 2-vector
-def gather_pose_array(poses):
+def gather_pose_array(poses: list[Dict[str, torch.Tensor]]) -> torch.Tensor:
+    """Collate a list of pose dictionaries into a torch tensor of shape (N, num_keys, 2).
+
+    Each pose in the input list should be a dict mapping keypoint names to 2D coordinates (2-vector).
+
+    Args:
+        poses: List of dicts, where each dict {key: value} contains keypoint names as keys and 2D coordinates as values.
+
+    Returns:
+        torch.Tensor: Tensor of shape (N, num_keys, 2) containing the collated poses, where N is the number of poses and num_keys is the maximum number of keys across all poses.
+    """
     num_pose_keys = [len(instance.keys()) for instance in poses]
     max_num_keys = max(num_pose_keys)
     pose_arr = torch.full((len(poses), max_num_keys, 2), fill_value=torch.nan)

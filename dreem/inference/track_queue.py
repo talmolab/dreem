@@ -182,7 +182,7 @@ class TrackQueue:
                 return False
         return True
 
-    def add_frame(self, frame: Frame) -> None:
+    def add_frame(self, frame: Frame) -> dict[int, bool]:
         """Add frames to the queue.
 
         Each instance from the frame is added to the queue according to its pred_track_id.
@@ -190,6 +190,8 @@ class TrackQueue:
 
         Args:
             frame: A Frame object containing instances that have already been tracked.
+        Returns:
+            Dictionary mapping track ids to a bool indicating whether the track has exceeded the max gap and been terminated.
         """
         if frame.num_detected == 0:  # only add frames with instances.
             return
@@ -201,7 +203,7 @@ class TrackQueue:
         else:
             vid_name = frame.video.filename
         # traj_score = frame.get_traj_score()  TODO: figure out better way to save trajectory scores.
-        frame_meta = (vid_id, frame_id, vid_name, img_shape.cpu().tolist())
+        frame_meta = (vid_id, frame_id, vid_name, list(img_shape))
 
         pred_tracks = []
         for instance in frame.instances:

@@ -228,7 +228,7 @@ class Tracker:
         _ = model.eval()
 
         query_frame = frames[query_ind]
-        _, h, w = query_frame.img_shape.flatten().cpu()
+        _, h, w = query_frame.img_shape
 
         query_instances = query_frame.instances
         all_instances = [instance for frame in frames for instance in frame.instances]
@@ -269,7 +269,7 @@ class Tracker:
             )
         with torch.no_grad():
             asso_matrix = model(
-                all_instances, query_instances, save_crops=enable_crop_saving
+                all_instances, query_instances, retain_crops=enable_crop_saving
             )
 
         asso_output = asso_matrix[-1].matrix.split(

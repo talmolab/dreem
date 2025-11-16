@@ -37,6 +37,29 @@ def _to_tensor(data: float | ArrayLike) -> torch.Tensor:
         return torch.tensor(data)
 
 
+def _to_size(data: ArrayLike | torch.Size) -> torch.Size:
+    """Convert data to torch.Size type.
+
+    Args:
+        data: An ArrayLike object (tuple, list, np.ndarray, torch.Tensor) or torch.Size
+            to be converted to torch.Size.
+
+    Returns:
+        A torch.Size object containing `data`.
+    """
+    if isinstance(data, torch.Size):
+        return data
+
+    if isinstance(data, torch.Tensor):
+        return torch.Size(data.tolist())
+
+    if isinstance(data, (list, tuple)):
+        return torch.Size(data)
+
+    # For numpy arrays or other array-like objects
+    return torch.Size(np.array(data).tolist())
+
+
 @attrs.define(eq=False)
 class Frame:
     """Data structure containing metadata for a single frame of a video.
@@ -60,8 +83,8 @@ class Frame:
     _video_id: int = attrs.field(alias="video_id", converter=_to_tensor)
     _frame_id: int = attrs.field(alias="frame_id", converter=_to_tensor)
     _video: str = attrs.field(alias="vid_file", default="")
-    _img_shape: ArrayLike = attrs.field(
-        alias="img_shape", converter=_to_tensor, factory=list
+    _img_shape: torch.Size = attrs.field(
+        alias="img_shape", converter=_to_size, factory=lambda: torch.Size([])
     )
 
     _instances: list["Instance"] = attrs.field(alias="instances", factory=list)
@@ -75,7 +98,7 @@ class Frame:
     def __attrs_post_init__(self) -> None:
         """Handle more intricate default initializations and moving to device."""
         if len(self.img_shape) == 0:
-            self.img_shape = torch.tensor([0, 0, 0])
+            self.img_shape = torch.Size([0, 0, 0])
 
         for instance in self.instances:
             instance.frame = self
@@ -114,7 +137,7 @@ class Frame:
         """
         self._video_id = self._video_id.to(map_location)
         self._frame_id = self._frame_id.to(map_location)
-        self._img_shape = self._img_shape.to(map_location)
+        # torch.Size is immutable and doesn't need device movement
 
         if isinstance(self._asso_output, torch.Tensor):
             self._asso_output = self._asso_output.to(map_location)
@@ -167,7 +190,7 @@ class Frame:
                 else lf.frame_idx
             ),
             vid_file=lf.video.filename,
-            img_shape=img_shape,
+            img_shape=torch.Size(img_shape),
             instances=[Instance.from_slp(instance, **kwargs) for instance in lf],
             device=device,
         )
@@ -357,24 +380,24 @@ class Frame:
             return self.video.name
 
     @property
-    def img_shape(self) -> torch.Tensor:
+    def img_shape(self) -> torch.Size:
         """The shape of the pre-cropped frame.
 
         Returns:
-            A torch tensor containing the shape of the frame. Should generally be (c, h, w)
+            A torch.Size object containing the shape of the frame. Should generally be (c, h, w)
         """
         return self._img_shape
 
     @img_shape.setter
-    def img_shape(self, img_shape: ArrayLike) -> None:
+    def img_shape(self, img_shape: ArrayLike | torch.Size) -> None:
         """Set the shape of the frame image.
 
         Note: the img_shape should generally be immutable after initialization.
 
         Args:
-            img_shape: an ArrayLike object containing the shape of the frame image.
+            img_shape: an ArrayLike object or torch.Size containing the shape of the frame image.
         """
-        self._img_shape = _to_tensor(img_shape)
+        self._img_shape = _to_size(img_shape)
 
     @property
     def instances(self) -> list["Instance"]:
