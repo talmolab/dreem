@@ -2775,7 +2775,7 @@
       </thead>
       <tbody>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;filter_max_center_dist&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;asso_output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;max_center_dist&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;query_boxes_px&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nonquery_boxes_px&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;h&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;w&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.inference.post_processing.filter_max_center_dist&lt;/code&gt;)" href="#dreem.inference.post_processing.filter_max_center_dist">filter_max_center_dist</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;filter_max_center_dist&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;asso_output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;max_center_dist&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;query_boxes_px&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nonquery_boxes_px&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;h&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;w&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.inference.post_processing.filter_max_center_dist&lt;/code&gt;)" href="#dreem.inference.post_processing.filter_max_center_dist">filter_max_center_dist</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Filter trajectory score by distances between objects across frames.</p>
@@ -2836,7 +2836,7 @@
 
 
 <h3 id="dreem.inference.post_processing.filter_max_center_dist" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">filter_max_center_dist</span><span class="p">(</span><span class="n">asso_output</span><span class="p">,</span> <span class="n">max_center_dist</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">query_boxes_px</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nonquery_boxes_px</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">filter_max_center_dist</span><span class="p">(</span><span class="n">asso_output</span><span class="p">,</span> <span class="n">max_center_dist</span><span class="p">,</span> <span class="n">query_boxes_px</span><span class="p">,</span> <span class="n">nonquery_boxes_px</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span></code>
 
 <a href="#dreem.inference.post_processing.filter_max_center_dist" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -2886,7 +2886,7 @@
               </div>
             </td>
             <td>
-                  <code>0</code>
+                <em>required</em>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -2894,7 +2894,7 @@
                 <code>query_boxes_px</code>
             </td>
             <td>
-                  <code><span title="torch.Tensor">Tensor</span> | None</code>
+                  <code><span title="torch.Tensor">Tensor</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2902,7 +2902,7 @@
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -2910,7 +2910,7 @@
                 <code>nonquery_boxes_px</code>
             </td>
             <td>
-                  <code><span title="torch.Tensor">Tensor</span> | None</code>
+                  <code><span title="torch.Tensor">Tensor</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2918,7 +2918,7 @@
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -2926,7 +2926,7 @@
                 <code>h</code>
             </td>
             <td>
-                  <code><span title="int">int</span> | None</code>
+                  <code><span title="int">int</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2934,7 +2934,7 @@
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -2942,7 +2942,7 @@
                 <code>w</code>
             </td>
             <td>
-                  <code><span title="int">int</span> | None</code>
+                  <code><span title="int">int</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2950,7 +2950,7 @@
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
       </tbody>
@@ -2963,11 +2963,11 @@
               <summary>Source code in <code>dreem/inference/post_processing.py</code></summary>
               <div class="highlight"><pre><span></span><code><a id="__codelineno-0-288" name="__codelineno-0-288"></a><a href="#__codelineno-0-288"><span class="linenos" data-linenos="288 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">filter_max_center_dist</span><span class="p">(</span>
 <a id="__codelineno-0-289" name="__codelineno-0-289"></a><a href="#__codelineno-0-289"><span class="linenos" data-linenos="289 "></span></a>    <span class="n">asso_output</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-<a id="__codelineno-0-290" name="__codelineno-0-290"></a><a href="#__codelineno-0-290"><span class="linenos" data-linenos="290 "></span></a>    <span class="n">max_center_dist</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-0-291" name="__codelineno-0-291"></a><a href="#__codelineno-0-291"><span class="linenos" data-linenos="291 "></span></a>    <span class="n">query_boxes_px</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-292" name="__codelineno-0-292"></a><a href="#__codelineno-0-292"><span class="linenos" data-linenos="292 "></span></a>    <span class="n">nonquery_boxes_px</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-293" name="__codelineno-0-293"></a><a href="#__codelineno-0-293"><span class="linenos" data-linenos="293 "></span></a>    <span class="n">h</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-294" name="__codelineno-0-294"></a><a href="#__codelineno-0-294"><span class="linenos" data-linenos="294 "></span></a>    <span class="n">w</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-290" name="__codelineno-0-290"></a><a href="#__codelineno-0-290"><span class="linenos" data-linenos="290 "></span></a>    <span class="n">max_center_dist</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<a id="__codelineno-0-291" name="__codelineno-0-291"></a><a href="#__codelineno-0-291"><span class="linenos" data-linenos="291 "></span></a>    <span class="n">query_boxes_px</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+<a id="__codelineno-0-292" name="__codelineno-0-292"></a><a href="#__codelineno-0-292"><span class="linenos" data-linenos="292 "></span></a>    <span class="n">nonquery_boxes_px</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+<a id="__codelineno-0-293" name="__codelineno-0-293"></a><a href="#__codelineno-0-293"><span class="linenos" data-linenos="293 "></span></a>    <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-0-294" name="__codelineno-0-294"></a><a href="#__codelineno-0-294"><span class="linenos" data-linenos="294 "></span></a>    <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <a id="__codelineno-0-295" name="__codelineno-0-295"></a><a href="#__codelineno-0-295"><span class="linenos" data-linenos="295 "></span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-296" name="__codelineno-0-296"></a><a href="#__codelineno-0-296"><span class="linenos" data-linenos="296 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter trajectory score by distances between objects across frames.</span>
 <a id="__codelineno-0-297" name="__codelineno-0-297"></a><a href="#__codelineno-0-297"><span class="linenos" data-linenos="297 "></span></a>
