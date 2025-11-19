@@ -6,7 +6,8 @@ import pandas as pd
 import torch
 from scipy.optimize import linear_sum_assignment
 from dreem.datasets.data_utils import _pairwise_iou, is_pose_centroid_only
-from dreem.inference import post_processing
+from dreem.inference.post_processing import IOUWeighting, DistanceWeighting, OrientationWeighting
+from dreem.inference.post_processing_utils import get_principal_axis_with_fallback
 from dreem.inference.boxes import Boxes
 from dreem.inference.track_queue import TrackQueue
 from dreem.io import Frame
@@ -78,6 +79,10 @@ class Tracker:
         self.front_nodes = front_nodes
         self.back_nodes = back_nodes
         self.enable_crop_saving = enable_crop_saving
+
+        self.orientation_weighting = OrientationWeighting(max_angle_diff)
+        self.distance_weighting = DistanceWeighting(max_center_dist)
+        self.iou_weighting = IOUWeighting(iou)
 
     def __call__(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -387,7 +392,11 @@ class Tracker:
         else:
             last_ious = traj_score.new_zeros(traj_score.shape)
 
-        traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious.cpu())
+        state = self.iou_weighting.run({
+            "traj_score": traj_score,
+            "last_ious": last_ious.cpu(),
+        })
+        traj_score = state["traj_score"]
 
         if self.iou is not None and self.iou != "":
             iou_traj_score = pd.DataFrame(
@@ -408,14 +417,15 @@ class Tracker:
             last_boxes_px = last_boxes.cpu()
             last_boxes_px[:, :, [0, 2]] *= w
             last_boxes_px[:, :, [1, 3]] *= h
-            traj_score = post_processing.filter_max_center_dist(
-                traj_score,
-                self.max_center_dist,
-                query_boxes_px,
-                last_boxes_px,
-                h,
-                w,
-            )
+            state = self.distance_weighting.run({
+                "traj_score": traj_score,
+                "query_boxes_px": query_boxes_px,
+                "last_boxes_px": last_boxes_px,
+                "h": h,
+                "w": w,
+            })
+            traj_score = state["traj_score"]
+            # update metadata
             max_center_dist_traj_score = pd.DataFrame(
                 traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
             )
@@ -433,7 +443,7 @@ class Tracker:
             successes = []
             for instance, pred_track_id, crop in query_poses:
                 instance_principal_axes, success = (
-                    post_processing.get_principal_axis_with_fallback(
+                    get_principal_axis_with_fallback(
                         instance,
                         self.front_nodes,
                         self.back_nodes,
@@ -448,7 +458,7 @@ class Tracker:
 
             for instance, pred_track_id, crop in last_poses:
                 instance_principal_axes, success = (
-                    post_processing.get_principal_axis_with_fallback(
+                    get_principal_axis_with_fallback(
                         instance,
                         self.front_nodes,
                         self.back_nodes,
@@ -462,12 +472,13 @@ class Tracker:
             last_principal_axes = torch.stack(last_principal_axes)  # (n_traj, 2)
 
             if all(successes):
-                traj_score = post_processing.weight_by_angle_diff(
-                    traj_score,
-                    self.max_angle_diff,
-                    query_principal_axes,
-                    last_principal_axes,
-                )
+                state = self.orientation_weighting.run({
+                    "traj_score": traj_score,
+                    "query_principal_axes": query_principal_axes,
+                    "last_principal_axes": last_principal_axes,
+                })
+                traj_score = state["traj_score"]
+                # update metadata
                 angle_diff_weight_traj_score = pd.DataFrame(
                     traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
                 )

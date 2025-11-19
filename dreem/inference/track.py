@@ -12,6 +12,7 @@ import pytorch_lightning as pl
 import sleap_io as sio
 import tifffile
 import torch
+from math import inf
 from omegaconf import DictConfig
 from tqdm import tqdm
 from dreem.datasets import CellTrackingDataset
@@ -189,7 +190,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
 
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     tracker_cfg = pred_cfg.get_tracker_cfg()
-    max_tracks = tracker_cfg.get("max_tracks", None)
+    max_tracks = tracker_cfg.get("max_tracks", inf)
     dataset_overrides = {}
     # for excess detection removal
     dataset_overrides["max_tracks"] = max_tracks

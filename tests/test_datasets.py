@@ -347,7 +347,7 @@ def test_sleap_dataset_nms_off_without_arg(two_flies_overlapping):
         chunk=True,
         clip_length=clip_length,
         anchors=["thorax"],
-        max_detection_overlap=None,
+        max_detection_overlap=0,
     )
 
     frames = next(iter(train_ds))

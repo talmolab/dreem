@@ -4,7 +4,7 @@ import logging
 import random
 from pathlib import Path
 from typing import Optional, Union
-
+from math import inf
 import albumentations as A
 import imageio
 import numpy as np
@@ -13,10 +13,8 @@ import torch
 from torchvision.transforms import functional as tvf
 
 from dreem.datasets import BaseDataset, data_utils
-from dreem.datasets.data_utils import pairwise_iom, nms
-from dreem.inference.boxes import Boxes
 from dreem.io import Frame, Instance
-
+from dreem.datasets.preprocessors import RemoveExcessDetections, NonMaxSuppression
 logger = logging.getLogger("dreem.datasets")
 
 
@@ -43,8 +41,8 @@ class SleapDataset(BaseDataset):
         max_batching_gap: int = 15,
         use_tight_bbox: bool = False,
         dilation_radius_px: Union[int, list[int]] = 0,
-        max_detection_overlap: float | None = None,
-        max_tracks: int | None = None,
+        max_detection_overlap: float = 0,
+        max_tracks: int = inf,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -118,8 +116,8 @@ class SleapDataset(BaseDataset):
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
         self.dilation_radius_px = dilation_radius_px
-        self.max_detection_overlap = max_detection_overlap
-        self.max_tracks = max_tracks
+        self.max_detection_overlap = max_detection_overlap if max_detection_overlap is not None else 0
+        self.max_tracks = max_tracks if max_tracks is not None else inf
         if isinstance(anchors, int):
             self.anchors = anchors
         elif isinstance(anchors, str):
@@ -168,8 +166,9 @@ class SleapDataset(BaseDataset):
             self.annotated_segments[slp_file] = annotated_segments
 
         self.videos = [imageio.get_reader(vid_file) for vid_file in self.vid_files]
-        # do we need this? would need to update with sleap-io
-
+        # preprocessors
+        self.remove_excess_detections = RemoveExcessDetections(max_tracks)
+        self.non_max_suppression = NonMaxSuppression(max_detection_overlap)
         # Method in BaseDataset. Creates label_idx and chunked_frame_idx to be
         # used in call to get_instances()
         self.create_chunks_slp()
@@ -484,54 +483,22 @@ class SleapDataset(BaseDataset):
 
                 instances.append(instance)
 
-            if self.max_tracks is not None and len(instances) > self.max_tracks:
-                removed = 0
-                num_to_remove = len(instances) - self.max_tracks
-                for _ in range(num_to_remove):
-                    lowest_conf_instance = min(
-                        instances, key=lambda x: x.instance_score
-                    )
-                    if lowest_conf_instance.instance_score < 1:
-                        instances.remove(lowest_conf_instance)
-                        removed += 1
-                if removed > 0:
-                    logger.warning(
-                        f"Removed {removed} lowest confidence instances from frame {frame_ind} due to excess detections. Parameter 'max_tracks' in the tracker config sets the maximum number of detections per frame."
-                    )
+            # remove excess detections
+            if len(instances) > self.max_tracks:
+                state = self.remove_excess_detections.run({
+                    "frame_ind": frame_ind,
+                    "instances": instances,
+                })
+                instances = state["instances"]
 
-            # nms
-            if self.max_detection_overlap and len(instances) > 0:
-                discard = set()
-                bboxes = np.stack([instance.bbox.squeeze(0) for instance in instances])
-                ioms = pairwise_iom(Boxes(bboxes), Boxes(bboxes))
-                high_iom_pairs = nms(ioms, self.max_detection_overlap)
-                for pair in high_iom_pairs:
-                    if pair[0] in discard or pair[1] in discard:
-                        continue
-                    # Collect the 'pose' dictionary values for both instances and stack them into tensors
-                    inst_1_pose_tensor = torch.stack(
-                        [torch.tensor(v) for v in instances[pair[0]].pose.values()]
-                    )
-                    inst_2_pose_tensor = torch.stack(
-                        [torch.tensor(v) for v in instances[pair[1]].pose.values()]
-                    )
-                    inst_1_keypoints = len(
-                        inst_1_pose_tensor[~inst_1_pose_tensor.isnan().any(dim=1)]
-                    )
-                    inst_2_keypoints = len(
-                        inst_2_pose_tensor[~inst_2_pose_tensor.isnan().any(dim=1)]
-                    )
-                    # break ties by keeping the first instance
-                    if inst_1_keypoints >= inst_2_keypoints:
-                        id_to_discard = pair[1]
-                    else:
-                        id_to_discard = pair[0]
-                    discard.add(id_to_discard)
-                for id in sorted(discard, reverse=True):
-                    removed = instances.pop(id)
-                    logger.warning(
-                        f"Removed instance with bounding box {removed.bbox.squeeze(0)} format [ymin, xmin, ymax, xmax] from frame {frame_ind} due to high bounding box overlap with another instance"
-                    )
+            # non-maximum suppression (high overlap bounding boxes)
+            print(self.max_detection_overlap, len(instances))
+            if self.max_detection_overlap > 0 and len(instances) > 0:
+                state = self.non_max_suppression.run({
+                    "frame_ind": frame_ind,
+                    "instances": instances,
+                })
+                instances = state["instances"]
 
             frame = Frame(
                 video_id=label_idx,
