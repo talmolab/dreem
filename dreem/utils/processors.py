@@ -32,4 +32,3 @@ class ProcessingStep(ABC):
             The modified state dictionary.
         """
         ...
-

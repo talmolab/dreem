@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from dreem.datasets.data_utils import pairwise_iom, nms
 from dreem.inference.boxes import Boxes
+
 logger = logging.getLogger(__name__)
 
 
@@ -67,6 +68,7 @@ class RemoveExcessDetections(ProcessingStep):
 
         return state
 
+
 class NonMaxSuppression(ProcessingStep):
     """Apply non-maximum suppression to a list of instances.
 
@@ -76,6 +78,7 @@ class NonMaxSuppression(ProcessingStep):
         - instances: list of dreem.io.Instance objects
         - max_detection_overlap: float - the maximum overlap allowed between instances
     """
+
     def __init__(self, max_detection_overlap: float):
         super().__init__(name="non_max_suppression")
         self.max_detection_overlap = max_detection_overlap

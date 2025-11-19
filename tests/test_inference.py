@@ -8,7 +8,11 @@ from omegaconf import OmegaConf
 from pytorch_lightning import Trainer
 
 from dreem.inference import Tracker, metrics
-from dreem.inference.post_processing import IOUWeighting, DistanceWeighting, OrientationWeighting
+from dreem.inference.post_processing import (
+    IOUWeighting,
+    DistanceWeighting,
+    OrientationWeighting,
+)
 from dreem.inference.track import run
 from dreem.inference.track_queue import TrackQueue
 from dreem.io import Config, Frame, Instance
@@ -179,17 +183,24 @@ def test_weight_iou():  # set_default_device
     asso_output = torch.rand((N_t, M))
     ious = torch.rand((N_t, M))
 
-    result = IOUWeighting(method="mult").run({"traj_score": asso_output, "last_ious": ious})
+    result = IOUWeighting(method="mult").run(
+        {"traj_score": asso_output, "last_ious": ious}
+    )
     result = result["traj_score"]
     assert not torch.equal(asso_output, result)
 
-    result = IOUWeighting(method="max").run({"traj_score": asso_output, "last_ious": ious})
+    result = IOUWeighting(method="max").run(
+        {"traj_score": asso_output, "last_ious": ious}
+    )
     result = result["traj_score"]
     assert not torch.equal(asso_output, result)
 
-    result = IOUWeighting(method=None).run({"traj_score": asso_output, "last_ious": ious})
+    result = IOUWeighting(method=None).run(
+        {"traj_score": asso_output, "last_ious": ious}
+    )
     result = result["traj_score"]
     assert torch.equal(asso_output, result)
+
 
 def test_metrics():
     """Test basic GTR Runner."""
@@ -508,11 +519,13 @@ def test_filter_max_angle_diff_angle_wrapping():
         ]
     )
 
-    result = OrientationWeighting(max_angle_diff_rad=torch.pi / 2.5).run({
-        "traj_score": asso_output,
-        "query_principal_axes": query_principal_axes,
-        "last_principal_axes": last_principal_axes,
-    })
+    result = OrientationWeighting(max_angle_diff_rad=torch.pi / 2.5).run(
+        {
+            "traj_score": asso_output,
+            "query_principal_axes": query_principal_axes,
+            "last_principal_axes": last_principal_axes,
+        }
+    )
     result = result["traj_score"]
     # 120 degrees wraps to 60 degrees so should be allowed
     expected_asso_equality = torch.tensor([True, True, False])
@@ -549,11 +562,13 @@ def test_filter_max_angle_diff_proportional_penalty():
         ]
     )
 
-    result = OrientationWeighting(max_angle_diff_rad=torch.pi / 100).run({
-        "traj_score": asso_output,
-        "query_principal_axes": query_principal_axes,
-        "last_principal_axes": last_principal_axes,
-    })
+    result = OrientationWeighting(max_angle_diff_rad=torch.pi / 100).run(
+        {
+            "traj_score": asso_output,
+            "query_principal_axes": query_principal_axes,
+            "last_principal_axes": last_principal_axes,
+        }
+    )
     result = result["traj_score"]
 
     # Verify larger angle = more penalty
@@ -589,11 +604,13 @@ def test_filter_max_angle_diff_with_nans():
         ]
     )
 
-    result = OrientationWeighting(max_angle_diff_rad=torch.pi / 100).run({
-        "traj_score": asso_output,
-        "query_principal_axes": query_principal_axes,
-        "last_principal_axes": last_principal_axes,
-    })
+    result = OrientationWeighting(max_angle_diff_rad=torch.pi / 100).run(
+        {
+            "traj_score": asso_output,
+            "query_principal_axes": query_principal_axes,
+            "last_principal_axes": last_principal_axes,
+        }
+    )
     result = result["traj_score"]
 
     assert result.shape == asso_output.shape
@@ -613,13 +630,15 @@ def test_filter_max_center_dist_threshold():
         ],
         dtype=torch.float32,
     )
-    result = DistanceWeighting(max_center_dist=50.0).run({
-        "traj_score": asso_output,
-        "query_boxes_px": query_boxes_px,
-        "last_boxes_px": nonquery_boxes_px,
-        "h": 100,
-        "w": 100,
-    })
+    result = DistanceWeighting(max_center_dist=50.0).run(
+        {
+            "traj_score": asso_output,
+            "query_boxes_px": query_boxes_px,
+            "last_boxes_px": nonquery_boxes_px,
+            "h": 100,
+            "w": 100,
+        }
+    )
     result = result["traj_score"]
     expected_asso_equality = torch.tensor([True, False, True])
     np.testing.assert_array_equal(
@@ -636,13 +655,15 @@ def test_filter_max_center_dist_proportional_penalty():
     nonquery_boxes_px = torch.tensor(
         [[[0.0, 0.0, 10.0, 10.0]], [[70.0, 70.0, 90.0, 90.0]]], dtype=torch.float32
     )
-    result = DistanceWeighting(max_center_dist=5.0).run({
-        "traj_score": asso_output,
-        "query_boxes_px": query_boxes_px,
-        "last_boxes_px": nonquery_boxes_px,
-        "h": 100,
-        "w": 100,
-    })
+    result = DistanceWeighting(max_center_dist=5.0).run(
+        {
+            "traj_score": asso_output,
+            "query_boxes_px": query_boxes_px,
+            "last_boxes_px": nonquery_boxes_px,
+            "h": 100,
+            "w": 100,
+        }
+    )
     result = result["traj_score"]
     assert result[0, 1] < result[0, 0]
     assert result[1, 0] < result[1, 1]
@@ -659,36 +680,40 @@ def test_filter_max_center_dist_with_nans():
         [[[0.0, 0.0, 20.0, 20.0]], [[10.0, float("nan"), 30.0, float("nan")]]],
         dtype=torch.float32,
     )
-    result = DistanceWeighting(max_center_dist=5.0).run({
-        "traj_score": asso_output,
-        "query_boxes_px": query_boxes_px,
-        "last_boxes_px": nonquery_boxes_px,
-        "h": 100,
-        "w": 100,
-    })
+    result = DistanceWeighting(max_center_dist=5.0).run(
+        {
+            "traj_score": asso_output,
+            "query_boxes_px": query_boxes_px,
+            "last_boxes_px": nonquery_boxes_px,
+            "h": 100,
+            "w": 100,
+        }
+    )
     result = result["traj_score"]
     assert result.shape == asso_output.shape
     assert not torch.isnan(result).all()
     assert not torch.isinf(result).all()
 
+
 def test_filter_max_center_dist_with_different_sizes():
     """Test 5: Handling of different matrix sizes."""
     ######### more query instances than nonquery instances #########
     asso_output = torch.tensor([[0.8], [0.9]], dtype=torch.float32)  # shape (2,1)
-    query_boxes_px = torch.tensor([
-        [[0.0, 0.0, 20.0, 20.0]],
-        [[10.0, 10.0, 30.0, 30.0]]
-    ], dtype=torch.float32)  # shape (2,1,4)
-    nonquery_boxes_px = torch.tensor([
-        [[0.0, 0.0, 20.0, 20.0]]
-    ], dtype=torch.float32)  # shape (1,1,4)
-    result = DistanceWeighting(max_center_dist=5.0).run({
-        "traj_score": asso_output,
-        "query_boxes_px": query_boxes_px,
-        "last_boxes_px": nonquery_boxes_px,
-        "h": 100,
-        "w": 100,
-    })
+    query_boxes_px = torch.tensor(
+        [[[0.0, 0.0, 20.0, 20.0]], [[10.0, 10.0, 30.0, 30.0]]], dtype=torch.float32
+    )  # shape (2,1,4)
+    nonquery_boxes_px = torch.tensor(
+        [[[0.0, 0.0, 20.0, 20.0]]], dtype=torch.float32
+    )  # shape (1,1,4)
+    result = DistanceWeighting(max_center_dist=5.0).run(
+        {
+            "traj_score": asso_output,
+            "query_boxes_px": query_boxes_px,
+            "last_boxes_px": nonquery_boxes_px,
+            "h": 100,
+            "w": 100,
+        }
+    )
     result = result["traj_score"]
     # assert result.shape == asso_output.shape
     assert not torch.isnan(result).all()
@@ -696,42 +721,45 @@ def test_filter_max_center_dist_with_different_sizes():
 
     ######### less query instances than nonquery instances #########
     asso_output = torch.tensor([[0.8, 0.9]], dtype=torch.float32)  # shape (1,2)
-    query_boxes_px = torch.tensor([
-        [[0.0, 0.0, 20.0, 20.0]]
-    ], dtype=torch.float32)  # shape (1,1,4)
-    nonquery_boxes_px = torch.tensor([
-        [[0.0, 0.0, 20.0, 20.0]],
-        [[10.0, 10.0, 30.0, 30.0]]
-    ], dtype=torch.float32)  # shape (2,1,4)
-    result = DistanceWeighting(max_center_dist=5.0).run({
-        "traj_score": asso_output,
-        "query_boxes_px": query_boxes_px,
-        "last_boxes_px": nonquery_boxes_px,
-        "h": 100,
-        "w": 100,
-    })
+    query_boxes_px = torch.tensor(
+        [[[0.0, 0.0, 20.0, 20.0]]], dtype=torch.float32
+    )  # shape (1,1,4)
+    nonquery_boxes_px = torch.tensor(
+        [[[0.0, 0.0, 20.0, 20.0]], [[10.0, 10.0, 30.0, 30.0]]], dtype=torch.float32
+    )  # shape (2,1,4)
+    result = DistanceWeighting(max_center_dist=5.0).run(
+        {
+            "traj_score": asso_output,
+            "query_boxes_px": query_boxes_px,
+            "last_boxes_px": nonquery_boxes_px,
+            "h": 100,
+            "w": 100,
+        }
+    )
     result = result["traj_score"]
     assert result.shape == asso_output.shape
     assert not torch.isnan(result).all()
     assert not torch.isinf(result).all()
 
     ######### same number of query and nonquery instances #########
-    asso_output = torch.tensor([[0.8, 0.9], [0.7, 0.6]], dtype=torch.float32)  # shape (2,2)
-    query_boxes_px = torch.tensor([
-        [[0.0, 0.0, 20.0, 20.0]],
-        [[10.0, 10.0, 30.0, 30.0]]
-    ], dtype=torch.float32)  # shape (2,1,4)
-    nonquery_boxes_px = torch.tensor([
-        [[0.0, 0.0, 20.0, 20.0]],
-        [[10.0, 10.0, 30.0, 30.0]]
-    ], dtype=torch.float32)  # shape (2,1,4)
-    result = DistanceWeighting(max_center_dist=5.0).run({
-        "traj_score": asso_output,
-        "query_boxes_px": query_boxes_px,
-        "last_boxes_px": nonquery_boxes_px,
-        "h": 100,
-        "w": 100,
-    })
+    asso_output = torch.tensor(
+        [[0.8, 0.9], [0.7, 0.6]], dtype=torch.float32
+    )  # shape (2,2)
+    query_boxes_px = torch.tensor(
+        [[[0.0, 0.0, 20.0, 20.0]], [[10.0, 10.0, 30.0, 30.0]]], dtype=torch.float32
+    )  # shape (2,1,4)
+    nonquery_boxes_px = torch.tensor(
+        [[[0.0, 0.0, 20.0, 20.0]], [[10.0, 10.0, 30.0, 30.0]]], dtype=torch.float32
+    )  # shape (2,1,4)
+    result = DistanceWeighting(max_center_dist=5.0).run(
+        {
+            "traj_score": asso_output,
+            "query_boxes_px": query_boxes_px,
+            "last_boxes_px": nonquery_boxes_px,
+            "h": 100,
+            "w": 100,
+        }
+    )
     result = result["traj_score"]
     assert result.shape == asso_output.shape
     assert not torch.isnan(result).all()
@@ -739,19 +767,24 @@ def test_filter_max_center_dist_with_different_sizes():
 
     ######### 1 query and nonquery instance #########
     asso_output = torch.tensor([[0.8]], dtype=torch.float32)  # shape (1,1)
-    query_boxes_px = torch.tensor([
-        [[0.0, 0.0, 20.0, 20.0]]
-    ], dtype=torch.float32)  # shape (1,1,4)
-    nonquery_boxes_px = torch.tensor([
-        [[0.0, 0.0, 20.0, 20.0]],
-    ], dtype=torch.float32)  # shape (1,1,4)
-    result = DistanceWeighting(max_center_dist=5.0).run({
-        "traj_score": asso_output,
-        "query_boxes_px": query_boxes_px,
-        "last_boxes_px": nonquery_boxes_px,
-        "h": 100,
-        "w": 100,
-    })
+    query_boxes_px = torch.tensor(
+        [[[0.0, 0.0, 20.0, 20.0]]], dtype=torch.float32
+    )  # shape (1,1,4)
+    nonquery_boxes_px = torch.tensor(
+        [
+            [[0.0, 0.0, 20.0, 20.0]],
+        ],
+        dtype=torch.float32,
+    )  # shape (1,1,4)
+    result = DistanceWeighting(max_center_dist=5.0).run(
+        {
+            "traj_score": asso_output,
+            "query_boxes_px": query_boxes_px,
+            "last_boxes_px": nonquery_boxes_px,
+            "h": 100,
+            "w": 100,
+        }
+    )
     result = result["traj_score"]
     assert result.shape == asso_output.shape
     assert not torch.isnan(result).all()

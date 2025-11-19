@@ -181,9 +181,7 @@ class OrientationWeighting(ProcessingStep):
         assert query_axes is not None and last_axes is not None, (
             "Need `query_principal_axes`, and `last_principal_axes` to weight by angle difference"
         )
-        dot = (query_axes[:, None, :] * last_axes[None, :, :]).sum(
-            dim=-1
-        )  # (q, nq)
+        dot = (query_axes[:, None, :] * last_axes[None, :, :]).sum(dim=-1)  # (q, nq)
         # cross product is scalar in 2D
         cross_z = (
             query_axes[:, None, 0] * last_axes[None, :, 1]
@@ -201,7 +199,9 @@ class OrientationWeighting(ProcessingStep):
             dim=1
         )  # row wise aggregation of association scores; used to weight the angle diff
         penalty = torch.where(
-            angle_diff > self.max_angle_diff_rad, angle_diff - self.max_angle_diff_rad, 0
+            angle_diff > self.max_angle_diff_rad,
+            angle_diff - self.max_angle_diff_rad,
+            0,
         )  # gracefully handles nans by setting diff to 0
         scale = weight  # / (penalty.mean(dim=1) + 1e-8)
         # normalize angle difference to [0, 1]

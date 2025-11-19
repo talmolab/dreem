@@ -15,6 +15,7 @@ from torchvision.transforms import functional as tvf
 from dreem.datasets import BaseDataset, data_utils
 from dreem.io import Frame, Instance
 from dreem.datasets.preprocessors import RemoveExcessDetections, NonMaxSuppression
+
 logger = logging.getLogger("dreem.datasets")
 
 
@@ -116,7 +117,9 @@ class SleapDataset(BaseDataset):
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
         self.dilation_radius_px = dilation_radius_px
-        self.max_detection_overlap = max_detection_overlap if max_detection_overlap is not None else 0
+        self.max_detection_overlap = (
+            max_detection_overlap if max_detection_overlap is not None else 0
+        )
         self.max_tracks = max_tracks if max_tracks is not None else inf
         if isinstance(anchors, int):
             self.anchors = anchors
@@ -485,18 +488,22 @@ class SleapDataset(BaseDataset):
 
             # remove excess detections
             if len(instances) > self.max_tracks:
-                state = self.remove_excess_detections.run({
-                    "frame_ind": frame_ind,
-                    "instances": instances,
-                })
+                state = self.remove_excess_detections.run(
+                    {
+                        "frame_ind": frame_ind,
+                        "instances": instances,
+                    }
+                )
                 instances = state["instances"]
 
             # non-maximum suppression (high overlap bounding boxes)
             if self.max_detection_overlap > 0 and len(instances) > 0:
-                state = self.non_max_suppression.run({
-                    "frame_ind": frame_ind,
-                    "instances": instances,
-                })
+                state = self.non_max_suppression.run(
+                    {
+                        "frame_ind": frame_ind,
+                        "instances": instances,
+                    }
+                )
                 instances = state["instances"]
 
             frame = Frame(

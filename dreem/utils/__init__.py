@@ -5,4 +5,3 @@ from dreem.utils.processors import ProcessingStep
 __all__ = [
     "ProcessingStep",
 ]
-

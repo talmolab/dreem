@@ -5,9 +5,10 @@ from dreem.datasets.data_utils import (
     get_pose_principal_axis,
     gather_pose_array,
     is_pose_centroid_only,
-    )
+)
 from scipy import ndimage
 import numpy as np
+
 logger = logging.getLogger(__name__)
 
 # Registry of principal axis computation methods

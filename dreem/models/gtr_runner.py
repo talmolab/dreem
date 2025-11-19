@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
-
+from math import inf
 import h5py
 import numpy as np
 import sleap_io as sio
@@ -264,25 +264,27 @@ class GTRRunner(LightningModule):
         gc.collect()
         torch.cuda.empty_cache()
 
-    def setup_eval(self, eval_cfg: DictConfig):
+    def setup_tracking(self, tracker_cfg: DictConfig, mode: str = "inference"):
         from dreem.inference.tracker import Tracker
 
-        save_frame_meta = eval_cfg.cfg.get("save_frame_meta", False)
-        self.tracker_cfg = eval_cfg.get_tracker_cfg()
+        save_frame_meta = tracker_cfg.cfg.get("save_frame_meta", False)
+        self.tracker_cfg = tracker_cfg.get_tracker_cfg()
         self.tracker_cfg["enable_crop_saving"] = (
             save_frame_meta  # to save frame metadata, need to disable crop=None in GTR (memory saving)
         )
         self.tracker = Tracker(**self.tracker_cfg)
         logger.info("Using the following tracker:")
         logger.info(self.tracker)
-        self.metrics["test"] = eval_cfg.get("metrics", {}).get("test", "all")
-        logger.info("Computing the following metrics:")
-        logger.info(self.metrics["test"])
-        self.test_results["save_frame_meta"] = save_frame_meta
-        self.test_results["save_path"] = eval_cfg.get("outdir", ".")
-        os.makedirs(self.test_results["save_path"], exist_ok=True)
+        if mode == "eval":
+            self.metrics["test"] = tracker_cfg.get("metrics", {}).get("test", "all")
+            logger.info("Computing the following metrics:")
+            logger.info(self.metrics["test"])
+            self.test_results["save_frame_meta"] = save_frame_meta
+            self.test_results["save_path"] = tracker_cfg.get("outdir", ".")
+            os.makedirs(self.test_results["save_path"], exist_ok=True)
         overrides_dict = {
-            "max_tracks": self.tracker_cfg.get("max_tracks", None),
+            "max_tracks": self.tracker_cfg.get("max_tracks", inf),
+            "save_frame_meta": save_frame_meta,
         }
         return overrides_dict
 

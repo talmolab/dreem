@@ -117,7 +117,7 @@ def track(
     trainer: pl.Trainer,
     dataloader: torch.utils.data.DataLoader,
     outdir: str,
-    save_frame_meta: bool,
+    overrides_dict: dict,
 ) -> list[pd.DataFrame]:
     """Run Inference.
 
@@ -130,6 +130,7 @@ def track(
         List of DataFrames containing prediction results for each video
     """
     preds = trainer.predict(model, dataloader)
+    save_frame_meta = overrides_dict["save_frame_meta"]
     if save_frame_meta:
         h5_path = os.path.join(
             outdir,
@@ -189,20 +190,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         )
 
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
-    tracker_cfg = pred_cfg.get_tracker_cfg()
-    max_tracks = tracker_cfg.get("max_tracks", inf)
-    dataset_overrides = {}
-    # for excess detection removal
-    dataset_overrides["max_tracks"] = max_tracks
-    save_frame_meta = pred_cfg.cfg.get("save_frame_meta", False)
-    logger.info("Updating tracker hparams")
-    model.tracker_cfg = tracker_cfg
-    model.tracker_cfg["enable_crop_saving"] = (
-        save_frame_meta  # to save frame metadata, need to disable crop=None in GTR (memory saving)
-    )
-    model.tracker = Tracker(**model.tracker_cfg)
-    logger.info("Using the following tracker:")
-    logger.info(model.tracker)
+    overrides_dict = model.setup_tracking(pred_cfg, mode="inference")
 
     labels_files, vid_files = pred_cfg.get_data_paths(
         "test", pred_cfg.cfg.dataset.test_dataset
@@ -216,7 +204,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
             label_files=[label_file],
             vid_files=[vid_file],
             mode="test",
-            overrides=dataset_overrides,
+            overrides=overrides_dict,
         )
         dataloader = pred_cfg.get_dataloader(dataset, mode="test")
         if isinstance(vid_file, list):
@@ -232,7 +220,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
             )
             tifffile.imwrite(outpath, preds.astype(np.uint16))
         else:
-            preds = track(model, trainer, dataloader, outdir, save_frame_meta)
+            preds = track(model, trainer, dataloader, outdir, overrides_dict)
             outpath = os.path.join(
                 outdir,
                 f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.slp",
