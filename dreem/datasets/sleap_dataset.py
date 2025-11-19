@@ -492,7 +492,6 @@ class SleapDataset(BaseDataset):
                 instances = state["instances"]
 
             # non-maximum suppression (high overlap bounding boxes)
-            print(self.max_detection_overlap, len(instances))
             if self.max_detection_overlap > 0 and len(instances) > 0:
                 state = self.non_max_suppression.run({
                     "frame_ind": frame_ind,

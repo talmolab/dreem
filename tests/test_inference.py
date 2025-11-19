@@ -179,10 +179,17 @@ def test_weight_iou():  # set_default_device
     asso_output = torch.rand((N_t, M))
     ious = torch.rand((N_t, M))
 
-    result = weight_iou.run({"traj_score": asso_output, "last_ious": ious})
+    result = IOUWeighting(method="mult").run({"traj_score": asso_output, "last_ious": ious})
     result = result["traj_score"]
-    assert (asso_output == result).all()
+    assert not torch.equal(asso_output, result)
 
+    result = IOUWeighting(method="max").run({"traj_score": asso_output, "last_ious": ious})
+    result = result["traj_score"]
+    assert not torch.equal(asso_output, result)
+
+    result = IOUWeighting(method=None).run({"traj_score": asso_output, "last_ious": ious})
+    result = result["traj_score"]
+    assert torch.equal(asso_output, result)
 
 def test_metrics():
     """Test basic GTR Runner."""
