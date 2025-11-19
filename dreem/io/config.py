@@ -276,6 +276,7 @@ class Config:
         mode: str,
         label_files: list[str] | None = None,
         vid_files: list[str | list[str]] = None,
+        overrides: dict | None = None,
     ) -> SleapDataset | CellTrackingDataset:
         """Getter for datasets.
 
@@ -284,7 +285,7 @@ class Config:
                 train, val, or test params for dataset
             label_files: path to label_files for override
             vid_files: path to vid_files for override
-
+            overrides: overrides to apply to the dataset config
         Returns:
             Either a `SleapDataset` or `CellTrackingDataset` with params indicated by cfg
         """
@@ -329,7 +330,8 @@ class Config:
             dataset_params["video_files"] = vid_files
             dataset_params["data_dirs"] = self.data_dirs
             self.data_paths = (mode, vid_files)
-
+            if overrides:
+                dataset_params.update(overrides)
             return SleapDataset(**dataset_params)
 
         elif self.labels_suffix == ".tif":
@@ -347,7 +349,8 @@ class Config:
             dataset_params["gt_list"] = label_files
             dataset_params["raw_img_list"] = vid_files
             dataset_params["ctc_track_meta"] = ctc_track_meta
-
+            if overrides:
+                dataset_params.update(overrides)
             return CellTrackingDataset(**dataset_params)
 
         else:

@@ -69,7 +69,7 @@ def test_frame():
     n_traj = 3
     video_id = 0
     frame_id = 0
-    img_shape = torch.tensor([3, 1024, 1024])
+    img_shape = torch.Size([3, 1024, 1024])
     traj_score = torch.randn(n_detected, n_traj)
     matches = ([0, 1], [0, 1])
 
@@ -90,7 +90,7 @@ def test_frame():
 
     assert frame.video_id.item() == video_id
     assert frame.frame_id.item() == frame_id
-    assert torch.equal(frame.img_shape, img_shape)
+    assert frame.img_shape == img_shape
     assert frame.num_detected == n_detected
     assert frame.has_instances()
     assert len(frame.instances) == n_detected

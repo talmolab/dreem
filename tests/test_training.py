@@ -116,8 +116,6 @@ def test_basic_gtr_runner():
         gtr_runner.eval()
         with torch.no_grad():
             metrics = gtr_runner.test_step([batch], k)
-        assert "loss" in metrics
-        assert not metrics["loss"].requires_grad
 
 
 # temp fix for actions test, still need to debug

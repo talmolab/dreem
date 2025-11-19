@@ -12,6 +12,7 @@ import pytorch_lightning as pl
 import sleap_io as sio
 import tifffile
 import torch
+from math import inf
 from omegaconf import DictConfig
 from tqdm import tqdm
 from dreem.datasets import CellTrackingDataset
@@ -26,7 +27,11 @@ def store_frame_metadata(frame, h5_path: str):
     with h5py.File(h5_path, "a") as h5f:
         frame_meta_group = h5f.require_group("frame_meta")
         frame = frame.to("cpu")
-        _ = frame.to_h5(frame_meta_group, frame.get_gt_track_ids().cpu().numpy())
+        _ = frame.to_h5(
+            frame_meta_group,
+            frame.get_gt_track_ids().cpu().numpy(),
+            save={"features": True, "crop": True},
+        )
 
 
 def get_timestamp() -> str:
@@ -112,7 +117,7 @@ def track(
     trainer: pl.Trainer,
     dataloader: torch.utils.data.DataLoader,
     outdir: str,
-    save_frame_meta: bool,
+    overrides_dict: dict,
 ) -> list[pd.DataFrame]:
     """Run Inference.
 
@@ -125,6 +130,7 @@ def track(
         List of DataFrames containing prediction results for each video
     """
     preds = trainer.predict(model, dataloader)
+    save_frame_meta = overrides_dict["save_frame_meta"]
     if save_frame_meta:
         h5_path = os.path.join(
             outdir,
@@ -184,12 +190,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         )
 
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
-    tracker_cfg = pred_cfg.get_tracker_cfg()
-    logger.info("Updating tracker hparams")
-    model.tracker_cfg = tracker_cfg
-    model.tracker = Tracker(**model.tracker_cfg)
-    logger.info("Using the following tracker:")
-    logger.info(model.tracker)
+    overrides_dict = model.setup_tracking(pred_cfg, mode="inference")
 
     labels_files, vid_files = pred_cfg.get_data_paths(
         "test", pred_cfg.cfg.dataset.test_dataset
@@ -197,11 +198,13 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
     trainer = pred_cfg.get_trainer()
     outdir = pred_cfg.cfg.outdir if "outdir" in pred_cfg.cfg else "./results"
     os.makedirs(outdir, exist_ok=True)
-    save_frame_meta = pred_cfg.cfg.get("save_frame_meta", False)
 
     for label_file, vid_file in zip(labels_files, vid_files):
         dataset = pred_cfg.get_dataset(
-            label_files=[label_file], vid_files=[vid_file], mode="test"
+            label_files=[label_file],
+            vid_files=[vid_file],
+            mode="test",
+            overrides=overrides_dict,
         )
         dataloader = pred_cfg.get_dataloader(dataset, mode="test")
         if isinstance(vid_file, list):
@@ -217,7 +220,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
             )
             tifffile.imwrite(outpath, preds.astype(np.uint16))
         else:
-            preds = track(model, trainer, dataloader, outdir, save_frame_meta)
+            preds = track(model, trainer, dataloader, outdir, overrides_dict)
             outpath = os.path.join(
                 outdir,
                 f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.slp",

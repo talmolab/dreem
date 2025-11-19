@@ -4,6 +4,7 @@ import logging
 import random
 from pathlib import Path
 from typing import Optional, Union
+from math import inf
 import albumentations as A
 import imageio
 import numpy as np
@@ -13,6 +14,7 @@ from torchvision.transforms import functional as tvf
 
 from dreem.datasets import BaseDataset, data_utils
 from dreem.io import Frame, Instance
+from dreem.datasets.preprocessors import RemoveExcessDetections, NonMaxSuppression
 
 logger = logging.getLogger("dreem.datasets")
 
@@ -40,6 +42,8 @@ class SleapDataset(BaseDataset):
         max_batching_gap: int = 15,
         use_tight_bbox: bool = False,
         dilation_radius_px: Union[int, list[int]] = 0,
+        max_detection_overlap: float = 0,
+        max_tracks: int = inf,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -81,6 +85,8 @@ class SleapDataset(BaseDataset):
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
             dilation_radius_px: radius of the keypoints dilation in pixels. 0 means no mask applied
+            max_detection_overlap: the iom threshold for non-maximum suppression of detections
+            max_tracks: the maximum number of tracks that can be created while tracking. Remove any detections that exceed this number.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
@@ -111,7 +117,10 @@ class SleapDataset(BaseDataset):
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
         self.dilation_radius_px = dilation_radius_px
-
+        self.max_detection_overlap = (
+            max_detection_overlap if max_detection_overlap is not None else 0
+        )
+        self.max_tracks = max_tracks if max_tracks is not None else inf
         if isinstance(anchors, int):
             self.anchors = anchors
         elif isinstance(anchors, str):
@@ -160,8 +169,9 @@ class SleapDataset(BaseDataset):
             self.annotated_segments[slp_file] = annotated_segments
 
         self.videos = [imageio.get_reader(vid_file) for vid_file in self.vid_files]
-        # do we need this? would need to update with sleap-io
-
+        # preprocessors
+        self.remove_excess_detections = RemoveExcessDetections(max_tracks)
+        self.non_max_suppression = NonMaxSuppression(max_detection_overlap)
         # Method in BaseDataset. Creates label_idx and chunked_frame_idx to be
         # used in call to get_instances()
         self.create_chunks_slp()
@@ -440,8 +450,6 @@ class SleapDataset(BaseDataset):
                             arr_pose, crop, dilation_radius_px, bbox
                         )
                         crop = crop * mask
-                        # os.makedirs(f"/root/vast/mustafa/dreem-experiments/run/apply-mask-kpts-dilate/crops", exist_ok=True)
-                        # plt.imsave(f"/root/vast/mustafa/dreem-experiments/run/apply-mask-kpts-dilate/crops/frame_{frame_ind}_{j}_crop.png", crop[0].numpy())
                         # logger.debug(f"Applying mask to crop {frame_ind}_{j}")
 
                     crops.append(crop)
@@ -477,6 +485,26 @@ class SleapDataset(BaseDataset):
                 )
 
                 instances.append(instance)
+
+            # remove excess detections
+            if len(instances) > self.max_tracks:
+                state = self.remove_excess_detections.run(
+                    {
+                        "frame_ind": frame_ind,
+                        "instances": instances,
+                    }
+                )
+                instances = state["instances"]
+
+            # non-maximum suppression (high overlap bounding boxes)
+            if self.max_detection_overlap > 0 and len(instances) > 0:
+                state = self.non_max_suppression.run(
+                    {
+                        "frame_ind": frame_ind,
+                        "instances": instances,
+                    }
+                )
+                instances = state["instances"]
 
             frame = Frame(
                 video_id=label_idx,

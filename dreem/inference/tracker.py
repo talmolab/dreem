@@ -1,14 +1,17 @@
 """Module containing logic for going from association -> assignment."""
 
 import logging
-from math import inf
-
+from math import inf, radians as deg2rad
 import pandas as pd
 import torch
 from scipy.optimize import linear_sum_assignment
-
-from dreem.datasets.data_utils import _pairwise_iou
-from dreem.inference import post_processing
+from dreem.datasets.data_utils import _pairwise_iou, is_pose_centroid_only
+from dreem.inference.post_processing import (
+    IOUWeighting,
+    DistanceWeighting,
+    OrientationWeighting,
+)
+from dreem.inference.post_processing_utils import get_principal_axis_with_fallback
 from dreem.inference.boxes import Boxes
 from dreem.inference.track_queue import TrackQueue
 from dreem.io import Frame
@@ -32,8 +35,12 @@ class Tracker:
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
-        confidence_threshold: float = 0,
+        confidence_threshold: float = 0.0,
         temperature: float = 0.1,
+        max_angle_diff: float = 0.0,
+        front_nodes: list[str] | None = None,
+        back_nodes: list[str] | None = None,
+        enable_crop_saving: bool = False,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -53,6 +60,10 @@ class Tracker:
             verbose: Whether or not to turn on debug printing after each operation.
             confidence_threshold: threshold for filtering out instances with high confidence. Set to 0 to disable confidence thresholding.
             temperature: temperature for softmax.
+            max_angle_diff: maximum angle difference between pose principal axes when considering association between two instances. Set to 0 to disable angle difference filtering.
+            front_nodes: list of skeleton node names to be used to determine the orientation of the object. If None, computes using all available nodes.
+            back_nodes: list of skeleton node names to be used to determine the orientation of the object. If None, computes using all available nodes.
+            enable_crop_saving: Whether to save crops to frame metadata.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
@@ -68,6 +79,14 @@ class Tracker:
         self.max_tracks = max_tracks
         self.confidence_threshold = confidence_threshold
         self.temperature = temperature
+        self.max_angle_diff = deg2rad(max_angle_diff)
+        self.front_nodes = front_nodes
+        self.back_nodes = back_nodes
+        self.enable_crop_saving = enable_crop_saving
+
+        self.orientation_weighting = OrientationWeighting(max_angle_diff)
+        self.distance_weighting = DistanceWeighting(max_center_dist)
+        self.iou_weighting = IOUWeighting(iou)
 
     def __call__(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -99,6 +118,8 @@ class Tracker:
             f"verbose={self.verbose}, "
             f"queue={self.track_queue}, "
             f"temperature={self.temperature}"
+            f"queue={self.track_queue}, "
+            f"temperature={self.temperature}"
         )
 
     def track(
@@ -115,7 +136,6 @@ class Tracker:
         """
         _ = model.eval()
         instances_pred = self.sliding_inference(model, frames)
-
         return instances_pred
 
     def sliding_inference(
@@ -135,15 +155,16 @@ class Tracker:
         # nc: number of channels.
         # H: height.
         # W: width.
-
         for batch_idx, frame_to_track in enumerate(frames):
             tracked_frames = self.track_queue.collate_tracks(
                 device=frame_to_track.device
             )
             logger.debug(f"Current number of tracks is {self.track_queue.n_tracks}")
-            """
-            Initialize tracks on first frame where detections appear.
-            """
+            if frame_to_track.frame_id == 0:  # clear queue on new video
+                logger.debug("New Video! Resetting Track Queue.")
+                self.track_queue.end_tracks()
+
+            # Initialize tracks on first frame where detections appear
             if len(self.track_queue) == 0:
                 if frame_to_track.has_instances():
                     logger.debug(
@@ -157,8 +178,8 @@ class Tracker:
 
                     for i, instance in enumerate(frames[batch_idx].instances):
                         if instance.pred_track_id == -1:
-                            curr_track_id += 1
                             instance.pred_track_id = curr_track_id
+                            curr_track_id += 1
 
             else:
                 if frame_to_track.has_instances():  # Check if there are detections. If there are skip and increment gap count
@@ -174,7 +195,7 @@ class Tracker:
                     del frames_to_track
 
             if frame_to_track.has_instances():
-                self.track_queue.add_frame(frame_to_track)
+                gap = self.track_queue.add_frame(frame_to_track)
             else:
                 self.track_queue.increment_gaps([])
 
@@ -195,7 +216,6 @@ class Tracker:
             model: the pretrained GlobalTrackingTransformer to be used for inference
             frames: A list of Frames containing reid features. See `dreem.io.data_structures` for more info.
             query_ind: An integer for the query frame within the window of instances.
-
         Returns:
             query_frame: The query frame now populated with the pred_track_ids.
         """
@@ -217,6 +237,7 @@ class Tracker:
         _ = model.eval()
 
         query_frame = frames[query_ind]
+        _, h, w = query_frame.img_shape
 
         query_instances = query_frame.instances
         all_instances = [instance for frame in frames for instance in frame.instances]
@@ -234,8 +255,31 @@ class Tracker:
         n_traj = self.track_queue.n_tracks
         curr_tracks = self.track_queue.curr_track
 
+        query_poses = [
+            (instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu())
+            for instance in query_frame.instances
+        ]
+        nonquery_poses = [
+            (instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu())
+            for nonquery_frame in frames
+            if nonquery_frame.frame_id != query_frame.frame_id.item()
+            for instance in nonquery_frame.instances
+        ]
+        enable_crop_saving = self.enable_crop_saving or is_pose_centroid_only(
+            query_poses[0][0]
+        )
+        if (
+            is_pose_centroid_only(query_poses[0][0])
+            and query_frame.frame_id.item() == 1
+            and self.max_angle_diff > 0
+        ):
+            logger.warning(
+                "Crop saving is enabled due to max_angle_diff > 0 and a centroid-only skeleton. This can increase memory usage. If you experience memory issues, consider setting max_angle_diff = 0. This will skip orientation based post processing."
+            )
         with torch.no_grad():
-            asso_matrix = model(all_instances, query_instances)
+            asso_matrix = model(
+                all_instances, query_instances, retain_crops=enable_crop_saving
+            )
 
         asso_output = asso_matrix[-1].matrix.split(
             instances_per_frame, dim=1
@@ -267,14 +311,18 @@ class Tracker:
         logger.debug(f"n_nonquery: {n_nonquery}")
         logger.debug(f"n_query: {n_query}")
 
-        instance_ids = torch.cat(
-            [
-                x.get_pred_track_ids()
-                for batch_idx, x in enumerate(frames)
-                if batch_idx != query_ind
-            ],
-            dim=0,
-        ).view(n_nonquery)  # (n_nonquery,)
+        instance_ids = (
+            torch.cat(
+                [
+                    x.get_pred_track_ids()
+                    for batch_idx, x in enumerate(frames)
+                    if batch_idx != query_ind
+                ],
+                dim=0,
+            )
+            .view(n_nonquery)
+            .cpu()
+        )  # (n_nonquery,)
 
         query_inds = [
             x
@@ -301,22 +349,13 @@ class Tracker:
         # get raw bbox coords of prev frame instances from frame.instances_per_frame
         query_boxes_px = torch.cat(
             [instance.bbox for instance in query_frame.instances], dim=0
-        )
-        nonquery_boxes_px = torch.cat(
-            [
-                instance.bbox
-                for nonquery_frame in frames
-                if nonquery_frame.frame_id != query_frame.frame_id.item()
-                for instance in nonquery_frame.instances
-            ],
-            dim=0,
-        )
+        ).cpu()
 
         pred_boxes = model_utils.get_boxes(all_instances)
         query_boxes = pred_boxes[query_inds]  # n_k x 4
         nonquery_boxes = pred_boxes[nonquery_inds]  # n_nonquery x 4
 
-        unique_ids = torch.unique(instance_ids)  # (n_nonquery,)
+        unique_ids = torch.unique(instance_ids).cpu()  # (n_nonquery,)
 
         logger.debug(f"Instance IDs: {instance_ids}")
         logger.debug(f"unique ids: {unique_ids}")
@@ -329,7 +368,9 @@ class Tracker:
 
         # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj
         traj_score = torch.mm(asso_nonquery, id_inds.cpu())  # (n_query, n_traj)
-
+        assoc_col_pred_id_map = {
+            i: unique_ids[i].item() for i in range(unique_ids.shape[0])
+        }
         traj_score_df = pd.DataFrame(
             traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
         )
@@ -348,16 +389,20 @@ class Tracker:
             # last_inds = (id_inds * torch.arange(
             #    n_nonquery, device=id_inds.device)[:, None]).max(dim=0)[1] # n_traj
 
-            last_inds = (
-                id_inds * torch.arange(n_nonquery, device=id_inds.device)[:, None]
-            ).max(dim=0)[1]  # M
+            last_inds = (id_inds * torch.arange(n_nonquery)[:, None]).max(dim=0)[1]  # M
 
             last_boxes = nonquery_boxes[last_inds]  # n_traj x 4
             last_ious = _pairwise_iou(Boxes(query_boxes), Boxes(last_boxes))  # n_k x M
         else:
             last_ious = traj_score.new_zeros(traj_score.shape)
 
-        traj_score = post_processing.weight_iou(traj_score, self.iou, last_ious.cpu())
+        state = self.iou_weighting.run(
+            {
+                "traj_score": traj_score,
+                "last_ious": last_ious.cpu(),
+            }
+        )
+        traj_score = state["traj_score"]
 
         if self.iou is not None and self.iou != "":
             iou_traj_score = pd.DataFrame(
@@ -369,18 +414,26 @@ class Tracker:
 
             query_frame.add_traj_score("weight_iou", iou_traj_score)
         ################################################################################
-
-        # threshold for continuing a tracking or starting a new track -> they use 1.0
-        # todo -> should also work without pos_embed
-        traj_score = post_processing.filter_max_center_dist(
-            traj_score,
-            self.max_center_dist,
-            id_inds,
-            query_boxes_px,
-            nonquery_boxes_px,
-        )
+        last_poses = []
+        for ind in last_inds.cpu():  # its important to index nonquery_poses by last_inds as this maintains ordering that matches the association matrix ordering
+            last_poses.append(nonquery_poses[ind])
+        last_pred_ids = [pred_track_id for _, pred_track_id, _ in last_poses]
 
         if self.max_center_dist is not None and self.max_center_dist > 0:
+            last_boxes_px = last_boxes.cpu()
+            last_boxes_px[:, :, [0, 2]] *= w
+            last_boxes_px[:, :, [1, 3]] *= h
+            state = self.distance_weighting.run(
+                {
+                    "traj_score": traj_score,
+                    "query_boxes_px": query_boxes_px,
+                    "last_boxes_px": last_boxes_px,
+                    "h": h,
+                    "w": w,
+                }
+            )
+            traj_score = state["traj_score"]
+            # update metadata
             max_center_dist_traj_score = pd.DataFrame(
                 traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
             )
@@ -389,6 +442,62 @@ class Tracker:
             max_center_dist_traj_score.columns.name = "Unique IDs"
 
             query_frame.add_traj_score("max_center_dist", max_center_dist_traj_score)
+
+        ################################################################################
+
+        if self.max_angle_diff > 0:
+            query_principal_axes = []
+            last_principal_axes = []
+            successes = []
+            for instance, pred_track_id, crop in query_poses:
+                instance_principal_axes, success = get_principal_axis_with_fallback(
+                    instance,
+                    self.front_nodes,
+                    self.back_nodes,
+                    crop,
+                    logger,
+                    query_frame.frame_id.item(),
+                )
+                query_principal_axes.append(instance_principal_axes)
+                successes.append(success)
+            query_principal_axes = torch.stack(query_principal_axes)  # (n_query, 2)
+
+            for instance, pred_track_id, crop in last_poses:
+                instance_principal_axes, success = get_principal_axis_with_fallback(
+                    instance,
+                    self.front_nodes,
+                    self.back_nodes,
+                    crop,
+                    logger,
+                    query_frame.frame_id.item(),
+                )
+                last_principal_axes.append(instance_principal_axes)
+                successes.append(success)
+            last_principal_axes = torch.stack(last_principal_axes)  # (n_traj, 2)
+
+            if all(successes):
+                state = self.orientation_weighting.run(
+                    {
+                        "traj_score": traj_score,
+                        "query_principal_axes": query_principal_axes,
+                        "last_principal_axes": last_principal_axes,
+                    }
+                )
+                traj_score = state["traj_score"]
+                # update metadata
+                angle_diff_weight_traj_score = pd.DataFrame(
+                    traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+                )
+                angle_diff_weight_traj_score.index.name = "Current Frame Instances"
+                angle_diff_weight_traj_score.columns.name = "Unique IDs"
+
+                query_frame.add_traj_score(
+                    "angle_diff_weight", angle_diff_weight_traj_score
+                )
+            else:
+                logger.warning(
+                    f"Some instances had no principal axis in frame {query_frame.frame_id.item()}. Skipping instance angle based post processing."
+                )
 
         ################################################################################
         scaled_traj_score = torch.nn.functional.log_softmax(
@@ -456,6 +565,7 @@ class Tracker:
             thresh = (
                 overlap_thresh * id_inds[:, j].sum() if mult_thresh else overlap_thresh
             )
+            # if we've already reached max tracks, just assign it to one of the existing tracks
             if n_traj >= self.max_tracks or traj_score[i, j] > thresh:
                 logger.debug(
                     f"Assigning instance {i} to track {j} with id {unique_ids[j]}"

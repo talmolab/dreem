@@ -21,7 +21,7 @@ def get_boxes(instances: list["Instance"]) -> torch.Tensor:
     """
     boxes = []
     for i, instance in enumerate(instances):
-        _, h, w = instance.frame.img_shape.flatten()
+        _, h, w = instance.frame.img_shape
         bbox = instance.bbox.clone()
         bbox[:, :, [0, 2]] /= w
         bbox[:, :, [1, 3]] /= h

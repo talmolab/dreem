@@ -1,94 +1,211 @@
 """Helper functions for post-processing association matrix pre-tracking."""
 
+import logging
+from typing import Any, Dict
+
 import torch
 
-from dreem.inference.boxes import Boxes
+from dreem.utils.processors import ProcessingStep
+
+logger = logging.getLogger(__name__)
 
 
-def weight_iou(
-    asso_output: torch.Tensor, method: str | None = None, last_ious: torch.Tensor = None
-) -> torch.Tensor:
-    """Weight the association matrix by the IOU between object bboxes across frames.
+class IOUWeighting(ProcessingStep):
+    """Weight trajectory score by IOU between object bboxes across frames.
 
-    Args:
-        asso_output: An N_t x N association matrix
-        method: string indicating whether to use a max weighting or multiplicative weighting
-                Max weighting: take `max(traj_score, iou)`
-                multiplicative weighting: `iou*weight + traj_score`
-        last_ious: torch Tensor containing the ious between current and previous frames
+    This step applies IOU-based weighting to the trajectory score using either
+    multiplicative or max weighting methods.
 
-    Returns:
-        An N_t x N association matrix weighted by the IOU
+    Expected state keys:
+        - traj_score: torch.Tensor (n_query, n_traj)
+        - last_ious: torch.Tensor - IOU values between current and previous frames
+
+    Modified state keys:
+        - traj_score: updated with IOU-based weighting
     """
-    if method is not None and method != "":
+
+    def __init__(self, method: str | None = None):
+        """Initialize IOUWeighting step.
+
+        Args:
+            method: Weighting method. One of:
+                - None or "": Skip IOU weighting (no-op)
+                - "mult": Multiplicative weighting: `iou*weight + traj_score`
+                - "max": Max weighting: `max(traj_score, iou)`
+        """
+        super().__init__(name="iou_weighting")
+        self.method = method
+
+    def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply IOU weighting to trajectory score.
+
+        Args:
+            state: State dictionary with required keys.
+
+        Returns:
+            Modified state with updated traj_score.
+        """
+        if self.method is None or self.method == "":
+            return state
+
+        traj = state["traj_score"]
+        last_ious = state["last_ious"]
+
         assert last_ious is not None, "Need `last_ious` to weight traj_score by `IOU`"
-        if method.lower() == "mult":
-            weights = torch.abs(last_ious - asso_output)
+
+        if self.method.lower() == "mult":
+            weights = torch.abs(last_ious - traj)
             weighted_iou = weights * last_ious
             weighted_iou = torch.nan_to_num(weighted_iou, 0)
-            asso_output = asso_output + weighted_iou
-        elif method.lower() == "max":
-            asso_output = torch.max(asso_output, last_ious)
+            traj = traj + weighted_iou
+        elif self.method.lower() == "max":
+            traj = torch.max(traj, last_ious)
         else:
             raise ValueError(
-                f"`method` must be one of ['mult' or 'max'] got '{method.lower()}'"
+                f"`method` must be one of ['mult' or 'max'] got '{self.method.lower()}'"
             )
-    return asso_output
+
+        state["traj_score"] = traj
+        return state
 
 
-def filter_max_center_dist(
-    asso_output: torch.Tensor,
-    max_center_dist: float = 0,
-    id_inds: torch.Tensor | None = None,
-    query_boxes_px: torch.Tensor | None = None,
-    nonquery_boxes_px: torch.Tensor | None = None,
-) -> torch.Tensor:
-    """Filter trajectory score by distances between objects across frames.
+class DistanceWeighting(ProcessingStep):
+    """Weight trajectory score by distances between objects across frames.
 
-    Args:
-        asso_output: An N_t x N association matrix
-        max_center_dist: The euclidean distance threshold between bboxes
-        id_inds: track ids
-        query_boxes_px: the raw bbox coords of the current frame instances
-        nonquery_boxes_px: the raw bbox coords of the instances in the nonquery frames (context window)
+    This step applies a penalty to the trajectory score based on euclidean distance
+    between bounding box centers.
 
-    Returns:
-        An N_t x N association matrix
+    Expected state keys:
+        - traj_score: torch.Tensor (n_query, n_traj)
+        - query_boxes_px: torch.Tensor - raw bbox coords of current frame instances
+        - last_boxes_px: torch.Tensor - raw bbox coords of instances in context window
+        - h: int - height of the image in pixels
+        - w: int - width of the image in pixels
+
+    Modified state keys:
+        - traj_score: updated with distance-based penalties
     """
-    if max_center_dist is not None and max_center_dist > 0:
-        assert query_boxes_px is not None and nonquery_boxes_px is not None, (
-            "Need `query_boxes_px`, and `nonquery_boxes_px` to filter by `max_center_dist`"
+
+    def __init__(self, max_center_dist: float):
+        """Initialize DistanceWeighting step.
+
+        Args:
+            max_center_dist: The euclidean distance threshold between bboxes in pixels.
+        """
+        super().__init__(name="distance_weighting")
+        self.max_center_dist = max_center_dist
+
+    def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply distance weighting to trajectory score.
+
+        Args:
+            state: State dictionary with required keys.
+
+        Returns:
+            Modified state with updated traj_score.
+        """
+        traj = state["traj_score"]
+        q_boxes_px = state["query_boxes_px"]
+        last_boxes_px = state["last_boxes_px"]
+        h, w = state["h"], state["w"]
+
+        assert (
+            q_boxes_px is not None
+            and last_boxes_px is not None
+            and h is not None
+            and w is not None
+        ), (
+            "Need `query_boxes_px`, `last_boxes_px`, and `h`, `w` to weight by `max_center_dist`"
         )
-
-        k_ct = (query_boxes_px[:, :, :2] + query_boxes_px[:, :, 2:]) / 2
-        # k_s = ((curr_frame_boxes[:, :, 2:] - curr_frame_boxes[:, :, :2]) ** 2).sum(dim=2)  # n_k
-        # nonk boxes are only from previous frame rather than entire window
-        nonk_ct = (nonquery_boxes_px[:, :, :2] + nonquery_boxes_px[:, :, 2:]) / 2
-
+        diag_length = (h**2 + w**2) ** (1 / 2)  # diagonal length of the image in pixels
+        max_center_dist_normalized = self.max_center_dist / diag_length
+        k_ct = (q_boxes_px[:, :, :2] + q_boxes_px[:, :, 2:]) / 2
+        # nonquery boxes are the most recent occurrence of each instance; could be many frames ago
+        nonk_ct = (last_boxes_px[:, :, :2] + last_boxes_px[:, :, 2:]) / 2
         # pairwise euclidean distance in units of pixels
         dist = ((k_ct[:, None, :, :] - nonk_ct[None, :, :, :]) ** 2).sum(dim=-1) ** (
             1 / 2
         )  # n_k x n_nonk
-        # norm_dist = dist / (k_s[:, None, :] + 1e-8)
+        dist = dist.squeeze(-1) / diag_length  # n_k x n_nonk
+        while dist.dim() < 2:
+            dist = dist.unsqueeze(0)
+        asso_scale = traj.mean(dim=1)
+        penalty = torch.where(
+            dist > max_center_dist_normalized, dist - max_center_dist_normalized, 0
+        )  # n_k x n_nonk
+        scale = asso_scale / (penalty.mean(dim=1) + 1e-8)
+        scaled_penalty = -scale.unsqueeze(-1) * penalty  # n_k x n_nonk
+        traj = traj + scaled_penalty
+        state["traj_score"] = traj
+        return state
 
-        valid = dist.squeeze() < max_center_dist  # n_k x n_nonk
-        # handle case where id_inds and valid is a single value
-        # handle this better
-        if valid.ndim == 0:
-            valid = valid.unsqueeze(0)
-        if valid.ndim == 1:
-            if id_inds.shape[0] == 1:
-                valid_mult = valid.float().unsqueeze(-1)
-            else:
-                valid_mult = valid.float().unsqueeze(0)
-        else:
-            valid_mult = valid.float()
 
-        valid_assn = (
-            torch.mm(valid_mult, id_inds.to(valid.device)).clamp_(max=1.0).long().bool()
-        )  # n_k x M
-        asso_output_filtered = asso_output.clone()
-        asso_output_filtered[~valid_assn] = 0  # n_k x M
-        return asso_output_filtered
-    else:
-        return asso_output
+class OrientationWeighting(ProcessingStep):
+    """Weight trajectory score by angle difference between objects' orientations across frames.
+
+    This step applies a penalty based on the angular difference between principal axes
+    of instances across frames.
+
+    Expected state keys:
+        - traj_score: torch.Tensor (n_query, n_traj)
+        - query_principal_axes: torch.Tensor (n_query, 2) - principal axes of current frame
+        - last_principal_axes: torch.Tensor (n_traj, 2) - principal axes of last frame instances
+
+    Modified state keys:
+        - traj_score: updated with angle-based penalties
+    """
+
+    def __init__(self, max_angle_diff_rad: float):
+        """Initialize WeightAngleDiff step.
+
+        Args:
+            max_angle_diff_rad: Maximum angle difference threshold in radians.
+        """
+        super().__init__(name="weight_angle_diff")
+        self.max_angle_diff_rad = max_angle_diff_rad
+
+    def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply angle difference weighting to trajectory score.
+
+        Args:
+            state: State dictionary with required keys.
+
+        Returns:
+            Modified state with updated traj_score.
+        """
+        traj = state["traj_score"]
+        query_axes = state["query_principal_axes"]
+        last_axes = state["last_principal_axes"]
+
+        # Inline the weight_by_angle_diff logic
+        assert query_axes is not None and last_axes is not None, (
+            "Need `query_principal_axes`, and `last_principal_axes` to weight by angle difference"
+        )
+        dot = (query_axes[:, None, :] * last_axes[None, :, :]).sum(dim=-1)  # (q, nq)
+        # cross product is scalar in 2D
+        cross_z = (
+            query_axes[:, None, 0] * last_axes[None, :, 1]
+            - query_axes[:, None, 1] * last_axes[None, :, 0]
+        )  # (q, nq)
+        # product of norms cancels out in arctan so no need to calculate
+        angle_diff = torch.abs(torch.atan2(cross_z, dot))
+        # wrap angle diff to [0, pi/2] since there is no head/tail disambiguation in general
+        angle_diff = torch.where(
+            angle_diff > torch.pi / 2, torch.pi - angle_diff, angle_diff
+        )
+        if angle_diff.dim() == 1:
+            angle_diff = angle_diff.unsqueeze(0)
+        weight = traj.mean(
+            dim=1
+        )  # row wise aggregation of association scores; used to weight the angle diff
+        penalty = torch.where(
+            angle_diff > self.max_angle_diff_rad,
+            angle_diff - self.max_angle_diff_rad,
+            0,
+        )  # gracefully handles nans by setting diff to 0
+        scale = weight  # / (penalty.mean(dim=1) + 1e-8)
+        # normalize angle difference to [0, 1]
+        scaled_penalty = -scale.unsqueeze(-1) * penalty
+        traj = traj + scaled_penalty
+        state["traj_score"] = traj
+        return state

@@ -145,3 +145,10 @@ site/
 
 # Serena MCP
 .serena/
+
+# Local agent workflow files
+AGENTS.md
+agents/
+.cursor/
+run_tracker.py
+run_trainer.py

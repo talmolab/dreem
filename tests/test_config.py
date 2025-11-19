@@ -86,7 +86,7 @@ def test_getters(base_config, sleap_data_dir):
 
     ds = cfg.get_dataset("train")
     assert ds.clip_length == 4
-    assert len(ds.label_files) == len(ds.vid_files) == 4
+    assert len(ds.label_files) == len(ds.vid_files) == 5
     ds = cfg.get_dataset("val")
     assert ds.clip_length == 8
 
@@ -100,7 +100,7 @@ def test_getters(base_config, sleap_data_dir):
         }
     )
     ds = cfg.get_dataset("train")
-    assert len(ds.label_files) == len(ds.vid_files) == 4
+    assert len(ds.label_files) == len(ds.vid_files) == 5
 
     optim = cfg.get_optimizer(model.parameters())
     assert isinstance(optim, torch.optim.Adam)
@@ -118,7 +118,7 @@ def test_getters(base_config, sleap_data_dir):
             }
         },
     )
-    assert len(label_paths) == len(data_path) == 4
+    assert len(label_paths) == len(data_path) == 5
 
 
 def test_missing(base_config):

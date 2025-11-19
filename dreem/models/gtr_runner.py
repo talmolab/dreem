@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
-
+from math import inf
 import h5py
 import numpy as np
 import sleap_io as sio
@@ -148,7 +148,7 @@ class GTRRunner(LightningModule):
     def test_step(
         self, test_batch: list[list["Frame"]], batch_idx: int
     ) -> dict[str, float]:
-        """Execute single test step for model.
+        """Execute single test step for model. Performs eval in addition to tracking.
 
         Args:
             test_batch: A single batch from the dataset which is a list of `Frame` objects
@@ -156,12 +156,12 @@ class GTRRunner(LightningModule):
             batch_idx: the batch number used by lightning
 
         Returns:
-            A dict containing the val loss plus any other metrics specified
+            None
         """
-        result = self._shared_eval_step(test_batch[0], mode="test")
-        self.log_metrics(result, len(test_batch[0]), "test")
-
-        return result
+        frames_pred = self.tracker(self.model, test_batch[0])
+        self.test_results["preds"].extend([frame.to("cpu") for frame in frames_pred])
+        self.log_metrics(None, len(test_batch[0]), "test")
+        return None
 
     def predict_step(self, batch: list[list["Frame"]], batch_idx: int) -> list["Frame"]:
         """Run inference for model.
@@ -193,22 +193,13 @@ class GTRRunner(LightningModule):
         """
         try:
             instances = [instance for frame in frames for instance in frame.instances]
-
             if len(instances) == 0:
                 return None
-
-            # eval_metrics = self.metrics[mode]  # Currently unused but available for future metric computation
 
             logits = self(instances)
             logits = [asso.matrix for asso in logits]
             loss = self.loss(logits, frames)
-
             return_metrics = {"loss": loss}
-            if mode == "test":
-                frames_pred = self.tracker(self.model, frames)
-                self.test_results["preds"].extend(
-                    [frame.to("cpu") for frame in frames_pred]
-                )
             return_metrics["batch_size"] = len(frames)
         except Exception as e:
             logger.exception(
@@ -273,20 +264,29 @@ class GTRRunner(LightningModule):
         gc.collect()
         torch.cuda.empty_cache()
 
-    def setup_eval(self, eval_cfg: DictConfig):
+    def setup_tracking(self, tracker_cfg: DictConfig, mode: str = "inference"):
         from dreem.inference.tracker import Tracker
 
-        self.tracker_cfg = eval_cfg.cfg.tracker
+        save_frame_meta = tracker_cfg.cfg.get("save_frame_meta", False)
+        self.tracker_cfg = tracker_cfg.get_tracker_cfg()
+        self.tracker_cfg["enable_crop_saving"] = (
+            save_frame_meta  # to save frame metadata, need to disable crop=None in GTR (memory saving)
+        )
         self.tracker = Tracker(**self.tracker_cfg)
         logger.info("Using the following tracker:")
         logger.info(self.tracker)
-        self.metrics["test"] = eval_cfg.get("metrics", {}).get("test", "all")
-        logger.info("Computing the following metrics:")
-        logger.info(self.metrics["test"])
-        save_frame_meta = eval_cfg.cfg.get("save_frame_meta", False)
-        self.test_results["save_frame_meta"] = save_frame_meta
-        self.test_results["save_path"] = eval_cfg.get("outdir", ".")
-        os.makedirs(self.test_results["save_path"], exist_ok=True)
+        if mode == "eval":
+            self.metrics["test"] = tracker_cfg.get("metrics", {}).get("test", "all")
+            logger.info("Computing the following metrics:")
+            logger.info(self.metrics["test"])
+            self.test_results["save_frame_meta"] = save_frame_meta
+            self.test_results["save_path"] = tracker_cfg.get("outdir", ".")
+            os.makedirs(self.test_results["save_path"], exist_ok=True)
+        overrides_dict = {
+            "max_tracks": self.tracker_cfg.get("max_tracks", inf),
+            "save_frame_meta": save_frame_meta,
+        }
+        return overrides_dict
 
     def on_test_end(self):
         """Run inference and metrics pipeline to compute metrics for test set.
@@ -344,6 +344,13 @@ class GTRRunner(LightningModule):
                     # For num_switches, save mot_summary and mot_events separately
                     mot_summary = value[0]
                     frame_switch_map = value[1]
+                    motevents = value[2]
+                    motevents.to_csv(
+                        os.path.join(
+                            self.test_results["save_path"], f"{vid_name}.motevents.csv"
+                        ),
+                        index=False,
+                    )
                     mot_summary_group = vid_group.require_group("mot_summary")
                     # Loop through each row in mot_summary and save as attributes
                     for _, row in mot_summary.iterrows():

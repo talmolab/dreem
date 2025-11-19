@@ -2,7 +2,7 @@
 
 import math
 from xml.etree import cElementTree as et
-
+from typing import Dict
 import albumentations as A
 import matplotlib.pyplot as plt
 import numpy as np
@@ -93,6 +93,40 @@ def load_slp(labels_path: str, open_videos: bool = True) -> Labels:
     return labels, annotated_segments
 
 
+def is_pose_centroid_only(pose: Dict[str, torch.Tensor]) -> bool:
+    """Check if a pose contains only a single key named "centroid".
+
+    Args:
+        pose: a pose as a dictionary mapping keypoint names to 2D coordinates.
+
+    Returns:
+        bool: True if the pose contains only a single key named "centroid", False otherwise.
+    """
+    if len(pose.keys()) <= 1 and pose.get("centroid") is not None:
+        return True
+    return False
+
+
+def gather_pose_array(poses: list[Dict[str, torch.Tensor]]) -> torch.Tensor:
+    """Collate a list of pose dictionaries into a torch tensor of shape (N, num_keys, 2).
+
+    Each pose in the input list should be a dict mapping keypoint names to 2D coordinates (2-vector).
+
+    Args:
+        poses: List of dicts, where each dict {key: value} contains keypoint names as keys and 2D coordinates as values.
+
+    Returns:
+        torch.Tensor: Tensor of shape (N, num_keys, 2) containing the collated poses, where N is the number of poses and num_keys is the maximum number of keys across all poses.
+    """
+    num_pose_keys = [len(instance.keys()) for instance in poses]
+    max_num_keys = max(num_pose_keys)
+    pose_arr = torch.full((len(poses), max_num_keys, 2), fill_value=torch.nan)
+    for i, instance in enumerate(poses):
+        for j, node_name in enumerate(instance.keys()):
+            pose_arr[i, j, :] = torch.tensor(instance[node_name])
+    return pose_arr
+
+
 def pad_bbox(bbox: ArrayLike, padding: int = 16) -> torch.Tensor:
     """Pad bounding box coordinates.
 
@@ -160,6 +194,25 @@ def get_mask_from_keypoints(
     mask = np.min(dists, axis=-1) < dilation_radius_px
     mask = torch.from_numpy(mask.astype(np.uint8))
     return mask
+
+
+def get_pose_principal_axis(pose_arr: torch.Tensor) -> torch.Tensor:
+    """Get the principal axis of a pose.
+
+    Args:
+        pose_arr: a tensor of shape (N, num_keys, 2)
+
+    Returns:
+        The principal axis of the pose
+    """
+    # each instance can have a different number of pose keypoints
+    principal_axes = []
+    for instance in pose_arr:
+        valid = ~torch.isnan(instance).any(dim=-1)
+        instance_filt = instance[valid]
+        U, S, Vt = torch.linalg.svd(instance_filt - instance_filt.mean(dim=0))
+        principal_axes.append(Vt[:, 0])
+    return torch.stack(principal_axes)
 
 
 def pad_variable_size_crops(instance, target_size):
@@ -252,6 +305,37 @@ def _pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
         torch.nan,
     )
     return iou.nanmean(dim=-1)
+
+
+def pairwise_iom(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
+    """Compute the intersection over minimum area between all N x M pairs of boxes."""
+    area1 = boxes1.area()  # [N]
+    area2 = boxes2.area()  # [M]
+    inter = _pairwise_intersection(boxes1, boxes2)
+    iom = torch.where(
+        inter >= 0,
+        inter / torch.min(area1, area2),
+        torch.nan,
+    )
+    return iom.nanmean(dim=-1)
+
+
+def nms(ioms: torch.Tensor, threshold: float) -> list[int]:
+    """Non-maximum suppression.
+
+    Args:
+        ioms: IoM matrix
+        threshold: threshold for non-maximum suppression
+    Returns:
+        list of indices of the boxes to keep
+    """
+    keep_inds = []
+    x, y = np.where(ioms > threshold)
+    coords = np.stack([x, y], axis=-1)
+    self_mask = coords[:, 0] == coords[:, 1]  # diagonal elements are self-ious
+    coords = coords[~self_mask]
+
+    return coords
 
 
 def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:
