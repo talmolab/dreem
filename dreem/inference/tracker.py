@@ -33,7 +33,7 @@ class Tracker:
         iou: str | None = None,
         max_center_dist: float | None = None,
         distance_penalty_multiplier: float = 1.0,
-        orientation_penalty_multiplier: float = 1.0,
+        angle_diff_penalty_multiplier: float = 1.0,
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
@@ -87,7 +87,7 @@ class Tracker:
         self.max_angle_diff = (
             deg2rad(max_angle_diff) if max_angle_diff is not None else inf
         )
-        self.orientation_weighting = OrientationWeighting(self.max_angle_diff, orientation_penalty_multiplier)
+        self.orientation_weighting = OrientationWeighting(self.max_angle_diff, angle_diff_penalty_multiplier)
         self.distance_weighting = DistanceWeighting(self.max_center_dist, distance_penalty_multiplier)
         self.iou_weighting = IOUWeighting(iou)
 
