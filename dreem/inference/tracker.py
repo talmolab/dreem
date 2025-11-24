@@ -32,6 +32,8 @@ class Tracker:
         decay_time: float | None = None,
         iou: str | None = None,
         max_center_dist: float | None = None,
+        distance_penalty_multiplier: float = 1.0,
+        orientation_penalty_multiplier: float = 1.0,
         max_gap: int = inf,
         max_tracks: int = inf,
         verbose: bool = False,
@@ -74,18 +76,19 @@ class Tracker:
         self.mult_thresh = mult_thresh
         self.decay_time = decay_time
         self.iou = iou
-        self.max_center_dist = max_center_dist
+        self.max_center_dist = max_center_dist if max_center_dist is not None else inf
         self.verbose = verbose
         self.max_tracks = max_tracks
         self.confidence_threshold = confidence_threshold
         self.temperature = temperature
-        self.max_angle_diff = deg2rad(max_angle_diff)
         self.front_nodes = front_nodes
         self.back_nodes = back_nodes
         self.enable_crop_saving = enable_crop_saving
-
-        self.orientation_weighting = OrientationWeighting(max_angle_diff)
-        self.distance_weighting = DistanceWeighting(max_center_dist)
+        self.max_angle_diff = (
+            deg2rad(max_angle_diff) if max_angle_diff is not None else inf
+        )
+        self.orientation_weighting = OrientationWeighting(self.max_angle_diff, orientation_penalty_multiplier)
+        self.distance_weighting = DistanceWeighting(self.max_center_dist, distance_penalty_multiplier)
         self.iou_weighting = IOUWeighting(iou)
 
     def __call__(

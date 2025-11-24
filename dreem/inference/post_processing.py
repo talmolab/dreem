@@ -86,14 +86,16 @@ class DistanceWeighting(ProcessingStep):
         - traj_score: updated with distance-based penalties
     """
 
-    def __init__(self, max_center_dist: float):
+    def __init__(self, max_center_dist: float, penalty_multiplier: float = 1.0):
         """Initialize DistanceWeighting step.
 
         Args:
             max_center_dist: The euclidean distance threshold between bboxes in pixels.
+            penalty_multiplier: The multiplier for the penalty.
         """
         super().__init__(name="distance_weighting")
         self.max_center_dist = max_center_dist
+        self.penalty_multiplier = penalty_multiplier
 
     def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Apply distance weighting to trajectory score.
@@ -129,13 +131,13 @@ class DistanceWeighting(ProcessingStep):
         dist = dist.squeeze(-1) / diag_length  # n_k x n_nonk
         while dist.dim() < 2:
             dist = dist.unsqueeze(0)
-        asso_scale = traj.mean(dim=1)
+        asso_scale = torch.abs(traj).mean(dim=1)
         penalty = torch.where(
             dist > max_center_dist_normalized, dist - max_center_dist_normalized, 0
         )  # n_k x n_nonk
         scale = asso_scale / (penalty.mean(dim=1) + 1e-8)
         scaled_penalty = -scale.unsqueeze(-1) * penalty  # n_k x n_nonk
-        traj = traj + scaled_penalty
+        traj = traj + self.penalty_multiplier * scaled_penalty
         state["traj_score"] = traj
         return state
 
@@ -155,14 +157,16 @@ class OrientationWeighting(ProcessingStep):
         - traj_score: updated with angle-based penalties
     """
 
-    def __init__(self, max_angle_diff_rad: float):
+    def __init__(self, max_angle_diff_rad: float, penalty_multiplier: float = 1.0):
         """Initialize WeightAngleDiff step.
 
         Args:
             max_angle_diff_rad: Maximum angle difference threshold in radians.
+            penalty_multiplier: The multiplier for the penalty.
         """
         super().__init__(name="weight_angle_diff")
         self.max_angle_diff_rad = max_angle_diff_rad
+        self.penalty_multiplier = penalty_multiplier
 
     def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Apply angle difference weighting to trajectory score.
@@ -195,7 +199,8 @@ class OrientationWeighting(ProcessingStep):
         )
         if angle_diff.dim() == 1:
             angle_diff = angle_diff.unsqueeze(0)
-        weight = traj.mean(
+        # already been modified by other post processing so use abs as this only considers scale
+        weight = torch.abs(traj).mean(
             dim=1
         )  # row wise aggregation of association scores; used to weight the angle diff
         penalty = torch.where(
@@ -203,9 +208,9 @@ class OrientationWeighting(ProcessingStep):
             angle_diff - self.max_angle_diff_rad,
             0,
         )  # gracefully handles nans by setting diff to 0
-        scale = weight  # / (penalty.mean(dim=1) + 1e-8)
+        scale = weight / (penalty.mean(dim=1) + 1e-8)
         # normalize angle difference to [0, 1]
         scaled_penalty = -scale.unsqueeze(-1) * penalty
-        traj = traj + scaled_penalty
+        traj = traj + self.penalty_multiplier * scaled_penalty
         state["traj_score"] = traj
         return state
