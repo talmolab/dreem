@@ -19,6 +19,8 @@ from dreem.inference import metrics
 from dreem.models import GlobalTrackingTransformer
 from dreem.models.model_utils import init_optimizer, init_scheduler
 from dreem.training.losses import AssoLoss
+from dreem.io.flags import FrameFlagCode
+from sleap_io.model.suggestions import SuggestionFrame
 
 if TYPE_CHECKING:
     from dreem.io import AssociationMatrix, Frame, Instance
@@ -407,7 +409,7 @@ class GTRRunner(LightningModule):
                 f"{vid_name}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp",
             )
             pred_slp = []
-
+            suggestions = []
             logger.info(f"Saving inference results to {outpath}")
             # save the tracking results to a slp file
             tracks = {}
@@ -418,9 +420,14 @@ class GTRRunner(LightningModule):
                         if isinstance(frame.video, str)
                         else sio.Video
                     )
+                if frame.has_flag(FrameFlagCode.LOW_CONFIDENCE):
+                    suggestion = SuggestionFrame(
+                        video=video, frame_idx=frame.frame_id.item()
+                    )
+                    suggestions.append(suggestion)
                 lf, tracks = frame.to_slp(tracks, video=video)
                 pred_slp.append(lf)
-            pred_slp = sio.Labels(pred_slp)
+            pred_slp = sio.Labels(pred_slp, suggestions=suggestions)
 
             pred_slp.save(outpath)
 

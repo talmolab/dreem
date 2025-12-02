@@ -2,19 +2,22 @@
 
 import logging
 from math import inf, radians as deg2rad
+
 import pandas as pd
 import torch
 from scipy.optimize import linear_sum_assignment
+
 from dreem.datasets.data_utils import _pairwise_iou, is_pose_centroid_only
+from dreem.inference.boxes import Boxes
 from dreem.inference.post_processing import (
-    IOUWeighting,
     DistanceWeighting,
+    IOUWeighting,
     OrientationWeighting,
 )
 from dreem.inference.post_processing_utils import get_principal_axis_with_fallback
-from dreem.inference.boxes import Boxes
 from dreem.inference.track_queue import TrackQueue
 from dreem.io import Frame
+from dreem.io.flags import FrameFlagCode
 from dreem.models import GlobalTrackingTransformer, model_utils
 
 logger = logging.getLogger("dreem.inference")
@@ -87,8 +90,12 @@ class Tracker:
         self.max_angle_diff = (
             deg2rad(max_angle_diff) if max_angle_diff is not None else inf
         )
-        self.orientation_weighting = OrientationWeighting(self.max_angle_diff, angle_diff_penalty_multiplier)
-        self.distance_weighting = DistanceWeighting(self.max_center_dist, distance_penalty_multiplier)
+        self.orientation_weighting = OrientationWeighting(
+            self.max_angle_diff, angle_diff_penalty_multiplier
+        )
+        self.distance_weighting = DistanceWeighting(
+            self.max_center_dist, distance_penalty_multiplier
+        )
         self.iou_weighting = IOUWeighting(iou)
 
     def __call__(
@@ -520,42 +527,14 @@ class Tracker:
                 scaled_traj_score * torch.exp(scaled_traj_score), axis=1
             )
             norm_entropy = entropy / torch.log(torch.tensor(n_query))
-            removal_threshold = 1 - self.confidence_threshold
-            # remove these rows from the cost matrix, but careful to maintain indexes of the results
-            remove = norm_entropy > removal_threshold
+            flag_threshold = 1 - self.confidence_threshold
+            # flag rows with high entropy
+            flag = norm_entropy > flag_threshold
+            # Flag the frame if any instances have high entropy
+            if flag.any():
+                query_frame.add_flag(FrameFlagCode.LOW_CONFIDENCE)
 
-            if (remove.sum() == traj_score.shape[0]).item():
-                logger.debug(
-                    f"All instances have high entropy in frame {query_frame.frame_id.item()}, skipping assignment"
-                )
-                return query_frame
-
-            dict_remove_inds = {}
-            # post-LSA matches will have fewer rows, with remove=True indices being the removed rows
-            for idx in range(traj_score.shape[0]):
-                dict_remove_inds[idx] = True if remove[idx].item() else False
-
-            dict_old_new_map = {i: None for i in range(traj_score.shape[0])}
-            dict_new_old_map = {i: None for i in range(remove.sum())}
-            new_idx = 0
-            for idx in range(traj_score.shape[0]):
-                if remove[idx].item():
-                    pass
-                else:
-                    dict_old_new_map[idx] = new_idx
-                    dict_new_old_map[new_idx] = idx
-                    new_idx += 1
-
-            traj_score_filt = traj_score[~remove]
-        else:
-            traj_score_filt = traj_score
-            remove = torch.zeros(traj_score.shape[0])
-
-        match_i, match_j = linear_sum_assignment((-traj_score_filt))
-        if self.confidence_threshold > 0:
-            # reindex the match indices to account for removed rows; only match_i needs to be reindexed
-            for i, _ in enumerate(match_i):
-                match_i[i] = dict_new_old_map[i]
+        match_i, match_j = linear_sum_assignment((-traj_score))
 
         track_ids = instance_ids.new_full((n_query,), -1)
         for i, j in zip(match_i, match_j):
