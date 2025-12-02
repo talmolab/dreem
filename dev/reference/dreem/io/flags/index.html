@@ -8,13 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://dreem.sleap.ai/dev/reference/dreem/utils/processors/">
+        <link rel="canonical" href="https://dreem.sleap.ai/dev/reference/dreem/io/flags/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../config/">
       
       
-        <link rel="next" href="../../version/">
+        <link rel="next" href="../frame/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>processors - DREEM documentation</title>
+        <title>flags - DREEM documentation</title>
       
     
     
@@ -90,7 +90,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dreem.utils.processors" class="md-skip">
+        <a href="#dreem.io.flags" class="md-skip">
           Skip to content
         </a>
       
@@ -129,7 +129,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              processors
+              flags
             
           </span>
         </div>
@@ -1855,6 +1855,8 @@
                 
   
   
+    
+  
   
   
     
@@ -1864,15 +1866,15 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1_4" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../io/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1896,7 +1898,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_7_1_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_7_1_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7_1_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1914,7 +1916,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/association_matrix/" class="md-nav__link">
+      <a href="../association_matrix/" class="md-nav__link">
         
   
   
@@ -1942,7 +1944,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/config/" class="md-nav__link">
+      <a href="../config/" class="md-nav__link">
         
   
   
@@ -1967,10 +1969,35 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../io/flags/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    flags
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1986,6 +2013,52 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dreem.io.flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        flags
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="flags">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dreem.io.flags.FrameFlagCode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FrameFlagCode
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1998,7 +2071,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/frame/" class="md-nav__link">
+      <a href="../frame/" class="md-nav__link">
         
   
   
@@ -2026,7 +2099,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/instance/" class="md-nav__link">
+      <a href="../instance/" class="md-nav__link">
         
   
   
@@ -2054,7 +2127,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/track/" class="md-nav__link">
+      <a href="../track/" class="md-nav__link">
         
   
   
@@ -2082,7 +2155,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/visualize/" class="md-nav__link">
+      <a href="../visualize/" class="md-nav__link">
         
   
   
@@ -2523,8 +2596,6 @@
                 
   
   
-    
-  
   
   
     
@@ -2534,15 +2605,15 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1_7" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../utils/" class="md-nav__link ">
               
   
   
@@ -2566,7 +2637,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_7_1_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_7_1_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7_1_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2581,35 +2652,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    processors
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../utils/processors/" class="md-nav__link">
         
   
   
@@ -2625,52 +2671,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#dreem.utils.processors" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        processors
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="processors">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dreem.utils.processors.ProcessingStep" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ProcessingStep
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2779,22 +2779,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#dreem.utils.processors" class="md-nav__link">
+  <a href="#dreem.io.flags" class="md-nav__link">
     <span class="md-ellipsis">
       
-        processors
+        flags
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="processors">
+    <nav class="md-nav" aria-label="flags">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#dreem.utils.processors.ProcessingStep" class="md-nav__link">
+  <a href="#dreem.io.flags.FrameFlagCode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ProcessingStep
+        FrameFlagCode
       
     </span>
   </a>
@@ -2826,21 +2826,24 @@
   
 
 
-  <h1>processors</h1>
+  <h1>flags</h1>
 
 <div class="doc doc-object doc-module">
 
 
 
-<h2 id="dreem.utils.processors" class="doc doc-heading">
-            <code>dreem.utils.processors</code>
+<h2 id="dreem.io.flags" class="doc doc-heading">
+            <code>dreem.io.flags</code>
 
 
-<a href="#dreem.utils.processors" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#dreem.io.flags" class="headerlink" title="Permanent link">&para;</a></h2>
 
     <div class="doc doc-contents first">
 
-        <p>Base processor classes for DREEM processing pipelines.</p>
+        <p>Module containing flag codes for frames and other data structures.</p>
+<p>This module provides an extensible enum-like system for flagging frames and other
+objects with specific reason codes. This allows for type-safe, scalable flagging
+without passing around string literals.</p>
 
 
 
@@ -2861,10 +2864,10 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title="&lt;code&gt;ProcessingStep&lt;/code&gt; (&lt;code&gt;dreem.utils.processors.ProcessingStep&lt;/code&gt;)" href="#dreem.utils.processors.ProcessingStep">ProcessingStep</a></code></td>
+            <td><code><a class="autorefs autorefs-internal" title="&lt;code&gt;FrameFlagCode&lt;/code&gt; (&lt;code&gt;dreem.io.flags.FrameFlagCode&lt;/code&gt;)" href="#dreem.io.flags.FrameFlagCode">FrameFlagCode</a></code></td>
             <td>
               <div class="doc-md-description">
-                <p>Abstract base class for processing steps.</p>
+                <p>Enumeration of flag codes for Frame objects.</p>
               </div>
             </td>
           </tr>
@@ -2891,22 +2894,78 @@
 
 
 
-<h3 id="dreem.utils.processors.ProcessingStep" class="doc doc-heading">
-            <code>ProcessingStep</code>
+<h3 id="dreem.io.flags.FrameFlagCode" class="doc doc-heading">
+            <code>FrameFlagCode</code>
 
 
-<a href="#dreem.utils.processors.ProcessingStep" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#dreem.io.flags.FrameFlagCode" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><span title="abc.ABC">ABC</span></code></p>
+              Bases: <code><span title="enum.Enum">Enum</span></code></p>
 
 
 
-        <p>Abstract base class for processing steps.</p>
-<p>Each step accepts a state dict, modifies it, and returns it.
-Steps are instantiated once and can be called multiple times in a loop.</p>
+        <p>Enumeration of flag codes for Frame objects.</p>
+<p>Each flag code represents a specific reason why a frame might be flagged.
+This enum can be extended with additional flag codes as needed.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="dreem.io.flags.FrameFlagCode.LOW_CONFIDENCE">LOW_CONFIDENCE</span></code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Frame contains instances with low confidence scores
+(below confidence threshold).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dreem.io.flags.FrameFlagCode.HIGH_ENTROPY">HIGH_ENTROPY</span></code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Frame contains instances with high entropy in association
+scores, indicating uncertain tracking assignments.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dreem.io.flags.FrameFlagCode.MISSING_DETECTIONS">MISSING_DETECTIONS</span></code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Frame has no detected instances when some were expected.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dreem.io.flags.FrameFlagCode.TRACKING_FAILURE">TRACKING_FAILURE</span></code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Frame failed to be assigned to any trajectory.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
 
@@ -2929,22 +2988,18 @@ Steps are instantiated once and can be called multiple times in a loop.</p>
       </thead>
       <tbody>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;fm&quot;&gt;__init__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.utils.processors.ProcessingStep.__init__&lt;/code&gt;)" href="#dreem.utils.processors.ProcessingStep.__init__">__init__</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;fm&quot;&gt;__repr__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.io.flags.FrameFlagCode.__repr__&lt;/code&gt;)" href="#dreem.io.flags.FrameFlagCode.__repr__">__repr__</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Initialize a processing step.</p>
+                  <p>Return the representation of the flag code.</p>
                 </div>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;
-
-  &lt;span class=&quot;doc doc-labels&quot;&gt;
-      &lt;small class=&quot;doc doc-label doc-label-abstractmethod&quot;&gt;&lt;code&gt;abstractmethod&lt;/code&gt;&lt;/small&gt;
-  &lt;/span&gt; (&lt;code&gt;dreem.utils.processors.ProcessingStep.run&lt;/code&gt;)" href="#dreem.utils.processors.ProcessingStep.run">run</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;fm&quot;&gt;__str__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.io.flags.FrameFlagCode.__str__&lt;/code&gt;)" href="#dreem.io.flags.FrameFlagCode.__str__">__str__</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Execute the processing step.</p>
+                  <p>Return the string value of the flag code.</p>
                 </div>
               </td>
             </tr>
@@ -2954,34 +3009,31 @@ Steps are instantiated once and can be called multiple times in a loop.</p>
 
 
               <details class="mkdocstrings-source">
-                <summary>Source code in <code>dreem/utils/processors.py</code></summary>
-                <div class="highlight"><pre><span></span><code><a id="__codelineno-0-8" name="__codelineno-0-8"></a><a href="#__codelineno-0-8"><span class="linenos" data-linenos=" 8 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">ProcessingStep</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9"></a><a href="#__codelineno-0-9"><span class="linenos" data-linenos=" 9 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for processing steps.</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10"></a><a href="#__codelineno-0-10"><span class="linenos" data-linenos="10 "></span></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a><a href="#__codelineno-0-11"><span class="linenos" data-linenos="11 "></span></a><span class="sd">    Each step accepts a state dict, modifies it, and returns it.</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a><a href="#__codelineno-0-12"><span class="linenos" data-linenos="12 "></span></a><span class="sd">    Steps are instantiated once and can be called multiple times in a loop.</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a><a href="#__codelineno-0-13"><span class="linenos" data-linenos="13 "></span></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a><a href="#__codelineno-0-14"><span class="linenos" data-linenos="14 "></span></a>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a><a href="#__codelineno-0-15"><span class="linenos" data-linenos="15 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a><a href="#__codelineno-0-16"><span class="linenos" data-linenos="16 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a processing step.</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a><a href="#__codelineno-0-17"><span class="linenos" data-linenos="17 "></span></a>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a><a href="#__codelineno-0-18"><span class="linenos" data-linenos="18 "></span></a><span class="sd">        Args:</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a><a href="#__codelineno-0-19"><span class="linenos" data-linenos="19 "></span></a><span class="sd">            name: Optional name for the step. Defaults to class name.</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a><a href="#__codelineno-0-20"><span class="linenos" data-linenos="20 "></span></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><a href="#__codelineno-0-21"><span class="linenos" data-linenos="21 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a><a href="#__codelineno-0-22"><span class="linenos" data-linenos="22 "></span></a>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a><a href="#__codelineno-0-23"><span class="linenos" data-linenos="23 "></span></a>    <span class="nd">@abstractmethod</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a><a href="#__codelineno-0-24"><span class="linenos" data-linenos="24 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><a href="#__codelineno-0-25"><span class="linenos" data-linenos="25 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the processing step.</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a><a href="#__codelineno-0-26"><span class="linenos" data-linenos="26 "></span></a>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a><a href="#__codelineno-0-27"><span class="linenos" data-linenos="27 "></span></a><span class="sd">        Args:</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a><a href="#__codelineno-0-28"><span class="linenos" data-linenos="28 "></span></a><span class="sd">            state: Dictionary containing all necessary data for processing.</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a><a href="#__codelineno-0-29"><span class="linenos" data-linenos="29 "></span></a><span class="sd">                   Modified in place and returned.</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a><a href="#__codelineno-0-30"><span class="linenos" data-linenos="30 "></span></a>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a><a href="#__codelineno-0-31"><span class="linenos" data-linenos="31 "></span></a><span class="sd">        Returns:</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a><a href="#__codelineno-0-32"><span class="linenos" data-linenos="32 "></span></a><span class="sd">            The modified state dictionary.</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33"></a><a href="#__codelineno-0-33"><span class="linenos" data-linenos="33 "></span></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a><a href="#__codelineno-0-34"><span class="linenos" data-linenos="34 "></span></a>        <span class="o">...</span>
+                <summary>Source code in <code>dreem/io/flags.py</code></summary>
+                <div class="highlight"><pre><span></span><code><a id="__codelineno-0-11" name="__codelineno-0-11"></a><a href="#__codelineno-0-11"><span class="linenos" data-linenos="11 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">FrameFlagCode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a><a href="#__codelineno-0-12"><span class="linenos" data-linenos="12 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Enumeration of flag codes for Frame objects.</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><a href="#__codelineno-0-13"><span class="linenos" data-linenos="13 "></span></a>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><a href="#__codelineno-0-14"><span class="linenos" data-linenos="14 "></span></a><span class="sd">    Each flag code represents a specific reason why a frame might be flagged.</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><a href="#__codelineno-0-15"><span class="linenos" data-linenos="15 "></span></a><span class="sd">    This enum can be extended with additional flag codes as needed.</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a><a href="#__codelineno-0-16"><span class="linenos" data-linenos="16 "></span></a>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a><a href="#__codelineno-0-17"><span class="linenos" data-linenos="17 "></span></a><span class="sd">    Attributes:</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a><a href="#__codelineno-0-18"><span class="linenos" data-linenos="18 "></span></a><span class="sd">        LOW_CONFIDENCE: Frame contains instances with low confidence scores</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a><a href="#__codelineno-0-19"><span class="linenos" data-linenos="19 "></span></a><span class="sd">            (below confidence threshold).</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a><a href="#__codelineno-0-20"><span class="linenos" data-linenos="20 "></span></a><span class="sd">        HIGH_ENTROPY: Frame contains instances with high entropy in association</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a><a href="#__codelineno-0-21"><span class="linenos" data-linenos="21 "></span></a><span class="sd">            scores, indicating uncertain tracking assignments.</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a><a href="#__codelineno-0-22"><span class="linenos" data-linenos="22 "></span></a><span class="sd">        MISSING_DETECTIONS: Frame has no detected instances when some were expected.</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a><a href="#__codelineno-0-23"><span class="linenos" data-linenos="23 "></span></a><span class="sd">        TRACKING_FAILURE: Frame failed to be assigned to any trajectory.</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a><a href="#__codelineno-0-24"><span class="linenos" data-linenos="24 "></span></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a><a href="#__codelineno-0-25"><span class="linenos" data-linenos="25 "></span></a>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a><a href="#__codelineno-0-26"><span class="linenos" data-linenos="26 "></span></a>    <span class="n">LOW_CONFIDENCE</span> <span class="o">=</span> <span class="s2">&quot;low_confidence&quot;</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a><a href="#__codelineno-0-27"><span class="linenos" data-linenos="27 "></span></a>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a><a href="#__codelineno-0-28"><span class="linenos" data-linenos="28 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a><a href="#__codelineno-0-29"><span class="linenos" data-linenos="29 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the string value of the flag code.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a><a href="#__codelineno-0-30"><span class="linenos" data-linenos="30 "></span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31"></a><a href="#__codelineno-0-31"><span class="linenos" data-linenos="31 "></span></a>
+<a id="__codelineno-0-32" name="__codelineno-0-32"></a><a href="#__codelineno-0-32"><span class="linenos" data-linenos="32 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33"></a><a href="#__codelineno-0-33"><span class="linenos" data-linenos="33 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the representation of the flag code.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34"></a><a href="#__codelineno-0-34"><span class="linenos" data-linenos="34 "></span></a>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;FrameFlagCode.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
 </code></pre></div>
               </details>
 
@@ -3001,57 +3053,22 @@ Steps are instantiated once and can be called multiple times in a loop.</p>
 <div class="doc doc-object doc-function">
 
 
-<h4 id="dreem.utils.processors.ProcessingStep.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<h4 id="dreem.io.flags.FrameFlagCode.__repr__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__repr__</span><span class="p">()</span></code>
 
-<a href="#dreem.utils.processors.ProcessingStep.__init__" class="headerlink" title="Permanent link">&para;</a></h4>
+<a href="#dreem.io.flags.FrameFlagCode.__repr__" class="headerlink" title="Permanent link">&para;</a></h4>
 
 
     <div class="doc doc-contents ">
 
-        <p>Initialize a processing step.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>name</code>
-            </td>
-            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Optional name for the step. Defaults to class name.</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Return the representation of the flag code.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>dreem/utils/processors.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-15" name="__codelineno-0-15"></a><a href="#__codelineno-0-15"><span class="linenos" data-linenos="15 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a><a href="#__codelineno-0-16"><span class="linenos" data-linenos="16 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize a processing step.</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a><a href="#__codelineno-0-17"><span class="linenos" data-linenos="17 "></span></a>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a><a href="#__codelineno-0-18"><span class="linenos" data-linenos="18 "></span></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a><a href="#__codelineno-0-19"><span class="linenos" data-linenos="19 "></span></a><span class="sd">        name: Optional name for the step. Defaults to class name.</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a><a href="#__codelineno-0-20"><span class="linenos" data-linenos="20 "></span></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><a href="#__codelineno-0-21"><span class="linenos" data-linenos="21 "></span></a>    <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+              <summary>Source code in <code>dreem/io/flags.py</code></summary>
+              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-32" name="__codelineno-0-32"></a><a href="#__codelineno-0-32"><span class="linenos" data-linenos="32 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33"></a><a href="#__codelineno-0-33"><span class="linenos" data-linenos="33 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the representation of the flag code.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34"></a><a href="#__codelineno-0-34"><span class="linenos" data-linenos="34 "></span></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;FrameFlagCode.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
 </code></pre></div>
             </details>
     </div>
@@ -3061,90 +3078,22 @@ Steps are instantiated once and can be called multiple times in a loop.</p>
 <div class="doc doc-object doc-function">
 
 
-<h4 id="dreem.utils.processors.ProcessingStep.run" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">run</span><span class="p">(</span><span class="n">state</span><span class="p">)</span></code>
+<h4 id="dreem.io.flags.FrameFlagCode.__str__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__str__</span><span class="p">()</span></code>
 
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
-  </span>
-
-<a href="#dreem.utils.processors.ProcessingStep.run" class="headerlink" title="Permanent link">&para;</a></h4>
+<a href="#dreem.io.flags.FrameFlagCode.__str__" class="headerlink" title="Permanent link">&para;</a></h4>
 
 
     <div class="doc doc-contents ">
 
-        <p>Execute the processing step.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>state</code>
-            </td>
-            <td>
-                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Dictionary containing all necessary data for processing.
-   Modified in place and returned.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The modified state dictionary.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Return the string value of the flag code.</p>
 
 
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>dreem/utils/processors.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-23" name="__codelineno-0-23"></a><a href="#__codelineno-0-23"><span class="linenos" data-linenos="23 "></span></a><span class="nd">@abstractmethod</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a><a href="#__codelineno-0-24"><span class="linenos" data-linenos="24 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><a href="#__codelineno-0-25"><span class="linenos" data-linenos="25 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Execute the processing step.</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a><a href="#__codelineno-0-26"><span class="linenos" data-linenos="26 "></span></a>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a><a href="#__codelineno-0-27"><span class="linenos" data-linenos="27 "></span></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a><a href="#__codelineno-0-28"><span class="linenos" data-linenos="28 "></span></a><span class="sd">        state: Dictionary containing all necessary data for processing.</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a><a href="#__codelineno-0-29"><span class="linenos" data-linenos="29 "></span></a><span class="sd">               Modified in place and returned.</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a><a href="#__codelineno-0-30"><span class="linenos" data-linenos="30 "></span></a>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a><a href="#__codelineno-0-31"><span class="linenos" data-linenos="31 "></span></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a><a href="#__codelineno-0-32"><span class="linenos" data-linenos="32 "></span></a><span class="sd">        The modified state dictionary.</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33"></a><a href="#__codelineno-0-33"><span class="linenos" data-linenos="33 "></span></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a><a href="#__codelineno-0-34"><span class="linenos" data-linenos="34 "></span></a>    <span class="o">...</span>
+              <summary>Source code in <code>dreem/io/flags.py</code></summary>
+              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-28" name="__codelineno-0-28"></a><a href="#__codelineno-0-28"><span class="linenos" data-linenos="28 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a><a href="#__codelineno-0-29"><span class="linenos" data-linenos="29 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the string value of the flag code.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a><a href="#__codelineno-0-30"><span class="linenos" data-linenos="30 "></span></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
 </code></pre></div>
             </details>
     </div>
