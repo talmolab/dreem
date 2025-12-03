@@ -71,6 +71,7 @@ class GTRRunner(LightningModule):
             scheduler_cfg: hyperparameters for lr_scheduler used to overwrite `configure_optimizer
             metrics: a dict containing the metrics to be computed during train, val, and test.
             test_save_path: path to a directory to save the eval and tracking results to
+            save_frame_meta: Whether to save frame metadata to the h5 file
         """
         super().__init__()
         self.save_hyperparameters()
@@ -267,6 +268,15 @@ class GTRRunner(LightningModule):
         torch.cuda.empty_cache()
 
     def setup_tracking(self, tracker_cfg: DictConfig, mode: str = "inference"):
+        """Setup the tracker for tracking.
+
+        Args:
+            tracker_cfg: The configuration for the tracker.
+            mode: The mode to run the tracker in.
+
+        Returns:
+            A dictionary of overrides for the tracker.
+        """
         from dreem.inference.tracker import Tracker
 
         save_frame_meta = tracker_cfg.cfg.get("save_frame_meta", False)

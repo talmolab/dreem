@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 import torch
 
+from dreem.io.flags import FrameFlagCode
 from dreem.utils.processors import ProcessingStep
 
 logger = logging.getLogger(__name__)
@@ -213,4 +214,59 @@ class OrientationWeighting(ProcessingStep):
         scaled_penalty = -scale.unsqueeze(-1) * penalty
         traj = traj + self.penalty_multiplier * scaled_penalty
         state["traj_score"] = traj
+        return state
+
+
+class ConfidenceFlagging(ProcessingStep):
+    """Flag frames with low confidence based on entropy of association scores.
+
+    This step computes the entropy of the scaled trajectory scores and flags
+    frames where instances have high entropy (low confidence).
+
+    Expected state keys:
+        - scaled_traj_score: torch.Tensor (n_query, n_traj) - log-softmax scaled scores
+        - n_query: int - number of query instances
+        - query_frame: Frame - the frame to potentially flag
+
+    Modified state keys:
+        - query_frame: may have LOW_CONFIDENCE flag added
+    """
+
+    def __init__(self, confidence_threshold: float = 0.0):
+        """Initialize ConfidenceFlagging step.
+
+        Args:
+            confidence_threshold: Threshold for flagging low confidence frames.
+                Set to 0 to disable flagging. Higher values are more strict
+                (flag more frames).
+        """
+        super().__init__(name="confidence_flagging")
+        self.confidence_threshold = confidence_threshold
+
+    def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply confidence flagging to query frame.
+
+        Args:
+            state: State dictionary with required keys.
+
+        Returns:
+            Modified state with potentially flagged query_frame.
+        """
+
+        scaled_traj_score = state["scaled_traj_score"]
+        n_query = state["n_query"]
+        query_frame = state["query_frame"]
+
+        # Compute entropy for each row
+        entropy = -torch.sum(scaled_traj_score * torch.exp(scaled_traj_score), axis=1)
+        norm_entropy = entropy / torch.log(torch.tensor(n_query))
+        flag_threshold = 1 - self.confidence_threshold
+
+        # Flag rows with high entropy
+        flag = norm_entropy > flag_threshold
+
+        # Flag the frame if any instances have high entropy
+        if flag.any():
+            query_frame.add_flag(FrameFlagCode.LOW_CONFIDENCE)
+
         return state

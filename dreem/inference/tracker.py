@@ -10,6 +10,7 @@ from scipy.optimize import linear_sum_assignment
 from dreem.datasets.data_utils import _pairwise_iou, is_pose_centroid_only
 from dreem.inference.boxes import Boxes
 from dreem.inference.post_processing import (
+    ConfidenceFlagging,
     DistanceWeighting,
     IOUWeighting,
     OrientationWeighting,
@@ -17,7 +18,6 @@ from dreem.inference.post_processing import (
 from dreem.inference.post_processing_utils import get_principal_axis_with_fallback
 from dreem.inference.track_queue import TrackQueue
 from dreem.io import Frame
-from dreem.io.flags import FrameFlagCode
 from dreem.models import GlobalTrackingTransformer, model_utils
 
 logger = logging.getLogger("dreem.inference")
@@ -97,6 +97,7 @@ class Tracker:
             self.max_center_dist, distance_penalty_multiplier
         )
         self.iou_weighting = IOUWeighting(iou)
+        self.confidence_flagging = ConfidenceFlagging(confidence_threshold)
 
     def __call__(
         self, model: GlobalTrackingTransformer, frames: list[Frame]
@@ -205,7 +206,7 @@ class Tracker:
                     del frames_to_track
 
             if frame_to_track.has_instances():
-                gap = self.track_queue.add_frame(frame_to_track)
+                _ = self.track_queue.add_frame(frame_to_track)
             else:
                 self.track_queue.increment_gaps([])
 
@@ -226,6 +227,7 @@ class Tracker:
             model: the pretrained GlobalTrackingTransformer to be used for inference
             frames: A list of Frames containing reid features. See `dreem.io.data_structures` for more info.
             query_ind: An integer for the query frame within the window of instances.
+
         Returns:
             query_frame: The query frame now populated with the pred_track_ids.
         """
@@ -521,18 +523,16 @@ class Tracker:
 
         query_frame.add_traj_score("scaled", scaled_traj_score_df)
         ################################################################################
-        # Compute entropy for each row and filter out rows with high entropy
+        # Flag frames with low confidence
         if self.confidence_threshold > 0:
-            entropy = -torch.sum(
-                scaled_traj_score * torch.exp(scaled_traj_score), axis=1
+            state = self.confidence_flagging.run(
+                {
+                    "scaled_traj_score": scaled_traj_score,
+                    "n_query": n_query,
+                    "query_frame": query_frame,
+                }
             )
-            norm_entropy = entropy / torch.log(torch.tensor(n_query))
-            flag_threshold = 1 - self.confidence_threshold
-            # flag rows with high entropy
-            flag = norm_entropy > flag_threshold
-            # Flag the frame if any instances have high entropy
-            if flag.any():
-                query_frame.add_flag(FrameFlagCode.LOW_CONFIDENCE)
+            scaled_traj_score = state["scaled_traj_score"]
 
         match_i, match_j = linear_sum_assignment((-traj_score))
 
