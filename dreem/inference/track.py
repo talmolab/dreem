@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
 import sleap_io as sio
+from sleap_io.model.suggestions import SuggestionFrame
 import tifffile
 import torch
 from math import inf
@@ -18,6 +19,7 @@ from tqdm import tqdm
 from dreem.datasets import CellTrackingDataset
 from dreem.inference.tracker import Tracker
 from dreem.io import Config, Frame
+from dreem.io.flags import FrameFlagCode
 from dreem.models import GTRRunner
 
 logger = logging.getLogger("dreem.inference")
@@ -129,6 +131,7 @@ def track(
     Return:
         List of DataFrames containing prediction results for each video
     """
+    suggestions = []
     preds = trainer.predict(model, dataloader)
     save_frame_meta = overrides_dict["save_frame_meta"]
     if save_frame_meta:
@@ -150,12 +153,16 @@ def track(
                     if isinstance(frame.video, str)
                     else sio.Video
                 )
+            if frame.has_flag(FrameFlagCode.LOW_CONFIDENCE):
+                suggestion = SuggestionFrame(
+                    video=video, frame_idx=frame.frame_id.item()
+                )
+                suggestions.append(suggestion)
             lf, tracks = frame.to_slp(tracks, video=video)
             pred_slp.append(lf)
             if save_frame_meta:
                 store_frame_metadata(frame, h5_path)
-    pred_slp = sio.Labels(pred_slp)
-    print(pred_slp)
+    pred_slp = sio.Labels(pred_slp, suggestions=suggestions)
     return pred_slp
 
 

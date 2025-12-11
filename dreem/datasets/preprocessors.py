@@ -80,6 +80,11 @@ class NonMaxSuppression(ProcessingStep):
     """
 
     def __init__(self, max_detection_overlap: float):
+        """Initialize NonMaxSuppression step.
+
+        Args:
+            max_detection_overlap: The maximum overlap allowed between instances.
+        """
         super().__init__(name="non_max_suppression")
         self.max_detection_overlap = max_detection_overlap
 
@@ -90,6 +95,9 @@ class NonMaxSuppression(ProcessingStep):
             state: State dictionary with required keys.
                 - frame_ind: int - index of the current frame
                 - instances: list of dreem.io.Instance objects
+
+        Returns:
+            Modified state with instances removed.
         """
         instances = state["instances"]
         frame_ind = state["frame_ind"]

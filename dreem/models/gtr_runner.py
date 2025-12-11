@@ -19,6 +19,8 @@ from dreem.inference import metrics
 from dreem.models import GlobalTrackingTransformer
 from dreem.models.model_utils import init_optimizer, init_scheduler
 from dreem.training.losses import AssoLoss
+from dreem.io.flags import FrameFlagCode
+from sleap_io.model.suggestions import SuggestionFrame
 
 if TYPE_CHECKING:
     from dreem.io import AssociationMatrix, Frame, Instance
@@ -69,6 +71,7 @@ class GTRRunner(LightningModule):
             scheduler_cfg: hyperparameters for lr_scheduler used to overwrite `configure_optimizer
             metrics: a dict containing the metrics to be computed during train, val, and test.
             test_save_path: path to a directory to save the eval and tracking results to
+            save_frame_meta: Whether to save frame metadata to the h5 file
         """
         super().__init__()
         self.save_hyperparameters()
@@ -265,6 +268,15 @@ class GTRRunner(LightningModule):
         torch.cuda.empty_cache()
 
     def setup_tracking(self, tracker_cfg: DictConfig, mode: str = "inference"):
+        """Setup the tracker for tracking.
+
+        Args:
+            tracker_cfg: The configuration for the tracker.
+            mode: The mode to run the tracker in.
+
+        Returns:
+            A dictionary of overrides for the tracker.
+        """
         from dreem.inference.tracker import Tracker
 
         save_frame_meta = tracker_cfg.cfg.get("save_frame_meta", False)
@@ -407,7 +419,7 @@ class GTRRunner(LightningModule):
                 f"{vid_name}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp",
             )
             pred_slp = []
-
+            suggestions = []
             logger.info(f"Saving inference results to {outpath}")
             # save the tracking results to a slp file
             tracks = {}
@@ -418,9 +430,14 @@ class GTRRunner(LightningModule):
                         if isinstance(frame.video, str)
                         else sio.Video
                     )
+                if frame.has_flag(FrameFlagCode.LOW_CONFIDENCE):
+                    suggestion = SuggestionFrame(
+                        video=video, frame_idx=frame.frame_id.item()
+                    )
+                    suggestions.append(suggestion)
                 lf, tracks = frame.to_slp(tracks, video=video)
                 pred_slp.append(lf)
-            pred_slp = sio.Labels(pred_slp)
+            pred_slp = sio.Labels(pred_slp, suggestions=suggestions)
 
             pred_slp.save(outpath)
 

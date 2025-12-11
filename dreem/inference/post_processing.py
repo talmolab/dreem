@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 import torch
 
+from dreem.io.flags import FrameFlagCode
 from dreem.utils.processors import ProcessingStep
 
 logger = logging.getLogger(__name__)
@@ -86,14 +87,16 @@ class DistanceWeighting(ProcessingStep):
         - traj_score: updated with distance-based penalties
     """
 
-    def __init__(self, max_center_dist: float):
+    def __init__(self, max_center_dist: float, penalty_multiplier: float = 1.0):
         """Initialize DistanceWeighting step.
 
         Args:
             max_center_dist: The euclidean distance threshold between bboxes in pixels.
+            penalty_multiplier: The multiplier for the penalty.
         """
         super().__init__(name="distance_weighting")
         self.max_center_dist = max_center_dist
+        self.penalty_multiplier = penalty_multiplier
 
     def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Apply distance weighting to trajectory score.
@@ -129,13 +132,13 @@ class DistanceWeighting(ProcessingStep):
         dist = dist.squeeze(-1) / diag_length  # n_k x n_nonk
         while dist.dim() < 2:
             dist = dist.unsqueeze(0)
-        asso_scale = traj.mean(dim=1)
+        asso_scale = torch.abs(traj).mean(dim=1)
         penalty = torch.where(
             dist > max_center_dist_normalized, dist - max_center_dist_normalized, 0
         )  # n_k x n_nonk
         scale = asso_scale / (penalty.mean(dim=1) + 1e-8)
         scaled_penalty = -scale.unsqueeze(-1) * penalty  # n_k x n_nonk
-        traj = traj + scaled_penalty
+        traj = traj + self.penalty_multiplier * scaled_penalty
         state["traj_score"] = traj
         return state
 
@@ -155,14 +158,16 @@ class OrientationWeighting(ProcessingStep):
         - traj_score: updated with angle-based penalties
     """
 
-    def __init__(self, max_angle_diff_rad: float):
+    def __init__(self, max_angle_diff_rad: float, penalty_multiplier: float = 1.0):
         """Initialize WeightAngleDiff step.
 
         Args:
             max_angle_diff_rad: Maximum angle difference threshold in radians.
+            penalty_multiplier: The multiplier for the penalty.
         """
         super().__init__(name="weight_angle_diff")
         self.max_angle_diff_rad = max_angle_diff_rad
+        self.penalty_multiplier = penalty_multiplier
 
     def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Apply angle difference weighting to trajectory score.
@@ -195,7 +200,8 @@ class OrientationWeighting(ProcessingStep):
         )
         if angle_diff.dim() == 1:
             angle_diff = angle_diff.unsqueeze(0)
-        weight = traj.mean(
+        # already been modified by other post processing so use abs as this only considers scale
+        weight = torch.abs(traj).mean(
             dim=1
         )  # row wise aggregation of association scores; used to weight the angle diff
         penalty = torch.where(
@@ -203,9 +209,64 @@ class OrientationWeighting(ProcessingStep):
             angle_diff - self.max_angle_diff_rad,
             0,
         )  # gracefully handles nans by setting diff to 0
-        scale = weight  # / (penalty.mean(dim=1) + 1e-8)
+        scale = weight / (penalty.mean(dim=1) + 1e-8)
         # normalize angle difference to [0, 1]
         scaled_penalty = -scale.unsqueeze(-1) * penalty
-        traj = traj + scaled_penalty
+        traj = traj + self.penalty_multiplier * scaled_penalty
         state["traj_score"] = traj
+        return state
+
+
+class ConfidenceFlagging(ProcessingStep):
+    """Flag frames with low confidence based on entropy of association scores.
+
+    This step computes the entropy of the scaled trajectory scores and flags
+    frames where instances have high entropy (low confidence).
+
+    Expected state keys:
+        - scaled_traj_score: torch.Tensor (n_query, n_traj) - log-softmax scaled scores
+        - n_query: int - number of query instances
+        - query_frame: Frame - the frame to potentially flag
+
+    Modified state keys:
+        - query_frame: may have LOW_CONFIDENCE flag added
+    """
+
+    def __init__(self, confidence_threshold: float = 0.0):
+        """Initialize ConfidenceFlagging step.
+
+        Args:
+            confidence_threshold: Threshold for flagging low confidence frames.
+                Set to 0 to disable flagging. Higher values are more strict
+                (flag more frames).
+        """
+        super().__init__(name="confidence_flagging")
+        self.confidence_threshold = confidence_threshold
+
+    def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply confidence flagging to query frame.
+
+        Args:
+            state: State dictionary with required keys.
+
+        Returns:
+            Modified state with potentially flagged query_frame.
+        """
+
+        scaled_traj_score = state["scaled_traj_score"]
+        n_query = state["n_query"]
+        query_frame = state["query_frame"]
+
+        # Compute entropy for each row
+        entropy = -torch.sum(scaled_traj_score * torch.exp(scaled_traj_score), axis=1)
+        norm_entropy = entropy / torch.log(torch.tensor(n_query))
+        flag_threshold = 1 - self.confidence_threshold
+
+        # Flag rows with high entropy
+        flag = norm_entropy > flag_threshold
+
+        # Flag the frame if any instances have high entropy
+        if flag.any():
+            query_frame.add_flag(FrameFlagCode.LOW_CONFIDENCE)
+
         return state

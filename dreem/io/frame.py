@@ -15,6 +15,8 @@ from numpy.typing import ArrayLike
 if TYPE_CHECKING:
     from dreem.io import AssociationMatrix, Instance
 
+from dreem.io.flags import FrameFlagCode
+
 logger = logging.getLogger("dreem.io")
 
 
@@ -78,6 +80,8 @@ class Frame:
             between instances and trajectories along postprocessing pipeline
             or a single association matrix.
         device: The device the frame should be moved to.
+        is_flagged: Whether the frame has been flagged for any reason.
+        flag_reasons: Set of FrameFlagCode values indicating why the frame was flagged.
     """
 
     _video_id: int = attrs.field(alias="video_id", converter=_to_tensor)
@@ -94,6 +98,8 @@ class Frame:
     _matches: tuple = attrs.field(alias="matches", factory=tuple)
     _traj_score: dict = attrs.field(alias="traj_score", factory=dict)
     _device: str | torch.device | None = attrs.field(alias="device", default=None)
+    _is_flagged: bool = attrs.field(alias="is_flagged", default=False)
+    _flag_reasons: set[FrameFlagCode] = attrs.field(alias="flag_reasons", factory=set)
 
     def __attrs_post_init__(self) -> None:
         """Handle more intricate default initializations and moving to device."""
@@ -122,7 +128,9 @@ class Frame:
             f"traj_score={self._traj_score}, "
             f"matches={self._matches}, "
             f"instances={self._instances}, "
-            f"device={self._device}"
+            f"device={self._device}, "
+            f"is_flagged={self._is_flagged}, "
+            f"flag_reasons={self._flag_reasons}"
             ")"
         )
 
@@ -663,3 +671,69 @@ class Frame:
         )
 
         return (anchors, points)
+
+    @property
+    def is_flagged(self) -> bool:
+        """Whether the frame has been flagged for any reason.
+
+        Returns:
+            True if the frame has been flagged, otherwise False.
+        """
+        return self._is_flagged
+
+    @is_flagged.setter
+    def is_flagged(self, value: bool) -> None:
+        """Set the flagged status of the frame.
+
+        Args:
+            value: True to flag the frame, False to unflag it.
+        """
+        self._is_flagged = value
+        if not value:
+            self._flag_reasons.clear()
+
+    @property
+    def flag_reasons(self) -> set[FrameFlagCode]:
+        """List of flag codes indicating why the frame was flagged.
+
+        Returns:
+            A set of FrameFlagCode values indicating the reasons for flagging.
+        """
+        return self._flag_reasons.copy()
+
+    def add_flag(self, flag_code: FrameFlagCode) -> None:
+        """Add a flag reason to the frame.
+
+        Args:
+            flag_code: The FrameFlagCode indicating why the frame is being flagged.
+        """
+        if flag_code not in self._flag_reasons:
+            self._flag_reasons.add(flag_code)
+        self._is_flagged = True
+
+    def remove_flag(self, flag_code: FrameFlagCode) -> None:
+        """Remove a specific flag reason from the frame.
+
+        Args:
+            flag_code: The FrameFlagCode to remove.
+        """
+        if flag_code in self._flag_reasons:
+            self._flag_reasons.discard(flag_code)
+        if not self._flag_reasons:
+            self._is_flagged = False
+
+    def has_flag(self, flag_code: FrameFlagCode) -> bool:
+        """Check if the frame has a specific flag reason.
+
+        Args:
+            flag_code: The FrameFlagCode to check for.
+
+        Returns:
+            True if the frame has the specified flag code, otherwise False.
+        """
+        return flag_code in self._flag_reasons
+
+    def clear_flags(self) -> None:
+        """Clear all flags from the frame."""
+        self._flag_reasons.clear()
+        self._is_flagged = False

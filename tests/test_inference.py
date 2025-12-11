@@ -9,13 +9,14 @@ from pytorch_lightning import Trainer
 
 from dreem.inference import Tracker, metrics
 from dreem.inference.post_processing import (
-    IOUWeighting,
+    ConfidenceFlagging,
     DistanceWeighting,
+    IOUWeighting,
     OrientationWeighting,
 )
 from dreem.inference.track import run
 from dreem.inference.track_queue import TrackQueue
-from dreem.io import Config, Frame, Instance
+from dreem.io import Config, Frame, FrameFlagCode, Instance
 from dreem.models import GlobalTrackingTransformer, GTRRunner
 
 
@@ -789,3 +790,108 @@ def test_filter_max_center_dist_with_different_sizes():
     assert result.shape == asso_output.shape
     assert not torch.isnan(result).all()
     assert not torch.isinf(result).all()
+
+
+def test_confidence_flagging_basic():
+    """Test basic confidence flagging functionality.
+
+    Tests that frames are correctly flagged when entropy is high.
+    """
+    img_shape = (3, 128, 128)
+    instances = [Instance(gt_track_id=0, pred_track_id=0)]
+    frame = Frame(video_id=0, frame_id=0, img_shape=img_shape, instances=instances)
+
+    # Create high entropy scores (uniform distribution = low confidence)
+    n_query = 3
+    n_traj = 3
+    # Uniform distribution has maximum entropy
+    traj_score = torch.ones((n_query, n_traj)) / n_traj
+    scaled_traj_score = torch.nn.functional.log_softmax(traj_score / 0.1, dim=1)
+
+    # High threshold should flag the frame
+    flagging = ConfidenceFlagging(confidence_threshold=0.8)
+    flagging.run(
+        {
+            "scaled_traj_score": scaled_traj_score,
+            "n_query": n_query,
+            "query_frame": frame,
+        }
+    )
+
+    # Frame should be flagged due to high entropy
+    assert frame.is_flagged
+    assert frame.has_flag(FrameFlagCode.LOW_CONFIDENCE)
+
+
+def test_confidence_flagging_high_confidence():
+    """Test that high confidence frames are not flagged.
+
+    Tests that frames with low entropy (high confidence) are not flagged.
+    """
+    img_shape = (3, 128, 128)
+    instances = [Instance(gt_track_id=0, pred_track_id=0)]
+    frame = Frame(video_id=0, frame_id=0, img_shape=img_shape, instances=instances)
+
+    # Create low entropy scores (peaked distribution = high confidence)
+    n_query = 3
+    n_traj = 3
+    # One-hot-like distribution has low entropy
+    traj_score = torch.tensor(
+        [
+            [0.95, 0.025, 0.025],
+            [0.025, 0.95, 0.025],
+            [0.025, 0.025, 0.95],
+        ],
+        dtype=torch.float32,
+    )
+    scaled_traj_score = torch.nn.functional.log_softmax(traj_score / 0.1, dim=1)
+
+    # Even with high threshold, peaked distributions should not be flagged
+    flagging = ConfidenceFlagging(confidence_threshold=0.5)
+    flagging.run(
+        {
+            "scaled_traj_score": scaled_traj_score,
+            "n_query": n_query,
+            "query_frame": frame,
+        }
+    )
+
+    # Frame should NOT be flagged due to low entropy
+    assert not frame.is_flagged
+    assert not frame.has_flag(FrameFlagCode.LOW_CONFIDENCE)
+
+
+def test_confidence_flagging_mixed_entropy():
+    """Test flagging with mixed high/low entropy rows.
+
+    Tests that if any row has high entropy, the frame is flagged.
+    """
+    img_shape = (3, 128, 128)
+    instances = [Instance(gt_track_id=0, pred_track_id=0)]
+    frame = Frame(video_id=0, frame_id=0, img_shape=img_shape, instances=instances)
+
+    n_query = 3
+    n_traj = 3
+    # Mix of high and low entropy rows
+    traj_score = torch.tensor(
+        [
+            [0.95, 0.025, 0.025],  # Low entropy (high confidence)
+            [0.33, 0.33, 0.34],  # High entropy (low confidence)
+            [0.9, 0.05, 0.05],  # Low entropy (high confidence)
+        ],
+        dtype=torch.float32,
+    )
+    scaled_traj_score = torch.nn.functional.log_softmax(traj_score / 0.1, dim=1)
+
+    flagging = ConfidenceFlagging(confidence_threshold=0.7)
+    flagging.run(
+        {
+            "scaled_traj_score": scaled_traj_score,
+            "n_query": n_query,
+            "query_frame": frame,
+        }
+    )
+
+    # Frame should be flagged because at least one row has high entropy
+    assert frame.is_flagged
+    assert frame.has_flag(FrameFlagCode.LOW_CONFIDENCE)
