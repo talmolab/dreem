@@ -1,5 +1,7 @@
 # Quickstart
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/main/examples/quickstart.ipynb)
+
 DREEM operations can be performed either through the command-line interface or through the API (for more advanced users). The CLI provides all the commands for the main functionalities from training a model to running eval and inference to generating visualizations. All operations can be customized via configs that are managed by Hydra. For a more in-depth walkthrough of DREEM, see the Examples section. For a complete reference of all commands and options, see [the API Reference](https://dreem.sleap.ai/reference/dreem/). 
 
 To quickly test your installation and familiarize yourself with DREEM, you can follow the quickstart guide below.
