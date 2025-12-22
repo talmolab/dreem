@@ -32,6 +32,8 @@ class GlobalTrackingTransformer(torch.nn.Module):
         embedding_meta: dict | None = None,
         return_embedding: bool = False,
         decoder_self_attn: bool = False,
+        crop_size: int | None = None,
+        retain_crops: bool = False,
     ):
         """Initialize GTR.
 
@@ -51,7 +53,8 @@ class GlobalTrackingTransformer(torch.nn.Module):
             embedding_meta: Metadata for positional embeddings. See below.
             return_embedding: Whether to return the positional embeddings
             decoder_self_attn: If True, use decoder self attention.
-
+            crop_size: The size of the crop to use for the visual encoder.
+            retain_crops: Whether to retain the crops after feature extraction.
                 More details on `embedding_meta`:
                     By default this will be an empty dict and indicate
                     that no positional embeddings should be used. To use the positional embeddings
@@ -64,8 +67,8 @@ class GlobalTrackingTransformer(torch.nn.Module):
 
         if not encoder_cfg:
             encoder_cfg = {}
-        self.visual_encoder = create_visual_encoder(d_model=d_model, **encoder_cfg)
-
+        self.visual_encoder = create_visual_encoder(d_model=d_model, crop_size=crop_size, **encoder_cfg)
+        self.retain_crops = retain_crops
         self.transformer = Transformer(
             d_model=d_model,
             nhead=nhead,
@@ -87,7 +90,6 @@ class GlobalTrackingTransformer(torch.nn.Module):
         self,
         ref_instances: list["Instance"],
         query_instances: list["Instance"] = None,
-        retain_crops: bool = False,
     ) -> list["AssociationMatrix"]:
         """Execute forward pass of GTR Model to get asso matrix.
 
@@ -99,10 +101,10 @@ class GlobalTrackingTransformer(torch.nn.Module):
             An N_T x N association matrix
         """
         # Extract feature representations with pre-trained encoder.
-        self.extract_features(ref_instances, retain_crops=retain_crops)
+        self.extract_features(ref_instances, retain_crops=self.retain_crops)
 
         if query_instances:
-            self.extract_features(query_instances, retain_crops=retain_crops)
+            self.extract_features(query_instances, retain_crops=self.retain_crops)
 
         asso_preds = self.transformer(ref_instances, query_instances)
 
@@ -112,7 +114,6 @@ class GlobalTrackingTransformer(torch.nn.Module):
         self,
         instances: list["Instance"],
         force_recompute: bool = False,
-        retain_crops: bool = False,
     ) -> None:
         """Extract features from instances using visual encoder backbone.
 
@@ -140,5 +141,5 @@ class GlobalTrackingTransformer(torch.nn.Module):
 
         for i, z_i in enumerate(features):
             instances_to_compute[i].features = z_i
-            if not retain_crops:  # crops are an attribute of instance by default
+            if not self.retain_crops:  # crops are an attribute of instance by default
                 instances_to_compute[i].crop = None

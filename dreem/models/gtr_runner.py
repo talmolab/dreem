@@ -51,6 +51,7 @@ class GTRRunner(LightningModule):
 
     def __init__(
         self,
+        dataset_cfg: dict | None = None,
         model_cfg: dict | None = None,
         tracker_cfg: dict | None = None,
         loss_cfg: dict | None = None,
@@ -63,6 +64,7 @@ class GTRRunner(LightningModule):
         """Initialize a lightning module for GTR.
 
         Args:
+            dataset_cfg: dataset configuration
             model_cfg: hyperparameters for GlobalTrackingTransformer
             tracker_cfg: The parameters used for the tracker post-processing
             loss_cfg: hyperparameters for AssoLoss
@@ -76,9 +78,22 @@ class GTRRunner(LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
+        self.dataset_cfg = dataset_cfg if dataset_cfg else {}
         self.model_cfg = model_cfg if model_cfg else {}
         self.loss_cfg = loss_cfg if loss_cfg else {}
         self.tracker_cfg = tracker_cfg if tracker_cfg else {}
+
+        encoder_cfg = self.model_cfg.get("encoder_cfg", {})
+        visual_encoder_type = encoder_cfg.get("encoder_type", None)
+        if visual_encoder_type == "roi_align":
+            self.model_cfg["retain_crops"] = True
+            if "train_dataset" in dataset_cfg:
+                self.model_cfg["crop_size"] = dataset_cfg.get("train_dataset", {}).get("crop_size", None)
+            elif "test_dataset" in dataset_cfg:
+                self.model_cfg["crop_size"] = dataset_cfg.get("test_dataset", {}).get("crop_size", None)
+            else:
+                self.model_cfg["crop_size"] = None
+        
 
         self.model = GlobalTrackingTransformer(**self.model_cfg)
         self.loss = AssoLoss(**self.loss_cfg)
@@ -280,10 +295,10 @@ class GTRRunner(LightningModule):
         from dreem.inference.tracker import Tracker
 
         save_frame_meta = tracker_cfg.cfg.get("save_frame_meta", False)
+        visual_encoder_type = self.model_cfg.get("encoder_cfg", {}).get("encoder_type", None)
         self.tracker_cfg = tracker_cfg.get_tracker_cfg()
-        self.tracker_cfg["enable_crop_saving"] = (
-            save_frame_meta  # to save frame metadata, need to disable crop=None in GTR (memory saving)
-        )
+        if visual_encoder_type == "roi_align" or save_frame_meta:
+            self.tracker_cfg["enable_crop_saving"] = True
         self.tracker = Tracker(**self.tracker_cfg)
         logger.info("Using the following tracker:")
         logger.info(self.tracker)

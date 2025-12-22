@@ -279,7 +279,7 @@ class Tracker:
         ]
         enable_crop_saving = self.enable_crop_saving or is_pose_centroid_only(
             query_poses[0][0]
-        )
+        ) # TODO: if using roi align, we should be saving crops so have some condition here that checks if using roi align
         if (
             is_pose_centroid_only(query_poses[0][0])
             and query_frame.frame_id.item() == 1

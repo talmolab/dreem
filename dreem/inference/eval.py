@@ -29,7 +29,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
 
     logging.getLogger().setLevel(level=cfg.get("log_level", "INFO").upper())
 
-    model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
+    model = GTRRunner.load_from_checkpoint(checkpoint, strict=False, dataset_cfg=eval_cfg.cfg.dataset)
     overrides_dict = model.setup_tracking(eval_cfg, mode="eval")
     logger.info(
         f"Saving tracking results and metrics to {model.test_results['save_path']}"

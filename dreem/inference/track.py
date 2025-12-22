@@ -196,7 +196,7 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
             "Model checkpoint not found. Please provide a valid checkpoint path."
         )
 
-    model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
+    model = GTRRunner.load_from_checkpoint(checkpoint, strict=False, dataset_cfg=pred_cfg.cfg.dataset)
     overrides_dict = model.setup_tracking(pred_cfg, mode="inference")
 
     labels_files, vid_files = pred_cfg.get_data_paths(
