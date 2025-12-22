@@ -8,31 +8,31 @@
       
       
       
-        <link rel="canonical" href="https://dreem.sleap.ai/dev/reference/dreem/training/train/">
+        <link rel="canonical" href="https://dreem.sleap.ai/dev/Examples/">
       
       
-        <link rel="prev" href="../losses/">
+        <link rel="prev" href="../usage/">
       
       
-        <link rel="next" href="../../utils/">
+        <link rel="next" href="microscopy-demo-simple/">
       
       
         
       
       
-      <link rel="icon" href="../../../../assets/favicon.ico">
+      <link rel="icon" href="../assets/favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
-        <title>train - DREEM documentation</title>
+        <title>Overview - DREEM documentation</title>
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -46,16 +46,16 @@
         
         
         
-        <link rel="stylesheet" href="../../../../assets/external/fonts.googleapis.com/css.49ea35f2.css">
+        <link rel="stylesheet" href="../assets/external/fonts.googleapis.com/css.49ea35f2.css">
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
     
-      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../../../css/mkdocstrings.css">
+      <link rel="stylesheet" href="../css/mkdocstrings.css">
     
-    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
   
@@ -90,7 +90,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dreem.training.train" class="md-skip">
+        <a href="#examples" class="md-skip">
           Skip to content
         </a>
       
@@ -110,9 +110,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../../.." title="DREEM documentation" class="md-header__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
+    <a href=".." title="DREEM documentation" class="md-header__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
       
-  <img src="../../../../assets/sleap-logo.png" alt="logo">
+  <img src="../assets/sleap-logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -129,7 +129,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              train
+              Overview
             
           </span>
         </div>
@@ -247,9 +247,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../../.." title="DREEM documentation" class="md-nav__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
+    <a href=".." title="DREEM documentation" class="md-nav__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
       
-  <img src="../../../../assets/sleap-logo.png" alt="logo">
+  <img src="../assets/sleap-logo.png" alt="logo">
 
     </a>
     DREEM documentation
@@ -276,7 +276,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -303,7 +303,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -330,7 +330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../quickstart/" class="md-nav__link">
+      <a href="../quickstart/" class="md-nav__link">
         
   
   
@@ -357,7 +357,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../usage/" class="md-nav__link">
+      <a href="../usage/" class="md-nav__link">
         
   
   
@@ -381,8 +381,10 @@
       
   
   
+    
   
   
+  
     
     
     
@@ -393,11 +395,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
@@ -418,7 +420,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -433,10 +435,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../../../Examples/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -452,6 +481,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart-fly-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quickstart: Fly Tracking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#microscopy-demo-simple" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microscopy Demo (Simple)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#microscopy-demo-full-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microscopy Demo (Full API)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#end-to-end-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End-to-End Demo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -464,7 +568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../../examples/quickstart.ipynb" class="md-nav__link">
+      <a href="../../examples/quickstart.ipynb" class="md-nav__link">
         
   
   
@@ -492,7 +596,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../Examples/microscopy-demo-simple/" class="md-nav__link">
+      <a href="microscopy-demo-simple/" class="md-nav__link">
         
   
   
@@ -520,7 +624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../Examples/microscopy-demo-full-api/" class="md-nav__link">
+      <a href="microscopy-demo-full-api/" class="md-nav__link">
         
   
   
@@ -548,7 +652,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../Examples/dreem-demo/" class="md-nav__link">
+      <a href="dreem-demo/" class="md-nav__link">
         
   
   
@@ -649,7 +753,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../../io/" class="md-nav__link ">
+            <a href="../io/" class="md-nav__link ">
               
   
   
@@ -691,7 +795,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/asso_matrix/" class="md-nav__link">
+      <a href="../io/asso_matrix/" class="md-nav__link">
         
   
   
@@ -719,7 +823,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/config/" class="md-nav__link">
+      <a href="../io/config/" class="md-nav__link">
         
   
   
@@ -747,7 +851,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/frame/" class="md-nav__link">
+      <a href="../io/frame/" class="md-nav__link">
         
   
   
@@ -775,7 +879,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/instance/" class="md-nav__link">
+      <a href="../io/instance/" class="md-nav__link">
         
   
   
@@ -803,7 +907,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/track/" class="md-nav__link">
+      <a href="../io/track/" class="md-nav__link">
         
   
   
@@ -831,7 +935,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/visualize/" class="md-nav__link">
+      <a href="../io/visualize/" class="md-nav__link">
         
   
   
@@ -881,7 +985,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../../models/" class="md-nav__link ">
+            <a href="../models/" class="md-nav__link ">
               
   
   
@@ -923,7 +1027,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../models/global_tracking_transformer/" class="md-nav__link">
+      <a href="../models/global_tracking_transformer/" class="md-nav__link">
         
   
   
@@ -951,7 +1055,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../models/gtr_runner/" class="md-nav__link">
+      <a href="../models/gtr_runner/" class="md-nav__link">
         
   
   
@@ -979,7 +1083,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../models/model_parts/" class="md-nav__link">
+      <a href="../models/model_parts/" class="md-nav__link">
         
   
   
@@ -1029,7 +1133,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../../configs/" class="md-nav__link ">
+            <a href="../configs/" class="md-nav__link ">
               
   
   
@@ -1071,7 +1175,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../configs/config/" class="md-nav__link">
+      <a href="../configs/config/" class="md-nav__link">
         
   
   
@@ -1099,7 +1203,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../configs/eval/" class="md-nav__link">
+      <a href="../configs/eval/" class="md-nav__link">
         
   
   
@@ -1127,7 +1231,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../configs/inference/" class="md-nav__link">
+      <a href="../configs/inference/" class="md-nav__link">
         
   
   
@@ -1155,7 +1259,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../configs/training/" class="md-nav__link">
+      <a href="../configs/training/" class="md-nav__link">
         
   
   
@@ -1191,7 +1295,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../cli/" class="md-nav__link">
+      <a href="../cli/" class="md-nav__link">
         
   
   
@@ -1223,8 +1327,6 @@
       
   
   
-    
-  
   
   
     
@@ -1237,11 +1339,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
@@ -1262,7 +1364,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1277,8 +1379,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1288,15 +1388,15 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../" class="md-nav__link ">
+            <a href="../reference/dreem/" class="md-nav__link ">
               
   
   
@@ -1320,7 +1420,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_1_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1338,7 +1438,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cli/" class="md-nav__link">
+      <a href="../reference/dreem/cli/" class="md-nav__link">
         
   
   
@@ -1380,7 +1480,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../datasets/" class="md-nav__link ">
+            <a href="../reference/dreem/datasets/" class="md-nav__link ">
               
   
   
@@ -1422,7 +1522,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/base_dataset/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/base_dataset/" class="md-nav__link">
         
   
   
@@ -1450,7 +1550,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/cell_tracking_dataset/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/cell_tracking_dataset/" class="md-nav__link">
         
   
   
@@ -1478,7 +1578,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/data_utils/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/data_utils/" class="md-nav__link">
         
   
   
@@ -1506,7 +1606,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/microscopy_dataset/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/microscopy_dataset/" class="md-nav__link">
         
   
   
@@ -1534,7 +1634,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/preprocessors/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/preprocessors/" class="md-nav__link">
         
   
   
@@ -1562,7 +1662,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/sleap_dataset/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/sleap_dataset/" class="md-nav__link">
         
   
   
@@ -1590,7 +1690,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/tracking_dataset/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/tracking_dataset/" class="md-nav__link">
         
   
   
@@ -1640,7 +1740,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../inference/" class="md-nav__link ">
+            <a href="../reference/dreem/inference/" class="md-nav__link ">
               
   
   
@@ -1682,7 +1782,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/boxes/" class="md-nav__link">
+      <a href="../reference/dreem/inference/boxes/" class="md-nav__link">
         
   
   
@@ -1710,7 +1810,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/eval/" class="md-nav__link">
+      <a href="../reference/dreem/inference/eval/" class="md-nav__link">
         
   
   
@@ -1738,7 +1838,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/metrics/" class="md-nav__link">
+      <a href="../reference/dreem/inference/metrics/" class="md-nav__link">
         
   
   
@@ -1766,7 +1866,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/post_processing/" class="md-nav__link">
+      <a href="../reference/dreem/inference/post_processing/" class="md-nav__link">
         
   
   
@@ -1794,7 +1894,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/post_processing_utils/" class="md-nav__link">
+      <a href="../reference/dreem/inference/post_processing_utils/" class="md-nav__link">
         
   
   
@@ -1822,7 +1922,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/track/" class="md-nav__link">
+      <a href="../reference/dreem/inference/track/" class="md-nav__link">
         
   
   
@@ -1850,7 +1950,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/track_queue/" class="md-nav__link">
+      <a href="../reference/dreem/inference/track_queue/" class="md-nav__link">
         
   
   
@@ -1878,7 +1978,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/tracker/" class="md-nav__link">
+      <a href="../reference/dreem/inference/tracker/" class="md-nav__link">
         
   
   
@@ -1928,7 +2028,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../io/" class="md-nav__link ">
+            <a href="../reference/dreem/io/" class="md-nav__link ">
               
   
   
@@ -1970,7 +2070,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/association_matrix/" class="md-nav__link">
+      <a href="../reference/dreem/io/association_matrix/" class="md-nav__link">
         
   
   
@@ -1998,7 +2098,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/config/" class="md-nav__link">
+      <a href="../reference/dreem/io/config/" class="md-nav__link">
         
   
   
@@ -2026,7 +2126,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/flags/" class="md-nav__link">
+      <a href="../reference/dreem/io/flags/" class="md-nav__link">
         
   
   
@@ -2054,7 +2154,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/frame/" class="md-nav__link">
+      <a href="../reference/dreem/io/frame/" class="md-nav__link">
         
   
   
@@ -2082,7 +2182,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/instance/" class="md-nav__link">
+      <a href="../reference/dreem/io/instance/" class="md-nav__link">
         
   
   
@@ -2110,7 +2210,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/track/" class="md-nav__link">
+      <a href="../reference/dreem/io/track/" class="md-nav__link">
         
   
   
@@ -2138,7 +2238,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/visualize/" class="md-nav__link">
+      <a href="../reference/dreem/io/visualize/" class="md-nav__link">
         
   
   
@@ -2188,7 +2288,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../models/" class="md-nav__link ">
+            <a href="../reference/dreem/models/" class="md-nav__link ">
               
   
   
@@ -2230,7 +2330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/attention_head/" class="md-nav__link">
+      <a href="../reference/dreem/models/attention_head/" class="md-nav__link">
         
   
   
@@ -2258,7 +2358,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/embedding/" class="md-nav__link">
+      <a href="../reference/dreem/models/embedding/" class="md-nav__link">
         
   
   
@@ -2286,7 +2386,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/global_tracking_transformer/" class="md-nav__link">
+      <a href="../reference/dreem/models/global_tracking_transformer/" class="md-nav__link">
         
   
   
@@ -2314,7 +2414,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/gtr_runner/" class="md-nav__link">
+      <a href="../reference/dreem/models/gtr_runner/" class="md-nav__link">
         
   
   
@@ -2342,7 +2442,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/mlp/" class="md-nav__link">
+      <a href="../reference/dreem/models/mlp/" class="md-nav__link">
         
   
   
@@ -2370,7 +2470,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/model_utils/" class="md-nav__link">
+      <a href="../reference/dreem/models/model_utils/" class="md-nav__link">
         
   
   
@@ -2398,7 +2498,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/transformer/" class="md-nav__link">
+      <a href="../reference/dreem/models/transformer/" class="md-nav__link">
         
   
   
@@ -2426,7 +2526,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/visual_encoder/" class="md-nav__link">
+      <a href="../reference/dreem/models/visual_encoder/" class="md-nav__link">
         
   
   
@@ -2459,8 +2559,6 @@
                 
   
   
-    
-  
   
   
     
@@ -2470,15 +2568,15 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1_6" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../reference/dreem/training/" class="md-nav__link ">
               
   
   
@@ -2502,7 +2600,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_7_1_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_7_1_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7_1_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2520,7 +2618,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../losses/" class="md-nav__link">
+      <a href="../reference/dreem/training/losses/" class="md-nav__link">
         
   
   
@@ -2545,35 +2643,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    train
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../reference/dreem/training/train/" class="md-nav__link">
         
   
   
@@ -2589,52 +2662,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#dreem.training.train" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        train
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="train">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dreem.training.train.run" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        run
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2669,7 +2696,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../utils/" class="md-nav__link ">
+            <a href="../reference/dreem/utils/" class="md-nav__link ">
               
   
   
@@ -2711,7 +2738,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/processors/" class="md-nav__link">
+      <a href="../reference/dreem/utils/processors/" class="md-nav__link">
         
   
   
@@ -2747,7 +2774,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../version/" class="md-nav__link">
+      <a href="../reference/dreem/version/" class="md-nav__link">
         
   
   
@@ -2827,6 +2854,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -2835,30 +2864,57 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#dreem.training.train" class="md-nav__link">
+  <a href="#quickstart-fly-tracking" class="md-nav__link">
     <span class="md-ellipsis">
       
-        train
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="train">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dreem.training.train.run" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        run
+        Quickstart: Fly Tracking
       
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#microscopy-demo-simple" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microscopy Demo (Simple)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#microscopy-demo-full-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microscopy Demo (Full API)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#end-to-end-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End-to-End Demo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started
+      
+    </span>
+  </a>
   
 </li>
       
@@ -2882,213 +2938,36 @@
   
 
 
-  <h1>train</h1>
-
-<div class="doc doc-object doc-module">
-
-
-
-<h2 id="dreem.training.train" class="doc doc-heading">
-            <code>dreem.training.train</code>
-
-
-<a href="#dreem.training.train" class="headerlink" title="Permanent link">&para;</a></h2>
-
-    <div class="doc doc-contents first">
-
-        <p>Training script for training model.</p>
-<p>Used for training a single model or deploying a batch train job on RUNAI CLI</p>
-
-
-
-
-
-
-
-
-
-
-
-
-<p><span class="doc-section-title">Functions:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cfg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.training.train.run&lt;/code&gt;)" href="#dreem.training.train.run">run</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Train model based on config.</p>
-                </div>
-              </td>
-            </tr>
-      </tbody>
-    </table>
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="dreem.training.train.run" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">run</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></code>
-
-<a href="#dreem.training.train.run" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Train model based on config.</p>
-<p>Handles all config parsing and initialization then calls <code>trainer.train()</code>.
-If <code>batch_config</code> is included then run will be assumed to be a batch job.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>cfg</code>
-            </td>
-            <td>
-                  <code><span title="omegaconf.DictConfig">DictConfig</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The config dict parsed by <code>hydra</code></p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>dreem/training/train.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-24" name="__codelineno-0-24"></a><a href="#__codelineno-0-24"><span class="linenos" data-linenos=" 24 "></span></a><span class="nd">@hydra</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">version_base</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><a href="#__codelineno-0-25"><span class="linenos" data-linenos=" 25 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">DictConfig</span><span class="p">):</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a><a href="#__codelineno-0-26"><span class="linenos" data-linenos=" 26 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Train model based on config.</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a><a href="#__codelineno-0-27"><span class="linenos" data-linenos=" 27 "></span></a>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a><a href="#__codelineno-0-28"><span class="linenos" data-linenos=" 28 "></span></a><span class="sd">    Handles all config parsing and initialization then calls `trainer.train()`.</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a><a href="#__codelineno-0-29"><span class="linenos" data-linenos=" 29 "></span></a><span class="sd">    If `batch_config` is included then run will be assumed to be a batch job.</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a><a href="#__codelineno-0-30"><span class="linenos" data-linenos=" 30 "></span></a>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a><a href="#__codelineno-0-31"><span class="linenos" data-linenos=" 31 "></span></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a><a href="#__codelineno-0-32"><span class="linenos" data-linenos=" 32 "></span></a><span class="sd">        cfg: The config dict parsed by `hydra`</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33"></a><a href="#__codelineno-0-33"><span class="linenos" data-linenos=" 33 "></span></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a><a href="#__codelineno-0-34"><span class="linenos" data-linenos=" 34 "></span></a>    <span class="n">torch</span><span class="o">.</span><span class="n">set_float32_matmul_precision</span><span class="p">(</span><span class="s2">&quot;medium&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a><a href="#__codelineno-0-35"><span class="linenos" data-linenos=" 35 "></span></a>    <span class="n">train_cfg</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a><a href="#__codelineno-0-36"><span class="linenos" data-linenos=" 36 "></span></a>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a><a href="#__codelineno-0-37"><span class="linenos" data-linenos=" 37 "></span></a>    <span class="c1"># update with parameters for batch train job</span>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a><a href="#__codelineno-0-38"><span class="linenos" data-linenos=" 38 "></span></a>    <span class="k">if</span> <span class="s2">&quot;batch_config&quot;</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a><a href="#__codelineno-0-39"><span class="linenos" data-linenos=" 39 "></span></a>        <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a><a href="#__codelineno-0-40"><span class="linenos" data-linenos=" 40 "></span></a>            <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;POD_INDEX&quot;</span><span class="p">])</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a><a href="#__codelineno-0-41"><span class="linenos" data-linenos=" 41 "></span></a>        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a><a href="#__codelineno-0-42"><span class="linenos" data-linenos=" 42 "></span></a>            <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a><a href="#__codelineno-0-43"><span class="linenos" data-linenos=" 43 "></span></a>                <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Assuming single run!</span><span class="se">\n</span><span class="s2">Please input task index to run:&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a><a href="#__codelineno-0-44"><span class="linenos" data-linenos=" 44 "></span></a>            <span class="p">)</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a><a href="#__codelineno-0-45"><span class="linenos" data-linenos=" 45 "></span></a>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a><a href="#__codelineno-0-46"><span class="linenos" data-linenos=" 46 "></span></a>        <span class="n">hparams_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">batch_config</span><span class="p">)</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a><a href="#__codelineno-0-47"><span class="linenos" data-linenos=" 47 "></span></a>        <span class="n">hparams</span> <span class="o">=</span> <span class="n">hparams_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a><a href="#__codelineno-0-48"><span class="linenos" data-linenos=" 48 "></span></a>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a><a href="#__codelineno-0-49"><span class="linenos" data-linenos=" 49 "></span></a>        <span class="k">if</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">set_hparams</span><span class="p">(</span><span class="n">hparams</span><span class="p">):</span>
-<a id="__codelineno-0-50" name="__codelineno-0-50"></a><a href="#__codelineno-0-50"><span class="linenos" data-linenos=" 50 "></span></a>            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Updated the following hparams to the following values&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a><a href="#__codelineno-0-51"><span class="linenos" data-linenos=" 51 "></span></a>            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">hparams</span><span class="p">)</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a><a href="#__codelineno-0-52"><span class="linenos" data-linenos=" 52 "></span></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a><a href="#__codelineno-0-53"><span class="linenos" data-linenos=" 53 "></span></a>        <span class="n">hparams</span> <span class="o">=</span> <span class="p">{}</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a><a href="#__codelineno-0-54"><span class="linenos" data-linenos=" 54 "></span></a>    <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log_level&quot;</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a><a href="#__codelineno-0-55"><span class="linenos" data-linenos=" 55 "></span></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final train config: </span><span class="si">{</span><span class="n">train_cfg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a><a href="#__codelineno-0-56"><span class="linenos" data-linenos=" 56 "></span></a>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a><a href="#__codelineno-0-57"><span class="linenos" data-linenos=" 57 "></span></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">get_model</span><span class="p">()</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a><a href="#__codelineno-0-58"><span class="linenos" data-linenos=" 58 "></span></a>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a><a href="#__codelineno-0-59"><span class="linenos" data-linenos=" 59 "></span></a>    <span class="n">train_dataset</span> <span class="o">=</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">get_dataset</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a><a href="#__codelineno-0-60"><span class="linenos" data-linenos=" 60 "></span></a>    <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">get_dataloader</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a><a href="#__codelineno-0-61"><span class="linenos" data-linenos=" 61 "></span></a>
-<a id="__codelineno-0-62" name="__codelineno-0-62"></a><a href="#__codelineno-0-62"><span class="linenos" data-linenos=" 62 "></span></a>    <span class="n">val_dataset</span> <span class="o">=</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">get_dataset</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;val&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-63" name="__codelineno-0-63"></a><a href="#__codelineno-0-63"><span class="linenos" data-linenos=" 63 "></span></a>    <span class="n">val_dataloader</span> <span class="o">=</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">get_dataloader</span><span class="p">(</span><span class="n">val_dataset</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;val&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-64" name="__codelineno-0-64"></a><a href="#__codelineno-0-64"><span class="linenos" data-linenos=" 64 "></span></a>
-<a id="__codelineno-0-65" name="__codelineno-0-65"></a><a href="#__codelineno-0-65"><span class="linenos" data-linenos=" 65 "></span></a>    <span class="n">dataset</span> <span class="o">=</span> <span class="n">TrackingDataset</span><span class="p">(</span><span class="n">train_dl</span><span class="o">=</span><span class="n">train_dataloader</span><span class="p">,</span> <span class="n">val_dl</span><span class="o">=</span><span class="n">val_dataloader</span><span class="p">)</span>
-<a id="__codelineno-0-66" name="__codelineno-0-66"></a><a href="#__codelineno-0-66"><span class="linenos" data-linenos=" 66 "></span></a>
-<a id="__codelineno-0-67" name="__codelineno-0-67"></a><a href="#__codelineno-0-67"><span class="linenos" data-linenos=" 67 "></span></a>    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">view_batch</span><span class="o">.</span><span class="n">enable</span><span class="p">:</span>
-<a id="__codelineno-0-68" name="__codelineno-0-68"></a><a href="#__codelineno-0-68"><span class="linenos" data-linenos=" 68 "></span></a>        <span class="n">instances</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">))</span>
-<a id="__codelineno-0-69" name="__codelineno-0-69"></a><a href="#__codelineno-0-69"><span class="linenos" data-linenos=" 69 "></span></a>        <span class="n">view_training_batch</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">num_frames</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">view_batch</span><span class="o">.</span><span class="n">num_frames</span><span class="p">)</span>
-<a id="__codelineno-0-70" name="__codelineno-0-70"></a><a href="#__codelineno-0-70"><span class="linenos" data-linenos=" 70 "></span></a>
-<a id="__codelineno-0-71" name="__codelineno-0-71"></a><a href="#__codelineno-0-71"><span class="linenos" data-linenos=" 71 "></span></a>        <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">view_batch</span><span class="o">.</span><span class="n">no_train</span><span class="p">:</span>
-<a id="__codelineno-0-72" name="__codelineno-0-72"></a><a href="#__codelineno-0-72"><span class="linenos" data-linenos=" 72 "></span></a>            <span class="k">return</span>
-<a id="__codelineno-0-73" name="__codelineno-0-73"></a><a href="#__codelineno-0-73"><span class="linenos" data-linenos=" 73 "></span></a>
-<a id="__codelineno-0-74" name="__codelineno-0-74"></a><a href="#__codelineno-0-74"><span class="linenos" data-linenos=" 74 "></span></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">get_gtr_runner</span><span class="p">()</span>  <span class="c1"># TODO see if we can use torch.compile()</span>
-<a id="__codelineno-0-75" name="__codelineno-0-75"></a><a href="#__codelineno-0-75"><span class="linenos" data-linenos=" 75 "></span></a>
-<a id="__codelineno-0-76" name="__codelineno-0-76"></a><a href="#__codelineno-0-76"><span class="linenos" data-linenos=" 76 "></span></a>    <span class="n">run_logger</span> <span class="o">=</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span>
-<a id="__codelineno-0-77" name="__codelineno-0-77"></a><a href="#__codelineno-0-77"><span class="linenos" data-linenos=" 77 "></span></a>
-<a id="__codelineno-0-78" name="__codelineno-0-78"></a><a href="#__codelineno-0-78"><span class="linenos" data-linenos=" 78 "></span></a>    <span class="k">if</span> <span class="n">run_logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">run_logger</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">loggers</span><span class="o">.</span><span class="n">wandb</span><span class="o">.</span><span class="n">WandbLogger</span><span class="p">):</span>
-<a id="__codelineno-0-79" name="__codelineno-0-79"></a><a href="#__codelineno-0-79"><span class="linenos" data-linenos=" 79 "></span></a>        <span class="n">data_paths</span> <span class="o">=</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">data_paths</span>
-<a id="__codelineno-0-80" name="__codelineno-0-80"></a><a href="#__codelineno-0-80"><span class="linenos" data-linenos=" 80 "></span></a>        <span class="n">flattened_paths</span> <span class="o">=</span> <span class="p">[</span>
-<a id="__codelineno-0-81" name="__codelineno-0-81"></a><a href="#__codelineno-0-81"><span class="linenos" data-linenos=" 81 "></span></a>            <span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">data_paths</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sublist</span>
-<a id="__codelineno-0-82" name="__codelineno-0-82"></a><a href="#__codelineno-0-82"><span class="linenos" data-linenos=" 82 "></span></a>        <span class="p">]</span>
-<a id="__codelineno-0-83" name="__codelineno-0-83"></a><a href="#__codelineno-0-83"><span class="linenos" data-linenos=" 83 "></span></a>        <span class="n">run_logger</span><span class="o">.</span><span class="n">log_text</span><span class="p">(</span>
-<a id="__codelineno-0-84" name="__codelineno-0-84"></a><a href="#__codelineno-0-84"><span class="linenos" data-linenos=" 84 "></span></a>            <span class="s2">&quot;training_files&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;data_paths&quot;</span><span class="p">],</span> <span class="n">data</span><span class="o">=</span><span class="n">flattened_paths</span>
-<a id="__codelineno-0-85" name="__codelineno-0-85"></a><a href="#__codelineno-0-85"><span class="linenos" data-linenos=" 85 "></span></a>        <span class="p">)</span>
-<a id="__codelineno-0-86" name="__codelineno-0-86"></a><a href="#__codelineno-0-86"><span class="linenos" data-linenos=" 86 "></span></a>
-<a id="__codelineno-0-87" name="__codelineno-0-87"></a><a href="#__codelineno-0-87"><span class="linenos" data-linenos=" 87 "></span></a>    <span class="n">callbacks</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-0-88" name="__codelineno-0-88"></a><a href="#__codelineno-0-88"><span class="linenos" data-linenos=" 88 "></span></a>    <span class="n">_</span> <span class="o">=</span> <span class="n">callbacks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">train_cfg</span><span class="o">.</span><span class="n">get_checkpointing</span><span class="p">())</span>
-<a id="__codelineno-0-89" name="__codelineno-0-89"></a><a href="#__codelineno-0-89"><span class="linenos" data-linenos=" 89 "></span></a>    <span class="n">_</span> <span class="o">=</span> <span class="n">callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">LearningRateMonitor</span><span class="p">())</span>
-<a id="__codelineno-0-90" name="__codelineno-0-90"></a><a href="#__codelineno-0-90"><span class="linenos" data-linenos=" 90 "></span></a>
-<a id="__codelineno-0-91" name="__codelineno-0-91"></a><a href="#__codelineno-0-91"><span class="linenos" data-linenos=" 91 "></span></a>    <span class="n">early_stopping</span> <span class="o">=</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">get_early_stopping</span><span class="p">()</span>
-<a id="__codelineno-0-92" name="__codelineno-0-92"></a><a href="#__codelineno-0-92"><span class="linenos" data-linenos=" 92 "></span></a>    <span class="k">if</span> <span class="n">early_stopping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-93" name="__codelineno-0-93"></a><a href="#__codelineno-0-93"><span class="linenos" data-linenos=" 93 "></span></a>        <span class="n">callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">early_stopping</span><span class="p">)</span>
-<a id="__codelineno-0-94" name="__codelineno-0-94"></a><a href="#__codelineno-0-94"><span class="linenos" data-linenos=" 94 "></span></a>
-<a id="__codelineno-0-95" name="__codelineno-0-95"></a><a href="#__codelineno-0-95"><span class="linenos" data-linenos=" 95 "></span></a>    <span class="n">accelerator</span> <span class="o">=</span> <span class="s2">&quot;gpu&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
-<a id="__codelineno-0-96" name="__codelineno-0-96"></a><a href="#__codelineno-0-96"><span class="linenos" data-linenos=" 96 "></span></a>    <span class="n">devices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="n">cpu_count</span><span class="p">()</span>
-<a id="__codelineno-0-97" name="__codelineno-0-97"></a><a href="#__codelineno-0-97"><span class="linenos" data-linenos=" 97 "></span></a>
-<a id="__codelineno-0-98" name="__codelineno-0-98"></a><a href="#__codelineno-0-98"><span class="linenos" data-linenos=" 98 "></span></a>    <span class="n">trainer</span> <span class="o">=</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">get_trainer</span><span class="p">(</span>
-<a id="__codelineno-0-99" name="__codelineno-0-99"></a><a href="#__codelineno-0-99"><span class="linenos" data-linenos=" 99 "></span></a>        <span class="n">callbacks</span><span class="p">,</span>
-<a id="__codelineno-0-100" name="__codelineno-0-100"></a><a href="#__codelineno-0-100"><span class="linenos" data-linenos="100 "></span></a>        <span class="n">run_logger</span><span class="p">,</span>
-<a id="__codelineno-0-101" name="__codelineno-0-101"></a><a href="#__codelineno-0-101"><span class="linenos" data-linenos="101 "></span></a>        <span class="n">accelerator</span><span class="o">=</span><span class="n">accelerator</span><span class="p">,</span>
-<a id="__codelineno-0-102" name="__codelineno-0-102"></a><a href="#__codelineno-0-102"><span class="linenos" data-linenos="102 "></span></a>        <span class="n">devices</span><span class="o">=</span><span class="n">devices</span><span class="p">,</span>
-<a id="__codelineno-0-103" name="__codelineno-0-103"></a><a href="#__codelineno-0-103"><span class="linenos" data-linenos="103 "></span></a>    <span class="p">)</span>
-<a id="__codelineno-0-104" name="__codelineno-0-104"></a><a href="#__codelineno-0-104"><span class="linenos" data-linenos="104 "></span></a>
-<a id="__codelineno-0-105" name="__codelineno-0-105"></a><a href="#__codelineno-0-105"><span class="linenos" data-linenos="105 "></span></a>    <span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
-</code></pre></div>
-            </details>
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
+<h1 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h1>
+<h3 id="quickstart-fly-tracking"><a href="../quickstart/">Quickstart: Fly Tracking</a><a class="headerlink" href="#quickstart-fly-tracking" title="Permanent link">&para;</a></h3>
+<p><strong>Best for:</strong> First-time users<br />
+<strong>Runtime:</strong> 5-10 minutes</p>
+<p>A quick introduction to DREEM using a pretrained model on fly tracking data. Learn how to:
+- Download sample data and models
+- Run tracking with <code>dreem-track</code>
+- Evaluate results with <code>dreem-eval</code>
+- Visualize tracking outputs</p>
+<h3 id="microscopy-demo-simple"><a href="microscopy-demo-simple/">Microscopy Demo (Simple)</a><a class="headerlink" href="#microscopy-demo-simple" title="Permanent link">&para;</a></h3>
+<p><strong>Best for:</strong> Microscopy users who don't already have detections for their data. This demo uses CellPose for segmentation and then DREEM to track the entities </p>
+<p><strong>Runtime:</strong> 10-15 minutes</p>
+<h3 id="microscopy-demo-full-api"><a href="microscopy-demo-full-api/">Microscopy Demo (Full API)</a><a class="headerlink" href="#microscopy-demo-full-api" title="Permanent link">&para;</a></h3>
+<p><strong>Best for:</strong> Advanced users wanting fine-grained control<br />
+<strong>Runtime:</strong> 15-20 minutes</p>
+<p>An in-depth walkthrough of the DREEM API for microscopy tracking, covering:
+- Custom data loading and preprocessing
+- Advanced configuration options
+- Detailed API usage patterns</p>
+<h3 id="end-to-end-demo"><a href="dreem-demo/">End-to-End Demo</a><a class="headerlink" href="#end-to-end-demo" title="Permanent link">&para;</a></h3>
+<p><strong>Best for:</strong> Users who want to train their own models<br />
+<strong>Runtime:</strong> 20-30 minutes</p>
+<p>A complete walkthrough of the DREEM pipeline:
+- Training a model from scratch
+- Running inference on new data
+- Evaluating tracking performance
+- Visualizing results and metrics</p>
+<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<p>If you're new to DREEM, we recommend starting with the <strong>Quickstart</strong> example to get familiar with the basic workflow. Once you're comfortable, explore the other examples based on your specific use case.</p>
+<p>For more details on configuration options and advanced usage, see the <a href="../usage/">Usage Guide</a>.</p>
 
 
 
@@ -3257,10 +3136,10 @@ If <code>batch_config</code> is included then run will be assumed to be a batch 
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.tracking", "toc.follow", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tooltips", "content.code.select", "content.footnote.tooltips"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tracking", "toc.follow", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tooltips", "content.code.select", "content.footnote.tooltips"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

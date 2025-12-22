@@ -436,6 +436,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../Examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../../examples/quickstart.ipynb" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../Examples/microscopy-demo-simple/" class="md-nav__link">
         
   
@@ -3267,7 +3323,7 @@
 <a id="__codelineno-0-196" name="__codelineno-0-196"></a><a href="#__codelineno-0-196"><span class="linenos" data-linenos="196 "></span></a>            <span class="s2">&quot;Model checkpoint not found. Please provide a valid checkpoint path.&quot;</span>
 <a id="__codelineno-0-197" name="__codelineno-0-197"></a><a href="#__codelineno-0-197"><span class="linenos" data-linenos="197 "></span></a>        <span class="p">)</span>
 <a id="__codelineno-0-198" name="__codelineno-0-198"></a><a href="#__codelineno-0-198"><span class="linenos" data-linenos="198 "></span></a>
-<a id="__codelineno-0-199" name="__codelineno-0-199"></a><a href="#__codelineno-0-199"><span class="linenos" data-linenos="199 "></span></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">GTRRunner</span><span class="o">.</span><span class="n">load_from_checkpoint</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dataset_cfg</span><span class="o">=</span><span class="n">pred_cfg</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+<a id="__codelineno-0-199" name="__codelineno-0-199"></a><a href="#__codelineno-0-199"><span class="linenos" data-linenos="199 "></span></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">GTRRunner</span><span class="o">.</span><span class="n">load_from_checkpoint</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <a id="__codelineno-0-200" name="__codelineno-0-200"></a><a href="#__codelineno-0-200"><span class="linenos" data-linenos="200 "></span></a>    <span class="n">overrides_dict</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">setup_tracking</span><span class="p">(</span><span class="n">pred_cfg</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;inference&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-201" name="__codelineno-0-201"></a><a href="#__codelineno-0-201"><span class="linenos" data-linenos="201 "></span></a>
 <a id="__codelineno-0-202" name="__codelineno-0-202"></a><a href="#__codelineno-0-202"><span class="linenos" data-linenos="202 "></span></a>    <span class="n">labels_files</span><span class="p">,</span> <span class="n">vid_files</span> <span class="o">=</span> <span class="n">pred_cfg</span><span class="o">.</span><span class="n">get_data_paths</span><span class="p">(</span>
