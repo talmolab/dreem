@@ -154,6 +154,8 @@ nav:
   - Quickstart: quickstart.md
   - Usage: usage.md
   - Examples:
+    - Overview: Examples/index.md
+    - Quickstart: ../examples/quickstart.ipynb
     - Microscopy: Examples/microscopy-demo-simple.md
     - Microscopy - in-depth API usage: Examples/microscopy-demo-full-api.md
     - End-to-end: Examples/dreem-demo.md

@@ -45,7 +45,7 @@ Explore the Examples section for notebooks that walk you through the DREEM pipel
 - [Installation](./installation.md)
 - [Quickstart](./quickstart.md)
 - [Usage Guide](./usage.md)
-- Examples
+- [Examples](./Examples/)
 - [API Reference](https://dreem.sleap.ai/reference/dreem/)
 
 ## Get Help
