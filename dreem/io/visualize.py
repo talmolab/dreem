@@ -102,7 +102,7 @@ def annotate_video(
             "opencv-python is required for video annotation. "
             "Install with: pip install opencv-python"
         ) from e
-    
+
     writer = imageio.get_writer(save_path, fps=fps)
     color_palette = (
         sns.color_palette(color_palette)
