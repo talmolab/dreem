@@ -1,9 +1,9 @@
-[build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "dreem-tracker"
+name = "dreem-track"
+description = "Global Tracking Transformers for biological multi-object tracking."
+readme = "README.md"
+license = {text = "BSD-3-Clause"}
+requires-python = ">=3.12"
 authors = [
     {name = "Arlo Sheridan", email = "asheridan@salk.edu"},
     {name = "Aaditya Prasad", email = "aprasad@salk.edu"},
@@ -11,47 +11,41 @@ authors = [
     {name = "Uri Manor", email = "umanor@salk.edu"},
     {name = "Talmo Pereira", email = "talmo@salk.edu"},
 ]
-description = "Global Tracking Transformers for biological multi-object tracking."
-requires-python = ">=3.12"
-keywords = ["gtr", "mot"]
-license = {text = "BSD-3-Clause"}
+keywords = ["gtr", "mot", "tracking", "deep learning", "transformers"]
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "torch >= 2.0.0",
+    # PyTorch ecosystem
+    "torch>=2.0.0",
     "torchvision",
     "lightning",
-    "imageio",
+    # Image/video I/O
+    "imageio>=2.34.0",
     "imageio-ffmpeg",
     "av",
+    # Image processing
     "albumentations",
+    "opencv-python<4.9.0",
+    # Configuration
     "hydra-core",
-    "sleap-io"
+    # Data I/O
+    "sleap-io",
+    # Visualization
+    "matplotlib",
+    "seaborn",
+    # Metrics and logging
+    "motmetrics",
+    "wandb",
+    # Models
+    "timm",
+    "huggingface-hub",
 ]
-dynamic = ["version", "readme"]
-
-[tool.setuptools.dynamic]
-version = {attr = "dreem.version.__version__"}
-readme = {file = ["README.md"]}
-
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "pytest-cov",
-    "ruff",
-    "codespell",
-    "toml",
-    "twine",
-    "build",
-    "mkdocs-material[imaging]",
-    "mkdocs-jupyter",
-    "mkdocstrings[python]>=0.18",
-    "mkdocs-gen-files",
-    "mkdocs-literate-nav",
-    "mike",
-    "mkdocs-section-index"
-]
+dynamic = ["version"]
 
 [project.scripts]
 dreem-train = "dreem.training.train:run"
@@ -63,13 +57,61 @@ dreem-visualize = "dreem.io.visualize:main"
 Homepage = "https://github.com/talmolab/dreem"
 Repository = "https://github.com/talmolab/dreem"
 
-[tool.black]
-line-length = 88
+# =============================================================================
+# Build system - using Hatchling
+# =============================================================================
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[pydocstyle]
-convention = "google"
-match-dir = "sleap_roots"
+[tool.hatch.build.targets.wheel]
+packages = ["dreem"]
 
+[tool.hatch.version]
+path = "dreem/version.py"
+
+# =============================================================================
+# uv configuration for PyTorch with CUDA support
+# =============================================================================
+# Use CUDA 12.1 builds on Linux/Windows, fall back to PyPI on macOS (MPS)
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu121", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
+    { index = "pytorch-cu121", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+
+# =============================================================================
+# Dependency groups (dev tools)
+# =============================================================================
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.5.0",
+    "codespell",
+    "toml",
+    "twine",
+    "build",
+    "mkdocs-material[imaging]",
+    "mkdocs-jupyter",
+    "mkdocstrings[python]>=0.18",
+    "mkdocs-gen-files",
+    "mkdocs-literate-nav",
+    "mike",
+    "mkdocs-section-index",
+]
+
+# =============================================================================
+# Code quality tools
+# =============================================================================
 [tool.ruff]
 line-length = 88
 
@@ -89,3 +131,6 @@ convention = "google"
 [tool.codespell]
 skip = "*.po,*.ts,./docs/_build,./docs/venv,./site,*.ipynb,.git,__pycache__,*.csv"
 ignore-words-list = "te,sleeap,thinc,mot,MOT"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
