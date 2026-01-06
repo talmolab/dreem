@@ -5,7 +5,6 @@ Used for training a single model or deploying a batch train job on RUNAI CLI
 
 import logging
 import os
-from multiprocessing import cpu_count
 
 import hydra
 import pandas as pd
@@ -93,7 +92,9 @@ def run(cfg: DictConfig):
         callbacks.append(early_stopping)
 
     accelerator = "gpu" if torch.cuda.is_available() else "cpu"
-    devices = torch.cuda.device_count() if torch.cuda.is_available() else cpu_count()
+    # Use 1 device for CPU to avoid multiprocessing issues (OOM kills, etc.)
+    # For GPU, use all available GPUs
+    devices = torch.cuda.device_count() if torch.cuda.is_available() else 1
 
     trainer = train_cfg.get_trainer(
         callbacks,
