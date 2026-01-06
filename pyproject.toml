@@ -31,6 +31,7 @@ dependencies = [
     # Image processing
     "albumentations",
     "opencv-python<4.9.0",
+    "numpy<2.0",  # Required for opencv-python<4.9.0 compatibility
     # Configuration
     "hydra-core",
     # Data I/O
@@ -46,6 +47,9 @@ dependencies = [
     "huggingface-hub",
 ]
 dynamic = ["version"]
+
+[project.optional-dependencies]
+encoder = ["scikit-image"]  # Required for visual encoder functionality
 
 [project.scripts]
 dreem-train = "dreem.training.train:run"
