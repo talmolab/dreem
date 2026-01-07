@@ -152,3 +152,4 @@ agents/
 .cursor/
 run_tracker.py
 run_trainer.py
+UV_MIGRATION.md

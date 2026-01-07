@@ -8,8 +8,8 @@ on:
       - "dreem/**"
       - "tests/**"
       - ".github/workflows/ci.yml"
-      - "environment_cpu.yml"
       - "pyproject.toml"
+      - "uv.lock"
   push:
     branches:
       - main
@@ -17,13 +17,8 @@ on:
       - "dreem/**"
       - "tests/**"
       - ".github/workflows/ci.yml"
-      - "environment_cpu.yml"
       - "pyproject.toml"
-
-defaults:
-  # This is needed for running steps within conda environments.
-  run:
-    shell: bash -l {0}
+      - "uv.lock"
 
 jobs:
   # Format and lint with ruff
@@ -36,69 +31,60 @@ jobs:
     # Note: This uses Google-style docstring convention
     # Ref: https://google.github.io/styleguide/pyguide.html
     name: Lint
-    runs-on: "ubuntu-22.04"
+    runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.12
+      - name: Install dependencies
+        run: uv sync --group dev
 
-    - name: Install dependencies
-      run: |
-        pip install --editable .[dev]
+      - name: Run ruff format check
+        run: uv run ruff format --check dreem tests
 
-    - name: Run ruff format check
-      run: |
-        ruff format --check dreem tests
-
-    - name: Run ruff check
-      run: |
-        ruff check dreem
+      - name: Run ruff check
+        run: uv run ruff check dreem
 
   # Tests with pytest
   tests:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-22.04"]
-        python: [3.12]
+        os: [ubuntu-latest]
+        python: ["3.12"]
 
     name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Setup Micromamba
-        # https://github.com/mamba-org/setup-micromamba
-        # Note: Set channel-priority in .condarc if needed
-        uses: mamba-org/setup-micromamba@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          environment-file: environment_cpu.yml
-          cache-environment: true
-          cache-environment-key: environment-${{ hashFiles('environment_cpu.yml') }}-${{ hashFiles('pyproject.toml') }}
-          init-shell: >-
-            bash
-            powershell
-          post-cleanup: all
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ matrix.python }}
+
+      - name: Install dependencies
+        run: uv sync --group dev
 
       - name: Print environment info
-        shell: bash -l {0}
         run: |
-          which python
-          micromamba info
-          micromamba list
-          pip freeze
+          uv run python --version
+          uv run pip list
 
       - name: Test with pytest (with coverage)
-        shell: bash -l {0}
-        run: |
-          pytest --cov=dreem --cov-report=xml tests/
+        run: uv run pytest --cov=dreem --cov-report=xml tests/
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
