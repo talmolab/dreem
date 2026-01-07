@@ -3,7 +3,6 @@
 from typing import Any, Dict, Type
 
 import numpy as np
-import skimage.measure as measure
 import timm
 import torch
 import torch.nn.functional as F
@@ -179,6 +178,8 @@ class DescriptorVisualEncoder(torch.nn.Module):
 
     def compute_hu_moments(self, img):
         """Compute Hu moments."""
+        import skimage.measure as measure
+
         mu = measure.moments_central(img)
         nu = measure.moments_normalized(mu)
         hu = measure.moments_hu(nu)
@@ -189,6 +190,8 @@ class DescriptorVisualEncoder(torch.nn.Module):
 
     def compute_inertia_tensor(self, img):
         """Compute inertia tensor."""
+        import skimage.measure as measure
+
         return measure.inertia_tensor(img)
 
     @torch.no_grad()

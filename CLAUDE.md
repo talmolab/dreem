@@ -12,21 +12,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Avoid generating new documentation unless explicitly requested; update existing docs instead
 
 ## Commands
-- Always activate the conda environment `dreem` before running any commands such as building, linting, testing, etc. Use the command `conda activate dreem` to activate the environment.
+
+This project uses [uv](https://docs.astral.sh/uv/) for package management. All commands should be run with `uv run` prefix, or after activating the virtual environment with `source .venv/bin/activate`.
+
+### Setup
+
+- **Install dependencies**: `uv sync --group dev`
+- **Update lock file**: `uv lock`
 
 ### Build, Lint, and Test
 
-- **Run tests**: `pytest`
-- **Run tests with coverage**: `pytest --cov=dreem --cov-report=xml tests/`
-- **Lint code**: `ruff format .`
-- **Check linting**: `ruff check .`
-- **Check docstring style**: `pydocstyle --convention=google dreem/`
+- **Run tests**: `uv run pytest`
+- **Run tests with coverage**: `uv run pytest --cov=dreem --cov-report=xml tests/`
+- **Format code**: `uv run ruff format .`
+- **Check formatting**: `uv run ruff format --check dreem tests`
+- **Lint code**: `uv run ruff check .`
+- **Fix lint issues**: `uv run ruff check --fix .`
 
 ### Development Scripts
 
-- **Train a model**: `dreem-train --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
-- **Run inference**: `dreem-track --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
-- **Evaluate model**: `dreem-eval --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
+- **Train a model**: `uv run dreem-train --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
+- **Run inference**: `uv run dreem-track --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
+- **Evaluate model**: `uv run dreem-eval --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
+- **Visualize**: `uv run dreem-visualize`
 
 ## Architecture Overview
 

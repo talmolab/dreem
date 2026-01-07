@@ -3,7 +3,6 @@
 import logging
 from copy import deepcopy
 
-import cv2
 import hydra
 import imageio
 import numpy as np
@@ -96,6 +95,14 @@ def annotate_video(
     Returns:
         A list of annotated video frames
     """
+    try:
+        import cv2
+    except ImportError as e:
+        raise ImportError(
+            "opencv-python is required for video annotation. "
+            "Install with: pip install opencv-python"
+        ) from e
+
     writer = imageio.get_writer(save_path, fps=fps)
     color_palette = (
         sns.color_palette(color_palette)
