@@ -2,9 +2,12 @@
 
 import logging
 import os
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated
+
+warnings.filterwarnings("ignore", message=".*num_workers.*")
 
 import typer
 from omegaconf import OmegaConf, DictConfig
@@ -96,34 +99,82 @@ def main(
 @app.command()
 def track(
     input_path: Annotated[Path, typer.Argument(help="Input data directory")],
-    checkpoint: Annotated[Path, typer.Option("--checkpoint", "-ckpt", help="Model checkpoint path")],
+    checkpoint: Annotated[
+        Path, typer.Option("--checkpoint", "-ckpt", help="Model checkpoint path")
+    ],
     output: Annotated[Path, typer.Option("--output", "-o", help="Output directory")],
-
-    slp_files: Annotated[list[Path] | None, typer.Option("--slp-file", "-slp", help="SLEAP label files")] = None,
-    video_files: Annotated[list[Path] | None, typer.Option("--video-file", "-vid", help="Video files")] = None,
-
-    anchors: Annotated[str | None, typer.Option("--anchors", "-a", help="Anchor type")] = None,
-    clip_length: Annotated[int | None, typer.Option("--clip-length", "-cl", help="Clip length")] = None,
-    crop_size: Annotated[int | None, typer.Option("--crop-size", "-cs", help="Crop size")] = None,
-    detection_iou: Annotated[float | None, typer.Option("--detection-iou", "-di", help="Detection IOU threshold")] = None,
-    dilation_radius: Annotated[int | None, typer.Option("--dilation-radius", "-dr", help="Dilation radius in pixels")] = None,
-
-    confidence: Annotated[float | None, typer.Option("--confidence", "-conf", help="Confidence threshold")] = None,
-    iou_mode: Annotated[str | None, typer.Option("--iou-mode", "-iou", help="IOU mode (mult/add)")] = None,
-    max_dist: Annotated[float | None, typer.Option("--max-dist", "-md", help="Max center distance")] = None,
-    max_gap: Annotated[int | None, typer.Option("--max-gap", "-mg", help="Max frame gap")] = None,
-    overlap_thresh: Annotated[float | None, typer.Option("--overlap-thresh", "-ot", help="Overlap threshold")] = None,
-    mult_thresh: Annotated[bool | None, typer.Option("--mult-thresh", "-mt", help="Use multiplicative threshold")] = None,
-    max_angle: Annotated[float | None, typer.Option("--max-angle", "-ma", help="Max angle difference")] = None,
-    max_tracks: Annotated[int | None, typer.Option("--max-tracks", "-mx", help="Max number of tracks")] = None,
-    front_nodes: Annotated[list[str] | None, typer.Option("--front-node", "-fn", help="Front nodes for orientation")] = None,
-    back_nodes: Annotated[list[str] | None, typer.Option("--back-node", "-bn", help="Back nodes for orientation")] = None,
-
-    save_meta: Annotated[bool, typer.Option("--save-meta", "-sm", help="Save frame metadata")] = False,
-
-    config: Annotated[Path | None, typer.Option("--config", "-c", help="Config file (overrides defaults)")] = None,
-    set_: Annotated[list[str] | None, typer.Option("--set", "-s", help="Config overrides (e.g., tracker.decay_time=0.9)")] = None,
-    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Suppress progress output")] = False,
+    slp_files: Annotated[
+        list[Path] | None, typer.Option("--slp-file", "-slp", help="SLEAP label files")
+    ] = None,
+    video_files: Annotated[
+        list[Path] | None, typer.Option("--video-file", "-vid", help="Video files")
+    ] = None,
+    anchors: Annotated[
+        str | None, typer.Option("--anchors", "-a", help="Anchor type")
+    ] = None,
+    clip_length: Annotated[
+        int | None, typer.Option("--clip-length", "-cl", help="Clip length")
+    ] = None,
+    crop_size: Annotated[
+        int | None, typer.Option("--crop-size", "-cs", help="Crop size")
+    ] = None,
+    detection_iou: Annotated[
+        float | None,
+        typer.Option("--detection-iou", "-di", help="Detection IOU threshold"),
+    ] = None,
+    dilation_radius: Annotated[
+        int | None,
+        typer.Option("--dilation-radius", "-dr", help="Dilation radius in pixels"),
+    ] = None,
+    confidence: Annotated[
+        float | None, typer.Option("--confidence", "-conf", help="Confidence threshold")
+    ] = None,
+    iou_mode: Annotated[
+        str | None, typer.Option("--iou-mode", "-iou", help="IOU mode (mult/add)")
+    ] = None,
+    max_dist: Annotated[
+        float | None, typer.Option("--max-dist", "-md", help="Max center distance")
+    ] = None,
+    max_gap: Annotated[
+        int | None, typer.Option("--max-gap", "-mg", help="Max frame gap")
+    ] = None,
+    overlap_thresh: Annotated[
+        float | None, typer.Option("--overlap-thresh", "-ot", help="Overlap threshold")
+    ] = None,
+    mult_thresh: Annotated[
+        bool | None,
+        typer.Option("--mult-thresh", "-mt", help="Use multiplicative threshold"),
+    ] = None,
+    max_angle: Annotated[
+        float | None, typer.Option("--max-angle", "-ma", help="Max angle difference")
+    ] = None,
+    max_tracks: Annotated[
+        int | None, typer.Option("--max-tracks", "-mx", help="Max number of tracks")
+    ] = None,
+    front_nodes: Annotated[
+        list[str] | None,
+        typer.Option("--front-node", "-fn", help="Front nodes for orientation"),
+    ] = None,
+    back_nodes: Annotated[
+        list[str] | None,
+        typer.Option("--back-node", "-bn", help="Back nodes for orientation"),
+    ] = None,
+    save_meta: Annotated[
+        bool, typer.Option("--save-meta", "-sm", help="Save frame metadata")
+    ] = False,
+    config: Annotated[
+        Path | None,
+        typer.Option("--config", "-c", help="Config file (overrides defaults)"),
+    ] = None,
+    set_: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--set", "-s", help="Config overrides (e.g., tracker.decay_time=0.9)"
+        ),
+    ] = None,
+    quiet: Annotated[
+        bool, typer.Option("--quiet", "-q", help="Suppress progress output")
+    ] = False,
 ) -> None:
     """Run tracking inference on a video dataset."""
     if not checkpoint.exists():
@@ -143,8 +194,12 @@ def track(
         "dataset.test_dataset.crop_size": crop_size,
         "dataset.test_dataset.detection_iou_threshold": detection_iou,
         "dataset.test_dataset.dilation_radius_px": dilation_radius,
-        "dataset.test_dataset.slp_files": [str(f) for f in slp_files] if slp_files else None,
-        "dataset.test_dataset.video_files": [str(f) for f in video_files] if video_files else None,
+        "dataset.test_dataset.slp_files": [str(f) for f in slp_files]
+        if slp_files
+        else None,
+        "dataset.test_dataset.video_files": [str(f) for f in video_files]
+        if video_files
+        else None,
         "tracker.confidence_threshold": confidence,
         "tracker.iou": iou_mode,
         "tracker.max_center_dist": max_dist,
@@ -219,7 +274,7 @@ def _run_tracking(cfg: DictConfig, quiet: bool = False) -> None:
                         mask = mask.astype(np.uint8)
                         mask[mask != 0] = track_id
                         frame_masks.append(mask)
-                    
+
                     if frame_masks:
                         frame_mask = np.max(frame_masks, axis=0)
                     else:
@@ -232,7 +287,7 @@ def _run_tracking(cfg: DictConfig, quiet: bool = False) -> None:
                             # img_shape is (H, W)
                             height, width = img_shape
                         frame_mask = np.zeros((height, width), dtype=np.uint8)
-                    
+
                     pred_imgs.append(frame_mask)
             pred_imgs = np.stack(pred_imgs)
             outpath = os.path.join(
@@ -257,7 +312,11 @@ def _run_tracking(cfg: DictConfig, quiet: bool = False) -> None:
             pred_slp = []
             tracks = {}
 
-            iterator = tqdm(preds, desc="Saving .slp and frame metadata") if not quiet else preds
+            iterator = (
+                tqdm(preds, desc="Saving .slp and frame metadata")
+                if not quiet
+                else preds
+            )
             for batch in iterator:
                 for frame in batch:
                     if frame.frame_id.item() == 0:
@@ -289,6 +348,7 @@ def _run_tracking(cfg: DictConfig, quiet: bool = False) -> None:
 def _store_frame_metadata(frame, h5_path: str) -> None:
     """Store frame metadata to HDF5."""
     import h5py
+
     with h5py.File(h5_path, "a") as h5f:
         frame_meta_group = h5f.require_group("frame_meta")
         frame = frame.to("cpu")
@@ -302,22 +362,41 @@ def _store_frame_metadata(frame, h5_path: str) -> None:
 @app.command()
 def eval(
     input_path: Annotated[Path, typer.Argument(help="Input data directory")],
-    checkpoint: Annotated[Path, typer.Option("--checkpoint", "-ckpt", help="Model checkpoint path")],
+    checkpoint: Annotated[
+        Path, typer.Option("--checkpoint", "-ckpt", help="Model checkpoint path")
+    ],
     output: Annotated[Path, typer.Option("--output", "-o", help="Output directory")],
-
-    slp_files: Annotated[list[Path] | None, typer.Option("--slp-file", "-slp", help="SLEAP label files")] = None,
-    video_files: Annotated[list[Path] | None, typer.Option("--video-file", "-vid", help="Video files")] = None,
-
-    anchors: Annotated[str | None, typer.Option("--anchors", "-a", help="Anchor type")] = None,
-    clip_length: Annotated[int | None, typer.Option("--clip-length", "-cl", help="Clip length")] = None,
-
-    iou_mode: Annotated[str | None, typer.Option("--iou-mode", "-iou", help="IOU mode (mult/add)")] = None,
-    max_dist: Annotated[float | None, typer.Option("--max-dist", "-md", help="Max center distance")] = None,
-    overlap_thresh: Annotated[float | None, typer.Option("--overlap-thresh", "-ot", help="Overlap threshold")] = None,
-
-    config: Annotated[Path | None, typer.Option("--config", "-c", help="Config file (overrides defaults)")] = None,
-    set_: Annotated[list[str] | None, typer.Option("--set", "-s", help="Config overrides")] = None,
-    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Suppress progress output")] = False,
+    slp_files: Annotated[
+        list[Path] | None, typer.Option("--slp-file", "-slp", help="SLEAP label files")
+    ] = None,
+    video_files: Annotated[
+        list[Path] | None, typer.Option("--video-file", "-vid", help="Video files")
+    ] = None,
+    anchors: Annotated[
+        str | None, typer.Option("--anchors", "-a", help="Anchor type")
+    ] = None,
+    clip_length: Annotated[
+        int | None, typer.Option("--clip-length", "-cl", help="Clip length")
+    ] = None,
+    iou_mode: Annotated[
+        str | None, typer.Option("--iou-mode", "-iou", help="IOU mode (mult/add)")
+    ] = None,
+    max_dist: Annotated[
+        float | None, typer.Option("--max-dist", "-md", help="Max center distance")
+    ] = None,
+    overlap_thresh: Annotated[
+        float | None, typer.Option("--overlap-thresh", "-ot", help="Overlap threshold")
+    ] = None,
+    config: Annotated[
+        Path | None,
+        typer.Option("--config", "-c", help="Config file (overrides defaults)"),
+    ] = None,
+    set_: Annotated[
+        list[str] | None, typer.Option("--set", "-s", help="Config overrides")
+    ] = None,
+    quiet: Annotated[
+        bool, typer.Option("--quiet", "-q", help="Suppress progress output")
+    ] = False,
 ) -> None:
     """Evaluate a trained DREEM model against ground truth."""
     if not checkpoint.exists():
@@ -334,8 +413,12 @@ def eval(
         "dataset.test_dataset.dir.path": str(input_path),
         "dataset.test_dataset.anchors": anchors,
         "dataset.test_dataset.clip_length": clip_length,
-        "dataset.test_dataset.slp_files": [str(f) for f in slp_files] if slp_files else None,
-        "dataset.test_dataset.video_files": [str(f) for f in video_files] if video_files else None,
+        "dataset.test_dataset.slp_files": [str(f) for f in slp_files]
+        if slp_files
+        else None,
+        "dataset.test_dataset.video_files": [str(f) for f in video_files]
+        if video_files
+        else None,
         "tracker.iou": iou_mode,
         "tracker.max_center_dist": max_dist,
         "tracker.overlap_thresh": overlap_thresh,
@@ -360,7 +443,9 @@ def _run_eval(cfg: DictConfig, quiet: bool = False) -> None:
     overrides_dict = model.setup_tracking(eval_cfg, mode="eval")
 
     if not quiet:
-        console.print(f"[cyan]Saving results to {model.test_results['save_path']}[/cyan]")
+        console.print(
+            f"[cyan]Saving results to {model.test_results['save_path']}[/cyan]"
+        )
 
     labels_files, vid_files = eval_cfg.get_data_paths(
         "test", eval_cfg.cfg.dataset.test_dataset
@@ -383,26 +468,50 @@ def _run_eval(cfg: DictConfig, quiet: bool = False) -> None:
 @app.command()
 def train(
     train_dir: Annotated[Path, typer.Argument(help="Training data directory")],
-    val_dir: Annotated[Path, typer.Option("--val-dir", "-vd", help="Validation data directory")],
-
-    epochs: Annotated[int | None, typer.Option("--epochs", "-e", help="Max epochs")] = None,
+    val_dir: Annotated[
+        Path, typer.Option("--val-dir", "-vd", help="Validation data directory")
+    ],
+    epochs: Annotated[
+        int | None, typer.Option("--epochs", "-e", help="Max epochs")
+    ] = None,
     lr: Annotated[float | None, typer.Option("--lr", help="Learning rate")] = None,
-
-    d_model: Annotated[int | None, typer.Option("--d-model", help="Model dimension")] = None,
-    nhead: Annotated[int | None, typer.Option("--nhead", help="Number of attention heads")] = None,
-    num_encoder_layers: Annotated[int | None, typer.Option("--encoder-layers", help="Encoder layers")] = None,
-    num_decoder_layers: Annotated[int | None, typer.Option("--decoder-layers", help="Decoder layers")] = None,
-
-    anchors: Annotated[str | None, typer.Option("--anchors", "-a", help="Anchor type")] = None,
-    clip_length: Annotated[int | None, typer.Option("--clip-length", "-cl", help="Clip length")] = None,
-    crop_size: Annotated[int | None, typer.Option("--crop-size", "-cs", help="Crop size")] = None,
-
-    log_dir: Annotated[Path | None, typer.Option("--log-dir", "-ld", help="Log directory")] = None,
-    run_name: Annotated[str | None, typer.Option("--run-name", "-rn", help="Run name for logging")] = None,
-
-    config: Annotated[Path | None, typer.Option("--config", "-c", help="Config file (overrides defaults)")] = None,
-    set_: Annotated[list[str] | None, typer.Option("--set", "-s", help="Config overrides")] = None,
-    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Suppress progress output")] = False,
+    d_model: Annotated[
+        int | None, typer.Option("--d-model", help="Model dimension")
+    ] = None,
+    nhead: Annotated[
+        int | None, typer.Option("--nhead", help="Number of attention heads")
+    ] = None,
+    num_encoder_layers: Annotated[
+        int | None, typer.Option("--encoder-layers", help="Encoder layers")
+    ] = None,
+    num_decoder_layers: Annotated[
+        int | None, typer.Option("--decoder-layers", help="Decoder layers")
+    ] = None,
+    anchors: Annotated[
+        str | None, typer.Option("--anchors", "-a", help="Anchor type")
+    ] = None,
+    clip_length: Annotated[
+        int | None, typer.Option("--clip-length", "-cl", help="Clip length")
+    ] = None,
+    crop_size: Annotated[
+        int | None, typer.Option("--crop-size", "-cs", help="Crop size")
+    ] = None,
+    log_dir: Annotated[
+        Path | None, typer.Option("--log-dir", "-ld", help="Log directory")
+    ] = None,
+    run_name: Annotated[
+        str | None, typer.Option("--run-name", "-rn", help="Run name for logging")
+    ] = None,
+    config: Annotated[
+        Path | None,
+        typer.Option("--config", "-c", help="Config file (overrides defaults)"),
+    ] = None,
+    set_: Annotated[
+        list[str] | None, typer.Option("--set", "-s", help="Config overrides")
+    ] = None,
+    quiet: Annotated[
+        bool, typer.Option("--quiet", "-q", help="Suppress progress output")
+    ] = False,
 ) -> None:
     """Train a DREEM model."""
     if not train_dir.exists():
