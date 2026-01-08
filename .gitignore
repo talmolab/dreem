@@ -1,3 +1,6 @@
+# macOS
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -130,9 +133,15 @@ dmypy.json
 .pyre/
 
 # lightning
-lightning_logs
-outputs
-logs
+lightning_logs/
+outputs/
+logs/
+cli-refactor/
+
+# Local data/models/results
+data/
+models/
+results/
 *.ckpt
 
 # vscode
@@ -152,4 +161,3 @@ agents/
 .cursor/
 run_tracker.py
 run_trainer.py
-UV_MIGRATION.md
