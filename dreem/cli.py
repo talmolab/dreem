@@ -271,9 +271,15 @@ def _create_inference_command(mode: str):
             print_config(cfg, config_title, save_path=save_path)
 
         if mode == "track":
-            _run_tracking(cfg, quiet)
+            from dreem.inference.track import run as run_tracking
+            run_tracking(cfg)
+            outdir = cfg.outdir if "outdir" in cfg else "./results"
+            console.print(f"[green]Results saved to {outdir}[/green]")
+
         else:
-            _run_eval(cfg, quiet)
+            from dreem.inference.eval import run as run_eval
+            run_eval(cfg)
+            console.print("[green]Evaluation complete.[/green]")
     
     # Set function metadata for help text
     command.__name__ = mode
@@ -288,175 +294,6 @@ def _create_inference_command(mode: str):
 # Register commands using factory function - signature defined once above
 track = app.command()(_create_inference_command("track"))
 eval_cmd = app.command(name="eval")(_create_inference_command("eval"))
-
-
-def _run_tracking(cfg: DictConfig, quiet: bool = False) -> None:
-    """Execute tracking - mirrors dreem/inference/track.py:run()."""
-    import h5py
-    import numpy as np
-    import pytorch_lightning as pl
-    import sleap_io as sio
-    from sleap_io.model.suggestions import SuggestionFrame
-    import tifffile
-    from tqdm import tqdm
-
-    from dreem.datasets import CellTrackingDataset
-    from dreem.io import Config, Frame
-    from dreem.io.flags import FrameFlagCode
-    from dreem.models import GTRRunner
-
-    pred_cfg = Config(cfg)
-
-    model = GTRRunner.load_from_checkpoint(cfg.ckpt_path, strict=False)
-    overrides_dict = model.setup_tracking(pred_cfg, mode="inference")
-
-    labels_files, vid_files = pred_cfg.get_data_paths(
-        "test", pred_cfg.cfg.dataset.test_dataset
-    )
-    trainer = pred_cfg.get_trainer()
-    outdir = cfg.outdir if "outdir" in cfg else "./results"
-    os.makedirs(outdir, exist_ok=True)
-
-    for label_file, vid_file in zip(labels_files, vid_files):
-        dataset = pred_cfg.get_dataset(
-            label_files=[label_file],
-            vid_files=[vid_file],
-            mode="test",
-            overrides=overrides_dict,
-        )
-        dataloader = pred_cfg.get_dataloader(dataset, mode="test")
-
-        if isinstance(vid_file, list):
-            save_file_name = vid_file[0].split("/")[-2]
-        else:
-            save_file_name = vid_file
-
-        if isinstance(dataset, CellTrackingDataset):
-            preds = trainer.predict(model, dataloader)
-            pred_imgs = []
-            for batch in preds:
-                for frame in batch:
-                    frame_masks = []
-                    for instance in frame.instances:
-                        mask = instance.mask.cpu().numpy()
-                        track_id = instance.pred_track_id.cpu().numpy().item()
-                        mask = mask.astype(np.uint8)
-                        mask[mask != 0] = track_id
-                        frame_masks.append(mask)
-
-                    if frame_masks:
-                        frame_mask = np.max(frame_masks, axis=0)
-                    else:
-                        # Handle empty instances case - create zero mask with image dimensions
-                        img_shape = frame.img_shape
-                        if len(img_shape) == 3:
-                            # img_shape is (C, H, W), extract spatial dimensions
-                            _, height, width = img_shape
-                        elif len(img_shape) == 2:
-                            # img_shape is (H, W)
-                            height, width = img_shape
-                        frame_mask = np.zeros((height, width), dtype=np.uint8)
-
-                    pred_imgs.append(frame_mask)
-            pred_imgs = np.stack(pred_imgs)
-            outpath = os.path.join(
-                outdir,
-                f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.tif",
-            )
-            tifffile.imwrite(outpath, pred_imgs.astype(np.uint16))
-        else:
-            save_frame_meta = overrides_dict.get("save_frame_meta", False)
-            if save_frame_meta:
-                h5_path = os.path.join(
-                    outdir,
-                    f"{dataloader.dataset.slp_files[0].split('/')[-1].replace('.slp', '')}_frame_meta.h5",
-                )
-                if os.path.exists(h5_path):
-                    os.remove(h5_path)
-                with h5py.File(h5_path, "a") as h5f:
-                    h5f.create_dataset("vid_name", data=preds[0][0].vid_name)
-
-            suggestions = []
-            preds = trainer.predict(model, dataloader)
-            pred_slp = []
-            tracks = {}
-
-            for batch in tqdm(preds, desc="Saving results..."):
-                for frame in batch:
-                    if frame.frame_id.item() == 0:
-                        video = (
-                            sio.Video(frame.video)
-                            if isinstance(frame.video, str)
-                            else sio.Video
-                        )
-                    if frame.has_flag(FrameFlagCode.LOW_CONFIDENCE):
-                        suggestion = SuggestionFrame(
-                            video=video, frame_idx=frame.frame_id.item()
-                        )
-                        suggestions.append(suggestion)
-                    lf, tracks = frame.to_slp(tracks, video=video)
-                    pred_slp.append(lf)
-                    if save_frame_meta:
-                        _store_frame_metadata(frame, h5_path)
-
-            pred_slp = sio.Labels(pred_slp, suggestions=suggestions)
-            outpath = os.path.join(
-                outdir,
-                f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.slp",
-            )
-            pred_slp.save(outpath)
-
-    console.print(f"[green]Results saved to {outdir}[/green]")
-
-
-def _store_frame_metadata(frame, h5_path: str) -> None:
-    """Store frame metadata to HDF5."""
-    import h5py
-
-    with h5py.File(h5_path, "a") as h5f:
-        frame_meta_group = h5f.require_group("frame_meta")
-        frame = frame.to("cpu")
-        _ = frame.to_h5(
-            frame_meta_group,
-            frame.get_gt_track_ids().cpu().numpy(),
-            save={"features": True, "crop": True},
-        )
-
-
-
-
-def _run_eval(cfg: DictConfig, quiet: bool = False) -> None:
-    """Execute evaluation - mirrors dreem/inference/eval.py:run()."""
-    from dreem.io import Config
-    from dreem.models import GTRRunner
-
-    eval_cfg = Config(cfg)
-
-    model = GTRRunner.load_from_checkpoint(cfg.ckpt_path, strict=False)
-    overrides_dict = model.setup_tracking(eval_cfg, mode="eval")
-
-    if not quiet:
-        console.print(
-            f"[cyan]Saving results to {model.test_results['save_path']}[/cyan]"
-        )
-
-    labels_files, vid_files = eval_cfg.get_data_paths(
-        "test", eval_cfg.cfg.dataset.test_dataset
-    )
-    trainer = eval_cfg.get_trainer()
-
-    for label_file, vid_file in zip(labels_files, vid_files):
-        dataset = eval_cfg.get_dataset(
-            label_files=[label_file],
-            vid_files=[vid_file],
-            mode="test",
-            overrides=overrides_dict,
-        )
-        dataloader = eval_cfg.get_dataloader(dataset, mode="test")
-        _ = trainer.test(model, dataloader)
-
-    console.print("[green]Evaluation complete.[/green]")
-
 
 @app.command()
 def train(
@@ -553,64 +390,13 @@ def train(
     timestamp = get_timestamp()
     run_name = OmegaConf.select(cfg, "logging.name") or "train"
     save_path = save_dir / f"config.{run_name}.{timestamp}.yaml"
-    
+
+    from dreem.training.train import run as run_training
+
     if not quiet:
         print_config(cfg, "Train Configuration", save_path=save_path)
-
-    _run_training(cfg, quiet)
-
-
-def _run_training(cfg: DictConfig, quiet: bool = False) -> None:
-    """Execute training - mirrors dreem/training/train.py:run()."""
-    import torch
-    import pytorch_lightning as pl
-
-    from dreem.datasets import TrackingDataset
-    from dreem.io import Config
-
-    torch.set_float32_matmul_precision("medium")
-    train_cfg = Config(cfg)
-
-    model = train_cfg.get_model()
-
-    train_dataset = train_cfg.get_dataset(mode="train")
-    train_dataloader = train_cfg.get_dataloader(train_dataset, mode="train")
-
-    val_dataset = train_cfg.get_dataset(mode="val")
-    val_dataloader = train_cfg.get_dataloader(val_dataset, mode="val")
-
-    dataset = TrackingDataset(train_dl=train_dataloader, val_dl=val_dataloader)
-
-    model = train_cfg.get_gtr_runner()
-    run_logger = train_cfg.get_logger()
-    if run_logger is not None and isinstance(run_logger, pl.loggers.wandb.WandbLogger):
-        data_paths = train_cfg.data_paths
-        flattened_paths = [
-            [item] for sublist in data_paths.values() for item in sublist
-        ]
-        run_logger.log_text(
-            "training_files", columns=["data_paths"], data=flattened_paths
-        )
-
-    callbacks = []
-    callbacks.extend(train_cfg.get_checkpointing())
-    callbacks.append(pl.callbacks.LearningRateMonitor())
-
-    early_stopping = train_cfg.get_early_stopping()
-    if early_stopping is not None:
-        callbacks.append(early_stopping)
-
-    devices = torch.cuda.device_count() if torch.cuda.is_available() else 1
-
-    trainer = train_cfg.get_trainer(
-        callbacks,
-        run_logger,
-        devices=devices,
-    )
-
-    if not quiet:
         console.print("[cyan]Starting training...[/cyan]")
 
-    trainer.fit(model, dataset)
-
+    run_training(cfg)
     console.print("[green]Training complete.[/green]")
+
