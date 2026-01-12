@@ -29,18 +29,37 @@ This project uses [uv](https://docs.astral.sh/uv/) for package management. All c
 - **Lint code**: `uv run ruff check .`
 - **Fix lint issues**: `uv run ruff check --fix .`
 
-### Development Scripts
+### CLI Commands
 
-- **Train a model**: `uv run dreem-train --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
-- **Run inference**: `uv run dreem-track --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
-- **Evaluate model**: `uv run dreem-eval --config-base=[CONFIG_DIR] --config-name=[CONFIG_STEM]`
-- **Visualize**: `uv run dreem-visualize`
+The unified `dreem` CLI provides commands for training, tracking, and evaluation:
+
+```bash
+# Show help
+dreem --help
+dreem track --help
+
+# Run tracking inference
+dreem track INPUT_DIR --checkpoint MODEL.ckpt --output RESULTS_DIR --crop-size 128
+
+# Evaluate model against ground truth
+dreem eval INPUT_DIR --checkpoint MODEL.ckpt --output RESULTS_DIR --crop-size 128
+
+# Train a model
+dreem train TRAIN_DIR --val-dir VAL_DIR --crop-size 128 --epochs 30
+```
+
+**Common flags:**
+- `--gpu` / `-g`: Use GPU acceleration
+- `--config` / `-c`: Override with a YAML config file
+- `--set` / `-s`: Override individual config values (e.g., `--set tracker.max_tracks=5`)
+- `--verbose`: Enable detailed logging
+- `--quiet` / `-q`: Suppress progress output
 
 ## Architecture Overview
 
 DREEM (Relates Every Entities' Motion) is a Global Tracking Transformer system for biological multi-object tracking. The codebase is organized around three main frameworks:
 
-1. **Hydra** - Configuration management system used throughout for handling YAML configs
+1. **Typer + Rich** - CLI framework with colored output and progress bars
 2. **PyTorch** - Core model implementation and tensor operations
 3. **PyTorch Lightning** - High-level training/validation/inference orchestration
 
@@ -79,14 +98,21 @@ DREEM (Relates Every Entities' Motion) is a Global Tracking Transformer system f
 
 ### Configuration System
 
-All training/inference parameters are managed through Hydra configs. Key config sections:
+The CLI uses a layered configuration system with sensible defaults:
+
+1. **Default configs** embedded in `dreem/configs/defaults/` (track.yaml, train.yaml)
+2. **User config file** via `--config` flag (optional)
+3. **CLI arguments** (highest priority)
+4. **`--set` overrides** for fine-grained control
+
+Key config sections:
 - `model` - Model architecture parameters
 - `dataset` - Data loading settings
 - `optimizer`/`scheduler` - Training optimization
 - `tracker` - Inference-time tracking parameters
 - `loss` - Loss function configuration
 
-Configs support hierarchical overrides via CLI using dot notation (e.g., `model.nhead=8`).
+Configs support hierarchical overrides via `--set` using dot notation (e.g., `--set model.nhead=8`).
 
 ## GitHub Workflow
 - Always use the `gh` CLI to do GitHub related tasks like opening PRs, inspecting issues, and anything that interacts with GitHub. Always prefer using the `gh` CLI over fetching the entire page if URLs with `https://github.com` are provided as part of your task.
