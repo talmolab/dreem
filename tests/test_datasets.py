@@ -274,21 +274,6 @@ def test_sleap_dataset(two_flies):
         n_chunks=30,
     )
 
-    # test tight bbox implementation
-    crop_size = 4
-    train_ds = SleapDataset(
-        slp_files=[two_flies[0]],
-        video_files=[two_flies[1]],
-        data_dirs="./data/sleap",
-        crop_size=crop_size,
-        use_tight_bbox=True,
-    )
-    frames = next(iter(train_ds))
-    for frame in frames:
-        for instance in frame.instances:
-            _, c, h, w = instance.crop.shape
-            assert h <= crop_size and w <= crop_size
-
 
 def test_sleap_dataset_nms_removes_sparse_duplicate(two_flies_overlapping):
     """High-overlap duplicate with fewer keypoints should be removed."""

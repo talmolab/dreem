@@ -73,7 +73,9 @@ def build_config(
     return cfg
 
 
-def _flatten_config(cfg: DictConfig, parent_key: str = "", sep: str = ".") -> dict[str, Any]:
+def _flatten_config(
+    cfg: DictConfig, parent_key: str = "", sep: str = "."
+) -> dict[str, Any]:
     """Recursively flatten nested OmegaConf config into dot-notation keys."""
     items = {}
     for key, value in cfg.items():
@@ -94,7 +96,7 @@ def print_config(
     table = Table.grid(padding=(0, 2))
     table.add_column(style="bold cyan")
     table.add_column()
-        
+
     # Save to YAML if save_path is provided
     if save_path:
         save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -130,39 +132,64 @@ def main(
 
 def _create_inference_command(mode: str):
     """Factory function to create track/eval commands with shared signature."""
-    
+
     def command(
         input_path: Annotated[Path, typer.Argument(help="Input data directory")],
         checkpoint: Annotated[
             Path, typer.Option("--checkpoint", "-ckpt", help="Model checkpoint path")
         ],
-        output: Annotated[Path, typer.Option("--output", "-o", help="Output directory")],
-        crop_size: Annotated[
-            int | None, typer.Option("--crop-size", "-cs", help="Size of bounding box to crop each instance (pixels)")
+        output: Annotated[
+            Path, typer.Option("--output", "-o", help="Output directory")
         ],
-
+        crop_size: Annotated[
+            int | None,
+            typer.Option(
+                "--crop-size",
+                "-cs",
+                help="Size of bounding box to crop each instance (pixels)",
+            ),
+        ],
         slp_files: Annotated[
-            list[Path] | None, typer.Option("--slp-file", "-slp", help="Path to SLEAP label files")
+            list[Path] | None,
+            typer.Option("--slp-file", "-slp", help="Path to SLEAP label files"),
         ] = None,
         video_files: Annotated[
-            list[Path] | None, typer.Option("--video-file", "-vid", help="Path to video files")
+            list[Path] | None,
+            typer.Option("--video-file", "-vid", help="Path to video files"),
         ] = None,
         anchor: Annotated[
-            str | None, typer.Option("--anchor", "-a", help="Name of anchor keypoint e.g. 'centroid'")
+            str | None,
+            typer.Option(
+                "--anchor", "-a", help="Name of anchor keypoint e.g. 'centroid'"
+            ),
         ] = "centroid",
         clip_length: Annotated[
-            int | None, typer.Option("--clip-length", "-cl", help="Number of frames per batch")
+            int | None,
+            typer.Option("--clip-length", "-cl", help="Number of frames per batch"),
         ] = 32,
         max_detection_overlap: Annotated[
             float | None,
-            typer.Option("--max-detection-overlap", "-di", help="IOU threshold above which detections are considered duplicates"),
+            typer.Option(
+                "--max-detection-overlap",
+                "-di",
+                help="IOU threshold above which detections are considered duplicates",
+            ),
         ] = None,
         dilation_radius: Annotated[
             int | None,
-            typer.Option("--dilation-radius", "-dr", help="Size of mask around the keypoint (pixels) to mask out background"),
+            typer.Option(
+                "--dilation-radius",
+                "-dr",
+                help="Size of mask around the keypoint (pixels) to mask out background",
+            ),
         ] = None,
         confidence_threshold: Annotated[
-            float | None, typer.Option("--confidence-threshold", "-conf", help="Threshold below which frames will be flagged as a potential error")
+            float | None,
+            typer.Option(
+                "--confidence-threshold",
+                "-conf",
+                help="Threshold below which frames will be flagged as a potential error",
+            ),
         ] = 0,
         iou_mode: Annotated[
             str | None, typer.Option("--iou-mode", "-iou", help="IOU mode (mult/add)")
@@ -174,14 +201,16 @@ def _create_inference_command(mode: str):
             int | None, typer.Option("--max-gap", "-mg", help="Max frame gap")
         ] = None,
         overlap_thresh: Annotated[
-            float | None, typer.Option("--overlap-thresh", "-ot", help="Overlap threshold")
+            float | None,
+            typer.Option("--overlap-thresh", "-ot", help="Overlap threshold"),
         ] = None,
         mult_thresh: Annotated[
             bool | None,
             typer.Option("--mult-thresh", "-mt", help="Use multiplicative threshold"),
         ] = None,
         max_angle: Annotated[
-            float | None, typer.Option("--max-angle", "-ma", help="Max angle difference")
+            float | None,
+            typer.Option("--max-angle", "-ma", help="Max angle difference"),
         ] = None,
         max_tracks: Annotated[
             int | None, typer.Option("--max-tracks", "-mx", help="Max number of tracks")
@@ -236,9 +265,11 @@ def _create_inference_command(mode: str):
             "dataset.test_dataset.anchors": anchor,
             "dataset.test_dataset.clip_length": clip_length,
             "dataset.test_dataset.slp_files": [str(f) for f in slp_files]
-            if slp_files else None,
+            if slp_files
+            else None,
             "dataset.test_dataset.video_files": [str(f) for f in video_files]
-            if video_files else None,
+            if video_files
+            else None,
             "tracker.iou": iou_mode,
             "tracker.max_center_dist": max_dist,
             "tracker.overlap_thresh": overlap_thresh,
@@ -258,42 +289,47 @@ def _create_inference_command(mode: str):
 
         cfg = build_config("track", config, set_, **cli_overrides)
 
-        config_title = "Track Configuration" if mode == "track" else "Eval Configuration"
-        
+        config_title = (
+            "Track Configuration" if mode == "track" else "Eval Configuration"
+        )
+
         # Determine save path for config YAML
         save_path = None
         outdir = Path(cfg.outdir) if "outdir" in cfg else Path("./results")
         outdir.mkdir(parents=True, exist_ok=True)
         timestamp = get_timestamp()
         save_path = outdir / f"config.{mode}.{timestamp}.yaml"
-        
+
         if not quiet:
             print_config(cfg, config_title, save_path=save_path)
 
         if mode == "track":
             from dreem.inference.track import run as run_tracking
+
             run_tracking(cfg)
             outdir = cfg.outdir if "outdir" in cfg else "./results"
             console.print(f"[green]Results saved to {outdir}[/green]")
 
         else:
             from dreem.inference.eval import run as run_eval
+
             run_eval(cfg)
             console.print("[green]Evaluation complete.[/green]")
-    
+
     # Set function metadata for help text
     command.__name__ = mode
     if mode == "track":
         command.__doc__ = "Run tracking on a dataset."
     else:
         command.__doc__ = "Evaluate a trained DREEM model against ground truth."
-    
+
     return command
 
 
 # Register commands using factory function - signature defined once above
 track = app.command()(_create_inference_command("track"))
 eval_cmd = app.command(name="eval")(_create_inference_command("eval"))
+
 
 @app.command()
 def train(
@@ -304,7 +340,6 @@ def train(
     crop_size: Annotated[
         int | None, typer.Option("--crop-size", "-cs", help="Crop size")
     ],
-
     epochs: Annotated[
         int | None, typer.Option("--epochs", "-e", help="Max epochs")
     ] = 30,
@@ -338,7 +373,12 @@ def train(
         typer.Option("--config", "-c", help="Config file (overrides defaults)"),
     ] = None,
     logger: Annotated[
-        str | None, typer.Option("--logger", "-l", help="Logger type (any Lightning logger e.g. WandbLogger, TensorBoardLogger)")
+        str | None,
+        typer.Option(
+            "--logger",
+            "-l",
+            help="Logger type (any Lightning logger e.g. WandbLogger, TensorBoardLogger)",
+        ),
     ] = None,
     set_: Annotated[
         list[str] | None, typer.Option("--set", "-s", help="Config overrides")
@@ -399,4 +439,3 @@ def train(
 
     run_training(cfg)
     console.print("[green]Training complete.[/green]")
-
