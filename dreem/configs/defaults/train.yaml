@@ -121,5 +121,5 @@ trainer:
   limit_test_batches: 1.0
   limit_val_batches: 1.0
   log_every_n_steps: 1
-  max_epochs: 2
+  max_epochs: 35
   min_epochs: 1
