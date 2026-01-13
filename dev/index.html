@@ -53,6 +53,8 @@
     
       <link rel="stylesheet" href="css/mkdocstrings.css">
     
+      <link rel="stylesheet" href="css/termynal.css">
+    
     <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -539,6 +541,62 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/quickstart.ipynb" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -2903,12 +2961,21 @@
 <h1 id="dreem-relates-every-entitys-motion">DREEM Relates Every Entity's Motion<a class="headerlink" href="#dreem-relates-every-entitys-motion" title="Permanent link">&para;</a></h1>
 <p><a href="https://github.com/talmolab/dreem/actions/workflows/ci.yml"><img alt="CI" src="assets/external/github.com/talmolab/dreem/actions/workflows/ci.yml/badge.svg"></a>
 <a href="https://codecov.io/gh/talmolab/dreem"><img alt="codecov" src="assets/external/codecov.io/gh/talmolab/dreem/branch/main/graph/badge.a688273e.svg"></a>
-<a href="https://github.com/talmolab/dreem"><img alt="code" src="assets/external/img.shields.io/github/stars/talmolab/dreem.svg"></a></p>
-<!-- [![Release](https://img.shields.io/github/v/release/talmolab/dreem?label=Latest)](https://github.com/talmolab/dreem/releases/)
-[![PyPI](https://img.shields.io/pypi/v/dreem-tracker?label=PyPI)](https://pypi.org/project/dreem-tracker)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dreem-tracker) -->
+<a href="https://github.com/talmolab/dreem"><img alt="code" src="assets/external/img.shields.io/github/stars/talmolab/dreem.svg"></a>
+<a href="https://github.com/talmolab/dreem/releases/"><img alt="Release" src="assets/external/img.shields.io/github/v/release/talmolab/dreem.bf78f93a.svg"></a>
+<a href="https://pypi.org/project/dreem-track"><img alt="PyPI" src="assets/external/img.shields.io/pypi/v/dreem-track.e0d24428.svg"></a></p>
+<p>Welcome to the documentation for <strong>DREEM</strong> – an open-source tool for multiple object tracking. DREEM is a framework that enables you to train your own models, run inference on new data, and evaluate your results. DREEM supports a variety of detection types, including keypoints and segmentation masks. You can use any detection model you want, convert the output to a format DREEM can use, and train a model or run inference using a pretrained model.</p>
+<div class="termy">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>uv<span class="w"> </span>init
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">$ </span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>dreem-track
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">$ </span>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>./models/pretrained.ckpt<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">128</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="go">Running tracking...</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="go">Tracking complete! Results saved to results/</span>
+</code></pre></div>
 
-<p>Welcome to the documentation for <strong>DREEM</strong> – an open-source tool for multiple object tracking. DREEM is a framework that enables you to train your own models, run inference on new data, and evaluate your results. DREEM supports a variety of detection types, including keypoints, bounding boxes, and segmentation masks. You can use any detection model you want, convert the output to a format DREEM can use, and train a model or run inference using a pretrained model.</p>
+</div>
+
 <h2 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Command-Line &amp; API Access:</strong> Use DREEM via a simple CLI or integrate into your own Python scripts.</li>
@@ -2933,7 +3000,7 @@
 <li><a href="installation/">Installation</a></li>
 <li><a href="quickstart/">Quickstart</a></li>
 <li><a href="usage/">Usage Guide</a></li>
-<li>Examples</li>
+<li><a href="./Examples/">Examples</a></li>
 <li><a href="https://dreem.sleap.ai/reference/dreem/">API Reference</a></li>
 </ul>
 <h2 id="get-help">Get Help<a class="headerlink" href="#get-help" title="Permanent link">&para;</a></h2>
@@ -3116,6 +3183,10 @@ If you use DREEM in your research, please cite our [paper](#) (link to be added)
     
     
       <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="js/termynal.js"></script>
+      
+        <script src="js/custom.js"></script>
       
     
   </body>

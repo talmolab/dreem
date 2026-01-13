@@ -55,6 +55,8 @@
     
       <link rel="stylesheet" href="../css/mkdocstrings.css">
     
+      <link rel="stylesheet" href="../css/termynal.css">
+    
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -90,7 +92,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#uninstall" class="md-skip">
+        <a href="#installation" class="md-skip">
           Skip to content
         </a>
       
@@ -309,6 +311,8 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
@@ -351,12 +355,58 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#alternative-pip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative: pip
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gpu-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GPU Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Development Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verify-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verify Installation
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#uninstall" class="md-nav__link">
@@ -482,6 +532,62 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/quickstart.ipynb" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -2748,12 +2854,58 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#alternative-pip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative: pip
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gpu-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GPU Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Development Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verify-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verify Installation
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#uninstall" class="md-nav__link">
@@ -2786,28 +2938,39 @@
   
 
 
-  <h1>Installation</h1>
-
-<!-- ### Basic
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>dreem-tracker
+<h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
+<p>The easiest way to install DREEM is with <a href="https://docs.astral.sh/uv/">uv</a>. </p>
+<p>In a new directory:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>venv<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>dreem-track
 </code></pre></div>
--->
-<h4 id="clone-the-repository">Clone the repository:<a class="headerlink" href="#clone-the-repository" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/talmolab/dreem<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>dreem
+<p>Or install as a standalone tool without creating a virtual environment:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>dreem-track
 </code></pre></div>
-<h4 id="set-up-in-a-new-conda-environment">Set up in a new conda environment:<a class="headerlink" href="#set-up-in-a-new-conda-environment" title="Permanent link">&para;</a></h4>
-<h5 id="linuxwindows">Linux/Windows:<a class="headerlink" href="#linuxwindows" title="Permanent link">&para;</a></h5>
-<h6 id="gpu-accelerated-requires-cudanvidia-gpu">GPU-accelerated (requires CUDA/nvidia gpu)<a class="headerlink" href="#gpu-accelerated-requires-cudanvidia-gpu" title="Permanent link">&para;</a></h6>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>conda<span class="w"> </span>activate<span class="w"> </span>dreem
+<h2 id="alternative-pip">Alternative: pip<a class="headerlink" href="#alternative-pip" title="Permanent link">&para;</a></h2>
+<p>You can also use pip:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip<span class="w"> </span>install<span class="w"> </span>dreem-track
 </code></pre></div>
-<h6 id="cpu">CPU:<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h6>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment_cpu.yml<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>conda<span class="w"> </span>activate<span class="w"> </span>dreem
+<h2 id="gpu-support">GPU Support<a class="headerlink" href="#gpu-support" title="Permanent link">&para;</a></h2>
+<p>DREEM automatically uses GPU acceleration when available:</p>
+<ul>
+<li><strong>Linux/Windows</strong>: CUDA-enabled GPUs are supported out of the box</li>
+<li><strong>macOS (Apple Silicon)</strong>: MPS acceleration is used automatically</li>
+</ul>
+<p>No additional configuration is needed.</p>
+<h2 id="development-installation">Development Installation<a class="headerlink" href="#development-installation" title="Permanent link">&para;</a></h2>
+<p>To contribute or modify DREEM:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/talmolab/dreem<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>dreem
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>uv<span class="w"> </span>sync<span class="w"> </span>--group<span class="w"> </span>dev
 </code></pre></div>
-<h4 id="osx-apple-silicon">OSX (Apple Silicon)<a class="headerlink" href="#osx-apple-silicon" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment_osx-arm64.yml<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>conda<span class="w"> </span>activate<span class="w"> </span>dreem
+<h2 id="verify-installation">Verify Installation<a class="headerlink" href="#verify-installation" title="Permanent link">&para;</a></h2>
+<p>Check that DREEM is installed correctly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dreem<span class="w"> </span>--help
 </code></pre></div>
-<h3 id="uninstall">Uninstall<a class="headerlink" href="#uninstall" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>conda env remove -n dreem
+<h2 id="uninstall">Uninstall<a class="headerlink" href="#uninstall" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>uv<span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>dreem-track
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># or</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>uv<span class="w"> </span>tool<span class="w"> </span>uninstall<span class="w"> </span>dreem-track
 </code></pre></div>
 
 
@@ -2981,6 +3144,10 @@
     
     
       <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../js/termynal.js"></script>
+      
+        <script src="../js/custom.js"></script>
       
     
   </body>

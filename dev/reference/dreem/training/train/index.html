@@ -55,6 +55,8 @@
     
       <link rel="stylesheet" href="../../../../css/mkdocstrings.css">
     
+      <link rel="stylesheet" href="../../../../css/termynal.css">
+    
     <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -428,6 +430,62 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../Examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../../examples/quickstart.ipynb" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -2974,12 +3032,12 @@
 <a id="__codelineno-0-51" name="__codelineno-0-51"></a><a href="#__codelineno-0-51"><span class="linenos" data-linenos="51 "></span></a>    <span class="k">if</span> <span class="n">early_stopping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-52" name="__codelineno-0-52"></a><a href="#__codelineno-0-52"><span class="linenos" data-linenos="52 "></span></a>        <span class="n">callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">early_stopping</span><span class="p">)</span>
 <a id="__codelineno-0-53" name="__codelineno-0-53"></a><a href="#__codelineno-0-53"><span class="linenos" data-linenos="53 "></span></a>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a><a href="#__codelineno-0-54"><span class="linenos" data-linenos="54 "></span></a>    <span class="n">devices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="mi">1</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54"></a><a href="#__codelineno-0-54"><span class="linenos" data-linenos="54 "></span></a>    <span class="c1"># devices = torch.cuda.device_count() if torch.cuda.is_available() else 1</span>
 <a id="__codelineno-0-55" name="__codelineno-0-55"></a><a href="#__codelineno-0-55"><span class="linenos" data-linenos="55 "></span></a>
 <a id="__codelineno-0-56" name="__codelineno-0-56"></a><a href="#__codelineno-0-56"><span class="linenos" data-linenos="56 "></span></a>    <span class="n">trainer</span> <span class="o">=</span> <span class="n">train_cfg</span><span class="o">.</span><span class="n">get_trainer</span><span class="p">(</span>
 <a id="__codelineno-0-57" name="__codelineno-0-57"></a><a href="#__codelineno-0-57"><span class="linenos" data-linenos="57 "></span></a>        <span class="n">callbacks</span><span class="p">,</span>
 <a id="__codelineno-0-58" name="__codelineno-0-58"></a><a href="#__codelineno-0-58"><span class="linenos" data-linenos="58 "></span></a>        <span class="n">run_logger</span><span class="p">,</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a><a href="#__codelineno-0-59"><span class="linenos" data-linenos="59 "></span></a>        <span class="n">devices</span><span class="o">=</span><span class="n">devices</span><span class="p">,</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59"></a><a href="#__codelineno-0-59"><span class="linenos" data-linenos="59 "></span></a>        <span class="c1"># devices=devices,</span>
 <a id="__codelineno-0-60" name="__codelineno-0-60"></a><a href="#__codelineno-0-60"><span class="linenos" data-linenos="60 "></span></a>    <span class="p">)</span>
 <a id="__codelineno-0-61" name="__codelineno-0-61"></a><a href="#__codelineno-0-61"><span class="linenos" data-linenos="61 "></span></a>
 <a id="__codelineno-0-62" name="__codelineno-0-62"></a><a href="#__codelineno-0-62"><span class="linenos" data-linenos="62 "></span></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting training...&quot;</span><span class="p">)</span>
@@ -3170,6 +3228,10 @@
     
     
       <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../../../js/termynal.js"></script>
+      
+        <script src="../../../../js/custom.js"></script>
       
     
   </body>

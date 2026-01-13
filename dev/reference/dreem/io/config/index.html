@@ -55,6 +55,8 @@
     
       <link rel="stylesheet" href="../../../../css/mkdocstrings.css">
     
+      <link rel="stylesheet" href="../../../../css/termynal.css">
+    
     <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -428,6 +430,62 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../Examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../../examples/quickstart.ipynb" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -3073,7 +3131,7 @@
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;get_trainer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;callbacks&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;logger&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;devices&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;accelerator&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;auto&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.io.config.Config.get_trainer&lt;/code&gt;)" href="#dreem.io.config.Config.get_trainer">get_trainer</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;get_trainer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;callbacks&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;logger&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;devices&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;accelerator&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;gpu&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.io.config.Config.get_trainer&lt;/code&gt;)" href="#dreem.io.config.Config.get_trainer">get_trainer</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Getter for the lightning trainer.</p>
@@ -3660,7 +3718,7 @@
 <a id="__codelineno-0-557" name="__codelineno-0-557"></a><a href="#__codelineno-0-557"><span class="linenos" data-linenos="557 "></span></a>        <span class="n">callbacks</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pl</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">Callback</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-558" name="__codelineno-0-558"></a><a href="#__codelineno-0-558"><span class="linenos" data-linenos="558 "></span></a>        <span class="n">logger</span><span class="p">:</span> <span class="n">pl</span><span class="o">.</span><span class="n">loggers</span><span class="o">.</span><span class="n">WandbLogger</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-559" name="__codelineno-0-559"></a><a href="#__codelineno-0-559"><span class="linenos" data-linenos="559 "></span></a>        <span class="n">devices</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-560" name="__codelineno-0-560"></a><a href="#__codelineno-0-560"><span class="linenos" data-linenos="560 "></span></a>        <span class="n">accelerator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-560" name="__codelineno-0-560"></a><a href="#__codelineno-0-560"><span class="linenos" data-linenos="560 "></span></a>        <span class="n">accelerator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpu&quot;</span><span class="p">,</span>
 <a id="__codelineno-0-561" name="__codelineno-0-561"></a><a href="#__codelineno-0-561"><span class="linenos" data-linenos="561 "></span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">:</span>
 <a id="__codelineno-0-562" name="__codelineno-0-562"></a><a href="#__codelineno-0-562"><span class="linenos" data-linenos="562 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Getter for the lightning trainer.</span>
 <a id="__codelineno-0-563" name="__codelineno-0-563"></a><a href="#__codelineno-0-563"><span class="linenos" data-linenos="563 "></span></a>
@@ -5361,7 +5419,7 @@ parameter groups</p>
 
 
 <h4 id="dreem.io.config.Config.get_trainer" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_trainer</span><span class="p">(</span><span class="n">callbacks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">accelerator</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">get_trainer</span><span class="p">(</span><span class="n">callbacks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">accelerator</span><span class="o">=</span><span class="s1">&#39;gpu&#39;</span><span class="p">)</span></code>
 
 <a href="#dreem.io.config.Config.get_trainer" class="headerlink" title="Permanent link">&para;</a></h4>
 
@@ -5444,7 +5502,7 @@ for training</p>
               </div>
             </td>
             <td>
-                  <code>&#39;auto&#39;</code>
+                  <code>&#39;gpu&#39;</code>
             </td>
           </tr>
       </tbody>
@@ -5481,7 +5539,7 @@ for training</p>
 <a id="__codelineno-0-557" name="__codelineno-0-557"></a><a href="#__codelineno-0-557"><span class="linenos" data-linenos="557 "></span></a>    <span class="n">callbacks</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pl</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">Callback</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-558" name="__codelineno-0-558"></a><a href="#__codelineno-0-558"><span class="linenos" data-linenos="558 "></span></a>    <span class="n">logger</span><span class="p">:</span> <span class="n">pl</span><span class="o">.</span><span class="n">loggers</span><span class="o">.</span><span class="n">WandbLogger</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-559" name="__codelineno-0-559"></a><a href="#__codelineno-0-559"><span class="linenos" data-linenos="559 "></span></a>    <span class="n">devices</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-560" name="__codelineno-0-560"></a><a href="#__codelineno-0-560"><span class="linenos" data-linenos="560 "></span></a>    <span class="n">accelerator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-560" name="__codelineno-0-560"></a><a href="#__codelineno-0-560"><span class="linenos" data-linenos="560 "></span></a>    <span class="n">accelerator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpu&quot;</span><span class="p">,</span>
 <a id="__codelineno-0-561" name="__codelineno-0-561"></a><a href="#__codelineno-0-561"><span class="linenos" data-linenos="561 "></span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">:</span>
 <a id="__codelineno-0-562" name="__codelineno-0-562"></a><a href="#__codelineno-0-562"><span class="linenos" data-linenos="562 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Getter for the lightning trainer.</span>
 <a id="__codelineno-0-563" name="__codelineno-0-563"></a><a href="#__codelineno-0-563"><span class="linenos" data-linenos="563 "></span></a>
@@ -5823,6 +5881,10 @@ the value to be changed</p>
     
     
       <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../../../js/termynal.js"></script>
+      
+        <script src="../../../../js/custom.js"></script>
       
     
   </body>
