@@ -22,7 +22,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from dreem.version import __version__
+from dreem._version import __version__
 
 app = typer.Typer(
     name="dreem",

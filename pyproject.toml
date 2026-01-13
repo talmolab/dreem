@@ -70,14 +70,17 @@ Repository = "https://github.com/talmolab/dreem"
 # Build system - using Hatchling
 # =============================================================================
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["dreem"]
 
 [tool.hatch.version]
-path = "dreem/version.py"
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "dreem/_version.py"
 
 # =============================================================================
 # uv configuration for PyTorch with CUDA support

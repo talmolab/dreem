@@ -11,7 +11,7 @@ from dreem.models.global_tracking_transformer import GlobalTrackingTransformer
 from dreem.models.gtr_runner import GTRRunner
 from dreem.models.transformer import Transformer
 from dreem.models.visual_encoder import VisualEncoder
-from dreem.version import __version__
+from dreem._version import __version__
 
 __all__ = [
     "Tracker",
