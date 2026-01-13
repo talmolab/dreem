@@ -1,7 +1,6 @@
 """DREEM CLI - Global Tracking Transformer for biological multi-object tracking."""
 
 import logging
-import os
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -18,10 +17,10 @@ logging.basicConfig(
 )
 
 import typer
-from omegaconf import OmegaConf, DictConfig
+from omegaconf import DictConfig, OmegaConf
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 from dreem.version import __version__
 

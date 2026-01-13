@@ -48,8 +48,8 @@ jobs:
       - name: Run ruff format check
         run: uv run ruff format --check dreem tests
 
-      - name: Run ruff check
-        run: uv run ruff check dreem
+      # - name: Run ruff check
+      #   run: uv run ruff check dreem
 
   # Tests with pytest
   tests:

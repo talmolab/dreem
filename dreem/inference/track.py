@@ -9,10 +9,10 @@ import h5py
 import numpy as np
 import pytorch_lightning as pl
 import sleap_io as sio
-from sleap_io.model.suggestions import SuggestionFrame
 import tifffile
 import torch
 from omegaconf import DictConfig
+from sleap_io.model.suggestions import SuggestionFrame
 from tqdm import tqdm
 
 from dreem.datasets import CellTrackingDataset

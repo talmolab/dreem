@@ -1,8 +1,9 @@
 """Module containing helper functions for datasets."""
 
 import math
-from xml.etree import cElementTree as et
 from typing import Dict
+from xml.etree import cElementTree as et
+
 import albumentations as A
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,7 +12,6 @@ import sleap_io as sio
 import torch
 from numpy.typing import ArrayLike
 from PIL import Image
-from dreem.inference.boxes import Boxes
 from sleap_io import LabeledFrame, Labels
 from sleap_io.io.slp import (
     read_hdf5_attrs,
@@ -25,6 +25,8 @@ from sleap_io.io.slp import (
     read_videos,
 )
 from torchvision.transforms import functional as tvf
+
+from dreem.inference.boxes import Boxes
 
 
 def load_slp(labels_path: str, open_videos: bool = True) -> Labels:

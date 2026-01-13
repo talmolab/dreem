@@ -3,7 +3,7 @@
 import pytest
 import torch
 from torch.utils.data import DataLoader
-import sleap_io as sio
+
 from dreem.datasets import (
     BaseDataset,
     CellTrackingDataset,
@@ -277,7 +277,6 @@ def test_sleap_dataset(two_flies):
 
 def test_sleap_dataset_nms_removes_sparse_duplicate(two_flies_overlapping):
     """High-overlap duplicate with fewer keypoints should be removed."""
-
     clip_length = 16
     train_ds = SleapDataset(
         slp_files=[two_flies_overlapping[0]],

@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-This project uses [uv](https://docs.astral.sh/uv/) for package management. All commands should be run with `uv run` prefix, or after activating the virtual environment with `source .venv/bin/activate`.
+This project uses [uv](https://docs.astral.sh/uv/) for package management. All commands should be run with `uv run` prefix, or by running the script or command line tool after activating the virtual environment with `source .venv/bin/activate`.
 
 ### Setup
 
@@ -36,12 +36,15 @@ The unified `dreem` CLI provides commands for training, tracking, and evaluation
 ```bash
 # Show help
 dreem --help
+dreem train --help
 dreem track --help
+dreem eval --help
 
 # Run tracking inference
 dreem track INPUT_DIR --checkpoint MODEL.ckpt --output RESULTS_DIR --crop-size 128
 
-# Evaluate model against ground truth
+# Evaluate model against ground truth; in this case, INPUT_DIR should contain .slp files
+# that have ground truth
 dreem eval INPUT_DIR --checkpoint MODEL.ckpt --output RESULTS_DIR --crop-size 128
 
 # Train a model
@@ -85,7 +88,6 @@ DREEM (Relates Every Entities' Motion) is a Global Tracking Transformer system f
 
 - **`dreem/inference/`** - Inference and tracking logic
   - `tracker.py` - Main tracking algorithm implementation
-  - `batch_tracker.py` - Batched tracking for efficiency
   - `track_queue.py` - Queue management for sliding window tracking
 
 ### Key Design Patterns
@@ -103,7 +105,7 @@ The CLI uses a layered configuration system with sensible defaults:
 1. **Default configs** embedded in `dreem/configs/defaults/` (track.yaml, train.yaml)
 2. **User config file** via `--config` flag (optional)
 3. **CLI arguments** (highest priority)
-4. **`--set` overrides** for fine-grained control
+4. **`--set` overrides** for fine-grained control. This is not recommended and a config file should be used instead. It is only provided for maximum control.
 
 Key config sections:
 - `model` - Model architecture parameters
@@ -116,3 +118,7 @@ Configs support hierarchical overrides via `--set` using dot notation (e.g., `--
 
 ## GitHub Workflow
 - Always use the `gh` CLI to do GitHub related tasks like opening PRs, inspecting issues, and anything that interacts with GitHub. Always prefer using the `gh` CLI over fetching the entire page if URLs with `https://github.com` are provided as part of your task.
+
+## Ways of working
+
+- When implementing a new feature, create a new directory named ./{feature_name}, where feature_name is an appropriate name for the feature. In this directory, write out a to-do list, and as  you complete your work, update that to-do list so that anyone can refer to current progress at any time 

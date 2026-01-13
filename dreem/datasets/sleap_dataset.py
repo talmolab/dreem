@@ -2,9 +2,10 @@
 
 import logging
 import random
+from math import inf
 from pathlib import Path
 from typing import Optional, Union
-from math import inf
+
 import albumentations as A
 import imageio
 import numpy as np
@@ -13,8 +14,8 @@ import torch
 from torchvision.transforms import functional as tvf
 
 from dreem.datasets import BaseDataset, data_utils
+from dreem.datasets.preprocessors import NonMaxSuppression, RemoveExcessDetections
 from dreem.io import Frame, Instance
-from dreem.datasets.preprocessors import RemoveExcessDetections, NonMaxSuppression
 
 logger = logging.getLogger("dreem.datasets")
 
