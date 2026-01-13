@@ -51,12 +51,12 @@ def run(cfg: DictConfig) -> None:
     if early_stopping is not None:
         callbacks.append(early_stopping)
 
-    devices = torch.cuda.device_count() if torch.cuda.is_available() else 1
+    # devices = torch.cuda.device_count() if torch.cuda.is_available() else 1
 
     trainer = train_cfg.get_trainer(
         callbacks,
         run_logger,
-        devices=devices,
+        # devices=devices,
     )
 
     logger.info("Starting training...")
