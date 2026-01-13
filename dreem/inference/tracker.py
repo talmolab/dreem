@@ -1,7 +1,8 @@
 """Module containing logic for going from association -> assignment."""
 
 import logging
-from math import inf, radians as deg2rad
+from math import inf
+from math import radians as deg2rad
 
 import pandas as pd
 import torch

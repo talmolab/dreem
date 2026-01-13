@@ -20,43 +20,39 @@ jobs:
       contents: write
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
         with:
-            miniforge-version: latest
-            conda-solver: "libmamba"
-            environment-file: environment.yml
-            activate-environment: dreem
+          enable-cache: true
+
+      - name: Setup Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --group dev --python 3.12
 
       - name: Print environment info
-        shell: bash -l {0}
         run: |
-            which python
-            conda info
-            conda list
-            pip freeze
+          uv run python --version
+          uv pip list
 
       - name: Setup Git user
         run: |
-            git config --global user.name "github-actions[bot]"
-            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Build and upload docs (release)
         if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash -l {0}
-        run: |
-            mike deploy --update-aliases --allow-empty --push "${{ github.event.release.tag_name }}" latest
+        run: uv run mike deploy --update-aliases --allow-empty --push "${{ github.event.release.tag_name }}" latest
 
       - name: Build and upload docs (dev)
         if: ${{ github.event_name == 'push' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash -l {0}
-        run: |
-            mike deploy --update-aliases --allow-empty --push dev
+        run: uv run mike deploy --update-aliases --allow-empty --push dev

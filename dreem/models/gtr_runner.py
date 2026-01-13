@@ -357,6 +357,12 @@ class GTRRunner(LightningModule):
                     mot_summary = value[0]
                     frame_switch_map = value[1]
                     motevents = value[2]
+                    mot_summary.to_csv(
+                        os.path.join(
+                            self.test_results["save_path"], f"{vid_name}.motmetrics.csv"
+                        ),
+                        index=True,
+                    )
                     motevents.to_csv(
                         os.path.join(
                             self.test_results["save_path"], f"{vid_name}.motevents.csv"

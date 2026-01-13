@@ -1,0 +1,20 @@
+ckpt_path: null
+
+tracker:
+  overlap_thresh: 0.01
+  decay_time: null
+  iou: "mult"
+  max_center_dist: null
+
+dataset:
+  test_dataset:
+    dir:
+      path: null
+      labels_suffix: ".slp"
+      vid_suffix: ".mp4"
+    chunk: true
+    clip_length: 32
+    anchors: "centroid"
+
+save_frame_meta: false
+outdir: "./results"

@@ -1,0 +1,124 @@
+model:
+  activation: relu
+  ckpt_path: null
+  d_model: 128
+  decoder_self_attn: true
+  dropout: 0.1
+  dropout_attn_head: 0.1
+  embedding_meta:
+    embedding_agg_method: average
+    pos:
+      emb_num: 16
+      mode: learned
+      normalize: true
+      over_boxes: true
+    temp:
+      emb_num: 16
+      mode: learned
+  encoder_cfg:
+    backend: timm
+    in_chans: 3
+    model_name: resnet18
+    pretrained: false
+  nhead: 1
+  norm: false
+  num_decoder_layers: 1
+  num_encoder_layers: 1
+  num_layers_attn_head: 1
+  return_embedding: false
+  return_intermediate_dec: true
+
+loss:
+  neg_unmatched: false
+  epsilon: 1e-4
+  asso_weight: 1.0
+
+optimizer:
+  name: "Adam"
+  lr: 0.0001
+  betas: [0.9, 0.999]
+  eps: 1e-8
+  weight_decay: 0.01
+
+scheduler:
+  name: "ReduceLROnPlateau"
+  mode: "min"
+  factor: 0.5
+  patience: 5
+  threshold: 0.001
+  threshold_mode: "rel"
+
+dataset:
+  train_dataset:
+    anchors: "centroid"
+    augmentations:
+      GaussianBlur:
+        blur_limit: [3, 7]
+        p: 0.2
+      MotionBlur:
+        blur_limit: [3, 7]
+        p: 0.2
+      RandomBrightnessContrast:
+        brightness_limit: 0.1
+        contrast_limit: 0.3
+        p: 0.3
+      Rotate:
+        limit: 45
+        p: 0.3
+    dir:
+      path: "./data/train"
+      labels_suffix: ".slp"
+      vid_suffix: ".mp4"
+    clip_length: 32
+    chunk: true
+    padding: 0
+    crop_size: 128
+
+  val_dataset:
+    anchors: "centroid"
+    dir:
+      path: "./data/val"
+      labels_suffix: ".slp"
+      vid_suffix: ".mp4"
+    padding: 0
+    crop_size: 128
+    chunk: true
+    clip_length: 32
+
+dataloader:
+  train_dataloader:
+    shuffle: true
+  val_dataloader:
+    shuffle: false
+
+logging:
+  logger_type: null
+  name: "dreem_train"
+
+early_stopping:
+  monitor: "val_loss"
+  min_delta: 0.1
+  patience: 10
+  mode: "min"
+  check_finite: true
+  stopping_threshold: 1e-8
+
+checkpointing:
+  monitor: ["val_loss"]
+  verbose: true
+  save_last: true
+  dirpath: null
+  auto_insert_metric_name: true
+  every_n_epochs: 1
+  save_top_k: -1
+
+trainer:
+  check_val_every_n_epoch: 1
+  enable_checkpointing: true
+  gradient_clip_val: null
+  limit_train_batches: 1.0
+  limit_test_batches: 1.0
+  limit_val_batches: 1.0
+  log_every_n_steps: 1
+  max_epochs: 20
+  min_epochs: 1
