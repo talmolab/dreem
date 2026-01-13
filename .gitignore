@@ -136,12 +136,10 @@ dmypy.json
 lightning_logs/
 outputs/
 logs/
-cli-refactor/
 wandb/
 
 # Local data/models/results
 data/
-models/
 results/
 *.ckpt
 

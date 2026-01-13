@@ -56,11 +56,6 @@ encoder = ["scikit-image"]  # Required for visual encoder functionality
 
 [project.scripts]
 dreem = "dreem.cli:app"
-# Legacy entry points (backwards compatibility)
-dreem-train = "dreem.training.train:run"
-dreem-eval = "dreem.inference.eval:run"
-dreem-track = "dreem.inference.track:run"
-dreem-visualize = "dreem.io.visualize:main"
 
 [project.urls]
 Homepage = "https://github.com/talmolab/dreem"
