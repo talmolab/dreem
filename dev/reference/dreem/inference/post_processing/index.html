@@ -436,62 +436,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../Examples/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Overview
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../../../examples/quickstart.ipynb" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Quickstart
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../../Examples/microscopy-demo-simple/" class="md-nav__link">
         
   
@@ -3148,24 +3092,23 @@ frames where instances have high entropy (low confidence).</p>
 <a id="__codelineno-0-252" name="__codelineno-0-252"></a><a href="#__codelineno-0-252"><span class="linenos" data-linenos="252 "></span></a><span class="sd">        Returns:</span>
 <a id="__codelineno-0-253" name="__codelineno-0-253"></a><a href="#__codelineno-0-253"><span class="linenos" data-linenos="253 "></span></a><span class="sd">            Modified state with potentially flagged query_frame.</span>
 <a id="__codelineno-0-254" name="__codelineno-0-254"></a><a href="#__codelineno-0-254"><span class="linenos" data-linenos="254 "></span></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-255" name="__codelineno-0-255"></a><a href="#__codelineno-0-255"><span class="linenos" data-linenos="255 "></span></a>
-<a id="__codelineno-0-256" name="__codelineno-0-256"></a><a href="#__codelineno-0-256"><span class="linenos" data-linenos="256 "></span></a>        <span class="n">scaled_traj_score</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;scaled_traj_score&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-257" name="__codelineno-0-257"></a><a href="#__codelineno-0-257"><span class="linenos" data-linenos="257 "></span></a>        <span class="n">n_query</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;n_query&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-258" name="__codelineno-0-258"></a><a href="#__codelineno-0-258"><span class="linenos" data-linenos="258 "></span></a>        <span class="n">query_frame</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;query_frame&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-259" name="__codelineno-0-259"></a><a href="#__codelineno-0-259"><span class="linenos" data-linenos="259 "></span></a>
-<a id="__codelineno-0-260" name="__codelineno-0-260"></a><a href="#__codelineno-0-260"><span class="linenos" data-linenos="260 "></span></a>        <span class="c1"># Compute entropy for each row</span>
-<a id="__codelineno-0-261" name="__codelineno-0-261"></a><a href="#__codelineno-0-261"><span class="linenos" data-linenos="261 "></span></a>        <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">scaled_traj_score</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">scaled_traj_score</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-0-262" name="__codelineno-0-262"></a><a href="#__codelineno-0-262"><span class="linenos" data-linenos="262 "></span></a>        <span class="n">norm_entropy</span> <span class="o">=</span> <span class="n">entropy</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">n_query</span><span class="p">))</span>
-<a id="__codelineno-0-263" name="__codelineno-0-263"></a><a href="#__codelineno-0-263"><span class="linenos" data-linenos="263 "></span></a>        <span class="n">flag_threshold</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence_threshold</span>
-<a id="__codelineno-0-264" name="__codelineno-0-264"></a><a href="#__codelineno-0-264"><span class="linenos" data-linenos="264 "></span></a>
-<a id="__codelineno-0-265" name="__codelineno-0-265"></a><a href="#__codelineno-0-265"><span class="linenos" data-linenos="265 "></span></a>        <span class="c1"># Flag rows with high entropy</span>
-<a id="__codelineno-0-266" name="__codelineno-0-266"></a><a href="#__codelineno-0-266"><span class="linenos" data-linenos="266 "></span></a>        <span class="n">flag</span> <span class="o">=</span> <span class="n">norm_entropy</span> <span class="o">&gt;</span> <span class="n">flag_threshold</span>
-<a id="__codelineno-0-267" name="__codelineno-0-267"></a><a href="#__codelineno-0-267"><span class="linenos" data-linenos="267 "></span></a>
-<a id="__codelineno-0-268" name="__codelineno-0-268"></a><a href="#__codelineno-0-268"><span class="linenos" data-linenos="268 "></span></a>        <span class="c1"># Flag the frame if any instances have high entropy</span>
-<a id="__codelineno-0-269" name="__codelineno-0-269"></a><a href="#__codelineno-0-269"><span class="linenos" data-linenos="269 "></span></a>        <span class="k">if</span> <span class="n">flag</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-<a id="__codelineno-0-270" name="__codelineno-0-270"></a><a href="#__codelineno-0-270"><span class="linenos" data-linenos="270 "></span></a>            <span class="n">query_frame</span><span class="o">.</span><span class="n">add_flag</span><span class="p">(</span><span class="n">FrameFlagCode</span><span class="o">.</span><span class="n">LOW_CONFIDENCE</span><span class="p">)</span>
-<a id="__codelineno-0-271" name="__codelineno-0-271"></a><a href="#__codelineno-0-271"><span class="linenos" data-linenos="271 "></span></a>
-<a id="__codelineno-0-272" name="__codelineno-0-272"></a><a href="#__codelineno-0-272"><span class="linenos" data-linenos="272 "></span></a>        <span class="k">return</span> <span class="n">state</span>
+<a id="__codelineno-0-255" name="__codelineno-0-255"></a><a href="#__codelineno-0-255"><span class="linenos" data-linenos="255 "></span></a>        <span class="n">scaled_traj_score</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;scaled_traj_score&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-256" name="__codelineno-0-256"></a><a href="#__codelineno-0-256"><span class="linenos" data-linenos="256 "></span></a>        <span class="n">n_query</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;n_query&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-257" name="__codelineno-0-257"></a><a href="#__codelineno-0-257"><span class="linenos" data-linenos="257 "></span></a>        <span class="n">query_frame</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;query_frame&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-258" name="__codelineno-0-258"></a><a href="#__codelineno-0-258"><span class="linenos" data-linenos="258 "></span></a>
+<a id="__codelineno-0-259" name="__codelineno-0-259"></a><a href="#__codelineno-0-259"><span class="linenos" data-linenos="259 "></span></a>        <span class="c1"># Compute entropy for each row</span>
+<a id="__codelineno-0-260" name="__codelineno-0-260"></a><a href="#__codelineno-0-260"><span class="linenos" data-linenos="260 "></span></a>        <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">scaled_traj_score</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">scaled_traj_score</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-261" name="__codelineno-0-261"></a><a href="#__codelineno-0-261"><span class="linenos" data-linenos="261 "></span></a>        <span class="n">norm_entropy</span> <span class="o">=</span> <span class="n">entropy</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">n_query</span><span class="p">))</span>
+<a id="__codelineno-0-262" name="__codelineno-0-262"></a><a href="#__codelineno-0-262"><span class="linenos" data-linenos="262 "></span></a>        <span class="n">flag_threshold</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence_threshold</span>
+<a id="__codelineno-0-263" name="__codelineno-0-263"></a><a href="#__codelineno-0-263"><span class="linenos" data-linenos="263 "></span></a>
+<a id="__codelineno-0-264" name="__codelineno-0-264"></a><a href="#__codelineno-0-264"><span class="linenos" data-linenos="264 "></span></a>        <span class="c1"># Flag rows with high entropy</span>
+<a id="__codelineno-0-265" name="__codelineno-0-265"></a><a href="#__codelineno-0-265"><span class="linenos" data-linenos="265 "></span></a>        <span class="n">flag</span> <span class="o">=</span> <span class="n">norm_entropy</span> <span class="o">&gt;</span> <span class="n">flag_threshold</span>
+<a id="__codelineno-0-266" name="__codelineno-0-266"></a><a href="#__codelineno-0-266"><span class="linenos" data-linenos="266 "></span></a>
+<a id="__codelineno-0-267" name="__codelineno-0-267"></a><a href="#__codelineno-0-267"><span class="linenos" data-linenos="267 "></span></a>        <span class="c1"># Flag the frame if any instances have high entropy</span>
+<a id="__codelineno-0-268" name="__codelineno-0-268"></a><a href="#__codelineno-0-268"><span class="linenos" data-linenos="268 "></span></a>        <span class="k">if</span> <span class="n">flag</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+<a id="__codelineno-0-269" name="__codelineno-0-269"></a><a href="#__codelineno-0-269"><span class="linenos" data-linenos="269 "></span></a>            <span class="n">query_frame</span><span class="o">.</span><span class="n">add_flag</span><span class="p">(</span><span class="n">FrameFlagCode</span><span class="o">.</span><span class="n">LOW_CONFIDENCE</span><span class="p">)</span>
+<a id="__codelineno-0-270" name="__codelineno-0-270"></a><a href="#__codelineno-0-270"><span class="linenos" data-linenos="270 "></span></a>
+<a id="__codelineno-0-271" name="__codelineno-0-271"></a><a href="#__codelineno-0-271"><span class="linenos" data-linenos="271 "></span></a>        <span class="k">return</span> <span class="n">state</span>
 </code></pre></div>
               </details>
 
@@ -3326,24 +3269,23 @@ Set to 0 to disable flagging. Higher values are more strict
 <a id="__codelineno-0-252" name="__codelineno-0-252"></a><a href="#__codelineno-0-252"><span class="linenos" data-linenos="252 "></span></a><span class="sd">    Returns:</span>
 <a id="__codelineno-0-253" name="__codelineno-0-253"></a><a href="#__codelineno-0-253"><span class="linenos" data-linenos="253 "></span></a><span class="sd">        Modified state with potentially flagged query_frame.</span>
 <a id="__codelineno-0-254" name="__codelineno-0-254"></a><a href="#__codelineno-0-254"><span class="linenos" data-linenos="254 "></span></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-255" name="__codelineno-0-255"></a><a href="#__codelineno-0-255"><span class="linenos" data-linenos="255 "></span></a>
-<a id="__codelineno-0-256" name="__codelineno-0-256"></a><a href="#__codelineno-0-256"><span class="linenos" data-linenos="256 "></span></a>    <span class="n">scaled_traj_score</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;scaled_traj_score&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-257" name="__codelineno-0-257"></a><a href="#__codelineno-0-257"><span class="linenos" data-linenos="257 "></span></a>    <span class="n">n_query</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;n_query&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-258" name="__codelineno-0-258"></a><a href="#__codelineno-0-258"><span class="linenos" data-linenos="258 "></span></a>    <span class="n">query_frame</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;query_frame&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-259" name="__codelineno-0-259"></a><a href="#__codelineno-0-259"><span class="linenos" data-linenos="259 "></span></a>
-<a id="__codelineno-0-260" name="__codelineno-0-260"></a><a href="#__codelineno-0-260"><span class="linenos" data-linenos="260 "></span></a>    <span class="c1"># Compute entropy for each row</span>
-<a id="__codelineno-0-261" name="__codelineno-0-261"></a><a href="#__codelineno-0-261"><span class="linenos" data-linenos="261 "></span></a>    <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">scaled_traj_score</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">scaled_traj_score</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-0-262" name="__codelineno-0-262"></a><a href="#__codelineno-0-262"><span class="linenos" data-linenos="262 "></span></a>    <span class="n">norm_entropy</span> <span class="o">=</span> <span class="n">entropy</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">n_query</span><span class="p">))</span>
-<a id="__codelineno-0-263" name="__codelineno-0-263"></a><a href="#__codelineno-0-263"><span class="linenos" data-linenos="263 "></span></a>    <span class="n">flag_threshold</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence_threshold</span>
-<a id="__codelineno-0-264" name="__codelineno-0-264"></a><a href="#__codelineno-0-264"><span class="linenos" data-linenos="264 "></span></a>
-<a id="__codelineno-0-265" name="__codelineno-0-265"></a><a href="#__codelineno-0-265"><span class="linenos" data-linenos="265 "></span></a>    <span class="c1"># Flag rows with high entropy</span>
-<a id="__codelineno-0-266" name="__codelineno-0-266"></a><a href="#__codelineno-0-266"><span class="linenos" data-linenos="266 "></span></a>    <span class="n">flag</span> <span class="o">=</span> <span class="n">norm_entropy</span> <span class="o">&gt;</span> <span class="n">flag_threshold</span>
-<a id="__codelineno-0-267" name="__codelineno-0-267"></a><a href="#__codelineno-0-267"><span class="linenos" data-linenos="267 "></span></a>
-<a id="__codelineno-0-268" name="__codelineno-0-268"></a><a href="#__codelineno-0-268"><span class="linenos" data-linenos="268 "></span></a>    <span class="c1"># Flag the frame if any instances have high entropy</span>
-<a id="__codelineno-0-269" name="__codelineno-0-269"></a><a href="#__codelineno-0-269"><span class="linenos" data-linenos="269 "></span></a>    <span class="k">if</span> <span class="n">flag</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-<a id="__codelineno-0-270" name="__codelineno-0-270"></a><a href="#__codelineno-0-270"><span class="linenos" data-linenos="270 "></span></a>        <span class="n">query_frame</span><span class="o">.</span><span class="n">add_flag</span><span class="p">(</span><span class="n">FrameFlagCode</span><span class="o">.</span><span class="n">LOW_CONFIDENCE</span><span class="p">)</span>
-<a id="__codelineno-0-271" name="__codelineno-0-271"></a><a href="#__codelineno-0-271"><span class="linenos" data-linenos="271 "></span></a>
-<a id="__codelineno-0-272" name="__codelineno-0-272"></a><a href="#__codelineno-0-272"><span class="linenos" data-linenos="272 "></span></a>    <span class="k">return</span> <span class="n">state</span>
+<a id="__codelineno-0-255" name="__codelineno-0-255"></a><a href="#__codelineno-0-255"><span class="linenos" data-linenos="255 "></span></a>    <span class="n">scaled_traj_score</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;scaled_traj_score&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-256" name="__codelineno-0-256"></a><a href="#__codelineno-0-256"><span class="linenos" data-linenos="256 "></span></a>    <span class="n">n_query</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;n_query&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-257" name="__codelineno-0-257"></a><a href="#__codelineno-0-257"><span class="linenos" data-linenos="257 "></span></a>    <span class="n">query_frame</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;query_frame&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-258" name="__codelineno-0-258"></a><a href="#__codelineno-0-258"><span class="linenos" data-linenos="258 "></span></a>
+<a id="__codelineno-0-259" name="__codelineno-0-259"></a><a href="#__codelineno-0-259"><span class="linenos" data-linenos="259 "></span></a>    <span class="c1"># Compute entropy for each row</span>
+<a id="__codelineno-0-260" name="__codelineno-0-260"></a><a href="#__codelineno-0-260"><span class="linenos" data-linenos="260 "></span></a>    <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">scaled_traj_score</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">scaled_traj_score</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-261" name="__codelineno-0-261"></a><a href="#__codelineno-0-261"><span class="linenos" data-linenos="261 "></span></a>    <span class="n">norm_entropy</span> <span class="o">=</span> <span class="n">entropy</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">n_query</span><span class="p">))</span>
+<a id="__codelineno-0-262" name="__codelineno-0-262"></a><a href="#__codelineno-0-262"><span class="linenos" data-linenos="262 "></span></a>    <span class="n">flag_threshold</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence_threshold</span>
+<a id="__codelineno-0-263" name="__codelineno-0-263"></a><a href="#__codelineno-0-263"><span class="linenos" data-linenos="263 "></span></a>
+<a id="__codelineno-0-264" name="__codelineno-0-264"></a><a href="#__codelineno-0-264"><span class="linenos" data-linenos="264 "></span></a>    <span class="c1"># Flag rows with high entropy</span>
+<a id="__codelineno-0-265" name="__codelineno-0-265"></a><a href="#__codelineno-0-265"><span class="linenos" data-linenos="265 "></span></a>    <span class="n">flag</span> <span class="o">=</span> <span class="n">norm_entropy</span> <span class="o">&gt;</span> <span class="n">flag_threshold</span>
+<a id="__codelineno-0-266" name="__codelineno-0-266"></a><a href="#__codelineno-0-266"><span class="linenos" data-linenos="266 "></span></a>
+<a id="__codelineno-0-267" name="__codelineno-0-267"></a><a href="#__codelineno-0-267"><span class="linenos" data-linenos="267 "></span></a>    <span class="c1"># Flag the frame if any instances have high entropy</span>
+<a id="__codelineno-0-268" name="__codelineno-0-268"></a><a href="#__codelineno-0-268"><span class="linenos" data-linenos="268 "></span></a>    <span class="k">if</span> <span class="n">flag</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+<a id="__codelineno-0-269" name="__codelineno-0-269"></a><a href="#__codelineno-0-269"><span class="linenos" data-linenos="269 "></span></a>        <span class="n">query_frame</span><span class="o">.</span><span class="n">add_flag</span><span class="p">(</span><span class="n">FrameFlagCode</span><span class="o">.</span><span class="n">LOW_CONFIDENCE</span><span class="p">)</span>
+<a id="__codelineno-0-270" name="__codelineno-0-270"></a><a href="#__codelineno-0-270"><span class="linenos" data-linenos="270 "></span></a>
+<a id="__codelineno-0-271" name="__codelineno-0-271"></a><a href="#__codelineno-0-271"><span class="linenos" data-linenos="271 "></span></a>    <span class="k">return</span> <span class="n">state</span>
 </code></pre></div>
             </details>
     </div>
