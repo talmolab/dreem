@@ -226,8 +226,8 @@ def _create_inference_command(mode: str):
             bool, typer.Option("--save-meta", "-sm", help="Save frame metadata")
         ] = False,
         gpu: Annotated[
-            bool, typer.Option("--gpu", "-g", help="Use GPU for inference")
-        ] = False,
+            bool, typer.Option("--gpu/--no-gpu", "-g", help="Use GPU for inference")
+        ] = True,
         config: Annotated[
             Path | None,
             typer.Option("--config", "-c", help="Config file (overrides defaults)"),
@@ -365,8 +365,8 @@ def train(
         str | None, typer.Option("--run-name", "-rn", help="Run name for logging")
     ] = None,
     gpu: Annotated[
-        bool, typer.Option("--gpu", "-g", help="Use GPU for training")
-    ] = False,
+        bool, typer.Option("--gpu/--no-gpu", "-g", help="Use GPU for training")
+    ] = True,
     config: Annotated[
         Path | None,
         typer.Option("--config", "-c", help="Config file (overrides defaults)"),

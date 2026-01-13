@@ -140,7 +140,6 @@ wandb/
 
 # Local data/models/results
 data/
-models/
 results/
 *.ckpt
 

@@ -144,6 +144,11 @@ extra:
 
 extra_css:
   - css/mkdocstrings.css
+  - css/termynal.css
+
+extra_javascript:
+  - js/termynal.js
+  - js/custom.js
 
 copyright: >
   Copyright &copy; 2024 - 2025 Talmo Lab –

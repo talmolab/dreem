@@ -3,14 +3,22 @@
 [![CI](https://github.com/talmolab/dreem/actions/workflows/ci.yml/badge.svg)](https://github.com/talmolab/dreem/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/talmolab/dreem/branch/main/graph/badge.svg?token=Sj8kIFl3pi)](https://codecov.io/gh/talmolab/dreem)
 [![code](https://img.shields.io/github/stars/talmolab/dreem)](https://github.com/talmolab/dreem)
-<!-- [![Release](https://img.shields.io/github/v/release/talmolab/dreem?label=Latest)](https://github.com/talmolab/dreem/releases/)
-[![PyPI](https://img.shields.io/pypi/v/dreem-tracker?label=PyPI)](https://pypi.org/project/dreem-tracker)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dreem-tracker) -->
+[![Release](https://img.shields.io/github/v/release/talmolab/dreem?label=Latest)](https://github.com/talmolab/dreem/releases/)
+[![PyPI](https://img.shields.io/pypi/v/dreem-track?label=PyPI)](https://pypi.org/project/dreem-track)
 
+Welcome to the documentation for **DREEM** – an open-source tool for multiple object tracking. DREEM is a framework that enables you to train your own models, run inference on new data, and evaluate your results. DREEM supports a variety of detection types, including keypoints and segmentation masks. You can use any detection model you want, convert the output to a format DREEM can use, and train a model or run inference using a pretrained model.
 
-Welcome to the documentation for **DREEM** – an open-source tool for multiple object tracking. DREEM is a framework that enables you to train your own models, run inference on new data, and evaluate your results. DREEM supports a variety of detection types, including keypoints, bounding boxes, and segmentation masks. You can use any detection model you want, convert the output to a format DREEM can use, and train a model or run inference using a pretrained model.
+<div class="termy">
+```console
+$ uv init
+$ uv pip install dreem-track
+$ dreem track ./data --checkpoint ./models/pretrained.ckpt --output ./results --crop-size 128
+Running tracking...
+---> 100%
+Tracking complete! Results saved to results/
+```
 
-
+</div>
 
 ## Key Features
 
