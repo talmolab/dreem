@@ -135,7 +135,6 @@ dmypy.json
 lightning_logs/
 outputs/
 logs/
-cli-refactor/
 wandb/
 
 # Local data/models/results
@@ -160,3 +159,6 @@ agents/
 .cursor/
 run_tracker.py
 run_trainer.py
+
+# Auto-generated version file
+dreem/_version.py
