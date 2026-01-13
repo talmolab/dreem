@@ -342,7 +342,7 @@ def train(
     ],
     epochs: Annotated[
         int | None, typer.Option("--epochs", "-e", help="Max epochs")
-    ] = 30,
+    ] = 20,
     lr: Annotated[float | None, typer.Option("--lr", help="Learning rate")] = 0.0001,
     d_model: Annotated[
         int | None, typer.Option("--d-model", help="Model dimension")

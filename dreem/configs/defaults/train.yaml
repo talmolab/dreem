@@ -55,7 +55,6 @@ dataset:
       GaussianBlur:
         blur_limit: [3, 7]
         p: 0.2
-        sigma_limit: 0
       MotionBlur:
         blur_limit: [3, 7]
         p: 0.2
@@ -121,5 +120,5 @@ trainer:
   limit_test_batches: 1.0
   limit_val_batches: 1.0
   log_every_n_steps: 1
-  max_epochs: 35
+  max_epochs: 20
   min_epochs: 1
