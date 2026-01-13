@@ -252,7 +252,6 @@ class ConfidenceFlagging(ProcessingStep):
         Returns:
             Modified state with potentially flagged query_frame.
         """
-
         scaled_traj_score = state["scaled_traj_score"]
         n_query = state["n_query"]
         query_frame = state["query_frame"]

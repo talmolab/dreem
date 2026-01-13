@@ -1,13 +1,15 @@
 import logging
 from typing import Callable
+
+import numpy as np
 import torch
+from scipy import ndimage
+
 from dreem.datasets.data_utils import (
-    get_pose_principal_axis,
     gather_pose_array,
+    get_pose_principal_axis,
     is_pose_centroid_only,
 )
-from scipy import ndimage
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,7 @@ def _can_compute_with_prompts(instance, **kwargs) -> bool:
     # Must have more than just centroid
     if is_pose_centroid_only(instance):
         logger.debug(
-            f"Pose is only centroid. Cannot compute principal axis with orientation prompts."
+            "Pose is only centroid. Cannot compute principal axis with orientation prompts."
         )
         return False
     # Must have valid orientation prompt
@@ -40,7 +42,7 @@ def _can_compute_with_prompts(instance, **kwargs) -> bool:
         or len(back_nodes) < 1
     ):
         logger.debug(
-            f"Orientation prompt is not provided or is not valid. Cannot compute principal axis with orientation prompts."
+            "Orientation prompt is not provided or is not valid. Cannot compute principal axis with orientation prompts."
         )
         return False
     # Both nodes must exist
@@ -64,7 +66,7 @@ def _can_compute_with_prompts(instance, **kwargs) -> bool:
         or torch.isnan(back_tensor).any()
     ):
         logger.debug(
-            f"Orientation prompt nodes not visible. Cannot compute principal axis with orientation prompts."
+            "Orientation prompt nodes not visible. Cannot compute principal axis with orientation prompts."
         )
         return False
     return not (torch.isnan(front_tensor).any() or torch.isnan(back_tensor).any())
@@ -95,7 +97,7 @@ def _can_compute_with_pca(instance, **kwargs) -> bool:
     result = not is_pose_centroid_only(instance)
     if not result:
         logger.debug(
-            f"PCA method cannot be used. Cannot compute principal axis with PCA."
+            "PCA method cannot be used. Cannot compute principal axis with PCA."
         )
     return result
 
@@ -117,7 +119,7 @@ def _can_compute_with_img_grad(instance, **kwargs) -> bool:
     result = is_pose_centroid_only(instance) and crop is not None and len(crop) > 0
     if not result:
         logger.debug(
-            f"Cannot compute principal axis with image gradient. Pose must be only centroid, and crop must be available."
+            "Cannot compute principal axis with image gradient. Pose must be only centroid, and crop must be available."
         )
     return result
 

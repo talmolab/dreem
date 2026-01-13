@@ -1,33 +1,25 @@
-"""Script to evaluate model."""
+"""API for evaluating model against ground truth."""
 
 import logging
-import os
-import hydra
-import pandas as pd
-import sleap_io as sio
+
 from omegaconf import DictConfig
+
 from dreem.io import Config
 from dreem.models import GTRRunner
 
 logger = logging.getLogger("dreem.inference")
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    logger.addHandler(handler)
 
 
-@hydra.main(config_path=None, config_name=None, version_base=None)
-def run(cfg: DictConfig) -> dict[int, sio.Labels]:
-    """Run inference based on config file.
+def run(cfg: DictConfig) -> None:
+    """Run evaluation based on config.
 
     Args:
-        cfg: A dictconfig loaded from hydra containing checkpoint path and data
+        cfg: A DictConfig containing checkpoint path and data configuration
     """
     eval_cfg = Config(cfg)
     checkpoint = eval_cfg.get("ckpt_path", None)
     if checkpoint is None:
         raise ValueError("Checkpoint path not found in config")
-
-    logging.getLogger().setLevel(level=cfg.get("log_level", "INFO").upper())
 
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     overrides_dict = model.setup_tracking(eval_cfg, mode="eval")
@@ -49,6 +41,4 @@ def run(cfg: DictConfig) -> dict[int, sio.Labels]:
         dataloader = eval_cfg.get_dataloader(dataset, mode="test")
         _ = trainer.test(model, dataloader)
 
-
-if __name__ == "__main__":
-    run()
+    logger.info("Evaluation complete.")

@@ -156,10 +156,10 @@ class Config:
         for key, arg in zip(keys, args):
             sub_params = self.get(key, {})
 
-            if len(sub_params) == 0:
-                logger.warning(
-                    f"`{key}` not found in config or is empty. Using defaults for {arg}!"
-                )
+            # if len(sub_params) == 0:
+            #     logger.warning(
+            #         f"`{key}` not found in config or is empty. Using defaults for {arg}!"
+            #     )
 
             if key == "runner":
                 runner_params = sub_params
@@ -573,10 +573,10 @@ class Config:
         """
         trainer_params = self.get("trainer", {})
         profiler = trainer_params.pop("profiler", None)
-        if len(trainer_params) == 0:
-            print(
-                "`trainer` key was not found in cfg or was empty. Using defaults for `pl.Trainer`!"
-            )
+        # if len(trainer_params) == 0:
+        #     print(
+        #         "`trainer` key was not found in cfg or was empty. Using defaults for `pl.Trainer`!"
+        #     )
 
         if "accelerator" not in trainer_params:
             trainer_params["accelerator"] = accelerator

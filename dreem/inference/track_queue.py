@@ -5,6 +5,7 @@ from collections import deque
 
 import numpy as np
 from torch import device
+
 from dreem.io import Frame
 
 logger = logging.getLogger("dreem.inference")
@@ -190,6 +191,7 @@ class TrackQueue:
 
         Args:
             frame: A Frame object containing instances that have already been tracked.
+
         Returns:
             Dictionary mapping track ids to a bool indicating whether the track has exceeded the max gap and been terminated.
         """

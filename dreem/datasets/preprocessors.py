@@ -1,13 +1,16 @@
 """Preprocessor classes for dataset preparation steps."""
 
 from __future__ import annotations
-from typing import Any, Dict
+
 import logging
-from dreem.utils.processors import ProcessingStep
+from typing import Any, Dict
+
 import numpy as np
 import torch
-from dreem.datasets.data_utils import pairwise_iom, nms
+
+from dreem.datasets.data_utils import nms, pairwise_iom
 from dreem.inference.boxes import Boxes
+from dreem.utils.processors import ProcessingStep
 
 logger = logging.getLogger(__name__)
 

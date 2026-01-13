@@ -2,9 +2,10 @@
 
 import logging
 import random
+from math import inf
 from pathlib import Path
 from typing import Optional, Union
-from math import inf
+
 import albumentations as A
 import imageio
 import numpy as np
@@ -13,8 +14,8 @@ import torch
 from torchvision.transforms import functional as tvf
 
 from dreem.datasets import BaseDataset, data_utils
+from dreem.datasets.preprocessors import NonMaxSuppression, RemoveExcessDetections
 from dreem.io import Frame, Instance
-from dreem.datasets.preprocessors import RemoveExcessDetections, NonMaxSuppression
 
 logger = logging.getLogger("dreem.datasets")
 
@@ -515,17 +516,6 @@ class SleapDataset(BaseDataset):
             )
             frames.append(frame)
 
-        # pad bbox to max size
-        if self.use_tight_bbox:
-            # bound the max crop size to the user defined crop size
-            max_crop_h = crop_size if max_crop_h == 0 else min(max_crop_h, crop_size)
-            max_crop_w = crop_size if max_crop_w == 0 else min(max_crop_w, crop_size)
-            # gather all the crops
-            for frame in frames:
-                for instance in frame.instances:
-                    data_utils.pad_variable_size_crops(
-                        instance, (max_crop_h, max_crop_w)
-                    )
         return frames
 
     def __del__(self):
