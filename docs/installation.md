@@ -15,8 +15,6 @@ Or install as a standalone tool without creating a virtual environment:
 uv tool install dreem-track
 ```
 
-## Alternative: pip
-
 You can also use pip:
 
 ```bash
@@ -33,8 +31,6 @@ DREEM automatically uses GPU acceleration when available:
 No additional configuration is needed.
 
 ## Development Installation
-
-To contribute or modify DREEM:
 
 ```bash
 git clone https://github.com/talmolab/dreem && cd dreem

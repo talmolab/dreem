@@ -63,7 +63,7 @@ hf download talmolab/animals-pretrained \
 dreem track ./data/inference \
     --checkpoint ./models/animals-pretrained.ckpt \
     --output ./results \
-    --crop-size 128 \
+    --crop-size 70 \
     --gpu
 ```
 
@@ -85,9 +85,8 @@ Train your own model on custom data:
 ```bash
 dreem train ./data/train \
     --val-dir ./data/val \
-    --crop-size 128 \
-    --epochs 20 \
-    --gpu
+    --crop-size 70 \
+    --epochs 10
 ```
 
 ### Running Inference
@@ -98,8 +97,7 @@ Run tracking on new data with a pretrained model:
 dreem track ./data/inference \
     --checkpoint ./models/my_model.ckpt \
     --output ./results \
-    --crop-size 128 \
-    --gpu
+    --crop-size 70
 ```
 
 ### Evaluating Results
@@ -110,8 +108,7 @@ Evaluate tracking accuracy against ground truth:
 dreem eval ./data/test \
     --checkpoint ./models/my_model.ckpt \
     --output ./results \
-    --crop-size 128 \
-    --gpu
+    --crop-size 70
 ```
 
 For detailed usage instructions, see the [Usage Guide](https://dreem.sleap.ai/usage/).

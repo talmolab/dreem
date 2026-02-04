@@ -156,6 +156,14 @@ def _create_inference_command(mode: str):
             list[Path] | None,
             typer.Option("--video-file", "-vid", help="Path to video files"),
         ] = None,
+        video_type: Annotated[
+            str | None,
+            typer.Option(
+                "--video-type",
+                "-vt",
+                help="Raw video file extension: For masks, use tif or tiff. For videos, use mp4, avi, mov, mkv, wmv, m4v, m4a",
+            ),
+        ] = "mp4",
         anchor: Annotated[
             str | None,
             typer.Option(
@@ -269,6 +277,10 @@ def _create_inference_command(mode: str):
             "dataset.test_dataset.video_files": [str(f) for f in video_files]
             if video_files
             else None,
+            "dataset.test_dataset.dir.labels_suffix": f".{video_type}"
+            if "tif" in video_type
+            else ".slp",
+            "dataset.test_dataset.dir.vid_suffix": f".{video_type}",
             "tracker.iou": iou_mode,
             "tracker.max_center_dist": max_dist,
             "tracker.overlap_thresh": overlap_thresh,
@@ -339,6 +351,14 @@ def train(
     crop_size: Annotated[
         int | None, typer.Option("--crop-size", "-cs", help="Crop size")
     ],
+    video_type: Annotated[
+        str | None,
+        typer.Option(
+            "--video-type",
+            "-vt",
+            help="Raw video file extension: For masks, use tif or tiff. For videos, use mp4, avi, mov, mkv, wmv, m4v, m4a",
+        ),
+    ] = "mp4",
     epochs: Annotated[
         int | None, typer.Option("--epochs", "-e", help="Max epochs")
     ] = 20,
@@ -361,9 +381,6 @@ def train(
     clip_length: Annotated[
         int | None, typer.Option("--clip-length", "-cl", help="Clip length")
     ] = 32,
-    run_name: Annotated[
-        str | None, typer.Option("--run-name", "-rn", help="Run name for logging")
-    ] = None,
     gpu: Annotated[
         bool, typer.Option("--gpu/--no-gpu", "-g", help="Use GPU for training")
     ] = True,
@@ -379,6 +396,14 @@ def train(
             help="Logger type (any Lightning logger e.g. WandbLogger, TensorBoardLogger)",
         ),
     ] = None,
+    run_name: Annotated[
+        str | None,
+        typer.Option(
+            "--run-name",
+            "-rn",
+            help="Name of model run (creates subdirectory ./models/run_name)",
+        ),
+    ] = "dreem_train",
     set_: Annotated[
         list[str] | None, typer.Option("--set", "-s", help="Config overrides")
     ] = None,
@@ -404,6 +429,14 @@ def train(
     cli_overrides = {
         "dataset.train_dataset.dir.path": str(train_dir),
         "dataset.val_dataset.dir.path": str(val_dir),
+        "dataset.train_dataset.dir.labels_suffix": f".{video_type}"
+        if "tif" in video_type
+        else ".slp",
+        "dataset.val_dataset.dir.labels_suffix": f".{video_type}"
+        if "tif" in video_type
+        else ".slp",
+        "dataset.train_dataset.dir.vid_suffix": f".{video_type}",
+        "dataset.val_dataset.dir.vid_suffix": f".{video_type}",
         "trainer.max_epochs": epochs,
         "optimizer.lr": lr,
         "model.d_model": d_model,
@@ -418,6 +451,7 @@ def train(
         "logging.name": run_name,
         "logging.logger_type": logger,
         "trainer.accelerator": "gpu" if gpu else "cpu",
+        "logging.name": run_name,
     }
 
     cfg = build_config("train", config, set_, **cli_overrides)

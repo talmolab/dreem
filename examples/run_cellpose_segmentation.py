@@ -19,6 +19,7 @@ Or use as a module:
     from run_cellpose_segmentation import run_cellpose_segmentation
     run_cellpose_segmentation(data_path, output_path, diameter=25, gpu=True)
 """
+
 import argparse
 import os
 
@@ -59,9 +60,7 @@ def run_cellpose_segmentation(
 
     # Load tiff files
     tiff_files = [
-        f
-        for f in os.listdir(data_path)
-        if f.endswith(".tif") or f.endswith(".tiff")
+        f for f in os.listdir(data_path) if f.endswith(".tif") or f.endswith(".tiff")
     ]
     tiff_files.sort()  # Ensure consistent ordering
 
@@ -83,7 +82,7 @@ def run_cellpose_segmentation(
     all_masks = np.zeros_like(stack)
 
     for i, img in enumerate(stack):
-        print(f"Processing frame {i+1}/{frames}...")
+        print(f"Processing frame {i + 1}/{frames}...")
         masks, flows, styles = model.eval(
             img,
             diameter=diameter,
@@ -100,7 +99,7 @@ def run_cellpose_segmentation(
             output_path, f"{os.path.splitext(filename)[0]}.tif"
         )
         tifffile.imwrite(new_tiff_path, mask)
-        print(f"Saved frame {i+1} to {new_tiff_path}")
+        print(f"Saved frame {i + 1} to {new_tiff_path}")
 
     print("Segmentation complete!")
     return all_masks

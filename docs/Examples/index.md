@@ -10,20 +10,11 @@ A quick introduction to DREEM using a pretrained model on fly tracking data. Lea
 - Evaluate results with `dreem-eval`
 - Visualize tracking outputs
 
-### [Microscopy Demo (Simple)](./microscopy-demo-simple.md)
+### [Microscopy Demo](./microscopy-demo.md)
 **Best for:** Microscopy users who don't already have detections for their data. This demo uses CellPose for segmentation and then DREEM to track the entities 
 
 **Runtime:** 10-15 minutes
 
-
-### [Microscopy Demo (Full API)](./microscopy-demo-full-api.md)
-**Best for:** Advanced users wanting fine-grained control  
-**Runtime:** 15-20 minutes
-
-An in-depth walkthrough of the DREEM API for microscopy tracking, covering:
-- Custom data loading and preprocessing
-- Advanced configuration options
-- Detailed API usage patterns
 
 ### [End-to-End Demo](./dreem-demo.md)
 **Best for:** Users who want to train their own models  

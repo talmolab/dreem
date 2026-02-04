@@ -22,11 +22,11 @@ Tracking complete! Results saved to results/
 
 ## Key Features
 
-- **Command-Line & API Access:** Use DREEM via a simple CLI or integrate into your own Python scripts.
-- **Configurable Workflows:** Easily customize training and inference using YAML configuration files.
-- **Pretrained Models:** Get started quickly with models trained specially for microscopy and animal domains.
-- **Visualization:** Tracking outputs are directly compatible with SLEAP's GUI.
-- **Examples:** Step-by-step notebooks and guides for common workflows.
+- ✅ **Command-Line & API Access:** Use DREEM via a simple CLI or integrate into your own Python scripts.
+- ✅ **Configurable Workflows:** Easily customize training and inference using YAML configuration files.
+- ✅ **Pretrained Models:** Get started quickly with models trained specially for microscopy and animal domains.
+- ✅ **Visualization:** Tracking outputs are directly compatible with SLEAP's GUI.
+- ✅ **Examples:** Step-by-step notebooks and guides for common workflows.
 
 
 ## Installation
