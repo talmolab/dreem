@@ -63,8 +63,7 @@ hf download talmolab/animals-pretrained \
 dreem track ./data/inference \
     --checkpoint ./models/animals-pretrained.ckpt \
     --output ./results \
-    --crop-size 70 \
-    --gpu
+    --crop-size 70
 ```
 
 ### 3. Visualize Results
