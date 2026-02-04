@@ -45,8 +45,8 @@
       
         
         
-        
-        <link rel="stylesheet" href="../../../assets/external/fonts.googleapis.com/css.49ea35f2.css">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
@@ -60,16 +60,6 @@
     <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
-  
-
-
-  
-  
-
-<script id="__analytics">function __md_analytics(){function e(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],e("js",new Date),e("config","G-V7MWLE7LXW"),document.addEventListener("DOMContentLoaded",(function(){document.forms.search&&document.forms.search.query.addEventListener("blur",(function(){this.value&&e("event","search",{search_term:this.value})}));document$.subscribe((function(){var t=document.forms.feedback;if(void 0!==t)for(var a of t.querySelectorAll("[type=submit]"))a.addEventListener("click",(function(a){a.preventDefault();var n=document.location.pathname,d=this.getAttribute("data-md-value");e("event","feedback",{page:n,data:d}),t.firstElementChild.disabled=!0;var r=t.querySelector(".md-feedback__note [data-md-value='"+d+"']");r&&(r.hidden=!1)})),t.hidden=!1})),location$.subscribe((function(t){e("config","G-V7MWLE7LXW",{page_path:t.pathname})}))}));var t=document.createElement("script");t.async=!0,t.src="https://www.googletagmanager.com/gtag/js?id=G-V7MWLE7LXW",document.getElementById("__analytics").insertAdjacentElement("afterEnd",t)}</script>
-  
-    <script>if("undefined"!=typeof __md_analytics){var consent=__md_get("__consent");consent&&consent.analytics&&__md_analytics()}</script>
-  
 
     
     
@@ -466,7 +456,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../examples/quickstart.ipynb" class="md-nav__link">
+      <a href="../../../quickstart/" class="md-nav__link">
         
   
   
@@ -494,7 +484,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../Examples/microscopy-demo-simple/" class="md-nav__link">
+      <a href="../../../Examples/microscopy-demo/" class="md-nav__link">
         
   
   
@@ -502,34 +492,6 @@
     
   
     Microscopy
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../Examples/microscopy-demo-full-api/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Microscopy - in-depth API usage
   
 
     
@@ -4763,69 +4725,67 @@ efficiency and data shuffling. To be called by subclass <strong>init</strong>()<
 <a id="__codelineno-0-274" name="__codelineno-0-274"></a><a href="#__codelineno-0-274"><span class="linenos" data-linenos="274 "></span></a>                <span class="n">pose</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;centroid&quot;</span><span class="p">:</span> <span class="n">dict_centroids</span><span class="p">[</span><span class="n">gt_track_ids</span><span class="p">[</span><span class="n">j</span><span class="p">]]}</span>  <span class="c1"># more formatting</span>
 <a id="__codelineno-0-275" name="__codelineno-0-275"></a><a href="#__codelineno-0-275"><span class="linenos" data-linenos="275 "></span></a>                <span class="n">crop_raw</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">crop_bbox</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
 <a id="__codelineno-0-276" name="__codelineno-0-276"></a><a href="#__codelineno-0-276"><span class="linenos" data-linenos="276 "></span></a>                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mask_to_crop</span><span class="p">:</span>
-<a id="__codelineno-0-277" name="__codelineno-0-277"></a><a href="#__codelineno-0-277"><span class="linenos" data-linenos="277 "></span></a>                    <span class="k">if</span> <span class="p">(</span>
-<a id="__codelineno-0-278" name="__codelineno-0-278"></a><a href="#__codelineno-0-278"><span class="linenos" data-linenos="278 "></span></a>                        <span class="bp">self</span><span class="o">.</span><span class="n">augmentations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-<a id="__codelineno-0-279" name="__codelineno-0-279"></a><a href="#__codelineno-0-279"><span class="linenos" data-linenos="279 "></span></a>                    <span class="p">):</span>  <span class="c1"># TODO: change this to a flag that the user passes in apply_mask_to_crop</span>
-<a id="__codelineno-0-280" name="__codelineno-0-280"></a><a href="#__codelineno-0-280"><span class="linenos" data-linenos="280 "></span></a>                        <span class="n">cropped_mask</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">crop_bbox</span><span class="p">(</span><span class="n">aug_mask</span><span class="p">,</span> <span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
-<a id="__codelineno-0-281" name="__codelineno-0-281"></a><a href="#__codelineno-0-281"><span class="linenos" data-linenos="281 "></span></a>                        <span class="c1"># filter for the instance of interest</span>
-<a id="__codelineno-0-282" name="__codelineno-0-282"></a><a href="#__codelineno-0-282"><span class="linenos" data-linenos="282 "></span></a>                        <span class="n">cropped_mask</span><span class="p">[</span><span class="n">cropped_mask</span> <span class="o">!=</span> <span class="n">gt_track_ids</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-0-283" name="__codelineno-0-283"></a><a href="#__codelineno-0-283"><span class="linenos" data-linenos="283 "></span></a>                    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-284" name="__codelineno-0-284"></a><a href="#__codelineno-0-284"><span class="linenos" data-linenos="284 "></span></a>                        <span class="c1"># masks[j] is already filtered for the instance of interest</span>
-<a id="__codelineno-0-285" name="__codelineno-0-285"></a><a href="#__codelineno-0-285"><span class="linenos" data-linenos="285 "></span></a>                        <span class="n">cropped_mask</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">crop_bbox</span><span class="p">(</span><span class="n">masks</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
-<a id="__codelineno-0-286" name="__codelineno-0-286"></a><a href="#__codelineno-0-286"><span class="linenos" data-linenos="286 "></span></a>
-<a id="__codelineno-0-287" name="__codelineno-0-287"></a><a href="#__codelineno-0-287"><span class="linenos" data-linenos="287 "></span></a>                    <span class="n">cropped_mask</span><span class="p">[</span><span class="n">cropped_mask</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-<a id="__codelineno-0-288" name="__codelineno-0-288"></a><a href="#__codelineno-0-288"><span class="linenos" data-linenos="288 "></span></a>                    <span class="c1"># apply mask to crop</span>
-<a id="__codelineno-0-289" name="__codelineno-0-289"></a><a href="#__codelineno-0-289"><span class="linenos" data-linenos="289 "></span></a>                    <span class="n">crop</span> <span class="o">=</span> <span class="n">crop_raw</span> <span class="o">*</span> <span class="n">cropped_mask</span>
-<a id="__codelineno-0-290" name="__codelineno-0-290"></a><a href="#__codelineno-0-290"><span class="linenos" data-linenos="290 "></span></a>                <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-291" name="__codelineno-0-291"></a><a href="#__codelineno-0-291"><span class="linenos" data-linenos="291 "></span></a>                    <span class="n">crop</span> <span class="o">=</span> <span class="n">crop_raw</span>
-<a id="__codelineno-0-292" name="__codelineno-0-292"></a><a href="#__codelineno-0-292"><span class="linenos" data-linenos="292 "></span></a>
-<a id="__codelineno-0-293" name="__codelineno-0-293"></a><a href="#__codelineno-0-293"><span class="linenos" data-linenos="293 "></span></a>                <span class="n">c</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">crop</span><span class="o">.</span><span class="n">shape</span>
-<a id="__codelineno-0-294" name="__codelineno-0-294"></a><a href="#__codelineno-0-294"><span class="linenos" data-linenos="294 "></span></a>                <span class="k">if</span> <span class="n">h</span> <span class="o">&gt;</span> <span class="n">max_crop_h</span><span class="p">:</span>
-<a id="__codelineno-0-295" name="__codelineno-0-295"></a><a href="#__codelineno-0-295"><span class="linenos" data-linenos="295 "></span></a>                    <span class="n">max_crop_h</span> <span class="o">=</span> <span class="n">h</span>
-<a id="__codelineno-0-296" name="__codelineno-0-296"></a><a href="#__codelineno-0-296"><span class="linenos" data-linenos="296 "></span></a>                <span class="k">if</span> <span class="n">w</span> <span class="o">&gt;</span> <span class="n">max_crop_w</span><span class="p">:</span>
-<a id="__codelineno-0-297" name="__codelineno-0-297"></a><a href="#__codelineno-0-297"><span class="linenos" data-linenos="297 "></span></a>                    <span class="n">max_crop_w</span> <span class="o">=</span> <span class="n">w</span>
-<a id="__codelineno-0-298" name="__codelineno-0-298"></a><a href="#__codelineno-0-298"><span class="linenos" data-linenos="298 "></span></a>
-<a id="__codelineno-0-299" name="__codelineno-0-299"></a><a href="#__codelineno-0-299"><span class="linenos" data-linenos="299 "></span></a>                <span class="n">instances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-<a id="__codelineno-0-300" name="__codelineno-0-300"></a><a href="#__codelineno-0-300"><span class="linenos" data-linenos="300 "></span></a>                    <span class="n">Instance</span><span class="p">(</span>
-<a id="__codelineno-0-301" name="__codelineno-0-301"></a><a href="#__codelineno-0-301"><span class="linenos" data-linenos="301 "></span></a>                        <span class="n">gt_track_id</span><span class="o">=</span><span class="n">gt_track_ids</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
-<a id="__codelineno-0-302" name="__codelineno-0-302"></a><a href="#__codelineno-0-302"><span class="linenos" data-linenos="302 "></span></a>                        <span class="n">pred_track_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-303" name="__codelineno-0-303"></a><a href="#__codelineno-0-303"><span class="linenos" data-linenos="303 "></span></a>                        <span class="n">centroid</span><span class="o">=</span><span class="n">instance_centroid</span><span class="p">,</span>
-<a id="__codelineno-0-304" name="__codelineno-0-304"></a><a href="#__codelineno-0-304"><span class="linenos" data-linenos="304 "></span></a>                        <span class="n">skeleton</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skeleton</span><span class="p">,</span>
-<a id="__codelineno-0-305" name="__codelineno-0-305"></a><a href="#__codelineno-0-305"><span class="linenos" data-linenos="305 "></span></a>                        <span class="n">point_scores</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]),</span>
-<a id="__codelineno-0-306" name="__codelineno-0-306"></a><a href="#__codelineno-0-306"><span class="linenos" data-linenos="306 "></span></a>                        <span class="n">instance_score</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]),</span>
-<a id="__codelineno-0-307" name="__codelineno-0-307"></a><a href="#__codelineno-0-307"><span class="linenos" data-linenos="307 "></span></a>                        <span class="n">pose</span><span class="o">=</span><span class="n">pose</span><span class="p">,</span>
-<a id="__codelineno-0-308" name="__codelineno-0-308"></a><a href="#__codelineno-0-308"><span class="linenos" data-linenos="308 "></span></a>                        <span class="n">bbox</span><span class="o">=</span><span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
-<a id="__codelineno-0-309" name="__codelineno-0-309"></a><a href="#__codelineno-0-309"><span class="linenos" data-linenos="309 "></span></a>                        <span class="n">crop</span><span class="o">=</span><span class="n">crop</span><span class="p">,</span>
-<a id="__codelineno-0-310" name="__codelineno-0-310"></a><a href="#__codelineno-0-310"><span class="linenos" data-linenos="310 "></span></a>                        <span class="n">mask</span><span class="o">=</span><span class="n">masks</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
-<a id="__codelineno-0-311" name="__codelineno-0-311"></a><a href="#__codelineno-0-311"><span class="linenos" data-linenos="311 "></span></a>                    <span class="p">)</span>
-<a id="__codelineno-0-312" name="__codelineno-0-312"></a><a href="#__codelineno-0-312"><span class="linenos" data-linenos="312 "></span></a>                <span class="p">)</span>
-<a id="__codelineno-0-313" name="__codelineno-0-313"></a><a href="#__codelineno-0-313"><span class="linenos" data-linenos="313 "></span></a>
-<a id="__codelineno-0-314" name="__codelineno-0-314"></a><a href="#__codelineno-0-314"><span class="linenos" data-linenos="314 "></span></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-315" name="__codelineno-0-315"></a><a href="#__codelineno-0-315"><span class="linenos" data-linenos="315 "></span></a>                <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span>
-<a id="__codelineno-0-316" name="__codelineno-0-316"></a><a href="#__codelineno-0-316"><span class="linenos" data-linenos="316 "></span></a>
-<a id="__codelineno-0-317" name="__codelineno-0-317"></a><a href="#__codelineno-0-317"><span class="linenos" data-linenos="317 "></span></a>            <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-<a id="__codelineno-0-318" name="__codelineno-0-318"></a><a href="#__codelineno-0-318"><span class="linenos" data-linenos="318 "></span></a>                <span class="n">Frame</span><span class="p">(</span>
-<a id="__codelineno-0-319" name="__codelineno-0-319"></a><a href="#__codelineno-0-319"><span class="linenos" data-linenos="319 "></span></a>                    <span class="n">video_id</span><span class="o">=</span><span class="n">label_idx</span><span class="p">,</span>
-<a id="__codelineno-0-320" name="__codelineno-0-320"></a><a href="#__codelineno-0-320"><span class="linenos" data-linenos="320 "></span></a>                    <span class="n">frame_id</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
-<a id="__codelineno-0-321" name="__codelineno-0-321"></a><a href="#__codelineno-0-321"><span class="linenos" data-linenos="321 "></span></a>                    <span class="n">vid_file</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">image_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-<a id="__codelineno-0-322" name="__codelineno-0-322"></a><a href="#__codelineno-0-322"><span class="linenos" data-linenos="322 "></span></a>                    <span class="n">img_shape</span><span class="o">=</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
-<a id="__codelineno-0-323" name="__codelineno-0-323"></a><a href="#__codelineno-0-323"><span class="linenos" data-linenos="323 "></span></a>                    <span class="n">instances</span><span class="o">=</span><span class="n">instances</span><span class="p">,</span>
-<a id="__codelineno-0-324" name="__codelineno-0-324"></a><a href="#__codelineno-0-324"><span class="linenos" data-linenos="324 "></span></a>                <span class="p">)</span>
-<a id="__codelineno-0-325" name="__codelineno-0-325"></a><a href="#__codelineno-0-325"><span class="linenos" data-linenos="325 "></span></a>            <span class="p">)</span>
-<a id="__codelineno-0-326" name="__codelineno-0-326"></a><a href="#__codelineno-0-326"><span class="linenos" data-linenos="326 "></span></a>
-<a id="__codelineno-0-327" name="__codelineno-0-327"></a><a href="#__codelineno-0-327"><span class="linenos" data-linenos="327 "></span></a>        <span class="c1"># pad bbox to max size</span>
-<a id="__codelineno-0-328" name="__codelineno-0-328"></a><a href="#__codelineno-0-328"><span class="linenos" data-linenos="328 "></span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_tight_bbox</span><span class="p">:</span>
-<a id="__codelineno-0-329" name="__codelineno-0-329"></a><a href="#__codelineno-0-329"><span class="linenos" data-linenos="329 "></span></a>            <span class="c1"># bound the max crop size to the user defined crop size</span>
-<a id="__codelineno-0-330" name="__codelineno-0-330"></a><a href="#__codelineno-0-330"><span class="linenos" data-linenos="330 "></span></a>            <span class="n">max_crop_h</span> <span class="o">=</span> <span class="n">crop_size</span> <span class="k">if</span> <span class="n">max_crop_h</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_crop_h</span><span class="p">,</span> <span class="n">crop_size</span><span class="p">)</span>
-<a id="__codelineno-0-331" name="__codelineno-0-331"></a><a href="#__codelineno-0-331"><span class="linenos" data-linenos="331 "></span></a>            <span class="n">max_crop_w</span> <span class="o">=</span> <span class="n">crop_size</span> <span class="k">if</span> <span class="n">max_crop_w</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_crop_w</span><span class="p">,</span> <span class="n">crop_size</span><span class="p">)</span>
-<a id="__codelineno-0-332" name="__codelineno-0-332"></a><a href="#__codelineno-0-332"><span class="linenos" data-linenos="332 "></span></a>            <span class="c1"># gather all the crops</span>
-<a id="__codelineno-0-333" name="__codelineno-0-333"></a><a href="#__codelineno-0-333"><span class="linenos" data-linenos="333 "></span></a>            <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frames</span><span class="p">:</span>
-<a id="__codelineno-0-334" name="__codelineno-0-334"></a><a href="#__codelineno-0-334"><span class="linenos" data-linenos="334 "></span></a>                <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">instances</span><span class="p">:</span>
-<a id="__codelineno-0-335" name="__codelineno-0-335"></a><a href="#__codelineno-0-335"><span class="linenos" data-linenos="335 "></span></a>                    <span class="n">data_utils</span><span class="o">.</span><span class="n">pad_variable_size_crops</span><span class="p">(</span>
-<a id="__codelineno-0-336" name="__codelineno-0-336"></a><a href="#__codelineno-0-336"><span class="linenos" data-linenos="336 "></span></a>                        <span class="n">instance</span><span class="p">,</span> <span class="p">(</span><span class="n">max_crop_h</span><span class="p">,</span> <span class="n">max_crop_w</span><span class="p">)</span>
-<a id="__codelineno-0-337" name="__codelineno-0-337"></a><a href="#__codelineno-0-337"><span class="linenos" data-linenos="337 "></span></a>                    <span class="p">)</span>
-<a id="__codelineno-0-338" name="__codelineno-0-338"></a><a href="#__codelineno-0-338"><span class="linenos" data-linenos="338 "></span></a>
-<a id="__codelineno-0-339" name="__codelineno-0-339"></a><a href="#__codelineno-0-339"><span class="linenos" data-linenos="339 "></span></a>        <span class="k">return</span> <span class="n">frames</span>
+<a id="__codelineno-0-277" name="__codelineno-0-277"></a><a href="#__codelineno-0-277"><span class="linenos" data-linenos="277 "></span></a>                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">augmentations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-278" name="__codelineno-0-278"></a><a href="#__codelineno-0-278"><span class="linenos" data-linenos="278 "></span></a>                        <span class="n">cropped_mask</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">crop_bbox</span><span class="p">(</span><span class="n">aug_mask</span><span class="p">,</span> <span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+<a id="__codelineno-0-279" name="__codelineno-0-279"></a><a href="#__codelineno-0-279"><span class="linenos" data-linenos="279 "></span></a>                        <span class="c1"># filter for the instance of interest</span>
+<a id="__codelineno-0-280" name="__codelineno-0-280"></a><a href="#__codelineno-0-280"><span class="linenos" data-linenos="280 "></span></a>                        <span class="n">cropped_mask</span><span class="p">[</span><span class="n">cropped_mask</span> <span class="o">!=</span> <span class="n">gt_track_ids</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-281" name="__codelineno-0-281"></a><a href="#__codelineno-0-281"><span class="linenos" data-linenos="281 "></span></a>                    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-282" name="__codelineno-0-282"></a><a href="#__codelineno-0-282"><span class="linenos" data-linenos="282 "></span></a>                        <span class="c1"># masks[j] is already filtered for the instance of interest</span>
+<a id="__codelineno-0-283" name="__codelineno-0-283"></a><a href="#__codelineno-0-283"><span class="linenos" data-linenos="283 "></span></a>                        <span class="n">cropped_mask</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">crop_bbox</span><span class="p">(</span><span class="n">masks</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+<a id="__codelineno-0-284" name="__codelineno-0-284"></a><a href="#__codelineno-0-284"><span class="linenos" data-linenos="284 "></span></a>
+<a id="__codelineno-0-285" name="__codelineno-0-285"></a><a href="#__codelineno-0-285"><span class="linenos" data-linenos="285 "></span></a>                    <span class="n">cropped_mask</span><span class="p">[</span><span class="n">cropped_mask</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="__codelineno-0-286" name="__codelineno-0-286"></a><a href="#__codelineno-0-286"><span class="linenos" data-linenos="286 "></span></a>                    <span class="c1"># apply mask to crop</span>
+<a id="__codelineno-0-287" name="__codelineno-0-287"></a><a href="#__codelineno-0-287"><span class="linenos" data-linenos="287 "></span></a>                    <span class="n">crop</span> <span class="o">=</span> <span class="n">crop_raw</span> <span class="o">*</span> <span class="n">cropped_mask</span>
+<a id="__codelineno-0-288" name="__codelineno-0-288"></a><a href="#__codelineno-0-288"><span class="linenos" data-linenos="288 "></span></a>                <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-289" name="__codelineno-0-289"></a><a href="#__codelineno-0-289"><span class="linenos" data-linenos="289 "></span></a>                    <span class="n">crop</span> <span class="o">=</span> <span class="n">crop_raw</span>
+<a id="__codelineno-0-290" name="__codelineno-0-290"></a><a href="#__codelineno-0-290"><span class="linenos" data-linenos="290 "></span></a>
+<a id="__codelineno-0-291" name="__codelineno-0-291"></a><a href="#__codelineno-0-291"><span class="linenos" data-linenos="291 "></span></a>                <span class="n">c</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">crop</span><span class="o">.</span><span class="n">shape</span>
+<a id="__codelineno-0-292" name="__codelineno-0-292"></a><a href="#__codelineno-0-292"><span class="linenos" data-linenos="292 "></span></a>                <span class="k">if</span> <span class="n">h</span> <span class="o">&gt;</span> <span class="n">max_crop_h</span><span class="p">:</span>
+<a id="__codelineno-0-293" name="__codelineno-0-293"></a><a href="#__codelineno-0-293"><span class="linenos" data-linenos="293 "></span></a>                    <span class="n">max_crop_h</span> <span class="o">=</span> <span class="n">h</span>
+<a id="__codelineno-0-294" name="__codelineno-0-294"></a><a href="#__codelineno-0-294"><span class="linenos" data-linenos="294 "></span></a>                <span class="k">if</span> <span class="n">w</span> <span class="o">&gt;</span> <span class="n">max_crop_w</span><span class="p">:</span>
+<a id="__codelineno-0-295" name="__codelineno-0-295"></a><a href="#__codelineno-0-295"><span class="linenos" data-linenos="295 "></span></a>                    <span class="n">max_crop_w</span> <span class="o">=</span> <span class="n">w</span>
+<a id="__codelineno-0-296" name="__codelineno-0-296"></a><a href="#__codelineno-0-296"><span class="linenos" data-linenos="296 "></span></a>
+<a id="__codelineno-0-297" name="__codelineno-0-297"></a><a href="#__codelineno-0-297"><span class="linenos" data-linenos="297 "></span></a>                <span class="n">instances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+<a id="__codelineno-0-298" name="__codelineno-0-298"></a><a href="#__codelineno-0-298"><span class="linenos" data-linenos="298 "></span></a>                    <span class="n">Instance</span><span class="p">(</span>
+<a id="__codelineno-0-299" name="__codelineno-0-299"></a><a href="#__codelineno-0-299"><span class="linenos" data-linenos="299 "></span></a>                        <span class="n">gt_track_id</span><span class="o">=</span><span class="n">gt_track_ids</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
+<a id="__codelineno-0-300" name="__codelineno-0-300"></a><a href="#__codelineno-0-300"><span class="linenos" data-linenos="300 "></span></a>                        <span class="n">pred_track_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-301" name="__codelineno-0-301"></a><a href="#__codelineno-0-301"><span class="linenos" data-linenos="301 "></span></a>                        <span class="n">centroid</span><span class="o">=</span><span class="n">instance_centroid</span><span class="p">,</span>
+<a id="__codelineno-0-302" name="__codelineno-0-302"></a><a href="#__codelineno-0-302"><span class="linenos" data-linenos="302 "></span></a>                        <span class="n">skeleton</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skeleton</span><span class="p">,</span>
+<a id="__codelineno-0-303" name="__codelineno-0-303"></a><a href="#__codelineno-0-303"><span class="linenos" data-linenos="303 "></span></a>                        <span class="n">point_scores</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]),</span>
+<a id="__codelineno-0-304" name="__codelineno-0-304"></a><a href="#__codelineno-0-304"><span class="linenos" data-linenos="304 "></span></a>                        <span class="n">instance_score</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]),</span>
+<a id="__codelineno-0-305" name="__codelineno-0-305"></a><a href="#__codelineno-0-305"><span class="linenos" data-linenos="305 "></span></a>                        <span class="n">pose</span><span class="o">=</span><span class="n">pose</span><span class="p">,</span>
+<a id="__codelineno-0-306" name="__codelineno-0-306"></a><a href="#__codelineno-0-306"><span class="linenos" data-linenos="306 "></span></a>                        <span class="n">bbox</span><span class="o">=</span><span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
+<a id="__codelineno-0-307" name="__codelineno-0-307"></a><a href="#__codelineno-0-307"><span class="linenos" data-linenos="307 "></span></a>                        <span class="n">crop</span><span class="o">=</span><span class="n">crop</span><span class="p">,</span>
+<a id="__codelineno-0-308" name="__codelineno-0-308"></a><a href="#__codelineno-0-308"><span class="linenos" data-linenos="308 "></span></a>                        <span class="n">mask</span><span class="o">=</span><span class="n">masks</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
+<a id="__codelineno-0-309" name="__codelineno-0-309"></a><a href="#__codelineno-0-309"><span class="linenos" data-linenos="309 "></span></a>                    <span class="p">)</span>
+<a id="__codelineno-0-310" name="__codelineno-0-310"></a><a href="#__codelineno-0-310"><span class="linenos" data-linenos="310 "></span></a>                <span class="p">)</span>
+<a id="__codelineno-0-311" name="__codelineno-0-311"></a><a href="#__codelineno-0-311"><span class="linenos" data-linenos="311 "></span></a>
+<a id="__codelineno-0-312" name="__codelineno-0-312"></a><a href="#__codelineno-0-312"><span class="linenos" data-linenos="312 "></span></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-313" name="__codelineno-0-313"></a><a href="#__codelineno-0-313"><span class="linenos" data-linenos="313 "></span></a>                <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span>
+<a id="__codelineno-0-314" name="__codelineno-0-314"></a><a href="#__codelineno-0-314"><span class="linenos" data-linenos="314 "></span></a>
+<a id="__codelineno-0-315" name="__codelineno-0-315"></a><a href="#__codelineno-0-315"><span class="linenos" data-linenos="315 "></span></a>            <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+<a id="__codelineno-0-316" name="__codelineno-0-316"></a><a href="#__codelineno-0-316"><span class="linenos" data-linenos="316 "></span></a>                <span class="n">Frame</span><span class="p">(</span>
+<a id="__codelineno-0-317" name="__codelineno-0-317"></a><a href="#__codelineno-0-317"><span class="linenos" data-linenos="317 "></span></a>                    <span class="n">video_id</span><span class="o">=</span><span class="n">label_idx</span><span class="p">,</span>
+<a id="__codelineno-0-318" name="__codelineno-0-318"></a><a href="#__codelineno-0-318"><span class="linenos" data-linenos="318 "></span></a>                    <span class="n">frame_id</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+<a id="__codelineno-0-319" name="__codelineno-0-319"></a><a href="#__codelineno-0-319"><span class="linenos" data-linenos="319 "></span></a>                    <span class="n">vid_file</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">image_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+<a id="__codelineno-0-320" name="__codelineno-0-320"></a><a href="#__codelineno-0-320"><span class="linenos" data-linenos="320 "></span></a>                    <span class="n">img_shape</span><span class="o">=</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+<a id="__codelineno-0-321" name="__codelineno-0-321"></a><a href="#__codelineno-0-321"><span class="linenos" data-linenos="321 "></span></a>                    <span class="n">instances</span><span class="o">=</span><span class="n">instances</span><span class="p">,</span>
+<a id="__codelineno-0-322" name="__codelineno-0-322"></a><a href="#__codelineno-0-322"><span class="linenos" data-linenos="322 "></span></a>                <span class="p">)</span>
+<a id="__codelineno-0-323" name="__codelineno-0-323"></a><a href="#__codelineno-0-323"><span class="linenos" data-linenos="323 "></span></a>            <span class="p">)</span>
+<a id="__codelineno-0-324" name="__codelineno-0-324"></a><a href="#__codelineno-0-324"><span class="linenos" data-linenos="324 "></span></a>
+<a id="__codelineno-0-325" name="__codelineno-0-325"></a><a href="#__codelineno-0-325"><span class="linenos" data-linenos="325 "></span></a>        <span class="c1"># pad bbox to max size</span>
+<a id="__codelineno-0-326" name="__codelineno-0-326"></a><a href="#__codelineno-0-326"><span class="linenos" data-linenos="326 "></span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_tight_bbox</span><span class="p">:</span>
+<a id="__codelineno-0-327" name="__codelineno-0-327"></a><a href="#__codelineno-0-327"><span class="linenos" data-linenos="327 "></span></a>            <span class="c1"># bound the max crop size to the user defined crop size</span>
+<a id="__codelineno-0-328" name="__codelineno-0-328"></a><a href="#__codelineno-0-328"><span class="linenos" data-linenos="328 "></span></a>            <span class="n">max_crop_h</span> <span class="o">=</span> <span class="n">crop_size</span> <span class="k">if</span> <span class="n">max_crop_h</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_crop_h</span><span class="p">,</span> <span class="n">crop_size</span><span class="p">)</span>
+<a id="__codelineno-0-329" name="__codelineno-0-329"></a><a href="#__codelineno-0-329"><span class="linenos" data-linenos="329 "></span></a>            <span class="n">max_crop_w</span> <span class="o">=</span> <span class="n">crop_size</span> <span class="k">if</span> <span class="n">max_crop_w</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_crop_w</span><span class="p">,</span> <span class="n">crop_size</span><span class="p">)</span>
+<a id="__codelineno-0-330" name="__codelineno-0-330"></a><a href="#__codelineno-0-330"><span class="linenos" data-linenos="330 "></span></a>            <span class="c1"># gather all the crops</span>
+<a id="__codelineno-0-331" name="__codelineno-0-331"></a><a href="#__codelineno-0-331"><span class="linenos" data-linenos="331 "></span></a>            <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frames</span><span class="p">:</span>
+<a id="__codelineno-0-332" name="__codelineno-0-332"></a><a href="#__codelineno-0-332"><span class="linenos" data-linenos="332 "></span></a>                <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">instances</span><span class="p">:</span>
+<a id="__codelineno-0-333" name="__codelineno-0-333"></a><a href="#__codelineno-0-333"><span class="linenos" data-linenos="333 "></span></a>                    <span class="n">data_utils</span><span class="o">.</span><span class="n">pad_variable_size_crops</span><span class="p">(</span>
+<a id="__codelineno-0-334" name="__codelineno-0-334"></a><a href="#__codelineno-0-334"><span class="linenos" data-linenos="334 "></span></a>                        <span class="n">instance</span><span class="p">,</span> <span class="p">(</span><span class="n">max_crop_h</span><span class="p">,</span> <span class="n">max_crop_w</span><span class="p">)</span>
+<a id="__codelineno-0-335" name="__codelineno-0-335"></a><a href="#__codelineno-0-335"><span class="linenos" data-linenos="335 "></span></a>                    <span class="p">)</span>
+<a id="__codelineno-0-336" name="__codelineno-0-336"></a><a href="#__codelineno-0-336"><span class="linenos" data-linenos="336 "></span></a>
+<a id="__codelineno-0-337" name="__codelineno-0-337"></a><a href="#__codelineno-0-337"><span class="linenos" data-linenos="337 "></span></a>        <span class="k">return</span> <span class="n">frames</span>
 </code></pre></div>
               </details>
 
@@ -5567,69 +5527,67 @@ See <code>dreem.io.data_structures</code> for more info.</p>
 <a id="__codelineno-0-274" name="__codelineno-0-274"></a><a href="#__codelineno-0-274"><span class="linenos" data-linenos="274 "></span></a>            <span class="n">pose</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;centroid&quot;</span><span class="p">:</span> <span class="n">dict_centroids</span><span class="p">[</span><span class="n">gt_track_ids</span><span class="p">[</span><span class="n">j</span><span class="p">]]}</span>  <span class="c1"># more formatting</span>
 <a id="__codelineno-0-275" name="__codelineno-0-275"></a><a href="#__codelineno-0-275"><span class="linenos" data-linenos="275 "></span></a>            <span class="n">crop_raw</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">crop_bbox</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
 <a id="__codelineno-0-276" name="__codelineno-0-276"></a><a href="#__codelineno-0-276"><span class="linenos" data-linenos="276 "></span></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mask_to_crop</span><span class="p">:</span>
-<a id="__codelineno-0-277" name="__codelineno-0-277"></a><a href="#__codelineno-0-277"><span class="linenos" data-linenos="277 "></span></a>                <span class="k">if</span> <span class="p">(</span>
-<a id="__codelineno-0-278" name="__codelineno-0-278"></a><a href="#__codelineno-0-278"><span class="linenos" data-linenos="278 "></span></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">augmentations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-<a id="__codelineno-0-279" name="__codelineno-0-279"></a><a href="#__codelineno-0-279"><span class="linenos" data-linenos="279 "></span></a>                <span class="p">):</span>  <span class="c1"># TODO: change this to a flag that the user passes in apply_mask_to_crop</span>
-<a id="__codelineno-0-280" name="__codelineno-0-280"></a><a href="#__codelineno-0-280"><span class="linenos" data-linenos="280 "></span></a>                    <span class="n">cropped_mask</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">crop_bbox</span><span class="p">(</span><span class="n">aug_mask</span><span class="p">,</span> <span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
-<a id="__codelineno-0-281" name="__codelineno-0-281"></a><a href="#__codelineno-0-281"><span class="linenos" data-linenos="281 "></span></a>                    <span class="c1"># filter for the instance of interest</span>
-<a id="__codelineno-0-282" name="__codelineno-0-282"></a><a href="#__codelineno-0-282"><span class="linenos" data-linenos="282 "></span></a>                    <span class="n">cropped_mask</span><span class="p">[</span><span class="n">cropped_mask</span> <span class="o">!=</span> <span class="n">gt_track_ids</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-0-283" name="__codelineno-0-283"></a><a href="#__codelineno-0-283"><span class="linenos" data-linenos="283 "></span></a>                <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-284" name="__codelineno-0-284"></a><a href="#__codelineno-0-284"><span class="linenos" data-linenos="284 "></span></a>                    <span class="c1"># masks[j] is already filtered for the instance of interest</span>
-<a id="__codelineno-0-285" name="__codelineno-0-285"></a><a href="#__codelineno-0-285"><span class="linenos" data-linenos="285 "></span></a>                    <span class="n">cropped_mask</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">crop_bbox</span><span class="p">(</span><span class="n">masks</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
-<a id="__codelineno-0-286" name="__codelineno-0-286"></a><a href="#__codelineno-0-286"><span class="linenos" data-linenos="286 "></span></a>
-<a id="__codelineno-0-287" name="__codelineno-0-287"></a><a href="#__codelineno-0-287"><span class="linenos" data-linenos="287 "></span></a>                <span class="n">cropped_mask</span><span class="p">[</span><span class="n">cropped_mask</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-<a id="__codelineno-0-288" name="__codelineno-0-288"></a><a href="#__codelineno-0-288"><span class="linenos" data-linenos="288 "></span></a>                <span class="c1"># apply mask to crop</span>
-<a id="__codelineno-0-289" name="__codelineno-0-289"></a><a href="#__codelineno-0-289"><span class="linenos" data-linenos="289 "></span></a>                <span class="n">crop</span> <span class="o">=</span> <span class="n">crop_raw</span> <span class="o">*</span> <span class="n">cropped_mask</span>
-<a id="__codelineno-0-290" name="__codelineno-0-290"></a><a href="#__codelineno-0-290"><span class="linenos" data-linenos="290 "></span></a>            <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-291" name="__codelineno-0-291"></a><a href="#__codelineno-0-291"><span class="linenos" data-linenos="291 "></span></a>                <span class="n">crop</span> <span class="o">=</span> <span class="n">crop_raw</span>
-<a id="__codelineno-0-292" name="__codelineno-0-292"></a><a href="#__codelineno-0-292"><span class="linenos" data-linenos="292 "></span></a>
-<a id="__codelineno-0-293" name="__codelineno-0-293"></a><a href="#__codelineno-0-293"><span class="linenos" data-linenos="293 "></span></a>            <span class="n">c</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">crop</span><span class="o">.</span><span class="n">shape</span>
-<a id="__codelineno-0-294" name="__codelineno-0-294"></a><a href="#__codelineno-0-294"><span class="linenos" data-linenos="294 "></span></a>            <span class="k">if</span> <span class="n">h</span> <span class="o">&gt;</span> <span class="n">max_crop_h</span><span class="p">:</span>
-<a id="__codelineno-0-295" name="__codelineno-0-295"></a><a href="#__codelineno-0-295"><span class="linenos" data-linenos="295 "></span></a>                <span class="n">max_crop_h</span> <span class="o">=</span> <span class="n">h</span>
-<a id="__codelineno-0-296" name="__codelineno-0-296"></a><a href="#__codelineno-0-296"><span class="linenos" data-linenos="296 "></span></a>            <span class="k">if</span> <span class="n">w</span> <span class="o">&gt;</span> <span class="n">max_crop_w</span><span class="p">:</span>
-<a id="__codelineno-0-297" name="__codelineno-0-297"></a><a href="#__codelineno-0-297"><span class="linenos" data-linenos="297 "></span></a>                <span class="n">max_crop_w</span> <span class="o">=</span> <span class="n">w</span>
-<a id="__codelineno-0-298" name="__codelineno-0-298"></a><a href="#__codelineno-0-298"><span class="linenos" data-linenos="298 "></span></a>
-<a id="__codelineno-0-299" name="__codelineno-0-299"></a><a href="#__codelineno-0-299"><span class="linenos" data-linenos="299 "></span></a>            <span class="n">instances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-<a id="__codelineno-0-300" name="__codelineno-0-300"></a><a href="#__codelineno-0-300"><span class="linenos" data-linenos="300 "></span></a>                <span class="n">Instance</span><span class="p">(</span>
-<a id="__codelineno-0-301" name="__codelineno-0-301"></a><a href="#__codelineno-0-301"><span class="linenos" data-linenos="301 "></span></a>                    <span class="n">gt_track_id</span><span class="o">=</span><span class="n">gt_track_ids</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
-<a id="__codelineno-0-302" name="__codelineno-0-302"></a><a href="#__codelineno-0-302"><span class="linenos" data-linenos="302 "></span></a>                    <span class="n">pred_track_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-303" name="__codelineno-0-303"></a><a href="#__codelineno-0-303"><span class="linenos" data-linenos="303 "></span></a>                    <span class="n">centroid</span><span class="o">=</span><span class="n">instance_centroid</span><span class="p">,</span>
-<a id="__codelineno-0-304" name="__codelineno-0-304"></a><a href="#__codelineno-0-304"><span class="linenos" data-linenos="304 "></span></a>                    <span class="n">skeleton</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skeleton</span><span class="p">,</span>
-<a id="__codelineno-0-305" name="__codelineno-0-305"></a><a href="#__codelineno-0-305"><span class="linenos" data-linenos="305 "></span></a>                    <span class="n">point_scores</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]),</span>
-<a id="__codelineno-0-306" name="__codelineno-0-306"></a><a href="#__codelineno-0-306"><span class="linenos" data-linenos="306 "></span></a>                    <span class="n">instance_score</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]),</span>
-<a id="__codelineno-0-307" name="__codelineno-0-307"></a><a href="#__codelineno-0-307"><span class="linenos" data-linenos="307 "></span></a>                    <span class="n">pose</span><span class="o">=</span><span class="n">pose</span><span class="p">,</span>
-<a id="__codelineno-0-308" name="__codelineno-0-308"></a><a href="#__codelineno-0-308"><span class="linenos" data-linenos="308 "></span></a>                    <span class="n">bbox</span><span class="o">=</span><span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
-<a id="__codelineno-0-309" name="__codelineno-0-309"></a><a href="#__codelineno-0-309"><span class="linenos" data-linenos="309 "></span></a>                    <span class="n">crop</span><span class="o">=</span><span class="n">crop</span><span class="p">,</span>
-<a id="__codelineno-0-310" name="__codelineno-0-310"></a><a href="#__codelineno-0-310"><span class="linenos" data-linenos="310 "></span></a>                    <span class="n">mask</span><span class="o">=</span><span class="n">masks</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
-<a id="__codelineno-0-311" name="__codelineno-0-311"></a><a href="#__codelineno-0-311"><span class="linenos" data-linenos="311 "></span></a>                <span class="p">)</span>
-<a id="__codelineno-0-312" name="__codelineno-0-312"></a><a href="#__codelineno-0-312"><span class="linenos" data-linenos="312 "></span></a>            <span class="p">)</span>
-<a id="__codelineno-0-313" name="__codelineno-0-313"></a><a href="#__codelineno-0-313"><span class="linenos" data-linenos="313 "></span></a>
-<a id="__codelineno-0-314" name="__codelineno-0-314"></a><a href="#__codelineno-0-314"><span class="linenos" data-linenos="314 "></span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-315" name="__codelineno-0-315"></a><a href="#__codelineno-0-315"><span class="linenos" data-linenos="315 "></span></a>            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span>
-<a id="__codelineno-0-316" name="__codelineno-0-316"></a><a href="#__codelineno-0-316"><span class="linenos" data-linenos="316 "></span></a>
-<a id="__codelineno-0-317" name="__codelineno-0-317"></a><a href="#__codelineno-0-317"><span class="linenos" data-linenos="317 "></span></a>        <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-<a id="__codelineno-0-318" name="__codelineno-0-318"></a><a href="#__codelineno-0-318"><span class="linenos" data-linenos="318 "></span></a>            <span class="n">Frame</span><span class="p">(</span>
-<a id="__codelineno-0-319" name="__codelineno-0-319"></a><a href="#__codelineno-0-319"><span class="linenos" data-linenos="319 "></span></a>                <span class="n">video_id</span><span class="o">=</span><span class="n">label_idx</span><span class="p">,</span>
-<a id="__codelineno-0-320" name="__codelineno-0-320"></a><a href="#__codelineno-0-320"><span class="linenos" data-linenos="320 "></span></a>                <span class="n">frame_id</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
-<a id="__codelineno-0-321" name="__codelineno-0-321"></a><a href="#__codelineno-0-321"><span class="linenos" data-linenos="321 "></span></a>                <span class="n">vid_file</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">image_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-<a id="__codelineno-0-322" name="__codelineno-0-322"></a><a href="#__codelineno-0-322"><span class="linenos" data-linenos="322 "></span></a>                <span class="n">img_shape</span><span class="o">=</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
-<a id="__codelineno-0-323" name="__codelineno-0-323"></a><a href="#__codelineno-0-323"><span class="linenos" data-linenos="323 "></span></a>                <span class="n">instances</span><span class="o">=</span><span class="n">instances</span><span class="p">,</span>
-<a id="__codelineno-0-324" name="__codelineno-0-324"></a><a href="#__codelineno-0-324"><span class="linenos" data-linenos="324 "></span></a>            <span class="p">)</span>
-<a id="__codelineno-0-325" name="__codelineno-0-325"></a><a href="#__codelineno-0-325"><span class="linenos" data-linenos="325 "></span></a>        <span class="p">)</span>
-<a id="__codelineno-0-326" name="__codelineno-0-326"></a><a href="#__codelineno-0-326"><span class="linenos" data-linenos="326 "></span></a>
-<a id="__codelineno-0-327" name="__codelineno-0-327"></a><a href="#__codelineno-0-327"><span class="linenos" data-linenos="327 "></span></a>    <span class="c1"># pad bbox to max size</span>
-<a id="__codelineno-0-328" name="__codelineno-0-328"></a><a href="#__codelineno-0-328"><span class="linenos" data-linenos="328 "></span></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_tight_bbox</span><span class="p">:</span>
-<a id="__codelineno-0-329" name="__codelineno-0-329"></a><a href="#__codelineno-0-329"><span class="linenos" data-linenos="329 "></span></a>        <span class="c1"># bound the max crop size to the user defined crop size</span>
-<a id="__codelineno-0-330" name="__codelineno-0-330"></a><a href="#__codelineno-0-330"><span class="linenos" data-linenos="330 "></span></a>        <span class="n">max_crop_h</span> <span class="o">=</span> <span class="n">crop_size</span> <span class="k">if</span> <span class="n">max_crop_h</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_crop_h</span><span class="p">,</span> <span class="n">crop_size</span><span class="p">)</span>
-<a id="__codelineno-0-331" name="__codelineno-0-331"></a><a href="#__codelineno-0-331"><span class="linenos" data-linenos="331 "></span></a>        <span class="n">max_crop_w</span> <span class="o">=</span> <span class="n">crop_size</span> <span class="k">if</span> <span class="n">max_crop_w</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_crop_w</span><span class="p">,</span> <span class="n">crop_size</span><span class="p">)</span>
-<a id="__codelineno-0-332" name="__codelineno-0-332"></a><a href="#__codelineno-0-332"><span class="linenos" data-linenos="332 "></span></a>        <span class="c1"># gather all the crops</span>
-<a id="__codelineno-0-333" name="__codelineno-0-333"></a><a href="#__codelineno-0-333"><span class="linenos" data-linenos="333 "></span></a>        <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frames</span><span class="p">:</span>
-<a id="__codelineno-0-334" name="__codelineno-0-334"></a><a href="#__codelineno-0-334"><span class="linenos" data-linenos="334 "></span></a>            <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">instances</span><span class="p">:</span>
-<a id="__codelineno-0-335" name="__codelineno-0-335"></a><a href="#__codelineno-0-335"><span class="linenos" data-linenos="335 "></span></a>                <span class="n">data_utils</span><span class="o">.</span><span class="n">pad_variable_size_crops</span><span class="p">(</span>
-<a id="__codelineno-0-336" name="__codelineno-0-336"></a><a href="#__codelineno-0-336"><span class="linenos" data-linenos="336 "></span></a>                    <span class="n">instance</span><span class="p">,</span> <span class="p">(</span><span class="n">max_crop_h</span><span class="p">,</span> <span class="n">max_crop_w</span><span class="p">)</span>
-<a id="__codelineno-0-337" name="__codelineno-0-337"></a><a href="#__codelineno-0-337"><span class="linenos" data-linenos="337 "></span></a>                <span class="p">)</span>
-<a id="__codelineno-0-338" name="__codelineno-0-338"></a><a href="#__codelineno-0-338"><span class="linenos" data-linenos="338 "></span></a>
-<a id="__codelineno-0-339" name="__codelineno-0-339"></a><a href="#__codelineno-0-339"><span class="linenos" data-linenos="339 "></span></a>    <span class="k">return</span> <span class="n">frames</span>
+<a id="__codelineno-0-277" name="__codelineno-0-277"></a><a href="#__codelineno-0-277"><span class="linenos" data-linenos="277 "></span></a>                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">augmentations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-278" name="__codelineno-0-278"></a><a href="#__codelineno-0-278"><span class="linenos" data-linenos="278 "></span></a>                    <span class="n">cropped_mask</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">crop_bbox</span><span class="p">(</span><span class="n">aug_mask</span><span class="p">,</span> <span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+<a id="__codelineno-0-279" name="__codelineno-0-279"></a><a href="#__codelineno-0-279"><span class="linenos" data-linenos="279 "></span></a>                    <span class="c1"># filter for the instance of interest</span>
+<a id="__codelineno-0-280" name="__codelineno-0-280"></a><a href="#__codelineno-0-280"><span class="linenos" data-linenos="280 "></span></a>                    <span class="n">cropped_mask</span><span class="p">[</span><span class="n">cropped_mask</span> <span class="o">!=</span> <span class="n">gt_track_ids</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-281" name="__codelineno-0-281"></a><a href="#__codelineno-0-281"><span class="linenos" data-linenos="281 "></span></a>                <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-282" name="__codelineno-0-282"></a><a href="#__codelineno-0-282"><span class="linenos" data-linenos="282 "></span></a>                    <span class="c1"># masks[j] is already filtered for the instance of interest</span>
+<a id="__codelineno-0-283" name="__codelineno-0-283"></a><a href="#__codelineno-0-283"><span class="linenos" data-linenos="283 "></span></a>                    <span class="n">cropped_mask</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">crop_bbox</span><span class="p">(</span><span class="n">masks</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+<a id="__codelineno-0-284" name="__codelineno-0-284"></a><a href="#__codelineno-0-284"><span class="linenos" data-linenos="284 "></span></a>
+<a id="__codelineno-0-285" name="__codelineno-0-285"></a><a href="#__codelineno-0-285"><span class="linenos" data-linenos="285 "></span></a>                <span class="n">cropped_mask</span><span class="p">[</span><span class="n">cropped_mask</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="__codelineno-0-286" name="__codelineno-0-286"></a><a href="#__codelineno-0-286"><span class="linenos" data-linenos="286 "></span></a>                <span class="c1"># apply mask to crop</span>
+<a id="__codelineno-0-287" name="__codelineno-0-287"></a><a href="#__codelineno-0-287"><span class="linenos" data-linenos="287 "></span></a>                <span class="n">crop</span> <span class="o">=</span> <span class="n">crop_raw</span> <span class="o">*</span> <span class="n">cropped_mask</span>
+<a id="__codelineno-0-288" name="__codelineno-0-288"></a><a href="#__codelineno-0-288"><span class="linenos" data-linenos="288 "></span></a>            <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-289" name="__codelineno-0-289"></a><a href="#__codelineno-0-289"><span class="linenos" data-linenos="289 "></span></a>                <span class="n">crop</span> <span class="o">=</span> <span class="n">crop_raw</span>
+<a id="__codelineno-0-290" name="__codelineno-0-290"></a><a href="#__codelineno-0-290"><span class="linenos" data-linenos="290 "></span></a>
+<a id="__codelineno-0-291" name="__codelineno-0-291"></a><a href="#__codelineno-0-291"><span class="linenos" data-linenos="291 "></span></a>            <span class="n">c</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">crop</span><span class="o">.</span><span class="n">shape</span>
+<a id="__codelineno-0-292" name="__codelineno-0-292"></a><a href="#__codelineno-0-292"><span class="linenos" data-linenos="292 "></span></a>            <span class="k">if</span> <span class="n">h</span> <span class="o">&gt;</span> <span class="n">max_crop_h</span><span class="p">:</span>
+<a id="__codelineno-0-293" name="__codelineno-0-293"></a><a href="#__codelineno-0-293"><span class="linenos" data-linenos="293 "></span></a>                <span class="n">max_crop_h</span> <span class="o">=</span> <span class="n">h</span>
+<a id="__codelineno-0-294" name="__codelineno-0-294"></a><a href="#__codelineno-0-294"><span class="linenos" data-linenos="294 "></span></a>            <span class="k">if</span> <span class="n">w</span> <span class="o">&gt;</span> <span class="n">max_crop_w</span><span class="p">:</span>
+<a id="__codelineno-0-295" name="__codelineno-0-295"></a><a href="#__codelineno-0-295"><span class="linenos" data-linenos="295 "></span></a>                <span class="n">max_crop_w</span> <span class="o">=</span> <span class="n">w</span>
+<a id="__codelineno-0-296" name="__codelineno-0-296"></a><a href="#__codelineno-0-296"><span class="linenos" data-linenos="296 "></span></a>
+<a id="__codelineno-0-297" name="__codelineno-0-297"></a><a href="#__codelineno-0-297"><span class="linenos" data-linenos="297 "></span></a>            <span class="n">instances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+<a id="__codelineno-0-298" name="__codelineno-0-298"></a><a href="#__codelineno-0-298"><span class="linenos" data-linenos="298 "></span></a>                <span class="n">Instance</span><span class="p">(</span>
+<a id="__codelineno-0-299" name="__codelineno-0-299"></a><a href="#__codelineno-0-299"><span class="linenos" data-linenos="299 "></span></a>                    <span class="n">gt_track_id</span><span class="o">=</span><span class="n">gt_track_ids</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
+<a id="__codelineno-0-300" name="__codelineno-0-300"></a><a href="#__codelineno-0-300"><span class="linenos" data-linenos="300 "></span></a>                    <span class="n">pred_track_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-301" name="__codelineno-0-301"></a><a href="#__codelineno-0-301"><span class="linenos" data-linenos="301 "></span></a>                    <span class="n">centroid</span><span class="o">=</span><span class="n">instance_centroid</span><span class="p">,</span>
+<a id="__codelineno-0-302" name="__codelineno-0-302"></a><a href="#__codelineno-0-302"><span class="linenos" data-linenos="302 "></span></a>                    <span class="n">skeleton</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skeleton</span><span class="p">,</span>
+<a id="__codelineno-0-303" name="__codelineno-0-303"></a><a href="#__codelineno-0-303"><span class="linenos" data-linenos="303 "></span></a>                    <span class="n">point_scores</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]),</span>
+<a id="__codelineno-0-304" name="__codelineno-0-304"></a><a href="#__codelineno-0-304"><span class="linenos" data-linenos="304 "></span></a>                    <span class="n">instance_score</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]),</span>
+<a id="__codelineno-0-305" name="__codelineno-0-305"></a><a href="#__codelineno-0-305"><span class="linenos" data-linenos="305 "></span></a>                    <span class="n">pose</span><span class="o">=</span><span class="n">pose</span><span class="p">,</span>
+<a id="__codelineno-0-306" name="__codelineno-0-306"></a><a href="#__codelineno-0-306"><span class="linenos" data-linenos="306 "></span></a>                    <span class="n">bbox</span><span class="o">=</span><span class="n">bboxes</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
+<a id="__codelineno-0-307" name="__codelineno-0-307"></a><a href="#__codelineno-0-307"><span class="linenos" data-linenos="307 "></span></a>                    <span class="n">crop</span><span class="o">=</span><span class="n">crop</span><span class="p">,</span>
+<a id="__codelineno-0-308" name="__codelineno-0-308"></a><a href="#__codelineno-0-308"><span class="linenos" data-linenos="308 "></span></a>                    <span class="n">mask</span><span class="o">=</span><span class="n">masks</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
+<a id="__codelineno-0-309" name="__codelineno-0-309"></a><a href="#__codelineno-0-309"><span class="linenos" data-linenos="309 "></span></a>                <span class="p">)</span>
+<a id="__codelineno-0-310" name="__codelineno-0-310"></a><a href="#__codelineno-0-310"><span class="linenos" data-linenos="310 "></span></a>            <span class="p">)</span>
+<a id="__codelineno-0-311" name="__codelineno-0-311"></a><a href="#__codelineno-0-311"><span class="linenos" data-linenos="311 "></span></a>
+<a id="__codelineno-0-312" name="__codelineno-0-312"></a><a href="#__codelineno-0-312"><span class="linenos" data-linenos="312 "></span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-313" name="__codelineno-0-313"></a><a href="#__codelineno-0-313"><span class="linenos" data-linenos="313 "></span></a>            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span>
+<a id="__codelineno-0-314" name="__codelineno-0-314"></a><a href="#__codelineno-0-314"><span class="linenos" data-linenos="314 "></span></a>
+<a id="__codelineno-0-315" name="__codelineno-0-315"></a><a href="#__codelineno-0-315"><span class="linenos" data-linenos="315 "></span></a>        <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+<a id="__codelineno-0-316" name="__codelineno-0-316"></a><a href="#__codelineno-0-316"><span class="linenos" data-linenos="316 "></span></a>            <span class="n">Frame</span><span class="p">(</span>
+<a id="__codelineno-0-317" name="__codelineno-0-317"></a><a href="#__codelineno-0-317"><span class="linenos" data-linenos="317 "></span></a>                <span class="n">video_id</span><span class="o">=</span><span class="n">label_idx</span><span class="p">,</span>
+<a id="__codelineno-0-318" name="__codelineno-0-318"></a><a href="#__codelineno-0-318"><span class="linenos" data-linenos="318 "></span></a>                <span class="n">frame_id</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+<a id="__codelineno-0-319" name="__codelineno-0-319"></a><a href="#__codelineno-0-319"><span class="linenos" data-linenos="319 "></span></a>                <span class="n">vid_file</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">image_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+<a id="__codelineno-0-320" name="__codelineno-0-320"></a><a href="#__codelineno-0-320"><span class="linenos" data-linenos="320 "></span></a>                <span class="n">img_shape</span><span class="o">=</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+<a id="__codelineno-0-321" name="__codelineno-0-321"></a><a href="#__codelineno-0-321"><span class="linenos" data-linenos="321 "></span></a>                <span class="n">instances</span><span class="o">=</span><span class="n">instances</span><span class="p">,</span>
+<a id="__codelineno-0-322" name="__codelineno-0-322"></a><a href="#__codelineno-0-322"><span class="linenos" data-linenos="322 "></span></a>            <span class="p">)</span>
+<a id="__codelineno-0-323" name="__codelineno-0-323"></a><a href="#__codelineno-0-323"><span class="linenos" data-linenos="323 "></span></a>        <span class="p">)</span>
+<a id="__codelineno-0-324" name="__codelineno-0-324"></a><a href="#__codelineno-0-324"><span class="linenos" data-linenos="324 "></span></a>
+<a id="__codelineno-0-325" name="__codelineno-0-325"></a><a href="#__codelineno-0-325"><span class="linenos" data-linenos="325 "></span></a>    <span class="c1"># pad bbox to max size</span>
+<a id="__codelineno-0-326" name="__codelineno-0-326"></a><a href="#__codelineno-0-326"><span class="linenos" data-linenos="326 "></span></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_tight_bbox</span><span class="p">:</span>
+<a id="__codelineno-0-327" name="__codelineno-0-327"></a><a href="#__codelineno-0-327"><span class="linenos" data-linenos="327 "></span></a>        <span class="c1"># bound the max crop size to the user defined crop size</span>
+<a id="__codelineno-0-328" name="__codelineno-0-328"></a><a href="#__codelineno-0-328"><span class="linenos" data-linenos="328 "></span></a>        <span class="n">max_crop_h</span> <span class="o">=</span> <span class="n">crop_size</span> <span class="k">if</span> <span class="n">max_crop_h</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_crop_h</span><span class="p">,</span> <span class="n">crop_size</span><span class="p">)</span>
+<a id="__codelineno-0-329" name="__codelineno-0-329"></a><a href="#__codelineno-0-329"><span class="linenos" data-linenos="329 "></span></a>        <span class="n">max_crop_w</span> <span class="o">=</span> <span class="n">crop_size</span> <span class="k">if</span> <span class="n">max_crop_w</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_crop_w</span><span class="p">,</span> <span class="n">crop_size</span><span class="p">)</span>
+<a id="__codelineno-0-330" name="__codelineno-0-330"></a><a href="#__codelineno-0-330"><span class="linenos" data-linenos="330 "></span></a>        <span class="c1"># gather all the crops</span>
+<a id="__codelineno-0-331" name="__codelineno-0-331"></a><a href="#__codelineno-0-331"><span class="linenos" data-linenos="331 "></span></a>        <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frames</span><span class="p">:</span>
+<a id="__codelineno-0-332" name="__codelineno-0-332"></a><a href="#__codelineno-0-332"><span class="linenos" data-linenos="332 "></span></a>            <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">instances</span><span class="p">:</span>
+<a id="__codelineno-0-333" name="__codelineno-0-333"></a><a href="#__codelineno-0-333"><span class="linenos" data-linenos="333 "></span></a>                <span class="n">data_utils</span><span class="o">.</span><span class="n">pad_variable_size_crops</span><span class="p">(</span>
+<a id="__codelineno-0-334" name="__codelineno-0-334"></a><a href="#__codelineno-0-334"><span class="linenos" data-linenos="334 "></span></a>                    <span class="n">instance</span><span class="p">,</span> <span class="p">(</span><span class="n">max_crop_h</span><span class="p">,</span> <span class="n">max_crop_w</span><span class="p">)</span>
+<a id="__codelineno-0-335" name="__codelineno-0-335"></a><a href="#__codelineno-0-335"><span class="linenos" data-linenos="335 "></span></a>                <span class="p">)</span>
+<a id="__codelineno-0-336" name="__codelineno-0-336"></a><a href="#__codelineno-0-336"><span class="linenos" data-linenos="336 "></span></a>
+<a id="__codelineno-0-337" name="__codelineno-0-337"></a><a href="#__codelineno-0-337"><span class="linenos" data-linenos="337 "></span></a>    <span class="k">return</span> <span class="n">frames</span>
 </code></pre></div>
             </details>
     </div>
@@ -8746,8 +8704,6 @@ Can either a fraction of the dataset (ie (0,1.0]) or number of chunks</p>
 
 
 
-  
-
 
 
 
@@ -8774,8 +8730,7 @@ Can either a fraction of the dataset (ie (0,1.0]) or number of chunks</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      Copyright &copy; 2024 - 2025 Talmo Lab – <a href="#__consent">Change cookie settings</a>
-
+      Copyright &copy; 2024 - 2025 Talmo Lab
     </div>
   
   
@@ -8822,85 +8777,6 @@ Can either a fraction of the dataset (ie (0,1.0]) or number of chunks</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    
-      <div class="md-consent" data-md-component="consent" id="__consent" hidden>
-        <div class="md-consent__overlay"></div>
-        <aside class="md-consent__inner">
-          <form class="md-consent__form md-grid md-typeset" name="consent">
-            
-
-
-
-<h4>Cookie consent</h4>
-<p>We use cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of our documentation and whether users find what they're searching for. With your consent, you're helping us to make our documentation better.</p>
-<input class="md-toggle" type="checkbox" id="__settings" >
-<div class="md-consent__settings">
-  <ul class="task-list">
-    
-    
-      
-        
-  
-  
-    
-    
-  
-  <li class="task-list-item">
-    <label class="task-list-control">
-      <input type="checkbox" name="analytics" checked>
-      <span class="task-list-indicator"></span>
-      Google Analytics
-    </label>
-  </li>
-
-      
-    
-    
-      
-        
-  
-  
-    
-    
-  
-  <li class="task-list-item">
-    <label class="task-list-control">
-      <input type="checkbox" name="github" checked>
-      <span class="task-list-indicator"></span>
-      GitHub
-    </label>
-  </li>
-
-      
-    
-    
-  </ul>
-</div>
-<div class="md-consent__controls">
-  
-    
-      <button class="md-button md-button--primary">Accept</button>
-    
-    
-    
-  
-    
-    
-      <button type="reset" class="md-button md-button--primary">Reject</button>
-    
-    
-  
-    
-    
-    
-      <label class="md-button" for="__settings">Manage settings</label>
-    
-  
-</div>
-          </form>
-        </aside>
-      </div>
-      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
     
     
       

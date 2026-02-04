@@ -8,31 +8,31 @@
       
       
       
-        <link rel="canonical" href="https://dreem.sleap.ai/dev/reference/dreem/training/">
+        <link rel="canonical" href="https://dreem.sleap.ai/dev/Examples/microscopy-demo/">
       
       
-        <link rel="prev" href="../models/visual_encoder/">
+        <link rel="prev" href="../../quickstart/">
       
       
-        <link rel="next" href="losses/">
+        <link rel="next" href="../dreem-demo/">
       
       
         
       
       
-      <link rel="icon" href="../../../assets/favicon.ico">
+      <link rel="icon" href="../../assets/favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
-        <title>training - DREEM documentation</title>
+        <title>Microscopy - DREEM documentation</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -51,13 +51,13 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../../css/mkdocstrings.css">
+      <link rel="stylesheet" href="../../css/mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../../css/termynal.css">
+      <link rel="stylesheet" href="../../css/termynal.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dreem.training" class="md-skip">
+        <a href="#dreem-workflow-for-microscopy" class="md-skip">
           Skip to content
         </a>
       
@@ -102,9 +102,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="DREEM documentation" class="md-header__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
+    <a href="../.." title="DREEM documentation" class="md-header__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
       
-  <img src="../../../assets/sleap-logo.png" alt="logo">
+  <img src="../../assets/sleap-logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              training
+              Microscopy
             
           </span>
         </div>
@@ -239,9 +239,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="DREEM documentation" class="md-nav__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
+    <a href="../.." title="DREEM documentation" class="md-nav__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
       
-  <img src="../../../assets/sleap-logo.png" alt="logo">
+  <img src="../../assets/sleap-logo.png" alt="logo">
 
     </a>
     DREEM documentation
@@ -268,7 +268,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -295,7 +295,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../installation/" class="md-nav__link">
+      <a href="../../installation/" class="md-nav__link">
         
   
   
@@ -322,7 +322,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../quickstart/" class="md-nav__link">
+      <a href="../../quickstart/" class="md-nav__link">
         
   
   
@@ -349,7 +349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../usage/" class="md-nav__link">
+      <a href="../../usage/" class="md-nav__link">
         
   
   
@@ -373,8 +373,10 @@
       
   
   
+    
   
   
+  
     
     
     
@@ -385,11 +387,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
@@ -410,7 +412,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -428,7 +430,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../Examples/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -456,7 +458,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../quickstart/" class="md-nav__link">
+      <a href="../../quickstart/" class="md-nav__link">
         
   
   
@@ -481,10 +483,35 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../../Examples/microscopy-demo/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microscopy
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -500,6 +527,108 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dreem-workflow-for-microscopy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DREEM workflow for microscopy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DREEM workflow for microscopy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-raw-tiff-stacks-to-tracked-identities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From raw tiff stacks to tracked identities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Detection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#view-the-segmentation-result-and-original-image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        View the segmentation result and original image
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tracking
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tracking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#visualize-the-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visualize the results
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -512,7 +641,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../Examples/dreem-demo/" class="md-nav__link">
+      <a href="../dreem-demo/" class="md-nav__link">
         
   
   
@@ -613,7 +742,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../io/" class="md-nav__link ">
+            <a href="../../io/" class="md-nav__link ">
               
   
   
@@ -655,7 +784,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../io/asso_matrix/" class="md-nav__link">
+      <a href="../../io/asso_matrix/" class="md-nav__link">
         
   
   
@@ -683,7 +812,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../io/config/" class="md-nav__link">
+      <a href="../../io/config/" class="md-nav__link">
         
   
   
@@ -711,7 +840,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../io/frame/" class="md-nav__link">
+      <a href="../../io/frame/" class="md-nav__link">
         
   
   
@@ -739,7 +868,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../io/instance/" class="md-nav__link">
+      <a href="../../io/instance/" class="md-nav__link">
         
   
   
@@ -767,7 +896,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../io/track/" class="md-nav__link">
+      <a href="../../io/track/" class="md-nav__link">
         
   
   
@@ -795,7 +924,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../io/visualize/" class="md-nav__link">
+      <a href="../../io/visualize/" class="md-nav__link">
         
   
   
@@ -845,7 +974,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../models/" class="md-nav__link ">
+            <a href="../../models/" class="md-nav__link ">
               
   
   
@@ -887,7 +1016,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/global_tracking_transformer/" class="md-nav__link">
+      <a href="../../models/global_tracking_transformer/" class="md-nav__link">
         
   
   
@@ -915,7 +1044,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/gtr_runner/" class="md-nav__link">
+      <a href="../../models/gtr_runner/" class="md-nav__link">
         
   
   
@@ -943,7 +1072,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/model_parts/" class="md-nav__link">
+      <a href="../../models/model_parts/" class="md-nav__link">
         
   
   
@@ -993,7 +1122,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../configs/" class="md-nav__link ">
+            <a href="../../configs/" class="md-nav__link ">
               
   
   
@@ -1035,7 +1164,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configs/config/" class="md-nav__link">
+      <a href="../../configs/config/" class="md-nav__link">
         
   
   
@@ -1063,7 +1192,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configs/eval/" class="md-nav__link">
+      <a href="../../configs/eval/" class="md-nav__link">
         
   
   
@@ -1091,7 +1220,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configs/inference/" class="md-nav__link">
+      <a href="../../configs/inference/" class="md-nav__link">
         
   
   
@@ -1119,7 +1248,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configs/training/" class="md-nav__link">
+      <a href="../../configs/training/" class="md-nav__link">
         
   
   
@@ -1155,7 +1284,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../cli/" class="md-nav__link">
+      <a href="../../cli/" class="md-nav__link">
         
   
   
@@ -1187,8 +1316,6 @@
       
   
   
-    
-  
   
   
     
@@ -1201,11 +1328,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
@@ -1226,7 +1353,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1241,8 +1368,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1252,15 +1377,15 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../reference/dreem/" class="md-nav__link ">
               
   
   
@@ -1284,7 +1409,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_1_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1302,7 +1427,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../_version/" class="md-nav__link">
+      <a href="../../reference/dreem/_version/" class="md-nav__link">
         
   
   
@@ -1330,7 +1455,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cli/" class="md-nav__link">
+      <a href="../../reference/dreem/cli/" class="md-nav__link">
         
   
   
@@ -1372,7 +1497,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../datasets/" class="md-nav__link ">
+            <a href="../../reference/dreem/datasets/" class="md-nav__link ">
               
   
   
@@ -1414,7 +1539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../datasets/base_dataset/" class="md-nav__link">
+      <a href="../../reference/dreem/datasets/base_dataset/" class="md-nav__link">
         
   
   
@@ -1442,7 +1567,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../datasets/cell_tracking_dataset/" class="md-nav__link">
+      <a href="../../reference/dreem/datasets/cell_tracking_dataset/" class="md-nav__link">
         
   
   
@@ -1470,7 +1595,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../datasets/data_utils/" class="md-nav__link">
+      <a href="../../reference/dreem/datasets/data_utils/" class="md-nav__link">
         
   
   
@@ -1498,7 +1623,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../datasets/microscopy_dataset/" class="md-nav__link">
+      <a href="../../reference/dreem/datasets/microscopy_dataset/" class="md-nav__link">
         
   
   
@@ -1526,7 +1651,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../datasets/preprocessors/" class="md-nav__link">
+      <a href="../../reference/dreem/datasets/preprocessors/" class="md-nav__link">
         
   
   
@@ -1554,7 +1679,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../datasets/sleap_dataset/" class="md-nav__link">
+      <a href="../../reference/dreem/datasets/sleap_dataset/" class="md-nav__link">
         
   
   
@@ -1582,7 +1707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../datasets/tracking_dataset/" class="md-nav__link">
+      <a href="../../reference/dreem/datasets/tracking_dataset/" class="md-nav__link">
         
   
   
@@ -1632,7 +1757,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../inference/" class="md-nav__link ">
+            <a href="../../reference/dreem/inference/" class="md-nav__link ">
               
   
   
@@ -1674,7 +1799,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inference/boxes/" class="md-nav__link">
+      <a href="../../reference/dreem/inference/boxes/" class="md-nav__link">
         
   
   
@@ -1702,7 +1827,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inference/eval/" class="md-nav__link">
+      <a href="../../reference/dreem/inference/eval/" class="md-nav__link">
         
   
   
@@ -1730,7 +1855,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inference/metrics/" class="md-nav__link">
+      <a href="../../reference/dreem/inference/metrics/" class="md-nav__link">
         
   
   
@@ -1758,7 +1883,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inference/post_processing/" class="md-nav__link">
+      <a href="../../reference/dreem/inference/post_processing/" class="md-nav__link">
         
   
   
@@ -1786,7 +1911,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inference/post_processing_utils/" class="md-nav__link">
+      <a href="../../reference/dreem/inference/post_processing_utils/" class="md-nav__link">
         
   
   
@@ -1814,7 +1939,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inference/track/" class="md-nav__link">
+      <a href="../../reference/dreem/inference/track/" class="md-nav__link">
         
   
   
@@ -1842,7 +1967,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inference/track_queue/" class="md-nav__link">
+      <a href="../../reference/dreem/inference/track_queue/" class="md-nav__link">
         
   
   
@@ -1870,7 +1995,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inference/tracker/" class="md-nav__link">
+      <a href="../../reference/dreem/inference/tracker/" class="md-nav__link">
         
   
   
@@ -1920,7 +2045,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../io/" class="md-nav__link ">
+            <a href="../../reference/dreem/io/" class="md-nav__link ">
               
   
   
@@ -1962,7 +2087,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../io/association_matrix/" class="md-nav__link">
+      <a href="../../reference/dreem/io/association_matrix/" class="md-nav__link">
         
   
   
@@ -1990,7 +2115,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../io/config/" class="md-nav__link">
+      <a href="../../reference/dreem/io/config/" class="md-nav__link">
         
   
   
@@ -2018,7 +2143,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../io/flags/" class="md-nav__link">
+      <a href="../../reference/dreem/io/flags/" class="md-nav__link">
         
   
   
@@ -2046,7 +2171,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../io/frame/" class="md-nav__link">
+      <a href="../../reference/dreem/io/frame/" class="md-nav__link">
         
   
   
@@ -2074,7 +2199,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../io/instance/" class="md-nav__link">
+      <a href="../../reference/dreem/io/instance/" class="md-nav__link">
         
   
   
@@ -2102,7 +2227,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../io/track/" class="md-nav__link">
+      <a href="../../reference/dreem/io/track/" class="md-nav__link">
         
   
   
@@ -2130,7 +2255,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../io/visualize/" class="md-nav__link">
+      <a href="../../reference/dreem/io/visualize/" class="md-nav__link">
         
   
   
@@ -2180,7 +2305,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../models/" class="md-nav__link ">
+            <a href="../../reference/dreem/models/" class="md-nav__link ">
               
   
   
@@ -2222,7 +2347,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/attention_head/" class="md-nav__link">
+      <a href="../../reference/dreem/models/attention_head/" class="md-nav__link">
         
   
   
@@ -2250,7 +2375,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/embedding/" class="md-nav__link">
+      <a href="../../reference/dreem/models/embedding/" class="md-nav__link">
         
   
   
@@ -2278,7 +2403,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/global_tracking_transformer/" class="md-nav__link">
+      <a href="../../reference/dreem/models/global_tracking_transformer/" class="md-nav__link">
         
   
   
@@ -2306,7 +2431,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/gtr_runner/" class="md-nav__link">
+      <a href="../../reference/dreem/models/gtr_runner/" class="md-nav__link">
         
   
   
@@ -2334,7 +2459,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/mlp/" class="md-nav__link">
+      <a href="../../reference/dreem/models/mlp/" class="md-nav__link">
         
   
   
@@ -2362,7 +2487,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/model_utils/" class="md-nav__link">
+      <a href="../../reference/dreem/models/model_utils/" class="md-nav__link">
         
   
   
@@ -2390,7 +2515,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/transformer/" class="md-nav__link">
+      <a href="../../reference/dreem/models/transformer/" class="md-nav__link">
         
   
   
@@ -2418,7 +2543,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/visual_encoder/" class="md-nav__link">
+      <a href="../../reference/dreem/models/visual_encoder/" class="md-nav__link">
         
   
   
@@ -2451,8 +2576,6 @@
                 
   
   
-    
-  
   
   
     
@@ -2462,15 +2585,15 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1_7" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="./" class="md-nav__link md-nav__link--active">
+            <a href="../../reference/dreem/training/" class="md-nav__link ">
               
   
   
@@ -2488,13 +2611,13 @@
             </a>
             
               
-              <label class="md-nav__link md-nav__link--active" for="__nav_7_1_7" id="__nav_7_1_7_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_7_1_7" id="__nav_7_1_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_7_1_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_7_1_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7_1_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2512,7 +2635,7 @@
   
   
     <li class="md-nav__item">
-      <a href="losses/" class="md-nav__link">
+      <a href="../../reference/dreem/training/losses/" class="md-nav__link">
         
   
   
@@ -2540,7 +2663,7 @@
   
   
     <li class="md-nav__item">
-      <a href="train/" class="md-nav__link">
+      <a href="../../reference/dreem/training/train/" class="md-nav__link">
         
   
   
@@ -2590,7 +2713,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../utils/" class="md-nav__link ">
+            <a href="../../reference/dreem/utils/" class="md-nav__link ">
               
   
   
@@ -2632,7 +2755,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../utils/processors/" class="md-nav__link">
+      <a href="../../reference/dreem/utils/processors/" class="md-nav__link">
         
   
   
@@ -2728,13 +2851,86 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#dreem.training" class="md-nav__link">
+  <a href="#dreem-workflow-for-microscopy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        training
+        DREEM workflow for microscopy
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="DREEM workflow for microscopy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-raw-tiff-stacks-to-tracked-identities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From raw tiff stacks to tracked identities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Detection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#view-the-segmentation-result-and-original-image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        View the segmentation result and original image
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tracking
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tracking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#visualize-the-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visualize the results
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2758,83 +2954,127 @@
   
 
 
-  <h1>training</h1>
+  <h1>Microscopy</h1>
 
-<div class="doc doc-object doc-module">
-
-
-
-<h2 id="dreem.training" class="doc doc-heading">
-            <code>dreem.training</code>
-
-
-<a href="#dreem.training" class="headerlink" title="Permanent link">&para;</a></h2>
-
-    <div class="doc doc-contents first">
-
-        <p>Initialize training module.</p>
-
-
-
-
-
-
-<p><span class="doc-section-title">Modules:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title="&lt;code&gt;dreem.training.losses&lt;/code&gt;" href="losses/#dreem.training.losses">losses</a></code></td>
-            <td>
-              <div class="doc-md-description">
-                <p>Module containing different loss functions to be optimized.</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title="&lt;code&gt;dreem.training.train&lt;/code&gt;" href="train/#dreem.training.train">train</a></code></td>
-            <td>
-              <div class="doc-md-description">
-                <p>API for training models.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
+<p><a href="https://colab.research.google.com/github/talmolab/dreem/blob/docs/examples/microscopy-demo.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<h2 id="dreem-workflow-for-microscopy">DREEM workflow for microscopy<a class="headerlink" href="#dreem-workflow-for-microscopy" title="Permanent link">&para;</a></h2>
+<h3 id="from-raw-tiff-stacks-to-tracked-identities">From raw tiff stacks to tracked identities<a class="headerlink" href="#from-raw-tiff-stacks-to-tracked-identities" title="Permanent link">&para;</a></h3>
+<p>This notebook will walk you through the typical workflow for microscopy identity tracking. We start with a raw tiff stack, pass it through an off-the-shelf detection model, and feed those detections into DREEM. </p>
+<p>This notebook uses a simple entrypoint into the tracking code. You only need to specify a configuration file, and a few lines of code!</p>
+<p>To run this demo, we have provided sample data and model checkpoints. A GPU is recommended if you run the CellPose segmentation step, otherwise the tracking will run on a CPU.</p>
+<h4 id="install-dreem-and-dependencies-colab-only">Install DREEM and dependencies (Colab only)<a class="headerlink" href="#install-dreem-and-dependencies-colab-only" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Install uv (fast Python package installer)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="o">%</span><span class="n">pip</span> <span class="n">install</span> <span class="n">uv</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Install dreem and dependencies using uv</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="err">!</span><span class="n">uv</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">dreem</span><span class="o">-</span><span class="n">track</span> <span class="n">huggingface_hub</span> <span class="n">tifffile</span> <span class="n">opencv</span><span class="o">-</span><span class="n">python</span><span class="o">-</span><span class="n">headless</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Install ffmpeg for video export (Colab-specific)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="err">!</span><span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> <span class="n">ffmpeg</span>
+</code></pre></div>
+<h4 id="import-necessary-packages">Import necessary packages<a class="headerlink" href="#import-necessary-packages" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">tifffile</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="kn">from</span><span class="w"> </span><span class="nn">huggingface_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">hf_hub_download</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+</code></pre></div>
+<h4 id="download-a-pretrained-model-configs-and-some-data">Download a pretrained model, configs and some data<a class="headerlink" href="#download-a-pretrained-model-configs-and-some-data" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">model_save_dir</span> <span class="o">=</span> <span class="s2">&quot;./models&quot;</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">config_save_dir</span> <span class="o">=</span> <span class="s2">&quot;./configs&quot;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">config_save_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">model_save_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">model_path</span> <span class="o">=</span> <span class="n">hf_hub_download</span><span class="p">(</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">repo_id</span><span class="o">=</span><span class="s2">&quot;talmolab/microscopy-pretrained&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;pretrained-microscopy.ckpt&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">local_dir</span><span class="o">=</span><span class="n">model_save_dir</span><span class="p">,</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">config_path</span> <span class="o">=</span> <span class="n">hf_hub_download</span><span class="p">(</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">repo_id</span><span class="o">=</span><span class="s2">&quot;talmolab/microscopy-pretrained&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;sample-microscopy-config.yaml&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">local_dir</span><span class="o">=</span><span class="n">config_save_dir</span><span class="p">,</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="err">!</span><span class="n">hf</span> <span class="n">download</span> <span class="n">talmolab</span><span class="o">/</span><span class="n">microscopy</span><span class="o">-</span><span class="n">demo</span> <span class="o">--</span><span class="n">repo</span><span class="o">-</span><span class="nb">type</span> <span class="n">dataset</span> <span class="o">--</span><span class="n">local</span><span class="o">-</span><span class="nb">dir</span> <span class="o">./</span><span class="n">data</span>
+</code></pre></div>
+<p>Check if a GPU is available. For Apple silicon users, you can run on MPS, but ensure your version of PyTorch is compatible with MPS, and that you have installed the correct version of DREEM. You can also run without a GPU. The demo has been tested on an M3 Macbook Air running only on a CPU.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">cuda_available</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CUDA available: </span><span class="si">{</span><span class="n">cuda_available</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">if</span> <span class="n">cuda_available</span><span class="p">:</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">accelerator</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">elif</span> <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">mps</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">accelerator</span> <span class="o">=</span> <span class="s2">&quot;mps&quot;</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="n">devices</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="n">accelerator</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using device: &quot;</span><span class="p">,</span> <span class="n">accelerator</span><span class="p">)</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="n">torch</span><span class="o">.</span><span class="n">set_float32_matmul_precision</span><span class="p">(</span><span class="s2">&quot;medium&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="detection">Detection<a class="headerlink" href="#detection" title="Permanent link">&para;</a></h2>
+<p>Here we use CellPose to create segmentation masks for our instances. <strong>If you want to skip this stage</strong>, we have provided segmentation masks for the lysosomes dataset located at ./data/lysosomes, and you can go straight ahead to the "Tracking" section below</p>
+<h4 id="run-cellpose-segmentation-with-uv">Run CellPose segmentation with uv<a class="headerlink" href="#run-cellpose-segmentation-with-uv" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">data_path</span> <span class="o">=</span> <span class="s2">&quot;./data/dynamicnuclearnet/test_1&quot;</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">segmented_path</span> <span class="o">=</span> <span class="s2">&quot;./data/dynamicnuclearnet/test_1_GT/TRA&quot;</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">segmented_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<p>Set the approximate diameter (in pixels) of the instances you want to segment</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">diam_px</span> <span class="o">=</span> <span class="mi">25</span>
+</code></pre></div>
+<h4 id="run-detection-model">Run detection model<a class="headerlink" href="#run-detection-model" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">gpu_flag</span> <span class="o">=</span> <span class="s2">&quot;--gpu&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;--no-gpu&quot;</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running CellPose segmentation with uv...&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="p">[</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>        <span class="s2">&quot;uv&quot;</span><span class="p">,</span> <span class="s2">&quot;run&quot;</span><span class="p">,</span> <span class="s2">&quot;run_cellpose_segmentation.py&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>        <span class="s2">&quot;--data_path&quot;</span><span class="p">,</span> <span class="n">data_path</span><span class="p">,</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>        <span class="s2">&quot;--output_path&quot;</span><span class="p">,</span> <span class="n">segmented_path</span><span class="p">,</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>        <span class="s2">&quot;--diameter&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">diam_px</span><span class="p">),</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>        <span class="n">gpu_flag</span><span class="p">,</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>    <span class="p">],</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>    <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>    <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>    <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="p">)</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">stderr</span><span class="p">:</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Errors/Warnings:&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="c1"># Load the original stack and masks for visualization</span>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="n">tiff_files</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a>    <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">data_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.tif&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.tiff&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="p">]</span>
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="n">tiff_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>  <span class="c1"># Ensure consistent ordering</span>
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="n">first_img</span> <span class="o">=</span> <span class="n">tifffile</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">tiff_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="n">mask_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">segmented_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">tiff_files</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.tif&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="n">first_mask</span> <span class="o">=</span> <span class="n">tifffile</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">mask_path</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="view-the-segmentation-result-and-original-image">View the segmentation result and original image<a class="headerlink" href="#view-the-segmentation-result-and-original-image" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">first_mask</span><span class="p">)</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Segmentation Mask&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">ax2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">first_img</span><span class="p">)</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Original Image&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div>
+<h2 id="tracking">Tracking<a class="headerlink" href="#tracking" title="Permanent link">&para;</a></h2>
+<p>Note that the segmented masks are saved to ./data/dynamicnuclearnet/test_1_GT/TRA; in general, any segmented masks are expected to be in a directory with the same name as the original data, with _GT/TRA appended to the end.</p>
+<p>The command below assumes you have run the CellPose segmentation step, and that the segmented masks are saved to ./data/dynamicnuclearnet/test_1_GT/TRA. If you have not run the segmentation step, you can use the following command to track the lysosome data that we have provided: </p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>!dreem track ./data/lysosomes --checkpoint ./models/pretrained-microscopy.ckpt --output ./results-lyso --video-type tif --crop-size 22
+</code></pre></div>
+If you did run the CellPose segmentation step, you can use the following command to track the data:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="err">!</span><span class="n">dreem</span> <span class="n">track</span> <span class="o">./</span><span class="n">data</span><span class="o">/</span><span class="n">dynamicnuclearnet</span> <span class="o">--</span><span class="n">checkpoint</span> <span class="o">./</span><span class="n">models</span><span class="o">/</span><span class="n">pretrained</span><span class="o">-</span><span class="n">microscopy</span><span class="o">.</span><span class="n">ckpt</span> <span class="o">--</span><span class="n">output</span> <span class="o">./</span><span class="n">results</span><span class="o">-</span><span class="n">dnn</span> <span class="o">--</span><span class="n">video</span><span class="o">-</span><span class="nb">type</span> <span class="n">tif</span> <span class="o">--</span><span class="n">crop</span><span class="o">-</span><span class="n">size</span> <span class="mi">32</span>
+</code></pre></div></p>
+<h3 id="visualize-the-results">Visualize the results<a class="headerlink" href="#visualize-the-results" title="Permanent link">&para;</a></h3>
+<p>To visualize the tracked tiff stacks, you can use tools like ImageJ, Fiji, or Napari plugins.</p>
 
 
 
@@ -2921,14 +3161,14 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tracking", "toc.follow", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tooltips", "content.code.select", "content.footnote.tooltips"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tracking", "toc.follow", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tooltips", "content.code.select", "content.footnote.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
-        <script src="../../../js/termynal.js"></script>
+        <script src="../../js/termynal.js"></script>
       
-        <script src="../../../js/custom.js"></script>
+        <script src="../../js/custom.js"></script>
       
     
   </body>

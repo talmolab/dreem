@@ -11,10 +11,6 @@
         <link rel="canonical" href="https://dreem.sleap.ai/dev/Examples/microscopy-demo-full-api/">
       
       
-        <link rel="prev" href="../microscopy-demo-simple/">
-      
-      
-        <link rel="next" href="../dreem-demo/">
       
       
         
@@ -25,7 +21,7 @@
     
     
       
-        <title>Microscopy - in-depth API usage - DREEM documentation</title>
+        <title>Microscopy demo full api - DREEM documentation</title>
       
     
     
@@ -45,8 +41,8 @@
       
         
         
-        
-        <link rel="stylesheet" href="../../assets/external/fonts.googleapis.com/css.49ea35f2.css">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
@@ -60,16 +56,6 @@
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
-  
-
-
-  
-  
-
-<script id="__analytics">function __md_analytics(){function e(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],e("js",new Date),e("config","G-V7MWLE7LXW"),document.addEventListener("DOMContentLoaded",(function(){document.forms.search&&document.forms.search.query.addEventListener("blur",(function(){this.value&&e("event","search",{search_term:this.value})}));document$.subscribe((function(){var t=document.forms.feedback;if(void 0!==t)for(var a of t.querySelectorAll("[type=submit]"))a.addEventListener("click",(function(a){a.preventDefault();var n=document.location.pathname,d=this.getAttribute("data-md-value");e("event","feedback",{page:n,data:d}),t.firstElementChild.disabled=!0;var r=t.querySelector(".md-feedback__note [data-md-value='"+d+"']");r&&(r.hidden=!1)})),t.hidden=!1})),location$.subscribe((function(t){e("config","G-V7MWLE7LXW",{page_path:t.pathname})}))}));var t=document.createElement("script");t.async=!0,t.src="https://www.googletagmanager.com/gtag/js?id=G-V7MWLE7LXW",document.getElementById("__analytics").insertAdjacentElement("afterEnd",t)}</script>
-  
-    <script>if("undefined"!=typeof __md_analytics){var consent=__md_get("__consent");consent&&consent.analytics&&__md_analytics()}</script>
-  
 
     
     
@@ -131,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Microscopy - in-depth API usage
+              Microscopy demo full api
             
           </span>
         </div>
@@ -383,8 +369,6 @@
       
   
   
-    
-  
   
   
     
@@ -397,11 +381,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
@@ -422,7 +406,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -468,7 +452,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../examples/quickstart.ipynb" class="md-nav__link">
+      <a href="../../quickstart/" class="md-nav__link">
         
   
   
@@ -496,7 +480,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../microscopy-demo-simple/" class="md-nav__link">
+      <a href="../microscopy-demo/" class="md-nav__link">
         
   
   
@@ -512,194 +496,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Microscopy - in-depth API usage
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Microscopy - in-depth API usage
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#from-raw-tiff-stacks-to-tracked-identities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        From raw tiff stacks to tracked identities
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#detection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Detection
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Detection">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#view-the-segmentation-result-and-original-image" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        View the segmentation result and original image
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dreem-inference" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DREEM Inference
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="DREEM Inference">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#setup-inference-configs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Setup inference configs
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#prepare-data-and-run-inference" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prepare data and run inference
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#visualize-the-results" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Visualize the results
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#evaluate-the-tracking-results" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Evaluate the tracking results
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Evaluate the tracking results">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#extract-the-results-and-view-key-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Extract the results and view key metrics
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3058,9 +2854,9 @@
   
 
 
-  <h1>Microscopy - in-depth API usage</h1>
+  <h1>Microscopy demo full api</h1>
 
-<p><a href="https://colab.research.google.com/github/talmolab/dreem/blob/main/examples/microscopy-demo-full-api.ipynb"><img alt="Open In Colab" src="../../assets/external/colab.research.google.com/assets/colab-badge.svg"></a></p>
+<p><a href="https://colab.research.google.com/github/talmolab/dreem/blob/main/examples/microscopy-demo-full-api.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <h3 id="from-raw-tiff-stacks-to-tracked-identities">From raw tiff stacks to tracked identities<a class="headerlink" href="#from-raw-tiff-stacks-to-tracked-identities" title="Permanent link">&para;</a></h3>
 <p>This notebook will walk you through the typical workflow for microscopy identity tracking. We start with an off-the-shelf detection model, and feed those results into DREEM. 
 Here, we'll use the API, but we also provide a CLI interface for convenience.</p>
@@ -3489,8 +3285,6 @@ we do not in fact use any ground truth information during tracking, go to our fu
 
 
 
-  
-
 
 
 
@@ -3517,8 +3311,7 @@ we do not in fact use any ground truth information during tracking, go to our fu
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      Copyright &copy; 2024 - 2025 Talmo Lab – <a href="#__consent">Change cookie settings</a>
-
+      Copyright &copy; 2024 - 2025 Talmo Lab
     </div>
   
   
@@ -3565,85 +3358,6 @@ we do not in fact use any ground truth information during tracking, go to our fu
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    
-      <div class="md-consent" data-md-component="consent" id="__consent" hidden>
-        <div class="md-consent__overlay"></div>
-        <aside class="md-consent__inner">
-          <form class="md-consent__form md-grid md-typeset" name="consent">
-            
-
-
-
-<h4>Cookie consent</h4>
-<p>We use cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of our documentation and whether users find what they're searching for. With your consent, you're helping us to make our documentation better.</p>
-<input class="md-toggle" type="checkbox" id="__settings" >
-<div class="md-consent__settings">
-  <ul class="task-list">
-    
-    
-      
-        
-  
-  
-    
-    
-  
-  <li class="task-list-item">
-    <label class="task-list-control">
-      <input type="checkbox" name="analytics" checked>
-      <span class="task-list-indicator"></span>
-      Google Analytics
-    </label>
-  </li>
-
-      
-    
-    
-      
-        
-  
-  
-    
-    
-  
-  <li class="task-list-item">
-    <label class="task-list-control">
-      <input type="checkbox" name="github" checked>
-      <span class="task-list-indicator"></span>
-      GitHub
-    </label>
-  </li>
-
-      
-    
-    
-  </ul>
-</div>
-<div class="md-consent__controls">
-  
-    
-      <button class="md-button md-button--primary">Accept</button>
-    
-    
-    
-  
-    
-    
-      <button type="reset" class="md-button md-button--primary">Reject</button>
-    
-    
-  
-    
-    
-    
-      <label class="md-button" for="__settings">Manage settings</label>
-    
-  
-</div>
-          </form>
-        </aside>
-      </div>
-      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
     
     
       
