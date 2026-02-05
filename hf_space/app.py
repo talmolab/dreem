@@ -628,15 +628,6 @@ with st.sidebar:
 
     st.subheader("Visualization")
 
-    viz_box_size = st.number_input(
-        "Box Size",
-        min_value=16,
-        max_value=256,
-        value=64,
-        step=16,
-        help="Size of bounding boxes in visualization",
-    )
-
     show_keypoints = st.checkbox("Show Keypoints", value=True)
     show_labels = st.checkbox("Show Track Labels", value=True)
 
@@ -850,7 +841,7 @@ else:
                 video_path=video_path,
                 tracks_data=tracks_data,
                 output_path=annotated_video_path,
-                box_size=viz_box_size,
+                box_size=crop_size,
                 show_keypoints=show_keypoints,
                 show_labels=show_labels,
                 fps=int(video_info.get("fps", 30)),
