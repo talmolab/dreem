@@ -183,6 +183,7 @@ dev = [
 # =============================================================================
 [tool.ruff]
 line-length = 88
+exclude = ["dreem/_version.py"]
 
 [tool.ruff.lint]
 select = [

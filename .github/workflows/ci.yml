@@ -46,7 +46,7 @@ jobs:
         run: uv sync --group dev --extra torch-cpu
 
       - name: Run ruff format check
-        run: uv run ruff format --check dreem tests
+        run: uv run --frozen ruff format --check dreem tests
 
       # - name: Run ruff check
       #   run: uv run ruff check dreem
@@ -80,11 +80,11 @@ jobs:
 
       - name: Print environment info
         run: |
-          uv run python --version
-          uv run pip list
+          uv run --frozen python --version
+          uv run --frozen pip list
 
       - name: Test with pytest (with coverage)
-        run: uv run pytest --cov=dreem --cov-report=xml tests/
+        run: uv run --frozen pytest --cov=dreem --cov-report=xml tests/
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
