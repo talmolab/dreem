@@ -1,0 +1,43 @@
+# Streamlit
+streamlit>=1.30.0
+
+# PyTorch (CPU version for HF Spaces free tier)
+torch>=2.0.0
+torchvision
+
+# Lightning
+lightning
+
+# Image/video I/O
+imageio>=2.34.0
+imageio-ffmpeg
+av
+
+# Image processing
+albumentations
+opencv-python<4.9.0
+numpy<2.0
+
+# Configuration
+hydra-core
+omegaconf
+
+# Data I/O
+sleap-io
+h5py
+tifffile
+
+# Visualization
+matplotlib
+seaborn
+pandas
+
+# Metrics
+motmetrics
+
+# Models
+timm
+huggingface-hub
+
+# DREEM (install from git)
+dreem-track @ git+https://github.com/talmolab/dreem.git
