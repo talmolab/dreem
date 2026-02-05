@@ -6,7 +6,7 @@ torch>=2.0.0
 torchvision
 
 # Lightning
-lightning
+Lightning
 
 # Image/video I/O
 imageio>=2.34.0

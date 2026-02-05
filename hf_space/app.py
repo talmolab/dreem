@@ -19,6 +19,8 @@ MAX_FRAMES_WARNING = 5000
 MAX_FRAMES_LIMIT = 20000
 SESSION_DIR = Path("/tmp/dreem_sessions")
 MODEL_CACHE_DIR = Path("/tmp/dreem_models")
+DATA_CACHE_DIR = Path("/tmp/dreem_sample_data")
+SAMPLE_DATA_REPO = "talmolab/sample-flies"
 
 # Pretrained models available on HuggingFace Hub
 PRETRAINED_MODELS = {
@@ -61,6 +63,48 @@ def download_pretrained_model(repo_id: str) -> str:
     )
 
     return ckpt_path
+
+
+@st.cache_resource
+def download_sample_data() -> Path:
+    """Download sample dataset from HuggingFace Hub.
+
+    Returns:
+        Path to the downloaded data directory.
+    """
+    from huggingface_hub import snapshot_download
+
+    DATA_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+    local_dir = DATA_CACHE_DIR / "sample-flies"
+    snapshot_download(
+        repo_id=SAMPLE_DATA_REPO,
+        repo_type="dataset",
+        local_dir=str(local_dir),
+    )
+
+    return local_dir
+
+
+def get_sample_data_paths(data_dir: Path) -> tuple[str, str]:
+    """Find the .slp and .mp4 files in the sample data inference directory.
+
+    Args:
+        data_dir: Root directory of the downloaded sample data.
+
+    Returns:
+        Tuple of (slp_path, video_path).
+    """
+    inference_dir = data_dir / "inference"
+    slp_files = list(inference_dir.glob("*.slp"))
+    video_files = list(inference_dir.glob("*.mp4"))
+
+    if not slp_files:
+        raise FileNotFoundError(f"No .slp files found in {inference_dir}")
+    if not video_files:
+        raise FileNotFoundError(f"No .mp4 files found in {inference_dir}")
+
+    return str(slp_files[0]), str(video_files[0])
 
 
 def get_session_dir() -> Path:
@@ -183,6 +227,7 @@ def generate_annotated_video(
     show_labels: bool = True,
     fps: int = 30,
     progress_callback=None,
+    flagged_frames: set[int] | None = None,
 ) -> str:
     """Generate an annotated MP4 video with track overlays.
 
@@ -195,6 +240,7 @@ def generate_annotated_video(
         show_labels: Whether to draw track labels
         fps: Output video frame rate
         progress_callback: Optional callback(current, total) for progress updates
+        flagged_frames: Set of frame indices flagged for low confidence
 
     Returns:
         Path to the generated video
@@ -215,13 +261,15 @@ def generate_annotated_video(
 
         # Get instances for this frame and annotate
         instances = tracks_data.get(frame_idx, [])
-        if instances:
+        is_flagged = flagged_frames is not None and frame_idx in flagged_frames
+        if instances or is_flagged:
             frame = annotate_frame(
                 frame,
                 instances,
                 box_size=box_size,
                 show_keypoints=show_keypoints,
                 show_labels=show_labels,
+                flagged=is_flagged,
             )
 
         writer.append_data(frame)
@@ -244,6 +292,7 @@ def annotate_frame(
     box_size: int = 64,
     show_keypoints: bool = True,
     show_labels: bool = True,
+    flagged: bool = False,
 ):
     """Overlay track annotations on a frame.
 
@@ -253,11 +302,35 @@ def annotate_frame(
         box_size: size of bounding box to draw
         show_keypoints: whether to draw keypoints
         show_labels: whether to draw track ID labels
+        flagged: whether this frame was flagged for low confidence
     """
     import cv2
     import numpy as np
 
     frame = frame.copy()
+
+    # Draw low-confidence warning banner
+    if flagged:
+        h, w = frame.shape[:2]
+        banner_text = "Low confidence - verify tracking"
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.8
+        thickness = 2
+        (tw, th), baseline = cv2.getTextSize(banner_text, font, font_scale, thickness)
+        banner_h = th + baseline + 20
+        # Semi-transparent red banner via alpha blend
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (0, 0), (w, banner_h), (220,0,0), -1)
+        cv2.addWeighted(overlay, 0.8, frame, 0.2, 0, frame)
+        cv2.putText(
+            frame,
+            banner_text,
+            (8, th + 8),
+            font,
+            font_scale,
+            (255, 255, 255),
+            thickness,
+        )
 
     # Color palette (tab20)
     colors = [
@@ -375,7 +448,7 @@ def run_inference(
     use_gpu: bool,
     progress_callback=None,
     batch_callback=None,
-) -> str | None:
+) -> tuple[str, set[int]] | tuple[None, set[int]]:
     """Run DREEM tracking inference with progress updates."""
     from omegaconf import OmegaConf
 
@@ -473,6 +546,7 @@ def run_inference(
             pred_slp = []
             tracks = {}
             suggestions = []
+            flagged_frames = set()
 
             for batch in preds:
                 for frame in batch:
@@ -488,6 +562,7 @@ def run_inference(
                             video=video, frame_idx=frame.frame_id.item()
                         )
                         suggestions.append(suggestion)
+                        flagged_frames.add(frame.frame_id.item())
                     lf, tracks = frame.to_slp(tracks, video=video)
                     pred_slp.append(lf)
 
@@ -507,7 +582,7 @@ def run_inference(
             pred_labels.save(output_path)
 
         update_progress(7, "Complete!")
-        return output_path
+        return output_path, flagged_frames
 
     except Exception as e:
         st.error(f"Inference failed: {e}")
@@ -540,15 +615,19 @@ if "video_info" not in st.session_state:
     st.session_state.video_info = None
 if "annotated_video_path" not in st.session_state:
     st.session_state.annotated_video_path = None
+if "flagged_frames" not in st.session_state:
+    st.session_state.flagged_frames = None
 
 
 # App UI
 st.title("DREEM: Multi-Object Tracking Across Biological Scales")
 st.markdown(
     """
-Upload your [SLEAP](https://sleap.ai) labels file (.slp) and video to run tracking. This demo only supports
-input data in the .slp format, although the [CLI](https://dreem.sleap.ai/0.2.3/quickstart/) can be used with labeled masks in the [Cell Tracking Challenge](https://celltrackingchallenge.net/datasets/) format
-as input for microscopy. For more information, see the [documentation](https://dreem.sleap.ai).
+Upload your [SLEAP](https://sleap.ai) labels file (.slp) and video to run tracking, or try it out with our
+sample data. This demo only supports input data in the .slp format, although the
+[CLI](https://dreem.sleap.ai/0.2.3/quickstart/) can be used with labeled masks in the
+[Cell Tracking Challenge](https://celltrackingchallenge.net/datasets/) format as input for microscopy.
+For more information, see the [documentation](https://dreem.sleap.ai).
 """
 )
 
@@ -565,11 +644,10 @@ with st.sidebar:
         help="Size of bounding box to crop each instance (pixels)",
     )
 
-    anchor = st.selectbox(
+    anchor = st.text_input(
         "Anchor Point",
-        options=["centroid", "thorax", "head", "abdomen"],
-        index=0,
-        help="Name of anchor keypoint for centering crops",
+        value="centroid",
+        help="Name of anchor keypoint for centering crops. Type any keypoint name present in your data.",
     )
 
     clip_length = st.number_input(
@@ -616,7 +694,7 @@ with st.sidebar:
         min_value=0,
         max_value=100,
         value=100,
-        help="Maximum number of tracks to maintain (0 = unlimited)",
+        help="Maximum number of tracks to maintain (cannot be less than the number of detections in any frame in the data)",
     )
     max_tracks = max_tracks if max_tracks > 0 else None
 
@@ -639,23 +717,39 @@ with st.sidebar:
 
 # Main content - show different UI based on state
 if not st.session_state.inference_complete:
+    # Data source selection
+    st.subheader("Data Source")
+    data_source = st.radio(
+        "",
+        options=["Use our sample data", "Bring your own data"],
+        horizontal=True,
+    )
+
     # Upload and inference UI
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("Input Files")
+        if data_source == "Bring your own data":
+            st.subheader("Input Files")
 
-        slp_file = st.file_uploader(
-            "SLEAP Labels File (.slp)",
-            type=["slp"],
-            help="Upload your SLEAP predictions file",
-        )
+            slp_file = st.file_uploader(
+                "SLEAP Labels File (.slp)",
+                type=["slp"],
+                help="Upload your SLEAP predictions file",
+            )
 
-        video_file = st.file_uploader(
-            "Video File",
-            type=["mp4", "avi", "mov", "mkv"],
-            help="Upload the corresponding video file (max 200MB)",
-        )
+            video_file = st.file_uploader(
+                "Video File",
+                type=["mp4", "avi", "mov", "mkv"],
+                help="Upload the corresponding video file (max 200MB)",
+            )
+        else:
+            st.subheader("Sample Data")
+            st.info(
+                "Sample data: **Drosophila melanogaster** (fruit flies) with "
+                "[SLEAP](https://sleap.ai) pose estimation. The dataset will be downloaded from "
+                f"`{SAMPLE_DATA_REPO}` on HuggingFace."
+            )
 
         st.subheader("Model")
         model_choice = st.selectbox(
@@ -682,11 +776,12 @@ if not st.session_state.inference_complete:
         batch_text_placeholder = st.empty()
 
     # Run inference button
-    if st.button("Run Tracking", type="primary", width="stretch"):
-        # Validate inputs
-        if not slp_file or not video_file:
-            st.error("Please upload SLP and video files")
-            st.stop()
+    if st.button("Run Tracking", type="primary", use_container_width=True):
+        # Validate inputs based on data source
+        if data_source == "Bring your own data":
+            if not slp_file or not video_file:
+                st.error("Please upload SLP and video files")
+                st.stop()
 
         # Check checkpoint
         using_pretrained = PRETRAINED_MODELS[model_choice] is not None
@@ -698,9 +793,23 @@ if not st.session_state.inference_complete:
         output_dir = session_dir / "output"
         output_dir.mkdir(exist_ok=True)
 
-        # Save uploaded files
-        slp_path = session_dir / slp_file.name
-        video_path = session_dir / video_file.name
+        # Resolve data paths based on source
+        if data_source == "Use our sample data":
+            status_placeholder.info("Downloading sample data...")
+            try:
+                sample_dir = download_sample_data()
+                slp_path, video_path = get_sample_data_paths(sample_dir)
+            except Exception as e:
+                st.error(f"Failed to download sample data: {e}")
+                st.stop()
+        else:
+            # Save uploaded files
+            slp_path = str(session_dir / slp_file.name)
+            video_path = str(session_dir / video_file.name)
+            with open(slp_path, "wb") as f:
+                f.write(slp_file.getvalue())
+            with open(video_path, "wb") as f:
+                f.write(video_file.getvalue())
 
         # Get checkpoint path (download pretrained or use uploaded)
         if using_pretrained:
@@ -714,12 +823,6 @@ if not st.session_state.inference_complete:
             ckpt_path = session_dir / checkpoint_file.name
             with open(ckpt_path, "wb") as f:
                 f.write(checkpoint_file.getvalue())
-
-        # Save uploaded data files
-        with open(slp_path, "wb") as f:
-            f.write(slp_file.getvalue())
-        with open(video_path, "wb") as f:
-            f.write(video_file.getvalue())
 
         # Validate video
         status_placeholder.info("Validating video...")
@@ -773,7 +876,7 @@ if not st.session_state.inference_complete:
             batch_text.text(f"Batch {current}/{total}")
 
         try:
-            output_slp = run_inference(
+            output_slp, flagged_frames = run_inference(
                 slp_path=str(slp_path),
                 video_path=str(video_path),
                 checkpoint_path=str(ckpt_path),
@@ -805,6 +908,7 @@ if not st.session_state.inference_complete:
                 st.session_state.tracks_data = tracks_data
                 st.session_state.video_path = str(video_path)
                 st.session_state.output_slp_path = output_slp
+                st.session_state.flagged_frames = flagged_frames
                 st.session_state.inference_complete = True
 
                 st.rerun()
@@ -822,6 +926,7 @@ else:
     tracks_data = st.session_state.tracks_data
     video_path = st.session_state.video_path
     video_info = st.session_state.video_info
+    flagged_frames = st.session_state.flagged_frames
 
     # Generate annotated video if not already done
     if "annotated_video_path" not in st.session_state or st.session_state.annotated_video_path is None:
@@ -846,6 +951,7 @@ else:
                 show_labels=show_labels,
                 fps=int(video_info.get("fps", 30)),
                 progress_callback=video_progress_callback,
+                flagged_frames=flagged_frames,
             )
             st.session_state.annotated_video_path = annotated_video_path
             video_progress.empty()
@@ -898,6 +1004,8 @@ else:
             st.write(f"**Total unique tracks:** {len(all_track_ids)}")
             st.write(f"**Frames with tracks:** {len(frames_with_tracks)}")
             st.write(f"**Track IDs:** {sorted(all_track_ids)}")
+            if flagged_frames:
+                st.write(f"**Flagged frames (low confidence):** {len(flagged_frames)}")
 
 
 # Footer
