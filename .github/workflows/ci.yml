@@ -37,19 +37,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          enable-cache: false
 
       - name: Install dependencies
         run: uv sync --group dev --extra torch-cpu
 
       - name: Run ruff format check
-        run: uv run --frozen ruff format --check dreem tests
+        run: uv run --frozen --extra torch-cpu ruff format --check dreem tests
 
       # - name: Run ruff check
-      #   run: uv run ruff check dreem
+      #   run: uv run --frozen --extra torch-cpu ruff check dreem
 
   # Tests with pytest
   tests:
@@ -61,16 +60,17 @@ jobs:
 
     name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
+    env:
+      UV_FROZEN: "1"
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v5
         with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          enable-cache: false
 
       - name: Set up Python
         run: uv python install ${{ matrix.python }}
@@ -80,11 +80,11 @@ jobs:
 
       - name: Print environment info
         run: |
-          uv run --frozen python --version
-          uv run --frozen pip list
+          uv run --frozen --extra torch-cpu python --version
+          uv run --frozen --extra torch-cpu pip list
 
       - name: Test with pytest (with coverage)
-        run: uv run --frozen pytest --cov=dreem --cov-report=xml tests/
+        run: uv run --frozen --extra torch-cpu pytest --cov=dreem --cov-report=xml tests/
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
