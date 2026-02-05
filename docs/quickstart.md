@@ -1,6 +1,6 @@
 # Quickstart
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/docs/examples/quickstart.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/main/examples/quickstart.ipynb)
 
 DREEM operations can be performed either through the command-line interface or through the API (for more advanced users). The CLI provides commands for training, tracking, evaluation, and visualization. All operations can be customized via config files. For a more in-depth walkthrough, see the [Examples](Examples/dreem-demo.md) section. For a complete reference of all commands and options, see [the API Reference](https://dreem.sleap.ai/reference/dreem/).
 
