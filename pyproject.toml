@@ -53,6 +53,12 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 encoder = ["scikit-image"]  # Required for visual encoder functionality
+torch = ["torch", "torchvision>=0.20.0"]
+torch-cpu = ["torch", "torchvision>=0.20.0"]
+torch-cuda118 = ["torch", "torchvision>=0.20.0"]
+torch-cuda128 = ["torch", "torchvision>=0.20.0"]
+torch-cuda130 = ["torch", "torchvision>=0.20.0"]
+
 
 [project.scripts]
 dreem = "dreem.cli:app"
@@ -82,18 +88,60 @@ version-file = "dreem/_version.py"
 # =============================================================================
 # Use CUDA 12.1 builds on Linux/Windows, fall back to PyPI on macOS (MPS)
 
-[[tool.uv.index]]
-name = "pytorch-cu121"
-url = "https://download.pytorch.org/whl/cu121"
-explicit = true
+[tool.uv]
+# Only resolve for platforms we actually support (excludes win_arm64 which has incomplete pytorch wheels)
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "sys_platform == 'win32' and platform_machine == 'AMD64'",
+]
+# Exclude torchvision builds that only have win_arm64 wheels
+constraint-dependencies = [
+    "torchvision!=0.24.1+d801a34",
+]
+conflicts = [
+    [
+        { extra = "torch-cpu" },
+        { extra = "torch-cuda118" },
+        { extra = "torch-cuda128" },
+        { extra = "torch-cuda130" },
+    ],
+]
 
 [tool.uv.sources]
 torch = [
-    { index = "pytorch-cu121", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { index = "pytorch-cpu", extra = "torch-cpu" },
+    { index = "pytorch-cu118", extra = "torch-cuda118", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
+    { index = "pytorch-cu128", extra = "torch-cuda128", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
+    { index = "pytorch-cu130", extra = "torch-cuda130", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
 ]
 torchvision = [
-    { index = "pytorch-cu121", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { index = "pytorch-cpu", extra = "torch-cpu" },
+    { index = "pytorch-cu118", extra = "torch-cuda118", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
+    { index = "pytorch-cu128", extra = "torch-cuda128", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
+    { index = "pytorch-cu130", extra = "torch-cuda130", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
 ]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu118"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
 
 # =============================================================================
 # Dependency groups (dev tools)
@@ -121,6 +169,7 @@ dev = [
 # =============================================================================
 [tool.ruff]
 line-length = 88
+exclude = ["dreem/_version.py"]
 
 [tool.ruff.lint]
 select = [
