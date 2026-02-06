@@ -8,31 +8,31 @@
       
       
       
-        <link rel="canonical" href="https://dreem.sleap.ai/0.2.3/reference/dreem/models/attention_head/">
+        <link rel="canonical" href="https://dreem.sleap.ai/0.2.3/visualizer/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../usage/">
       
       
-        <link rel="next" href="../embedding/">
+        <link rel="next" href="../Examples/">
       
       
         
       
       
-      <link rel="icon" href="../../../../assets/favicon.ico">
+      <link rel="icon" href="../assets/favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
-        <title>attention_head - DREEM documentation</title>
+        <title>Live Visualizer - DREEM documentation</title>
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -51,13 +51,13 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../../../css/mkdocstrings.css">
+      <link rel="stylesheet" href="../css/mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../../../css/termynal.css">
+      <link rel="stylesheet" href="../css/termynal.css">
     
-    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dreem.models.attention_head" class="md-skip">
+        <a href="#live-visualizer" class="md-skip">
           Skip to content
         </a>
       
@@ -102,9 +102,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../../.." title="DREEM documentation" class="md-header__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
+    <a href=".." title="DREEM documentation" class="md-header__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
       
-  <img src="../../../../assets/sleap-logo.png" alt="logo">
+  <img src="../assets/sleap-logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              attention_head
+              Live Visualizer
             
           </span>
         </div>
@@ -239,9 +239,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../../.." title="DREEM documentation" class="md-nav__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
+    <a href=".." title="DREEM documentation" class="md-nav__button md-logo" aria-label="DREEM documentation" data-md-component="logo">
       
-  <img src="../../../../assets/sleap-logo.png" alt="logo">
+  <img src="../assets/sleap-logo.png" alt="logo">
 
     </a>
     DREEM documentation
@@ -268,7 +268,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -295,7 +295,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -322,7 +322,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../quickstart/" class="md-nav__link">
+      <a href="../quickstart/" class="md-nav__link">
         
   
   
@@ -349,7 +349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../usage/" class="md-nav__link">
+      <a href="../usage/" class="md-nav__link">
         
   
   
@@ -373,10 +373,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../../../visualizer/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Live Visualizer
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -392,6 +419,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#supported-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported Formats
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -455,7 +513,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../Examples/" class="md-nav__link">
+      <a href="../Examples/" class="md-nav__link">
         
   
   
@@ -483,7 +541,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../quickstart/" class="md-nav__link">
+      <a href="../quickstart/" class="md-nav__link">
         
   
   
@@ -511,7 +569,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../Examples/microscopy-demo/" class="md-nav__link">
+      <a href="../Examples/microscopy-demo/" class="md-nav__link">
         
   
   
@@ -539,7 +597,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../Examples/dreem-demo/" class="md-nav__link">
+      <a href="../Examples/dreem-demo/" class="md-nav__link">
         
   
   
@@ -640,7 +698,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../../io/" class="md-nav__link ">
+            <a href="../io/" class="md-nav__link ">
               
   
   
@@ -682,7 +740,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/asso_matrix/" class="md-nav__link">
+      <a href="../io/asso_matrix/" class="md-nav__link">
         
   
   
@@ -710,7 +768,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/config/" class="md-nav__link">
+      <a href="../io/config/" class="md-nav__link">
         
   
   
@@ -738,7 +796,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/frame/" class="md-nav__link">
+      <a href="../io/frame/" class="md-nav__link">
         
   
   
@@ -766,7 +824,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/instance/" class="md-nav__link">
+      <a href="../io/instance/" class="md-nav__link">
         
   
   
@@ -794,7 +852,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/track/" class="md-nav__link">
+      <a href="../io/track/" class="md-nav__link">
         
   
   
@@ -822,7 +880,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../io/visualize/" class="md-nav__link">
+      <a href="../io/visualize/" class="md-nav__link">
         
   
   
@@ -872,7 +930,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../../models/" class="md-nav__link ">
+            <a href="../models/" class="md-nav__link ">
               
   
   
@@ -914,7 +972,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../models/global_tracking_transformer/" class="md-nav__link">
+      <a href="../models/global_tracking_transformer/" class="md-nav__link">
         
   
   
@@ -942,7 +1000,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../models/gtr_runner/" class="md-nav__link">
+      <a href="../models/gtr_runner/" class="md-nav__link">
         
   
   
@@ -970,7 +1028,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../models/model_parts/" class="md-nav__link">
+      <a href="../models/model_parts/" class="md-nav__link">
         
   
   
@@ -1020,7 +1078,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../../configs/" class="md-nav__link ">
+            <a href="../configs/" class="md-nav__link ">
               
   
   
@@ -1062,7 +1120,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../configs/config/" class="md-nav__link">
+      <a href="../configs/config/" class="md-nav__link">
         
   
   
@@ -1090,7 +1148,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../configs/eval/" class="md-nav__link">
+      <a href="../configs/eval/" class="md-nav__link">
         
   
   
@@ -1118,7 +1176,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../configs/inference/" class="md-nav__link">
+      <a href="../configs/inference/" class="md-nav__link">
         
   
   
@@ -1146,7 +1204,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../configs/training/" class="md-nav__link">
+      <a href="../configs/training/" class="md-nav__link">
         
   
   
@@ -1182,7 +1240,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../cli/" class="md-nav__link">
+      <a href="../cli/" class="md-nav__link">
         
   
   
@@ -1214,8 +1272,6 @@
       
   
   
-    
-  
   
   
     
@@ -1228,11 +1284,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
@@ -1253,7 +1309,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1268,8 +1324,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1279,15 +1333,15 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../" class="md-nav__link ">
+            <a href="../reference/dreem/" class="md-nav__link ">
               
   
   
@@ -1311,7 +1365,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_1_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1329,7 +1383,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../_version/" class="md-nav__link">
+      <a href="../reference/dreem/_version/" class="md-nav__link">
         
   
   
@@ -1357,7 +1411,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cli/" class="md-nav__link">
+      <a href="../reference/dreem/cli/" class="md-nav__link">
         
   
   
@@ -1399,7 +1453,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../datasets/" class="md-nav__link ">
+            <a href="../reference/dreem/datasets/" class="md-nav__link ">
               
   
   
@@ -1441,7 +1495,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/base_dataset/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/base_dataset/" class="md-nav__link">
         
   
   
@@ -1469,7 +1523,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/cell_tracking_dataset/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/cell_tracking_dataset/" class="md-nav__link">
         
   
   
@@ -1497,7 +1551,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/data_utils/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/data_utils/" class="md-nav__link">
         
   
   
@@ -1525,7 +1579,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/microscopy_dataset/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/microscopy_dataset/" class="md-nav__link">
         
   
   
@@ -1553,7 +1607,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/preprocessors/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/preprocessors/" class="md-nav__link">
         
   
   
@@ -1581,7 +1635,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/sleap_dataset/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/sleap_dataset/" class="md-nav__link">
         
   
   
@@ -1609,7 +1663,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datasets/tracking_dataset/" class="md-nav__link">
+      <a href="../reference/dreem/datasets/tracking_dataset/" class="md-nav__link">
         
   
   
@@ -1659,7 +1713,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../inference/" class="md-nav__link ">
+            <a href="../reference/dreem/inference/" class="md-nav__link ">
               
   
   
@@ -1701,7 +1755,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/boxes/" class="md-nav__link">
+      <a href="../reference/dreem/inference/boxes/" class="md-nav__link">
         
   
   
@@ -1729,7 +1783,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/eval/" class="md-nav__link">
+      <a href="../reference/dreem/inference/eval/" class="md-nav__link">
         
   
   
@@ -1757,7 +1811,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/metrics/" class="md-nav__link">
+      <a href="../reference/dreem/inference/metrics/" class="md-nav__link">
         
   
   
@@ -1785,7 +1839,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/post_processing/" class="md-nav__link">
+      <a href="../reference/dreem/inference/post_processing/" class="md-nav__link">
         
   
   
@@ -1813,7 +1867,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/post_processing_utils/" class="md-nav__link">
+      <a href="../reference/dreem/inference/post_processing_utils/" class="md-nav__link">
         
   
   
@@ -1841,7 +1895,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/track/" class="md-nav__link">
+      <a href="../reference/dreem/inference/track/" class="md-nav__link">
         
   
   
@@ -1869,7 +1923,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/track_queue/" class="md-nav__link">
+      <a href="../reference/dreem/inference/track_queue/" class="md-nav__link">
         
   
   
@@ -1897,7 +1951,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../inference/tracker/" class="md-nav__link">
+      <a href="../reference/dreem/inference/tracker/" class="md-nav__link">
         
   
   
@@ -1947,7 +2001,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../io/" class="md-nav__link ">
+            <a href="../reference/dreem/io/" class="md-nav__link ">
               
   
   
@@ -1989,7 +2043,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/association_matrix/" class="md-nav__link">
+      <a href="../reference/dreem/io/association_matrix/" class="md-nav__link">
         
   
   
@@ -2017,7 +2071,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/config/" class="md-nav__link">
+      <a href="../reference/dreem/io/config/" class="md-nav__link">
         
   
   
@@ -2045,7 +2099,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/flags/" class="md-nav__link">
+      <a href="../reference/dreem/io/flags/" class="md-nav__link">
         
   
   
@@ -2073,7 +2127,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/frame/" class="md-nav__link">
+      <a href="../reference/dreem/io/frame/" class="md-nav__link">
         
   
   
@@ -2101,7 +2155,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/instance/" class="md-nav__link">
+      <a href="../reference/dreem/io/instance/" class="md-nav__link">
         
   
   
@@ -2129,7 +2183,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/track/" class="md-nav__link">
+      <a href="../reference/dreem/io/track/" class="md-nav__link">
         
   
   
@@ -2157,7 +2211,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../io/visualize/" class="md-nav__link">
+      <a href="../reference/dreem/io/visualize/" class="md-nav__link">
         
   
   
@@ -2190,8 +2244,6 @@
                 
   
   
-    
-  
   
   
     
@@ -2201,15 +2253,15 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_6" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../reference/dreem/models/" class="md-nav__link ">
               
   
   
@@ -2233,7 +2285,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8_1_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2248,35 +2300,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    attention_head
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../reference/dreem/models/attention_head/" class="md-nav__link">
         
   
   
@@ -2292,52 +2319,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#dreem.models.attention_head" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        attention_head
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="attention_head">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dreem.models.attention_head.ATTWeightHead" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ATTWeightHead
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2350,7 +2331,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../embedding/" class="md-nav__link">
+      <a href="../reference/dreem/models/embedding/" class="md-nav__link">
         
   
   
@@ -2378,7 +2359,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../global_tracking_transformer/" class="md-nav__link">
+      <a href="../reference/dreem/models/global_tracking_transformer/" class="md-nav__link">
         
   
   
@@ -2406,7 +2387,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../gtr_runner/" class="md-nav__link">
+      <a href="../reference/dreem/models/gtr_runner/" class="md-nav__link">
         
   
   
@@ -2434,7 +2415,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../mlp/" class="md-nav__link">
+      <a href="../reference/dreem/models/mlp/" class="md-nav__link">
         
   
   
@@ -2462,7 +2443,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_utils/" class="md-nav__link">
+      <a href="../reference/dreem/models/model_utils/" class="md-nav__link">
         
   
   
@@ -2490,7 +2471,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../transformer/" class="md-nav__link">
+      <a href="../reference/dreem/models/transformer/" class="md-nav__link">
         
   
   
@@ -2518,7 +2499,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../visual_encoder/" class="md-nav__link">
+      <a href="../reference/dreem/models/visual_encoder/" class="md-nav__link">
         
   
   
@@ -2568,7 +2549,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../training/" class="md-nav__link ">
+            <a href="../reference/dreem/training/" class="md-nav__link ">
               
   
   
@@ -2610,7 +2591,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../training/losses/" class="md-nav__link">
+      <a href="../reference/dreem/training/losses/" class="md-nav__link">
         
   
   
@@ -2638,7 +2619,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../training/train/" class="md-nav__link">
+      <a href="../reference/dreem/training/train/" class="md-nav__link">
         
   
   
@@ -2688,7 +2669,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../utils/" class="md-nav__link ">
+            <a href="../reference/dreem/utils/" class="md-nav__link ">
               
   
   
@@ -2730,7 +2711,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/processors/" class="md-nav__link">
+      <a href="../reference/dreem/utils/processors/" class="md-nav__link">
         
   
   
@@ -2818,6 +2799,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -2826,30 +2809,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#dreem.models.attention_head" class="md-nav__link">
+  <a href="#supported-formats" class="md-nav__link">
     <span class="md-ellipsis">
       
-        attention_head
+        Supported Formats
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="attention_head">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dreem.models.attention_head.ATTWeightHead" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ATTWeightHead
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2873,416 +2839,768 @@
   
 
 
-  <h1>attention_head</h1>
-
-<div class="doc doc-object doc-module">
-
-
-
-<h2 id="dreem.models.attention_head" class="doc doc-heading">
-            <code>dreem.models.attention_head</code>
-
-
-<a href="#dreem.models.attention_head" class="headerlink" title="Permanent link">&para;</a></h2>
-
-    <div class="doc doc-contents first">
-
-        <p>Module containing different components of multi-head attention heads.</p>
-
-
-
-
-
-
-
-
-
-
-<p><span class="doc-section-title">Classes:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title="&lt;code&gt;dreem.models.attention_head.ATTWeightHead&lt;/code&gt;" href="../../../../models/model_parts/#dreem.models.attention_head.ATTWeightHead">ATTWeightHead</a></code></td>
-            <td>
-              <div class="doc-md-description">
-                <p>Single attention head.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="dreem.models.attention_head.ATTWeightHead" class="doc doc-heading">
-            <code>ATTWeightHead</code>
-
-
-<a href="#dreem.models.attention_head.ATTWeightHead" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="torch.nn.Module">Module</span></code></p>
-
-
-
-        <p>Single attention head.</p>
-
-
-
-
-
-
-
-
-
-
-
-
-<p><span class="doc-section-title">Methods:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;fm&quot;&gt;__init__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;feature_dim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;num_layers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dropout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.models.attention_head.ATTWeightHead.__init__&lt;/code&gt;)" href="../../../../models/model_parts/#dreem.models.attention_head.ATTWeightHead.__init__">__init__</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Initialize an instance of ATTWeightHead.</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;forward&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;query&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt; (&lt;code&gt;dreem.models.attention_head.ATTWeightHead.forward&lt;/code&gt;)" href="../../../../models/model_parts/#dreem.models.attention_head.ATTWeightHead.forward">forward</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Compute the attention weights of a query tensor using the key tensor.</p>
-                </div>
-              </td>
-            </tr>
-      </tbody>
-    </table>
-
-
-
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>dreem/models/attention_head.py</code></summary>
-                <div class="highlight"><pre><span></span><code><a id="__codelineno-0-10" name="__codelineno-0-10"></a><a href="#__codelineno-0-10"><span class="linenos" data-linenos="10 "></span></a><span class="k">class</span><span class="w"> </span><span class="nc">ATTWeightHead</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a><a href="#__codelineno-0-11"><span class="linenos" data-linenos="11 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Single attention head.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a><a href="#__codelineno-0-12"><span class="linenos" data-linenos="12 "></span></a>
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a><a href="#__codelineno-0-13"><span class="linenos" data-linenos="13 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a><a href="#__codelineno-0-14"><span class="linenos" data-linenos="14 "></span></a>        <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a><a href="#__codelineno-0-15"><span class="linenos" data-linenos="15 "></span></a>        <span class="n">feature_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a><a href="#__codelineno-0-16"><span class="linenos" data-linenos="16 "></span></a>        <span class="n">num_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a><a href="#__codelineno-0-17"><span class="linenos" data-linenos="17 "></span></a>        <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a><a href="#__codelineno-0-18"><span class="linenos" data-linenos="18 "></span></a>    <span class="p">):</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a><a href="#__codelineno-0-19"><span class="linenos" data-linenos="19 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize an instance of ATTWeightHead.</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a><a href="#__codelineno-0-20"><span class="linenos" data-linenos="20 "></span></a>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><a href="#__codelineno-0-21"><span class="linenos" data-linenos="21 "></span></a><span class="sd">        Args:</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a><a href="#__codelineno-0-22"><span class="linenos" data-linenos="22 "></span></a><span class="sd">            feature_dim: The dimensionality of input features.</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a><a href="#__codelineno-0-23"><span class="linenos" data-linenos="23 "></span></a><span class="sd">            num_layers: The number of hidden layers in the MLP.</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a><a href="#__codelineno-0-24"><span class="linenos" data-linenos="24 "></span></a><span class="sd">            dropout: Dropout probability.</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><a href="#__codelineno-0-25"><span class="linenos" data-linenos="25 "></span></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a><a href="#__codelineno-0-26"><span class="linenos" data-linenos="26 "></span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a><a href="#__codelineno-0-27"><span class="linenos" data-linenos="27 "></span></a>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a><a href="#__codelineno-0-28"><span class="linenos" data-linenos="28 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">q_proj</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">,</span> <span class="n">feature_dim</span><span class="p">,</span> <span class="n">feature_dim</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a><a href="#__codelineno-0-29"><span class="linenos" data-linenos="29 "></span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">k_proj</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">,</span> <span class="n">feature_dim</span><span class="p">,</span> <span class="n">feature_dim</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a><a href="#__codelineno-0-30"><span class="linenos" data-linenos="30 "></span></a>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a><a href="#__codelineno-0-31"><span class="linenos" data-linenos="31 "></span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a><a href="#__codelineno-0-32"><span class="linenos" data-linenos="32 "></span></a>        <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33"></a><a href="#__codelineno-0-33"><span class="linenos" data-linenos="33 "></span></a>        <span class="n">query</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a><a href="#__codelineno-0-34"><span class="linenos" data-linenos="34 "></span></a>        <span class="n">key</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a><a href="#__codelineno-0-35"><span class="linenos" data-linenos="35 "></span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a><a href="#__codelineno-0-36"><span class="linenos" data-linenos="36 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the attention weights of a query tensor using the key tensor.</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a><a href="#__codelineno-0-37"><span class="linenos" data-linenos="37 "></span></a>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a><a href="#__codelineno-0-38"><span class="linenos" data-linenos="38 "></span></a><span class="sd">        Args:</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a><a href="#__codelineno-0-39"><span class="linenos" data-linenos="39 "></span></a><span class="sd">            query: Input tensor of shape (batch_size, num_frame_instances, feature_dim).</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a><a href="#__codelineno-0-40"><span class="linenos" data-linenos="40 "></span></a><span class="sd">            key: Input tensor of shape (batch_size, num_window_instances, feature_dim).</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a><a href="#__codelineno-0-41"><span class="linenos" data-linenos="41 "></span></a>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a><a href="#__codelineno-0-42"><span class="linenos" data-linenos="42 "></span></a><span class="sd">        Returns:</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a><a href="#__codelineno-0-43"><span class="linenos" data-linenos="43 "></span></a><span class="sd">            Output tensor of shape</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a><a href="#__codelineno-0-44"><span class="linenos" data-linenos="44 "></span></a><span class="sd">            (batch_size, num_frame_instances, num_window_instances).</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a><a href="#__codelineno-0-45"><span class="linenos" data-linenos="45 "></span></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a><a href="#__codelineno-0-46"><span class="linenos" data-linenos="46 "></span></a>        <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_proj</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a><a href="#__codelineno-0-47"><span class="linenos" data-linenos="47 "></span></a>        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_proj</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a><a href="#__codelineno-0-48"><span class="linenos" data-linenos="48 "></span></a>        <span class="n">attn_weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a><a href="#__codelineno-0-49"><span class="linenos" data-linenos="49 "></span></a>
-<a id="__codelineno-0-50" name="__codelineno-0-50"></a><a href="#__codelineno-0-50"><span class="linenos" data-linenos="50 "></span></a>        <span class="k">return</span> <span class="n">attn_weights</span>  <span class="c1"># (B, N_t, N)</span>
-</code></pre></div>
-              </details>
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="dreem.models.attention_head.ATTWeightHead.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span></code>
-
-<a href="#dreem.models.attention_head.ATTWeightHead.__init__" class="headerlink" title="Permanent link">&para;</a></h4>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Initialize an instance of ATTWeightHead.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>feature_dim</code>
-            </td>
-            <td>
-                  <code><span title="int">int</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The dimensionality of input features.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>num_layers</code>
-            </td>
-            <td>
-                  <code><span title="int">int</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The number of hidden layers in the MLP.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>dropout</code>
-            </td>
-            <td>
-                  <code><span title="float">float</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Dropout probability.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>dreem/models/attention_head.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-13" name="__codelineno-0-13"></a><a href="#__codelineno-0-13"><span class="linenos" data-linenos="13 "></span></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a><a href="#__codelineno-0-14"><span class="linenos" data-linenos="14 "></span></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a><a href="#__codelineno-0-15"><span class="linenos" data-linenos="15 "></span></a>    <span class="n">feature_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a><a href="#__codelineno-0-16"><span class="linenos" data-linenos="16 "></span></a>    <span class="n">num_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a><a href="#__codelineno-0-17"><span class="linenos" data-linenos="17 "></span></a>    <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a><a href="#__codelineno-0-18"><span class="linenos" data-linenos="18 "></span></a><span class="p">):</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a><a href="#__codelineno-0-19"><span class="linenos" data-linenos="19 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize an instance of ATTWeightHead.</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a><a href="#__codelineno-0-20"><span class="linenos" data-linenos="20 "></span></a>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><a href="#__codelineno-0-21"><span class="linenos" data-linenos="21 "></span></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a><a href="#__codelineno-0-22"><span class="linenos" data-linenos="22 "></span></a><span class="sd">        feature_dim: The dimensionality of input features.</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a><a href="#__codelineno-0-23"><span class="linenos" data-linenos="23 "></span></a><span class="sd">        num_layers: The number of hidden layers in the MLP.</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a><a href="#__codelineno-0-24"><span class="linenos" data-linenos="24 "></span></a><span class="sd">        dropout: Dropout probability.</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><a href="#__codelineno-0-25"><span class="linenos" data-linenos="25 "></span></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a><a href="#__codelineno-0-26"><span class="linenos" data-linenos="26 "></span></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a><a href="#__codelineno-0-27"><span class="linenos" data-linenos="27 "></span></a>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a><a href="#__codelineno-0-28"><span class="linenos" data-linenos="28 "></span></a>    <span class="bp">self</span><span class="o">.</span><span class="n">q_proj</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">,</span> <span class="n">feature_dim</span><span class="p">,</span> <span class="n">feature_dim</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a><a href="#__codelineno-0-29"><span class="linenos" data-linenos="29 "></span></a>    <span class="bp">self</span><span class="o">.</span><span class="n">k_proj</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span><span class="n">feature_dim</span><span class="p">,</span> <span class="n">feature_dim</span><span class="p">,</span> <span class="n">feature_dim</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
-</code></pre></div>
-            </details>
+<h1 id="live-visualizer">Live Visualizer<a class="headerlink" href="#live-visualizer" title="Permanent link">&para;</a></h1>
+<p>Visualize your DREEM tracking results directly in the browser. Upload an SLP file and a video file to see pose annotations and track IDs overlaid on your data.</p>
+<div class="admonition info">
+<p class="admonition-title">How it works</p>
+<p>This visualizer uses <a href="https://github.com/talmolab/sleap-io.js">sleap-io.js</a> to parse SLP files entirely in your browser. No data is uploaded to any server.</p>
+</div>
+<hr />
+<div id="visualizer-app">
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <label for="slp-file">SLP File</label>
+      <input id="slp-file" type="file" accept=".slp,.h5,.hdf5" />
+
+
+      <label for="video-file" style="margin-top: 14px;">Video File</label>
+      <input id="video-file" type="file" accept="video/*,.mp4,.avi,.mov" />
+
+      <button id="load-btn">Load</button>
+      <div class="viz-status" id="status">Select an SLP file to begin.</div>
+      <div class="viz-meta" id="meta"></div>
     </div>
 
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="dreem.models.attention_head.ATTWeightHead.forward" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">forward</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span></code>
-
-<a href="#dreem.models.attention_head.ATTWeightHead.forward" class="headerlink" title="Permanent link">&para;</a></h4>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Compute the attention weights of a query tensor using the key tensor.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>query</code>
-            </td>
-            <td>
-                  <code><span title="torch.Tensor">Tensor</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Input tensor of shape (batch_size, num_frame_instances, feature_dim).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>key</code>
-            </td>
-            <td>
-                  <code><span title="torch.Tensor">Tensor</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Input tensor of shape (batch_size, num_window_instances, feature_dim).</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="torch.Tensor">Tensor</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Output tensor of shape
-(batch_size, num_frame_instances, num_window_instances).</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>dreem/models/attention_head.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-31" name="__codelineno-0-31"></a><a href="#__codelineno-0-31"><span class="linenos" data-linenos="31 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a><a href="#__codelineno-0-32"><span class="linenos" data-linenos="32 "></span></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33"></a><a href="#__codelineno-0-33"><span class="linenos" data-linenos="33 "></span></a>    <span class="n">query</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a><a href="#__codelineno-0-34"><span class="linenos" data-linenos="34 "></span></a>    <span class="n">key</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a><a href="#__codelineno-0-35"><span class="linenos" data-linenos="35 "></span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a><a href="#__codelineno-0-36"><span class="linenos" data-linenos="36 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the attention weights of a query tensor using the key tensor.</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a><a href="#__codelineno-0-37"><span class="linenos" data-linenos="37 "></span></a>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a><a href="#__codelineno-0-38"><span class="linenos" data-linenos="38 "></span></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a><a href="#__codelineno-0-39"><span class="linenos" data-linenos="39 "></span></a><span class="sd">        query: Input tensor of shape (batch_size, num_frame_instances, feature_dim).</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a><a href="#__codelineno-0-40"><span class="linenos" data-linenos="40 "></span></a><span class="sd">        key: Input tensor of shape (batch_size, num_window_instances, feature_dim).</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a><a href="#__codelineno-0-41"><span class="linenos" data-linenos="41 "></span></a>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a><a href="#__codelineno-0-42"><span class="linenos" data-linenos="42 "></span></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a><a href="#__codelineno-0-43"><span class="linenos" data-linenos="43 "></span></a><span class="sd">        Output tensor of shape</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a><a href="#__codelineno-0-44"><span class="linenos" data-linenos="44 "></span></a><span class="sd">        (batch_size, num_frame_instances, num_window_instances).</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a><a href="#__codelineno-0-45"><span class="linenos" data-linenos="45 "></span></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a><a href="#__codelineno-0-46"><span class="linenos" data-linenos="46 "></span></a>    <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_proj</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a><a href="#__codelineno-0-47"><span class="linenos" data-linenos="47 "></span></a>    <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_proj</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a><a href="#__codelineno-0-48"><span class="linenos" data-linenos="48 "></span></a>    <span class="n">attn_weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a><a href="#__codelineno-0-49"><span class="linenos" data-linenos="49 "></span></a>
-<a id="__codelineno-0-50" name="__codelineno-0-50"></a><a href="#__codelineno-0-50"><span class="linenos" data-linenos="50 "></span></a>    <span class="k">return</span> <span class="n">attn_weights</span>  <span class="c1"># (B, N_t, N)</span>
-</code></pre></div>
-            </details>
+    <div class="viz-main">
+      <div class="viz-player">
+        <video id="video" playsinline muted></video>
+        <canvas id="overlay"></canvas>
+      </div>
+      <div class="viz-controls">
+        <button id="play-btn">Play</button>
+        <input id="seek" type="range" min="0" max="0" value="0" step="1" />
+        <span id="frame-label" class="viz-pill">Frame 0</span>
+      </div>
+      <div class="viz-panel viz-coords">
+        <div class="viz-coords-label">Coordinates & Track Info</div>
+        <pre id="coords" class="viz-coords-body">—</pre>
+      </div>
     </div>
-
-</div>
-
-
-
   </div>
-
-    </div>
-
 </div>
 
+<script type="importmap">
+{
+  "imports": {
+    "h5wasm": "https://unpkg.com/h5wasm@0.8.8/dist/esm/hdf5_hl.js",
+    "yaml": "https://esm.sh/yaml@2.6.1",
+    "skia-canvas": "data:text/javascript,export class Canvas{}",
+    "child_process": "data:text/javascript,export function spawn(){}"
+  }
+}
+</script>
 
+<style>
+#visualizer-app {
+  --viz-panel: rgba(127, 127, 127, 0.1);
+  --viz-line: rgba(255, 152, 0, 0.3);
+  --viz-accent: #ff9800;
+  --viz-muted: #888;
+}
 
+[data-md-color-scheme="slate"] #visualizer-app {
+  --viz-panel: rgba(255, 255, 255, 0.06);
+}
 
-  </div>
+#visualizer-app * { box-sizing: border-box; }
 
-    </div>
+.viz-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  align-items: start;
+  margin-top: 1rem;
+}
 
+.viz-panel {
+  background: var(--viz-panel);
+  border: 1px solid var(--viz-line);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.viz-panel label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--viz-muted);
+  margin-bottom: 6px;
+}
+
+.viz-panel input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: rgba(127, 127, 127, 0.15);
+  color: var(--md-typeset-color);
+  font-size: 14px;
+}
+
+.viz-panel input[type="file"] {
+  width: 100%;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.viz-panel button {
+  margin-top: 12px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--viz-accent);
+  background: transparent;
+  color: var(--md-typeset-color);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.viz-panel button:hover {
+  background: rgba(255, 152, 0, 0.1);
+}
+
+.viz-panel button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.viz-status {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--viz-muted);
+}
+
+.viz-meta {
+  font-size: 12px;
+  color: var(--viz-muted);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.viz-player {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--viz-line);
+  background: #000;
+  min-height: 300px;
+}
+
+.viz-player video {
+  width: 100%;
+  display: block;
+}
+
+.viz-player canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.viz-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.viz-controls input[type="range"] {
+  flex: 1;
+}
+
+.viz-controls button {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--viz-accent);
+  background: transparent;
+  color: var(--md-typeset-color);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.viz-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--viz-line);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.viz-coords {
+  margin-top: 12px;
+}
+
+.viz-coords-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--viz-muted);
+  margin-bottom: 6px;
+}
+
+.viz-coords-body {
+  margin: 0;
+  max-height: 200px;
+  overflow: auto;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  background: var(--viz-panel);
+  border: 1px solid var(--viz-line);
+  border-radius: 10px;
+  padding: 10px;
+  white-space: pre;
+}
+
+@media (max-width: 900px) {
+  .viz-layout {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+<script type="module">
+// Import sleap-io.js from CDN
+const sleapioUrl = "https://unpkg.com/@talmolab/sleap-io.js@0.1.9/dist/index.js";
+const { loadSlp, loadVideo } = await import(sleapioUrl);
+
+// DOM elements
+const slpInput = document.querySelector("#slp-url");
+const videoInput = document.querySelector("#video-url");
+const fileInput = document.querySelector("#slp-file");
+const videoFileInput = document.querySelector("#video-file");
+const loadBtn = document.querySelector("#load-btn");
+const statusEl = document.querySelector("#status");
+const metaEl = document.querySelector("#meta");
+const videoEl = document.querySelector("#video");
+const canvas = document.querySelector("#overlay");
+const playerEl = document.querySelector(".viz-player");
+const seek = document.querySelector("#seek");
+const playBtn = document.querySelector("#play-btn");
+const frameLabel = document.querySelector("#frame-label");
+const coordsEl = document.querySelector("#coords");
+
+const ctx = canvas.getContext("2d");
+
+// Track colors - distinct colors for different track IDs
+const colors = ["#ff9800", "#7dd3fc", "#a7f3d0", "#fda4af", "#c4b5fd", "#fcd34d", "#6ee7b7", "#f9a8d4"];
+const trackColors = new Map();
+
+const getTrackKey = (track) => {
+  if (!track) return null;
+  if (typeof track === "object") return track.id ?? track.name ?? track;
+  return track;
+};
+
+const getInstanceColor = (instance, fallbackIndex) => {
+  const trackKey = getTrackKey(instance.track);
+  if (trackKey != null) {
+    if (!trackColors.has(trackKey)) {
+      trackColors.set(trackKey, colors[trackColors.size % colors.length]);
+    }
+    return trackColors.get(trackKey);
+  }
+  const stableIndex = instance.id ?? instance.instanceId ?? fallbackIndex;
+  return colors[stableIndex % colors.length];
+};
+
+const formatPoint = (point) => {
+  if (!point) return "None";
+  if (!point.visible) return "None";
+  const [x, y] = point.xy;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return "None";
+  return `${x.toFixed(2)}, ${y.toFixed(2)}`;
+};
+
+const formatFrameCoords = (frame, skeleton) => {
+  if (!coordsEl) return;
+  if (!frame || !skeleton) {
+    coordsEl.textContent = "—";
+    return;
+  }
+  const lines = [];
+  frame.instances.forEach((instance, idx) => {
+    const trackKey = getTrackKey(instance.track);
+    const trackName = instance.track?.name ?? `untracked`;
+    const trackId = trackKey != null ? ` [Track ${trackKey}]` : "";
+    const color = getInstanceColor(instance, idx);
+    lines.push(`Instance ${idx} (${trackName})${trackId}`);
+    instance.points.forEach((point, nodeIdx) => {
+      const nodeName = skeleton.nodes[nodeIdx]?.name ?? `node ${nodeIdx}`;
+      lines.push(`  ${nodeName}: ${formatPoint(point)}`);
+    });
+    lines.push("");
+  });
+  coordsEl.textContent = lines.length ? lines.join("\n").trim() : "—";
+};
+
+// State
+let labels = null;
+let videoModel = null;
+let frameTimes = null;
+let framesByIndex = new Map();
+let skeleton = null;
+let fps = 30;
+let maxFrame = 0;
+let frameCount = 0;
+let currentFrame = 0;
+let isPlaying = false;
+let playHandle = null;
+let playbackStartTime = 0;
+let playbackStartFrame = 0;
+let renderToken = 0;
+let embeddedMode = false;
+let labeledFramesList = [];
+let currentLabeledFrameIndex = 0;
+
+const setStatus = (message) => {
+  statusEl.textContent = message;
+};
+
+const setMeta = (data) => {
+  if (!data) {
+    metaEl.textContent = "";
+    return;
+  }
+  let text = `Frames: ${data.frames} | Instances: ${data.instances} | Nodes: ${data.nodes}`;
+  if (data.tracks) {
+    text += ` | Tracks: ${data.tracks}`;
+  }
+  if (data.videos > 1) {
+    text += ` | Videos: ${data.videos}`;
+  }
+  if (data.mode) {
+    text += `\nMode: ${data.mode}`;
+  }
+  metaEl.textContent = text;
+};
+
+const configureCanvas = (width, height, setPlayerHeight = false) => {
+  const w = width || videoEl?.videoWidth || 1280;
+  const h = height || videoEl?.videoHeight || 720;
+  canvas.width = w;
+  canvas.height = h;
+  if (setPlayerHeight) {
+    const player = playerEl || document.querySelector(".viz-player");
+    if (player) {
+      const aspectRatio = h / w;
+      player.style.paddingBottom = `${aspectRatio * 100}%`;
+    }
+  }
+};
+
+const buildFrameIndex = () => {
+  framesByIndex = new Map();
+  let instanceCount = 0;
+  for (const frame of labels.labeledFrames) {
+    if (!Number.isFinite(frame.frameIdx)) continue;
+    framesByIndex.set(frame.frameIdx, frame);
+    instanceCount += frame.instances.length;
+  }
+  const frameIndices = Array.from(framesByIndex.keys()).filter((value) => Number.isFinite(value));
+  maxFrame = frameIndices.length ? Math.max(...frameIndices) : 0;
+  frameCount = frameIndices.length;
+
+  trackColors.clear();
+  labels.tracks.forEach((track, index) => {
+    const key = getTrackKey(track) ?? track;
+    trackColors.set(key, colors[index % colors.length]);
+  });
+
+  return instanceCount;
+};
+
+const drawSkeleton = (frame, skel) => {
+  if (!ctx || !skel || !frame) return;
+
+  frame.instances.forEach((instance, idx) => {
+    const color = getInstanceColor(instance, idx);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+
+    // Draw edges
+    for (const edge of skel.edges) {
+      const sourceIdx = skel.index(edge.source.name);
+      const destIdx = skel.index(edge.destination.name);
+      const source = instance.points[sourceIdx];
+      const dest = instance.points[destIdx];
+      if (!source || !dest) continue;
+      if (!source.visible || !dest.visible) continue;
+      if (Number.isNaN(source.xy[0]) || Number.isNaN(dest.xy[0])) continue;
+      ctx.beginPath();
+      ctx.moveTo(source.xy[0], source.xy[1]);
+      ctx.lineTo(dest.xy[0], dest.xy[1]);
+      ctx.stroke();
+    }
+
+    // Draw nodes
+    instance.points.forEach((point) => {
+      if (!point.visible || Number.isNaN(point.xy[0])) return;
+      ctx.beginPath();
+      ctx.arc(point.xy[0], point.xy[1], 4, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Draw track label
+    const trackKey = getTrackKey(instance.track);
+    if (trackKey != null && instance.points.length > 0) {
+      const firstVisible = instance.points.find(p => p.visible && !Number.isNaN(p.xy[0]));
+      if (firstVisible) {
+        ctx.font = "bold 12px sans-serif";
+        ctx.fillStyle = color;
+        ctx.fillText(`T${trackKey}`, firstVisible.xy[0] + 8, firstVisible.xy[1] - 8);
+      }
+    }
+  });
+};
+
+const renderExternalFrame = async (frameIdx) => {
+  if (!ctx || !skeleton) return;
+  const frame = framesByIndex.get(frameIdx);
+  if (!frame) return;
+  const token = ++renderToken;
+  const videoFrame = await videoModel?.getFrame(frameIdx);
+  if (token !== renderToken) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (videoFrame instanceof ImageBitmap) {
+    ctx.drawImage(videoFrame, 0, 0, canvas.width, canvas.height);
+  } else if (videoFrame instanceof ImageData) {
+    ctx.putImageData(videoFrame, 0, 0);
+  }
+
+  drawSkeleton(frame, skeleton);
+  formatFrameCoords(frame, skeleton);
+};
+
+const renderEmbeddedFrame = async (labeledFrameIndex) => {
+  if (!ctx || !skeleton || labeledFrameIndex < 0 || labeledFrameIndex >= labeledFramesList.length) return;
+
+  const frame = labeledFramesList[labeledFrameIndex];
+  const video = frame.video;
+  const token = ++renderToken;
+
+  let imageData = null;
+  if (video.backend) {
+    try {
+      imageData = await video.backend.getFrame(frame.frameIdx);
+    } catch (err) {
+      console.warn("Error getting embedded frame:", err);
+    }
+  }
+
+  if (token !== renderToken) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (imageData) {
+    if (imageData instanceof ImageBitmap) {
+      configureCanvas(imageData.width, imageData.height, true);
+      ctx.drawImage(imageData, 0, 0);
+    } else if (imageData instanceof ImageData) {
+      configureCanvas(imageData.width, imageData.height, true);
+      ctx.putImageData(imageData, 0, 0);
+    } else if (imageData instanceof Uint8Array) {
+      const blob = new Blob([imageData], { type: "image/png" });
+      const bitmap = await createImageBitmap(blob);
+      configureCanvas(bitmap.width, bitmap.height, true);
+      ctx.drawImage(bitmap, 0, 0);
+    }
+  } else {
+    configureCanvas(canvas.width || 640, canvas.height || 480, true);
+    ctx.fillStyle = "#222";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#888";
+    ctx.font = "16px sans-serif";
+    ctx.textAlign = "center";
+    const videoIdx = labels.videos.indexOf(video);
+    ctx.fillText(`Video ${videoIdx}, Frame ${frame.frameIdx}`, canvas.width / 2, canvas.height / 2);
+    ctx.fillText(`(No embedded image data)`, canvas.width / 2, canvas.height / 2 + 24);
+  }
+
+  drawSkeleton(frame, skeleton);
+  formatFrameCoords(frame, skeleton);
+};
+
+const updateFpsFromVideo = () => {
+  if (frameTimes?.length) return;
+  if (!Number.isFinite(videoEl.duration) || videoEl.duration <= 0) return;
+  if (!frameCount) return;
+  fps = frameCount / videoEl.duration;
+};
+
+const getFrameIndexForTime = (time) => {
+  if (!Number.isFinite(time)) return 0;
+  if (frameTimes?.length) {
+    let low = 0;
+    let high = frameTimes.length - 1;
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const value = frameTimes[mid];
+      if (value === time) return mid;
+      if (value < time) low = mid + 1;
+      else high = mid - 1;
+    }
+    const idx = Math.min(frameTimes.length - 1, Math.max(0, low));
+    const prev = Math.max(0, idx - 1);
+    return Math.abs(frameTimes[idx] - time) < Math.abs(frameTimes[prev] - time) ? idx : prev;
+  }
+  return Math.min(maxFrame, Math.max(0, Math.round(time * fps)));
+};
+
+const getTimeForFrameIndex = (frameIdx) => {
+  if (frameTimes?.length && frameTimes[frameIdx] != null) return frameTimes[frameIdx];
+  return frameIdx / fps;
+};
+
+const updateFrameFromVideo = (time = 0) => {
+  const frameIdx = getFrameIndexForTime(time);
+  if (!Number.isFinite(frameIdx)) return;
+  currentFrame = frameIdx;
+  seek.value = String(frameIdx);
+  frameLabel.textContent = `Frame ${frameIdx}`;
+  renderExternalFrame(frameIdx);
+};
+
+const updateEmbeddedFrame = (labeledFrameIndex) => {
+  if (labeledFrameIndex < 0 || labeledFrameIndex >= labeledFramesList.length) return;
+  currentLabeledFrameIndex = labeledFrameIndex;
+  seek.value = String(labeledFrameIndex);
+  const frame = labeledFramesList[labeledFrameIndex];
+  const videoIdx = labels.videos.indexOf(frame.video);
+  frameLabel.textContent = `Frame ${labeledFrameIndex + 1}/${labeledFramesList.length} (v${videoIdx}:${frame.frameIdx})`;
+  renderEmbeddedFrame(labeledFrameIndex);
+};
+
+const playLoop = (timestamp) => {
+  if (!isPlaying) return;
+  if (!playbackStartTime) playbackStartTime = timestamp;
+  const elapsed = (timestamp - playbackStartTime) / 1000;
+  const startTime = getTimeForFrameIndex(playbackStartFrame);
+  const nextFrame = getFrameIndexForTime(startTime + elapsed);
+  if (nextFrame !== currentFrame) {
+    updateFrameFromVideo(startTime + elapsed);
+  }
+  if (currentFrame >= maxFrame) {
+    stopPlayback();
+    return;
+  }
+  playHandle = requestAnimationFrame(playLoop);
+};
+
+const startPlayback = () => {
+  if (isPlaying) return;
+  isPlaying = true;
+  playbackStartTime = 0;
+  playbackStartFrame = currentFrame;
+  playHandle = requestAnimationFrame(playLoop);
+};
+
+const stopPlayback = () => {
+  isPlaying = false;
+  if (playHandle) cancelAnimationFrame(playHandle);
+  playHandle = null;
+};
+
+const hasEmbeddedImages = () => {
+  if (!labels?.videos?.length) return false;
+  return labels.videos.some((v) => v.backend?.dataset || v.backendMetadata?.dataset);
+};
+
+const handleLoad = async () => {
+  const file = fileInput?.files?.[0];
+  const slpUrl = slpInput.value.trim();
+  const videoFile = videoFileInput?.files?.[0];
+  const videoUrl = videoInput.value.trim();
+
+  const slpSource = file ? await file.arrayBuffer() : slpUrl;
+  const slpFilename = file ? file.name : slpUrl;
+
+  if (!slpSource) {
+    setStatus("Select an SLP file or enter a URL.");
+    return;
+  }
+
+  loadBtn.disabled = true;
+  setStatus("Loading SLP...");
+
+  try {
+    const useEmbedded = !videoUrl && !videoFile;
+
+    labels = await loadSlp(slpSource, {
+      openVideos: useEmbedded,
+      h5: { stream: file ? undefined : "range", filenameHint: slpFilename },
+    });
+    skeleton = labels.skeletons[0];
+    const instanceCount = buildFrameIndex();
+    labeledFramesList = labels.labeledFrames;
+
+    embeddedMode = useEmbedded && (hasEmbeddedImages() || labels.videos.length > 1);
+
+    if (embeddedMode) {
+      setMeta({
+        frames: labeledFramesList.length,
+        instances: instanceCount,
+        nodes: skeleton?.nodes.length ?? 0,
+        tracks: labels.tracks.length,
+        videos: labels.videos.length,
+        mode: "embedded images",
+      });
+
+      seek.max = String(labeledFramesList.length - 1);
+      videoEl.style.display = "none";
+      playBtn.style.display = "none";
+      configureCanvas(1024, 1024, true);
+      currentLabeledFrameIndex = 0;
+      updateEmbeddedFrame(0);
+      setStatus("Ready. Use slider or arrow keys to navigate.");
+    } else {
+      const videoSource = videoFile ? URL.createObjectURL(videoFile) : videoUrl;
+
+      if (!videoSource) {
+        setStatus("No video provided and no embedded images found.");
+        loadBtn.disabled = false;
+        return;
+      }
+
+      setMeta({
+        frames: frameCount,
+        instances: instanceCount,
+        nodes: skeleton?.nodes.length ?? 0,
+        tracks: labels.tracks.length,
+        videos: 1,
+        mode: "external video",
+      });
+
+      setStatus("Loading video metadata...");
+      videoModel = await loadVideo(videoSource);
+      frameTimes = await videoModel.getFrameTimes();
+      fps = videoModel.fps ?? labels.video?.fps ?? 30;
+
+      setStatus("Loading video...");
+      videoEl.style.display = "block";
+      playBtn.style.display = "inline-block";
+      videoEl.src = videoSource;
+      await videoEl.play().catch(() => {});
+      videoEl.pause();
+      await new Promise((resolve) => {
+        if (videoEl.readyState >= 1) return resolve();
+        videoEl.addEventListener("loadedmetadata", resolve, { once: true });
+      });
+
+      const shape = videoModel?.shape;
+      configureCanvas(shape?.[2], shape?.[1]);
+      updateFpsFromVideo();
+      seek.max = String(maxFrame);
+      currentFrame = 0;
+      renderToken = 0;
+      updateFrameFromVideo(0);
+      setStatus("Ready. Use Play or arrow keys to navigate.");
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    setStatus(`Load failed: ${message}`);
+    console.error(error);
+  } finally {
+    loadBtn.disabled = false;
+  }
+};
+
+// Event listeners
+seek.addEventListener("input", () => {
+  if (embeddedMode) {
+    updateEmbeddedFrame(Number(seek.value));
+  } else {
+    const frameIdx = Number(seek.value);
+    currentFrame = frameIdx;
+    frameLabel.textContent = `Frame ${frameIdx}`;
+    renderExternalFrame(frameIdx);
+  }
+});
+
+playBtn?.addEventListener("click", () => {
+  if (embeddedMode) return;
+  if (isPlaying) {
+    stopPlayback();
+    playBtn.textContent = "Play";
+  } else {
+    startPlayback();
+    playBtn.textContent = "Pause";
+  }
+});
+
+// Keyboard navigation
+document.addEventListener("keydown", (e) => {
+  if (!labels) return;
+  // Don't capture if typing in an input
+  if (e.target.tagName === "INPUT") return;
+
+  if (e.key === "ArrowLeft" || e.key === "a") {
+    if (embeddedMode) {
+      if (currentLabeledFrameIndex > 0) {
+        updateEmbeddedFrame(currentLabeledFrameIndex - 1);
+      }
+    } else {
+      if (currentFrame > 0) {
+        currentFrame--;
+        seek.value = String(currentFrame);
+        frameLabel.textContent = `Frame ${currentFrame}`;
+        renderExternalFrame(currentFrame);
+      }
+    }
+  } else if (e.key === "ArrowRight" || e.key === "d") {
+    if (embeddedMode) {
+      if (currentLabeledFrameIndex < labeledFramesList.length - 1) {
+        updateEmbeddedFrame(currentLabeledFrameIndex + 1);
+      }
+    } else {
+      if (currentFrame < maxFrame) {
+        currentFrame++;
+        seek.value = String(currentFrame);
+        frameLabel.textContent = `Frame ${currentFrame}`;
+        renderExternalFrame(currentFrame);
+      }
+    }
+  } else if (e.key === " ") {
+    e.preventDefault();
+    if (!embeddedMode) {
+      playBtn?.click();
+    }
+  }
+});
+
+// Clear video inputs when SLP file is selected
+fileInput?.addEventListener("change", () => {
+  if (fileInput.files?.length) {
+    slpInput.value = "";
+  }
+});
+
+videoFileInput?.addEventListener("change", () => {
+  if (videoFileInput.files?.length) {
+    videoInput.value = "";
+  }
+});
+
+loadBtn.addEventListener("click", handleLoad);
+</script>
+
+<hr />
+<h2 id="supported-formats">Supported Formats<a class="headerlink" href="#supported-formats" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>SLP files</strong>: <code>.slp</code>, <code>.h5</code>, <code>.hdf5</code> (SLEAP format)</li>
+<li><strong>Videos</strong>: <code>.mp4</code>, <code>.avi</code>, <code>.mov</code> (browser-supported formats)</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Track Colors</p>
+<p>Each track ID is assigned a distinct color. The track ID is displayed next to the first visible keypoint of each instance.</p>
 </div>
 
 
@@ -3370,14 +3688,14 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.tracking", "toc.follow", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tooltips", "content.code.select", "content.footnote.tooltips"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tracking", "toc.follow", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tooltips", "content.code.select", "content.footnote.tooltips"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
-        <script src="../../../../js/termynal.js"></script>
+        <script src="../js/termynal.js"></script>
       
-        <script src="../../../../js/custom.js"></script>
+        <script src="../js/custom.js"></script>
       
     
   </body>
