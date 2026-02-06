@@ -10,7 +10,7 @@ Welcome to the documentation for **DREEM** – an open-source tool for multiple 
 
 <div class="termy">
 ```console
-$ uv init
+$ uv venv && source .venv/bin/activate
 $ uv pip install dreem-track
 $ dreem track ./data --checkpoint ./models/pretrained.ckpt --output ./results --crop-size 128
 Running tracking...

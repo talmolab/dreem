@@ -34,7 +34,7 @@ No additional configuration is needed.
 
 ```bash
 git clone https://github.com/talmolab/dreem && cd dreem
-uv sync --group dev
+uv sync --extra torch-cuda128 
 ```
 
 ## Verify Installation

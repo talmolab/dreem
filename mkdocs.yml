@@ -139,6 +139,7 @@ nav:
   - Installation: installation.md
   - Quickstart: quickstart.md
   - Usage: usage.md
+  - Live Visualizer: visualizer.md
   - Examples:
     - Overview: Examples/index.md
     - Quickstart: quickstart.md
