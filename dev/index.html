@@ -2953,7 +2953,7 @@
 <a href="https://github.com/talmolab/dreem"><img alt="code" src="https://img.shields.io/github/stars/talmolab/dreem" /></a>
 <a href="https://github.com/talmolab/dreem/releases/"><img alt="Release" src="https://img.shields.io/github/v/release/talmolab/dreem?label=Latest" /></a>
 <a href="https://pypi.org/project/dreem-track"><img alt="PyPI" src="https://img.shields.io/pypi/v/dreem-track?label=PyPI" /></a></p>
-<p>Welcome to the documentation for <strong>DREEM</strong> – an open-source tool for multiple object tracking. DREEM is a framework that enables you to train your own models, run inference on new data, and evaluate your results. DREEM supports a variety of detection types, including keypoints and segmentation masks. You can use any detection model you want, convert the output to a format DREEM can use, and train a model or run inference using a pretrained model.</p>
+<p>Welcome to the documentation for <strong>DREEM</strong> – an open-source tool for multiple object tracking. It enables you to track identities of objects in video data. You can run tracking using our pretrained models for animals and microscopy, or train a new model on your own data. In either case, DREEM takes in detection outputs in the form of pose keypoints or segmentation masks, and outputs identities of objects in the video. For an interactive demo, visit our <a href="https://huggingface.co/spaces/talmolab/dreem">Hugging Face demo page</a>.</p>
 <div class="termy">
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>uv<span class="w"> </span>venv<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">$ </span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>dreem-track
@@ -2968,9 +2968,9 @@
 <h2 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
 <ul>
 <li>✅ <strong>Command-Line &amp; API Access:</strong> Use DREEM via a simple CLI or integrate into your own Python scripts.</li>
+<li><strong>Pretrained Models:</strong> Get started quickly with models trained for <a href="https://huggingface.co/talmolab/microscopy-pretrained">microscopy</a> and <a href="https://huggingface.co/talmolab/animals-pretrained">animal</a> domains. Available on Hugging Face.</li>
 <li>✅ <strong>Configurable Workflows:</strong> Easily customize training and inference using YAML configuration files.</li>
-<li>✅ <strong>Pretrained Models:</strong> Get started quickly with models trained specially for microscopy and animal domains.</li>
-<li>✅ <strong>Visualization:</strong> Tracking outputs are directly compatible with SLEAP's GUI.</li>
+<li>✅ <strong>Visualization:</strong> Visualize tracking results in your browser without any data leaving your machine, or use the SLEAP GUI for a more detailed view.</li>
 <li>✅ <strong>Examples:</strong> Step-by-step notebooks and guides for common workflows.</li>
 </ul>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
