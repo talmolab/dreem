@@ -14,11 +14,11 @@
 
 ## Features
 
-- **Command-Line & API Access:** Use DREEM via a simple CLI or integrate into your own Python scripts
-- **Configurable Workflows:** Easily customize training and inference using CLI arguments or config files
-- **Pretrained Models:** Get started quickly with models trained for [microscopy](https://huggingface.co/talmolab/microscopy-pretrained) and [animal](https://huggingface.co/talmolab/animals-pretrained) domains. Available on Hugging Face.
-- **Visualization:** Tracking outputs are directly compatible with SLEAP's GUI
-- **Examples:** Step-by-step notebooks and guides for common workflows
+- ✅ **Command-Line & API Access:** Use DREEM via a simple CLI or integrate into your own Python scripts.
+- ✅ **Pretrained Models:** Get started quickly with models trained specially for microscopy and animal domains.
+- ✅ **Configurable Workflows:** Easily customize training and inference using YAML configuration files.
+- ✅ **Visualization:** Visualize tracking results in your browser without any data leaving your machine, or use the SLEAP GUI for a more detailed view.
+- ✅ **Examples:** Step-by-step notebooks and guides for common workflows.
 
 <!-- TODO: Add GIF showing CLI usage -->
 <!-- ![CLI Demo](docs/assets/cli-demo.gif) -->
@@ -29,7 +29,7 @@ DREEM works best with Python 3.12. We recommend using [uv](https://docs.astral.s
 
 In a new directory:
 ```bash
-   uv init
+   uv venv && source .venv/bin/activate
    uv pip install dreem-track
    ```
 or as a system-wide package that does not require a virtual environment:

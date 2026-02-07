@@ -9,17 +9,10 @@ This notebook uses a simple entrypoint into the tracking code. You only need to 
 
 To run this demo, we have provided sample data and model checkpoints. A GPU is recommended if you run the CellPose segmentation step, otherwise the tracking will run on a CPU.
 
-#### Install DREEM and dependencies (Colab only)
+#### Install DREEM
 
 ```python
-# Install uv (fast Python package installer)
-%pip install uv
-
-# Install dreem and dependencies using uv
-!uv pip install dreem-track huggingface_hub tifffile opencv-python-headless
-
-# Install ffmpeg for video export (Colab-specific)
-!apt-get install -y ffmpeg
+!uv pip install dreem-track
 ```
 
 #### Import necessary packages
@@ -30,7 +23,6 @@ import torch
 import numpy as np
 import tifffile
 import matplotlib.pyplot as plt
-from pathlib import Path
 import pandas as pd
 from huggingface_hub import hf_hub_download
 import subprocess
@@ -61,23 +53,6 @@ config_path = hf_hub_download(
 
 ```python
 !hf download talmolab/microscopy-demo --repo-type dataset --local-dir ./data
-```
-
-Check if a GPU is available. For Apple silicon users, you can run on MPS, but ensure your version of PyTorch is compatible with MPS, and that you have installed the correct version of DREEM. You can also run without a GPU. The demo has been tested on an M3 Macbook Air running only on a CPU.
-
-```python
-cuda_available = torch.cuda.is_available()
-print(f"CUDA available: {cuda_available}")
-if cuda_available:
-    accelerator = "cuda"
-elif torch.backends.mps.is_available():
-    accelerator = "mps"
-    devices = 1
-else:
-    accelerator = "cpu"
-print("Using device: ", accelerator)
-
-torch.set_float32_matmul_precision("medium")
 ```
 
 ## Detection

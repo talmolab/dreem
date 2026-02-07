@@ -295,7 +295,7 @@ def _create_inference_command(mode: str):
             "tracker.front_nodes": list(front_nodes) if front_nodes else None,
             "tracker.back_nodes": list(back_nodes) if back_nodes else None,
             "save_frame_meta": save_meta,
-            "trainer.accelerator": "gpu" if gpu else "cpu",
+            "trainer.accelerator": "cpu" if gpu is False else "gpu",
         }
 
         cfg = build_config("track", config, set_, **cli_overrides)
@@ -450,7 +450,7 @@ def train(
         "dataset.val_dataset.crop_size": crop_size,
         "logging.name": run_name,
         "logging.logger_type": logger,
-        "trainer.accelerator": "gpu" if gpu else "cpu",
+        "trainer.accelerator": "cpu" if gpu is False else "gpu",
         "logging.name": run_name,
     }
 
