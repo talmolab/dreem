@@ -231,8 +231,6 @@ const sleapioUrl = "https://unpkg.com/@talmolab/sleap-io.js@0.1.9/dist/index.js"
 const { loadSlp, loadVideo } = await import(sleapioUrl);
 
 // DOM elements
-const slpInput = document.querySelector("#slp-url");
-const videoInput = document.querySelector("#video-url");
 const fileInput = document.querySelector("#slp-file");
 const videoFileInput = document.querySelector("#video-file");
 const loadBtn = document.querySelector("#load-btn");
@@ -577,27 +575,25 @@ const hasEmbeddedImages = () => {
 
 const handleLoad = async () => {
   const file = fileInput?.files?.[0];
-  const slpUrl = slpInput.value.trim();
   const videoFile = videoFileInput?.files?.[0];
-  const videoUrl = videoInput.value.trim();
 
-  const slpSource = file ? await file.arrayBuffer() : slpUrl;
-  const slpFilename = file ? file.name : slpUrl;
-
-  if (!slpSource) {
-    setStatus("Select an SLP file or enter a URL.");
+  if (!file) {
+    setStatus("Select an SLP file to begin.");
     return;
   }
+
+  const slpSource = await file.arrayBuffer();
+  const slpFilename = file.name;
 
   loadBtn.disabled = true;
   setStatus("Loading SLP...");
 
   try {
-    const useEmbedded = !videoUrl && !videoFile;
+    const useEmbedded = !videoFile;
 
     labels = await loadSlp(slpSource, {
       openVideos: useEmbedded,
-      h5: { stream: file ? undefined : "range", filenameHint: slpFilename },
+      h5: { stream: undefined, filenameHint: slpFilename },
     });
     skeleton = labels.skeletons[0];
     const instanceCount = buildFrameIndex();
@@ -623,13 +619,13 @@ const handleLoad = async () => {
       updateEmbeddedFrame(0);
       setStatus("Ready. Use slider or arrow keys to navigate.");
     } else {
-      const videoSource = videoFile ? URL.createObjectURL(videoFile) : videoUrl;
-
-      if (!videoSource) {
+      if (!videoFile) {
         setStatus("No video provided and no embedded images found.");
         loadBtn.disabled = false;
         return;
       }
+
+      const videoSource = URL.createObjectURL(videoFile);
 
       setMeta({
         frames: frameCount,
@@ -734,19 +730,6 @@ document.addEventListener("keydown", (e) => {
     if (!embeddedMode) {
       playBtn?.click();
     }
-  }
-});
-
-// Clear video inputs when SLP file is selected
-fileInput?.addEventListener("change", () => {
-  if (fileInput.files?.length) {
-    slpInput.value = "";
-  }
-});
-
-videoFileInput?.addEventListener("change", () => {
-  if (videoFileInput.files?.length) {
-    videoInput.value = "";
   }
 });
 
