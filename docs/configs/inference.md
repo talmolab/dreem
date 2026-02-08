@@ -1,170 +1,188 @@
-# Description of inference params
+# Inference Configuration
 
-Here we describe the parameters used for inference. See [here](./inference.md#example-config) for an example inference config.
+This guide describes the parameters used for inference configuration. Most parameters can be set via CLI flags (see `dreem track --help` or `dreem eval --help`) or through a YAML config file.
 
-* `ckpt_path`: (`str`) the path to the saved model checkpoint. Can optionally provide a list of models and this will trigger batch inference where each pod gets a model to run inference with.
-e.g:
+## Required Parameters
+
+* `ckpt_path` (`str`): Path to the model checkpoint file.
+* `outdir` (`str`): Directory where tracking results will be saved.
+
+## Dataset Configuration
+
+The `dataset.test_dataset` section configures the input data for inference.
+
+### Directory-based Input (Recommended)
+
+Use the `dir` section to automatically discover videos and labels in a directory:
+
+* `path` (`str`): Path to directory containing videos and labels (use absolute paths).
+* `labels_suffix` (`str`): File extension for label files (e.g., `.slp`, `.csv`, `.xml`).
+* `vid_suffix` (`str`): File extension for video files (e.g., `.mp4`, `.avi`, `.tif`, `.tiff`).
+
+### File-based Input
+
+Alternatively, specify files explicitly:
+
+* `slp_files` (`list[str]`): List of paths to SLEAP label files (`.slp`).
+* `video_files` (`list[str]`): List of paths to video files.
+
+### Dataset Parameters
+
+* `crop_size` (`int`): Size (in pixels) of the square bounding box around each instance. Should match the approximate size of your tracked objects.
+* `clip_length` (`int`): Number of frames per chunk when processing videos (default: 32).
+* `chunk` (`bool`): Whether to chunk videos into smaller clips (default: `true`).
+* `anchors` (`str` | `list[str]` | `int`): 
+  * String: Single node name to center crops around (e.g., `"centroid"`).
+  * List: Multiple node names to use as crop centers.
+  * Integer: Number of anchors to randomly select.
+* `padding` (`int`): Amount of padding added to each side of the bounding box (default: 0).
+* `dilation_radius_px` (`int`): Size of mask around keypoint (pixels) to mask out background.
+* `max_detection_overlap` (`float`): IOU threshold above which detections are considered duplicates.
+* `detection_iou_threshold` (`bool`): Whether to use IOU threshold for detection filtering.
+
+## Tracker Configuration
+
+The `tracker` section controls tracking behavior and post-processing.
+
+### Core Tracking Parameters
+
+* `max_tracks` (`int`): Maximum number of tracks that can be created. Set this to the number of objects you expect to track.
+* `overlap_thresh` (`float`): Trajectory overlap threshold for assignment (default: 0.01).
+* `max_center_dist` (`float`): Maximum distance (pixels) an instance can move between frames to be considered the same track.
+* `max_gap` (`int`): Maximum number of frames a trajectory can be missing before termination.
+* `confidence_threshold` (`float`): Threshold below which frames are flagged as potential errors (default: 0).
+
+### IOU and Threshold Settings
+
+* `iou` (`str` | `None`): IOU reweighting mode. Options: `"mult"` (multiplicative), `"max"`, or `None`.
+* `mult_thresh` (`bool`): Whether to use multiplicative threshold weighting.
+
+### Orientation and Angle Constraints
+
+* `max_angle_diff` (`float`): Maximum angle difference (degrees) allowed for track assignment.
+* `front_nodes` (`list[str]`): List of node names defining the front of the object for orientation.
+* `back_nodes` (`list[str]`): List of node names defining the back of the object for orientation.
+* `angle_diff_penalty_multiplier` (`float`): Multiplier for angle difference penalty (default: 1.0).
+* `distance_penalty_multiplier` (`float`): Multiplier for distance penalty (default: 2.0).
+
+### Advanced Parameters
+
+* `decay_time` (`float` | `None`): Weight for temporal decay in post-processing. Set to `null` to disable.
+
+## Dataloader Configuration
+
+* `test_dataloader.num_workers` (`int`): Number of subprocesses for data loading. Use `0` for single-process loading.
+* `test_dataloader.shuffle` (`bool`): Whether to shuffle data (typically `false` for inference).
+
+## Trainer Configuration
+
+* `trainer.accelerator` (`str`): Device to use. Options: `"gpu"`, `"cuda"`, or `"cpu"`.
+* `trainer.devices` (`list[int]`): List of device indices (e.g., `[0]` for first GPU).
+* `trainer.limit_test_batches` (`float`): Fraction of test batches to process (default: 1.0).
+
+## Other Parameters
+
+* `save_frame_meta` (`bool`): Whether to save frame-level metadata (default: `false`).
+* `dataset.metrics.test` (`str` | `list[str]`): Metrics to compute during evaluation. Use `"all"` for all metrics.
+
+## Example Configuration
+
 ```YAML
-...
-ckpt_path: "/path/to/model.ckpt"
-...
-```
-* `out_dir`: (`str`) a directory path where to store outputs.
-e.g:
-```YAML
-...
-out_dir: "/path/to/results/dir"
-...
-```
-## `tracker`
+# str: Path to the model checkpoint file
+ckpt_path: <str>
 
-This section configures the tracker.
+# str: Directory where tracking results will be saved
+outdir: <str>
 
-* `window_size`: (`int`) the size of the window used during sliding inference.
-* `use_vis_feats`: (`bool`) Whether or not to use visual feature extractor.
-* `overlap_thresh`: (`float`) the trajectory overlap threshold to be used for assignment.
-* `mult_thresh`: (`bool`) Whether or not to use weight threshold.
-* `decay_time`: (`float`) weight for `decay_time` postprocessing.
-* `iou`: (`str` | `None`) Either `{None, '', "mult" or "max"}`. Whether to use multiplicative or max iou reweighting.
-* `max_center_dist`: (`float`) distance threshold for filtering trajectory score matrix.
-* `persistent_tracking`: (`bool`) whether to keep a buffer across chunks or not.
-* `max_gap`: (`int`) the max number of frames a trajectory can be missing before termination.
-* `max_tracks`: (`int`) the maximum number of tracks that can be created while tracking.
-    We force the tracker to assign instances to a track instead of creating a new track if `max_tracks `has been reached.
+dataset:
+  test_dataset:
+    # str: Node name to center crops around
+    anchors: <str>
+    
+    # int: Number of frames per chunk when processing videos (default: 32)
+    clip_length: <int>
+    
+    # int: Size (in pixels) of the square bounding box around each instance
+    #      Should match approximate size of tracked objects
+    crop_size: <int>
+    
+    # float: IOU threshold for detection filtering (default: 0; no filtering)
+    max_detection_overlap: <float>
+    
+    # int: Size of mask around keypoint (in pixels) to mask out background (default: 0; no masking)
+    dilation_radius_px: <int>
+    
+    # Directory-based input (recommended)
+    dir:
+      # str: File extension for label files (e.g., ".slp", ".tif", ".tiff")
+      labels_suffix: <str>
+      
+      # str: Path to directory containing videos and labels (use absolute paths)
+      path: <str>
+      
+      # str: File extension for video files (e.g., ".mp4", ".avi", ".tif", ".tiff")
+      vid_suffix: <str>
+    
+    # int: Amount of padding added to each side of the bounding box (default: 0)
+    padding: <int>
 
-### Examples:
-```YAML
-...
+# bool: Whether to save frame-level metadata (default: false)
+save_frame_meta: <bool>
+
 tracker:
-    window_size: 8
-    overlap_thresh: 0.01
-    mult_thresh: false
-    decay_time: 0.9
-    iou: "mult"
-    max_center_dist: 0.1
-...
+  # float | null: Maximum angle difference (degrees) allowed for track assignment (optional)
+  max_angle_diff: <float | null>
+  
+  # float | null: Maximum distance (pixels) an instance can move between frames (optional)
+  max_center_dist: <float | null>
+
+  # float: Multiplier for angle difference penalty (default: 1.0)
+  angle_diff_penalty_multiplier: <float>
+
+  # list[str] | null: List of node names defining the front of the object for orientation (optional)
+  front_nodes: <list[str] | null>
+  
+  # list[str] | null: List of node names defining the back of the object for orientation (optional)
+  back_nodes: <list[str] | null>
+  
+  # float: Threshold below which frames are flagged as potential errors (default: 0)
+  confidence_threshold: <float>
+  
+  # float: Multiplier for distance penalty (default: 2.0)
+  distance_penalty_multiplier: <float>
+  
+  # int: Maximum number of tracks that can be created
+  #      Set to number of objects you expect to track
+  max_tracks: <int>
+  
+  # bool: Whether to use multiplicative threshold weighting (default: true)
+  mult_thresh: <bool>
+  
+  # float: Trajectory overlap threshold for assignment (default: 0.01)
+  overlap_thresh: <float>
+
+trainer:
+  # str: Device to use: "gpu", "cuda", or "cpu"
+  accelerator: <str>
+  
+  # list[int]: List of device indices (e.g., [0] for first GPU)
+  devices: <list[int]>
 ```
 
-## `dataset`
-This section contains the params for initializing the datasets for training. Requires a `test_dataset` keys. 
+## CLI Usage
 
-### [`BaseDataset`](../reference/dreem/datasets/base_dataset.md) args
+Most parameters can be set via CLI flags. For example:
 
-* `padding`: An `int` representing the amount of padding to be added to each side of the bounding box size
-* `crop_size`: (`int`|`tuple`) the size of the bounding box around which a crop will form.
-* `chunk`: Whether or not to chunk videos into smaller clips to feed to model
-* `clip_length`: the number of frames in each chunk
-* `mode`: `train` or `val`. Determines whether this dataset is used for training or validation.
-* `n_chunks`: Number of chunks to subsample from. Can either a fraction of the dataset (ie `(0,1.0]`) or number of chunks
-* `seed`: set a seed for reproducibility
-* `gt_list`: An optional path to .txt file containing ground truth for cell tracking challenge datasets.
-
-#### `dir`:
-This section allows you to pass a directory rather than paths to labels/videos individually
-
-* `path`: The path to the dir where the data is stored (recommend absolute path)
-* `labels_suffix`: (`str`) containing the file extension to search for labels files. e.g. `.slp`, `.csv`, or `.xml`.
-* `vid_suffix`: (`str`) containing the file extension to search for video files e.g `.mp4`, `.avi` or `.tif`.
-##### Examples:
-```YAML
-...
-dataset:
-    ...
-    {MODE}_dataset:
-        dir:
-            path: "/path/to/data/dir/mode"
-            labels_suffix: ".slp"
-            vid_suffix: ".mp4"
-        ...
-    ...
-...
-```
-#### `augmentations`:
-
-This subsection contains params for albumentations. See [`albumentations`](https://albumentations.ai) for available visual augmentations. Other available augmentations include `NodeDropout` and `InstanceDropout`. Keys must match augmentation class name exactly and contain subsections with parameters for the augmentation
-
-##### Example
-```YAML
-augmentations: 
-    Rotate:
-        limit: 45
-        p: 0.3
-    ...
-    MotionBlur:
-        blur_limit: [3,7]
-        p: 0.3
-```
-### [`SleapDataset`](../reference/dreem/datasets/sleap_dataset.md) Args:
-* `slp_files`: (`str`) a list of .slp files storing tracking annotations
-* `video_files`: (`str`) a list of paths to video files
-* `anchors`: (`str` | `list` | `int`) One of:
-    * a string indicating a single node to center crops around
-    * a list of skeleton node names to be used as the center of crops
-    * an int indicating the number of anchors to randomly select
-    If unavailable then crop around the midpoint between all visible anchors.
-* `handle_missing`: how to handle missing single nodes. one of [`"drop"`, `"ignore"`, `"centroid"`].
-    * if `drop` then we dont include instances which are missing the `anchor`.
-    * if `ignore` then we use a mask instead of a crop and nan centroids/bboxes.
-    * if `centroid` then we default to the pose centroid as the node to crop around.
-### [`MicroscopyDataset`](../reference/dreem/datasets/microscopy_dataset.md)
-* `videos`: (`list[str | list[str]]`) paths to raw microscopy videos
-* `tracks`: (`list[str]`) paths to trackmate gt labels (either `.xml` or `.csv`)
-* `source`: file format of gt labels based on label generator. Either `"trackmate"` or `"isbi"`.
-### [`CellTrackingDataset`](../reference/dreem/datasets/cell_tracking_dataset.md)
-* `raw_images`: (`list[list[str] | list[list[str]]]`) paths to raw microscopy images
-* `gt_images`: (`list[list[str] | list[list[str]]]`) paths to gt label images
-* `gt_list`: (`list[str]`) An optional path to .txt file containing gt ids stored in cell
-                tracking challenge format: `"track_id", "start_frame",
-                "end_frame", "parent_id"`
-### `dataset` Examples
-#### [`SleapDataset`](../reference/dreem/datasets/sleap_dataset.md)
-```YAML
-...
-dataset:
-    test_dataset:
-        slp_files: ["/path/to/test/labels1.slp", "/path/to/test/labels2.slp", ..., "/path/to/test/labelsN.slp"]
-        video_files: ["/path/to/test/video1.mp4", "/path/to/test/video2.mp4", ..., "/path/to/test/videoN.mp4"]
-        padding: 5
-        crop_size: 128 
-        chunk: True
-        clip_length: 32
-        anchors: ["node1", "node2", ..."node_n"]
-        handle_missing: "drop"
-        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
-...
-```
-#### [`MicroscopyDataset`](../reference/dreem/datasets/microscopy_dataset.md)
-```YAML
-dataset:
-    test_dataset:
-        tracks: ["/path/to/test/labels1.csv", "/path/to/test/labels2.csv", ..., "/path/to/test/labelsN.csv"]
-        videos: ["/path/to/test/video1.tiff", "/path/to/test/video2.tiff", ..., "/path/to/test/videoN.tiff"]
-        source: "trackmate"
-        padding: 5
-        crop_size: 128 
-        chunk: True
-        clip_length: 32
-        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
+```bash
+dreem track ./data/inference \
+  --checkpoint ./models/model.ckpt \
+  --output ./results \
+  --crop-size 84 \
+  --max-tracks 2 \
+  --max-dist 30 \
+  --confidence-threshold 0.9 \
+  --iou-mode mult
 ```
 
-## dataloader
-This section outlines the params needed for the dataloader. Should have a `train_dataloader` and optionally `val_dataloader`/`test_dataloader` keys. 
-> Below we list the args we found useful/necessary for the dataloaders. For more advanced users see [`torch.utils.data.Dataloader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for more ways to initialize the dataloaders
+See `dreem track --help` or `dreem eval --help` for all available CLI options.
 
-* `shuffle`: (`bool`) Set to `True` to have the data reshuffled at every epoch (during training, this should always be `True` and during val/test usually `False`) 
-* `num_workers`: (`int`) How many subprocesses to use for data loading. 0 means that the data will be loaded in the main process.
-
-### Example
-```YAML
-...
-dataloader:
-    test_dataloader: # we leave out the `shuffle` field as default=`False` which is what we want
-        num_workers: 4
-...
-```
-
-## Example Config
-
-```YAML
---8<-- "dreem/inference/configs/inference.yaml"
-```

@@ -1,748 +1,515 @@
-# Description of training parameters
+# Training Configuration
 
-Here, we describe the hyperparameters used for setting up training. Please see [here](./training.md#example-config) for an example training config.
+This guide describes the parameters used for training configuration. Most parameters can be set via CLI flags (see `dreem train --help`) or through a YAML config file.
 
-> Note: for using defaults, simply leave the field blank or don't include the key. Using `null` will initialize the value to `None` which we use to represent turning off certain features such as logging, early stopping etc. e.g
-> ```YAML
-> model:
->   d_model: null # defaults to 1024 
->   nhead: 8
->   ...
-> ```
+> **Note**: For defaults, leave fields blank or omit the key. Use `null` to disable features like logging or early stopping.
 
-## `model`
+## Model Configuration
 
-This section contains all the parameters for initializing a [`GTRRunner`](../reference/dreem/models/gtr_runner.md) object
+The `model` section configures the transformer architecture and visual encoder.
 
-* `ckpt_path`: (`str`) the path to model `.ckpt` file. Used for resuming training.
-* `d_model`: (`int`) the size of the embedding dimensions used for input into the [transformer](../reference/dreem/models/transformer.md)
-* `nhead`: (`int`) the number of attention heads used in the transformer's [encoder](../reference/dreem/models/transformer.md#dreem.models.transformer.TransformerEncoderLayer)/[decoder](../reference/dreem/models/transformer.md#dreem.models.transformer.TransformerDecoderLayer) layers.
-* `num_encoder_layers`: (`int`) the number of layers in the [transformer encoder block](../reference/dreem/models/transformer.md#dreem.models.transformer.TransformerEncoder)
-* `num_decoder_layers`: (`int`) the number of layers in the [transformer decoder block](../reference/dreem/models/transformer.md#dreem.models.transformer.TransformerDecoder)
-* `dropout`: a `float` the dropout probability used in each transformer layer
-* `activation`: One of {`"relu"`, `"gelu"` `"glu"`}. Which activation function to use in the transformer.
-* `return_intermediate_dec`: (`bool`) whether or not to return the output from the intermediate decoder layers.
-* `norm`: (`bool`) whether or not to normalize output of encoder and decoder.
-* `num_layers_attn_head`: An `int` The number of layers in the [`AttentionHead`](../reference/dreem/models/attention_head.md) block.
-* `dropout_attn_head`: (`float`)  the dropout probability for the [`AttentionHead`](../reference/dreem/models/attention_head.md) block.
-* `return_embedding`: (`bool`) whether to return [the spatiotemporal embeddings](../reference/dreem/models/embedding.md)
-* `decoder_self_attn`: (`bool`) whether to use self attention in the decoder.
-### `embedding_meta`: 
+### Core Model Parameters
 
-This section contains parameters for initializing the [`Embedding`](../reference/dreem/models/embedding.md) Layer.
+* `ckpt_path` (`str` | `null`): Path to model checkpoint file for resuming training (use `null` for new training).
+* `d_model` (`int`): Size of embedding dimensions for the transformer (default: 128).
+* `nhead` (`int`): Number of attention heads in transformer encoder/decoder layers (default: 1).
+* `num_encoder_layers` (`int`): Number of layers in transformer encoder (default: 1).
+* `num_decoder_layers` (`int`): Number of layers in transformer decoder (default: 1).
+* `dropout` (`float`): Dropout probability used in each transformer layer (default: 0.1).
+* `activation` (`str`): Activation function. Options: `"relu"`, `"gelu"`, `"glu"` (default: `"relu"`).
+* `return_intermediate_dec` (`bool`): Whether to return output from intermediate decoder layers (default: `true`).
+* `norm` (`bool`): Whether to normalize output of encoder and decoder (default: `false`).
+* `num_layers_attn_head` (`int`): Number of layers in the AttentionHead block (default: 1).
+* `dropout_attn_head` (`float`): Dropout probability for the AttentionHead block (default: 0.1).
+* `return_embedding` (`bool`): Whether to return spatiotemporal embeddings (default: `false`).
+* `decoder_self_attn` (`bool`): Whether to use self attention in the decoder (default: `true`).
 
-#### `pos`
+### Embedding Configuration (`embedding_meta`)
 
-This subsection contains the parameters for initializing a Spatial [`Embedding`](../reference/dreem/models/embedding.md).
+#### Positional Embedding (`pos`)
 
-* `mode`: (`str`) One of {`"fixed"`, `"learned"`, `"None"`}. Indicates whether to use a fixed sinusoidal, learned, or no embedding.
-* `n_points`: (`int`) the number of points that will be embedded.
-##### Fixed Sinusoidal Params
-* `temperature`: (`float`) the temperature constant to be used when computing the sinusoidal position embedding
-* `normalize`: (`bool`) whether or not to normalize the positions (Only used in fixed embeddings).
-* `scale`: (`float`) factor by which to scale the positions after normalizing (Only used in fixed embeddings).
-##### Learned Params:
-* `emb_num`: (`int`) the number of embeddings in the `self.lookup` table (Only used in learned embeddings).
-* `over_boxes`: (`bool`) Whether to compute the position embedding for each bbox coordinate (`y1x1y2x2`) or the centroid + bbox size (`yxwh`).
-##### `mlp_cfg`
+* `mode` (`str`): Embedding type. Options: `"fixed"` (sinusoidal), `"learned"`, or `null` (no embedding).
+* `n_points` (`int`): Number of points to embed (1 for centroid, 3+ for bbox coordinates).
+* `normalize` (`bool`): Whether to normalize positions (only for fixed embeddings, default: `true`).
+* `temperature` (`float`): Temperature constant for sinusoidal position embedding (only for fixed, default: 10000).
+* `scale` (`float` | `null`): Factor to scale positions after normalizing (only for fixed, optional).
+* `emb_num` (`int`): Number of embeddings in lookup table (only for learned).
+* `over_boxes` (`bool`): Whether to compute embedding for bbox coordinates (`y1x1y2x2`) or centroid+size (`yxwh`) (only for learned, default: `true`).
 
-This subsection contains [`MLP`](../reference/dreem/models/mlp.md) hyperparameters for projecting embedding to correct space. Required when `n_points > 1`, optional otherwise.
+**MLP Configuration** (`mlp_cfg`): Required when `n_points > 1`, optional otherwise.
 
-* `hidden_dims`: (`int`) The dimensionality of the MLP hidden layers.
-* `num_layers`: (`int`) Number of hidden layers.
-* `dropout`: (`float`) The dropout probability for each hidden layer.
+* `hidden_dims` (`int`): Dimensionality of MLP hidden layers.
+* `num_layers` (`int`): Number of hidden layers.
+* `dropout` (`float`): Dropout probability for each hidden layer.
 
-Example: 
+#### Temporal Embedding (`temp`)
+
+* `mode` (`str`): Embedding type. Options: `"fixed"`, `"learned"`, or `null` (no embedding).
+* `temperature` (`float`): Temperature constant for sinusoidal embedding (only for fixed, default: 10000).
+* `emb_num` (`int`): Number of embeddings in lookup table (only for learned).
+
+### Visual Encoder Configuration (`encoder_cfg`)
+
+* `model_name` (`str`): Name of visual encoder backbone. For `timm` backend, any model in `timm.list_models()` is available. For `torchvision`, only ResNet models are available.
+* `backend` (`str`): Backend library. Options: `"timm"` or `"torchvision"` (default: `"timm"`).
+* `in_chans` (`int`): Number of input channels (default: 3, use more for multi-anchor crops).
+* `pretrained` (`bool`): Whether to use pretrained weights or initialize randomly (default: `false`).
+
+> **Note**: For advanced users, see [`timm.create_model`](https://timm.fast.ai/create_model) or [`torchvision.models.resnet`](https://pytorch.org/vision/stable/models/resnet.html) for additional parameters.
+
+## Loss Configuration
+
+The `loss` section configures the Association Loss function.
+
+* `neg_unmatched` (`bool`): Whether to set unmatched objects to background (default: `false`).
+* `epsilon` (`float`): Small value for numerical precision to prevent division by zero (default: `1e-4`).
+* `asso_weight` (`float`): Weight for association loss (default: 1.0).
+
+## Optimizer Configuration
+
+The `optimizer` section configures the training optimizer.
+
+* `name` (`str`): Optimizer name (must match PyTorch optimizer class name exactly, case-sensitive). See [`torch.optim`](https://pytorch.org/docs/stable/optim.html#algorithms) for available options.
+
+**Adam Parameters** (default optimizer):
+
+* `lr` (`float`): Learning rate (default: 0.0001).
+* `betas` (`tuple[float, float]`): Coefficients for computing running averages of gradient and its square (default: `[0.9, 0.999]`).
+* `eps` (`float`): Term added to denominator for numerical stability (default: `1e-8`).
+* `weight_decay` (`float`): L2 penalty (default: 0.01).
+
+> **Note**: For other optimizers, see the respective PyTorch documentation for available parameters.
+
+## Scheduler Configuration
+
+The `scheduler` section configures the learning rate scheduler.
+
+* `name` (`str`): Scheduler name (must match PyTorch scheduler class name exactly, case-sensitive). See [`torch.optim.lr_scheduler`](https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate) for available options.
+
+**ReduceLROnPlateau Parameters** (default scheduler):
+
+* `mode` (`str`): One of `"min"` or `"max"`. In `min` mode, LR reduces when monitored quantity stops decreasing.
+* `factor` (`float`): Factor by which LR is reduced: `new_lr = lr * factor` (default: 0.5).
+* `patience` (`int`): Number of epochs with no improvement before reducing LR (default: 5).
+* `threshold` (`float`): Threshold for measuring new optimum to focus on significant changes (default: 0.001).
+* `threshold_mode` (`str`): One of `"rel"` or `"abs"`. Relative or absolute threshold mode (default: `"rel"`).
+
+## Dataset Configuration
+
+The `dataset` section configures training, validation, and optionally test datasets. Requires `train_dataset` and optionally `val_dataset` and `test_dataset` keys.
+
+### Directory-based Input (Recommended)
+
+Use the `dir` section to automatically discover videos and labels:
+
+* `path` (`str`): Path to directory containing videos and labels (use absolute paths).
+* `labels_suffix` (`str`): File extension for label files (e.g., `.slp`, `.csv`, `.xml`).
+* `vid_suffix` (`str`): File extension for video files (e.g., `.mp4`, `.avi`, `.tif`, `.tiff`).
+
+### File-based Input
+
+Alternatively, specify files explicitly:
+
+* `slp_files` (`list[str]`): List of paths to SLEAP label files (`.slp`).
+* `video_files` (`list[str]`): List of paths to video files.
+
+### Dataset Parameters
+
+* `crop_size` (`int`): Size (in pixels) of the square bounding box around each instance. Should match approximate size of tracked objects.
+* `clip_length` (`int`): Number of frames per chunk when processing videos (default: 32).
+* `chunk` (`bool`): Whether to chunk videos into smaller clips (default: `true`).
+* `anchors` (`str` | `list[str]` | `int`):
+  * String: Single node name to center crops around (e.g., `"centroid"`).
+  * List: Multiple node names to use as crop centers.
+  * Integer: Number of anchors to randomly select.
+* `padding` (`int`): Amount of padding added to each side of the bounding box (default: 0).
+* `mode` (`str`): Dataset mode. Options: `"train"` or `"val"` (determines usage).
+* `handle_missing` (`str`): How to handle missing anchor nodes. Options: `"drop"`, `"ignore"`, or `"centroid"` (only for SleapDataset).
+
+### Augmentations
+
+The `augmentations` subsection contains parameters for [Albumentations](https://albumentations.ai). Keys must match augmentation class names exactly. Additional augmentations include `NodeDropout` and `InstanceDropout`.
+
+**Example**:
 ```YAML
-model:
-    ...
-    embedding_meta:
-        pos:
-            ...
-            n_points: 3 #could also be 1
-            ...
-            mlp_cfg: #cannot be null
-                hidden_dims: 256
-                num_layers: 3
-                dropout: 0.3
+augmentations:
+  Rotate:
+    limit: 45
+    p: 0.3
+  MotionBlur:
+    blur_limit: [3, 7]
+    p: 0.3
 ```
 
-##### Examples:
-###### With MLP:
+> **Note**: Augmentations are typically only used for training datasets, not validation or test.
+
+## Dataloader Configuration
+
+The `dataloader` section configures data loading. Should have `train_dataloader` and optionally `val_dataloader`/`test_dataloader` keys.
+
+* `shuffle` (`bool`): Whether to reshuffle data at every epoch. Should be `true` for training, `false` for validation/test (default: `false`).
+* `num_workers` (`int`): Number of subprocesses for data loading. Use `0` for single-process loading.
+
+> **Note**: For advanced options, see [`torch.utils.data.DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader).
+
+## Logging Configuration
+
+The `logging` section configures experiment logging.
+
+* `logger_type` (`str` | `null`): Logger to use. Options: `"CSVLogger"`, `"TensorBoardLogger"`, `"WandbLogger"`, or `null` to disable.
+
+**WandbLogger Parameters** (recommended):
+
+* `name` (`str`): Short display name for this run (default: `"dreem_train"`).
+* `project` (`str`): Name of the project where runs are sent.
+* `entity` (`str`): Username or team name where runs are sent.
+* `save_dir` (`str`): Absolute path to directory where metadata is stored.
+* `log_model` (`str`): Log checkpoints as W&B artifacts. Options: `"all"`, `"best"`, or `null`.
+* `group` (`str`): Group name to organize runs into larger experiments.
+* `notes` (`str`): Longer description of the run.
+
+> **Note**: See [`wandb.init()`](https://docs.wandb.ai/ref/python/init) and [`WandbLogger`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.wandb.html) for more parameters.
+
+## Early Stopping Configuration
+
+The `early_stopping` section configures early stopping for training.
+
+* `monitor` (`str`): Quantity to monitor (e.g., `"val_loss"`).
+* `mode` (`str`): One of `"min"` or `"max"`. In `min` mode, stops when quantity stops decreasing.
+* `patience` (`int`): Number of checks with no improvement before stopping (default: 10).
+* `min_delta` (`float`): Minimum change to qualify as improvement (default: 0.1).
+* `check_finite` (`bool`): Stop training when monitor becomes NaN or infinite (default: `true`).
+* `stopping_threshold` (`float` | `null`): Stop immediately when monitor reaches this threshold (optional).
+* `divergence_threshold` (`float` | `null`): Stop when monitor becomes worse than this threshold (optional).
+
+## Checkpointing Configuration
+
+The `checkpointing` section configures model checkpointing.
+
+* `monitor` (`list[str]`): List of metrics to save best models for. Usually `"val_{METRIC}"` notation. A separate ModelCheckpoint is created for each metric.
+* `dirpath` (`str` | `null`): Directory to save models. If `null`, saves to `./models/[GROUP]/[NAME]` or `./models/[NAME]` (default: `null`).
+* `save_last` (`bool`): Save a `last.ckpt` copy whenever a checkpoint is saved (default: `true`).
+* `save_top_k` (`int`): Save the best k models. Use `-1` to save all, `0` to save none (default: `-1`).
+* `every_n_epochs` (`int`): Number of epochs between checkpoints. Set to `0` to disable periodic saves (default: 1).
+
+## Trainer Configuration
+
+The `trainer` section configures the PyTorch Lightning Trainer.
+
+* `accelerator` (`str`): Device type. Options: `"cpu"`, `"gpu"`, `"cuda"`, `"tpu"`, `"ipu"`, `"hpu"`, `"mps"`, `"auto"`.
+* `strategy` (`str` | `null`): Training strategy (e.g., `"ddp"`, `"deepspeed"`). Optional.
+* `devices` (`list[int]` | `int` | `str`): Device indices to use. Can be a number, list, `-1` for all devices, or `"auto"`.
+* `max_epochs` (`int`): Stop training after this many epochs. Use `-1` for infinite training (default: 20).
+* `min_epochs` (`int`): Force training for at least this many epochs (default: 1).
+* `check_val_every_n_epoch` (`int`): Perform validation loop every N training epochs (default: 1).
+* `enable_checkpointing` (`bool`): Enable checkpointing (default: `true`).
+* `gradient_clip_val` (`float` | `null`): Value at which to clip gradients (optional).
+* `limit_train_batches` (`float` | `int`): Fraction or number of training batches to process (default: 1.0).
+* `limit_val_batches` (`float` | `int`): Fraction or number of validation batches to process (default: 1.0).
+* `log_every_n_steps` (`int`): How often to log within steps (default: 1).
+
+> **Note**: For advanced options, see [`lightning.Trainer`](https://lightning.ai/docs/pytorch/stable/common/trainer.html).
+
+
+## Example Configuration
+
 ```YAML
-...
+# Model configuration
 model:
-    ...
-    embedding_meta:
-        pos:
-            mode: "fixed"
-            normalize: true
-            temperature: 10000
-            scale: null
-            n_points: 3 #could also be 1
-            mlp_cfg: 
-                hidden_dims: 256
-                num_layers: 3
-                dropout: 0.3
-            ...
-        ...
-    ...
-...
-```
-###### With no MLP
-```YAML
-model:
-    ...
-    embedding_meta:
-        pos:
-            mode: "fixed"
-            normalize: true
-            temperature: 10000
-            scale: null
-            n_points: 1 #must be 1
-            mlp_cfg: null
-        ...
-    ...
-...
-```
-#### `temp`
-
-This subsection contains the parameters for initializing a Temporal [`Embedding`](../reference/dreem/models/embedding.md)
-
-* `mode`: (`str`) One of {`"fixed"`, `"learned"`, `"None"`}. Indicates whether to use a fixed sinusoidal, learned, or no embedding.
-##### Fixed Sinusoidal Params
-* `temperature`: (`float`) the temperature constant to be used when computing the sinusoidal position embedding
-##### Learned Params:
-* `emb_num`: (`int`) the number of embeddings in the lookup table.
-Note: See [`dreem.models.Embedding`](../reference/dreem/models/embedding.md) for additional `kwargs` that can be passed
-##### Examples:
-###### Fixed:
-```YAML
-model:
-    ...
-    embedding_meta:
-        temp:
-            mode: "fixed" # also accepts "off" or null
-            temperature: 10000
-        ...
-    ...
-...
-```
-#### `embedding_meta` Example:
-
-Putting it all together, your `embedding_meta` section should look something like this
-
-```YAML
-...
-model:
-    ...
-    embedding_meta:
-        pos:
-            mode: "fixed"
-            normalize: true
-            temperature: 10000
-            scale: null
-            n_points: 3 #could also be 1
-            mlp_cfg: 
-                hidden_dims: 256
-                num_layers: 3
-                dropout: 0.3
-        temp:
-            mode: "fixed"
-            temperature: 10000
-    ...
-...
-
-```
-            
-### `encoder_cfg`
-
-This section contains all the parameters for initializing a [`VisualEncoder`](../reference/dreem/models/visual_encoder.md) model.
-
-* `model_name`: (`str`) Thhe name of the visual encoder backbone to be used. When using `timm` as a backend, all models in `timm.list_model` are available. However, when using `torchvision` as a backend, only `resnet`s are available for now.
-* `backend`: (`str`) Either `"timm"` or `"torchvision"`. Indicates which deep learning library to use for initializing the visual encoder
-* `in_chans`: (`int`)  the number of input channels input images contain. Mostly used for multi-anchor crops
-* `pretrained`: (`bool`) Whether or not to use a pretrained backbone or initialize from random
-
-> Note: For more advanced users, see [`timm.create_model`](https://timm.fast.ai/create_model) or [`torchvision.models.resnet`](https://pytorch.org/vision/stable/models/resnet.html) for additional `kwargs` that can be passed to the visual encoder.
-
-#### Example:
-##### `timm`:
-```YAML
-...
-model:
-    ...
-    encoder_cfg:
-        model_name: "resnet18"
-        backend: "timm"
-        in_chans: 3
-        pretrained: false
-        ...
-    ...
-...
-```
-##### `torchvision`:
-```YAML
-...
-model:
-    ...
-    encoder_cfg:
-        model_name: "resnet32"
-        backend: "torchvision"
-        in_chans: 3
-        pretrained: false
-        ...
-    ...
-...
-```
-### `model` Example:
-Putting it all together your `model` config section will look something like this
-```YAML
-...
-model:
-  ckpt_path: null
-  encoder_cfg: 
-    model_name: "resnet18"
-    backend: "timm"
-    in_chans: 3
-  d_model: 1024
-  nhead: 8
-  num_encoder_layers: 1
-  num_decoder_layers: 1
-  dropout: 0.1
-  activation: "relu"
-  return_intermediate_dec: False
-  norm: False
-  num_layers_attn_head: 2
-  dropout_attn_head: 0.1
-  embedding_meta: 
+  # str | null: Path to checkpoint for resuming training (null for new training)
+  ckpt_path: <str | null>
+  
+  # int: Size of embedding dimensions (default: 128)
+  d_model: <int>
+  
+  # int: Number of attention heads (default: 1)
+  nhead: <int>
+  
+  # int: Number of encoder layers (default: 1)
+  num_encoder_layers: <int>
+  
+  # int: Number of decoder layers (default: 1)
+  num_decoder_layers: <int>
+  
+  # float: Dropout probability (default: 0.1)
+  dropout: <float>
+  
+  # str: Activation function: "relu", "gelu", or "glu" (default: "relu")
+  activation: <str>
+  
+  # bool: Normalize encoder/decoder output (default: false)
+  norm: <bool>
+  
+  # int: Number of layers in AttentionHead (default: 1)
+  num_layers_attn_head: <int>
+  
+  # float: Dropout for AttentionHead (default: 0.1)
+  dropout_attn_head: <float>
+  
+  # bool: Use self attention in decoder (default: true)
+  decoder_self_attn: <bool>
+  
+  # Embedding configuration
+  embedding_meta:
+    # Positional embedding
     pos:
-        mode: "fixed"
-        normalize: true
+      # str: Embedding mode: "fixed", "learned", or null
+      mode: <str | null>
+      
+      # int: Number of points to embed (1 for centroid, 3+ for bbox)
+      n_points: <int>
+      
+      # bool: Normalize positions (only for fixed, default: true)
+      normalize: <bool>
+      
+      # float: Temperature for sinusoidal embedding (only for fixed, default: 10000)
+      temperature: <float>
+      
+      # float | null: Scale factor after normalizing (only for fixed, optional)
+      scale: <float | null>
+      
+      # int: Number of embeddings in lookup table (only for learned)
+      emb_num: <int>
+      
+      # bool: Embed bbox coordinates vs centroid+size (only for learned, default: true)
+      over_boxes: <bool>
+      
+      # MLP config (required when n_points > 1)
+      mlp_cfg: <dict | null>
+        # int: Hidden layer dimensionality
+        hidden_dims: <int>
+        # int: Number of hidden layers
+        num_layers: <int>
+        # float: Dropout probability
+        dropout: <float>
+    
+    # Temporal embedding
     temp:
-        mode: "fixed"
-  return_embedding: False
-  decoder_self_attn: False
-...
-```
-## `loss`
+      # str: Embedding mode: "fixed", "learned", or null
+      mode: <str | null>
+      
+      # float: Temperature for sinusoidal embedding (only for fixed, default: 10000)
+      temperature: <float>
+      
+      # int: Number of embeddings in lookup table (only for learned)
+      emb_num: <int>
+  
+  # Visual encoder configuration
+  encoder_cfg:
+    # str: Model name (e.g., "resnet18")
+    model_name: <str>
+    
+    # str: Backend: "timm" or "torchvision" (default: "timm")
+    backend: <str>
+    
+    # int: Number of input channels (default: 3)
+    in_chans: <int>
+    
+    # bool: Use pretrained weights (default: false)
+    pretrained: <bool>
 
-This section contains parameters for the [Association Loss function](../reference/dreem/training/losses.md#dreem.training.losses.AssoLoss)
-
-* `neg_unmatched` a bool whether to set unmatched objects to the background
-* `epsilon`: A small `float` used for numeric precision to prevent dividing by zero
-* `asso_weight`: (`float`) how much to weight the association loss by
-
-### Examples:
-```YAML
-...
+# Loss configuration
 loss:
-    neg_unmatched: false
-    epsilon: 1e-8
-    asso_weight: 1.0
-...
-```
-## `optimizer`
+  # bool: Set unmatched objects to background (default: false)
+  neg_unmatched: <bool>
+  
+  # float: Small value for numerical precision (default: 1e-4)
+  epsilon: <float>
+  
+  # float: Weight for association loss (default: 1.0)
+  asso_weight: <float>
 
-This section contains the parameters for initializing the training optimizer
-
-* `name`: (`str`) representation of the optimizer. 
-    > See [`torch.optim`](https://pytorch.org/docs/stable/optim.html#algorithms) for available optimizers.(`name` must match the optimizer name exactly (case-sensitive)).
-
-> Below, we list the arguments we use for [`Adam`](https://pytorch.org/docs/stable/generated/torch.optim.Adam.html) which is the optimizer we use and is our default. For more advanced users please see the respective pytorch documentation page for the arguments expected in your requested optimizer.
-
-* `lr`: (`float`) learning rate
-* `betas`: (`tuple[float, float]`) coefficients used for computing running averages of gradient and its square
-* `eps`: (`float`): term added to the denominator to improve numerical stability
-* `weight_decay`: (`float`) weight decay ($L_2$ penalty)
-
-### Examples:
-Here's an example for [`Adam`](https://pytorch.org/docs/stable/generated/torch.optim.Adam.html):
-```YAML
-...
+# Optimizer configuration
 optimizer:
-    name: "Adam"
-    lr: 0.001
-    betas: [0.9, 0.999]
-    eps: 1e-8
-    weight_decay: 0.01
-    ...
-...
-```
-## `scheduler`
+  # str: Optimizer name (must match PyTorch class name exactly)
+  name: <str>
+  
+  # float: Learning rate (default: 0.0001)
+  lr: <float>
+  
+  # list[float]: Beta coefficients (default: [0.9, 0.999])
+  betas: <list[float]>
+  
+  # float: Epsilon for numerical stability (default: 1e-8)
+  eps: <float>
+  
+  # float: Weight decay (L2 penalty, default: 0.01)
+  weight_decay: <float>
 
-This section contains parameters for initializing the learning rate scheduler.
-
-* `name`: (`str`) Representation of the scheduler. 
-    > See [`torch.optim.lr_scheduler`](https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate) for available schedulers. `name` must match the scheduler name exactly (case-sensitive).
-
-> Below, we list the arguments we use for [`ReduceLROnPlateau`](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau) which is the scheduler we use and is our default. For more advanced users please see the respective pytorch documentation page for the arguments expected in your requested scheduler.
-
-* `mode`: (`str`) One of {`"min"`, `"max"`}. In `min` mode, lr will be reduced when the quantity monitored has stopped decreasing; in `max` mode it will be reduced when the quantity monitored has stopped increasing.
-* `factor`: (`float`) Factor by which the learning rate will be reduced. `new_lr = lr * factor`
-* `patience`: (`int`) The number of allowed epochs with no improvement after which the learning rate will be reduced.
-* `threshold`: (`float`) Threshold for measuring the new optimum, to only focus on significant changes. 
-* `threshold_mode`: (`str`)  One of {`"rel"`, "`abs`"}. In `rel` mode, `dynamic_threshold = best * ( 1 + threshold )` in `max` mode or `best * ( 1 - threshold )` in `min` mode. In `abs` mode, `dynamic_threshold = best + threshold` in `max` mode or `best - threshold` in `min` mode.
-
-### Examples:
-Here we give an example of configs for a Pytorch scheduler. For more detail, visit the PyTorch documentation page for the scheduler you are interested in.
-
-#### [`Reduce Learning Rate on Plateau`](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau)
-```YAML
-...
+# Scheduler configuration
 scheduler:
-  name: "ReduceLROnPlateau" #must match torch.optim class name
-  mode: "min"
-  factor: 0.5
-  patience: 10
-  threshold: 1e-4
-  threshold_mode: "rel"
-  ...
-...
-```
+  # str: Scheduler name (must match PyTorch class name exactly)
+  name: <str>
+  
+  # str: Mode: "min" or "max"
+  mode: <str>
+  
+  # float: Factor by which LR is reduced (default: 0.5)
+  factor: <float>
+  
+  # int: Patience before reducing LR (default: 5)
+  patience: <int>
+  
+  # float: Threshold for measuring improvement (default: 0.001)
+  threshold: <float>
+  
+  # str: Threshold mode: "rel" or "abs" (default: "rel")
+  threshold_mode: <str>
 
-## `tracker`:
-
-This section contains parameters for initializing the [`Tracker`](../reference/dreem/inference/tracker.md)
-
-* `window_size`: the size of the window used during sliding inference.
-* `use_vis_feats`: Whether or not to use visual feature extractor.
-* `overlap_thresh`: the trajectory overlap threshold to be used for assignment.
-* `mult_thresh`: Whether or not to use weight threshold.
-* `decay_time`: weight for `decay_time` postprocessing.
-* `iou`: Either `{None, '', "mult" or "max"}`. Whether to use multiplicative or max iou reweighting.
-* `max_center_dist`: distance threshold for filtering trajectory score matrix.
-* `persistent_tracking`: whether to keep a buffer across chunks or not.
-* `max_gap`: the max number of frames a trajectory can be missing before termination.
-* `max_tracks`: the maximum number of tracks that can be created while tracking.
-    We force the tracker to assign instances to a track instead of creating a new track if `max_tracks` has been reached.
-
-### Examples:
-```YAML
-...
-tracker:
-    window_size: 8
-    overlap_thresh: 0.01
-    mult_thresh: false
-    decay_time: 0.9
-    iou: "mult"
-    max_center_dist: 0.1
-    ...
-...
-```
-## `runner`
-
-This section contains parameters for how to handle training/validation/testing
-
-### `metrics`
-
-This section contains config for which metrics to compute during training/validation/testing. See [`pymotmetrics.list_metrics`](https://github.com/cheind/py-motmetrics) for available metrics.
-
-Should have a `train`, `val` and `test` key with corresponding list of metrics to compute during training.
-
-#### Examples:
-##### Only computing the loss:
-```YAML
-...
-runner:
-    ...
-    metrics:
-        train: []
-        val: []
-        test: []
-    ...
-...
-```
-##### Computing `num_switches` during validation:
-```YAML
-...
-runner:
-    ...
-    metrics:
-        train: []
-        val: ["num_switches"]
-        test: []
-    ...
-...
-```
-##### Computing `num_switches` and  `mota` during testing:
-```YAML
-...
-runner:
-    ...
-    metrics:
-        train: []
-        val: ["num_switches"]
-        test: ["num_switches", "mota"]
-    ...
-...
-```
-### `persistent_tracking`
-
-This section indicates whether or not to track across chunks during training/validation/testing
-
-Should have a `train`, `val` and `test` key with a corresponding `bool` whether to use persistent tracking.
-`persistent_tracking` should almost always be `False` during training. During validation and testing it may depend on whether you are testing on full videos or subsampled clips
-
-#### Examples:
-```YAML
-...
-runner
-    ...
-    persistent_tracking:
-        train: false
-        val: false # assuming we validate on a subsample of clips
-        test: true # assuming we test on a contiguous video.
-```
-
-## `dataset`
-
-This section contains the params for initializing the datasets for training. Requires a `train_dataset` and optionally `val_dataset`, `test_dataset` keys. 
-
-### [`BaseDataset`](../reference/dreem/datasets/base_dataset.md) args
-
-* `padding`: An `int` representing the amount of padding to be added to each side of the bounding box size
-* `crop_size`: (`int`|`tuple`) the size of the bounding box around which a crop will form.
-* `chunk`: Whether or not to chunk videos into smaller clips to feed to model
-* `clip_length`: the number of frames in each chunk
-* `mode`: `train` or `val`. Determines whether this dataset is used for training or validation.
-* `n_chunks`: Number of chunks to subsample from. Can either a fraction of the dataset (ie `(0,1.0]`) or number of chunks
-* `seed`: set a seed for reproducibility
-* `gt_list`: An optional path to .txt file containing ground truth for cell tracking challenge datasets.
-
-#### `dir`:
-This section allows you to pass a directory rather than paths to labels/videos individually
-
-* `path`: The path to the dir where the data is stored (recommend absolute path)
-* `labels_suffix`: (`str`) containing the file extension to search for labels files. e.g. `.slp`, `.csv`, or `.xml`.
-* `vid_suffix`: (`str`) containing the file extension to search for video files e.g `.mp4`, `.avi` or `.tif`.
-##### Examples:
-```YAML
-...
+# Dataset configuration
 dataset:
+  train_dataset:
+    # int: Number of chunks to train on (dataset size is clip_length * n_chunks)
+    n_chunks: <int>
+    
+    # int: Size of mask around keypoint (in pixels) to mask out background (default: 0; no masking)
+    dilation_radius_px: <int>
+    
+    # str: Anchor node for centering crops
+    anchors: <str>
+    
+    # int: Number of frames per chunk (default: 32)
+    clip_length: <int>
+    
+    # int: Size of bounding box in pixels; if list, should be same length as dir.path (e.g., [crop_size_1, crop_size_2] for two datasets)
+    crop_size: <int | list[int]>
+    
+    # int: Padding added to each side of bbox (default: 0)
+    padding: <int>
+    
+    # Directory-based input (recommended)
+    dir:
+      # str: Path or list of paths to directories with data (use absolute paths)
+      # e.g. ["/path/to/dataset1", "/path/to/dataset2"]
+      path: <str | list[str]>
+      
+      # str: File extension for label files
+      labels_suffix: <str>
+      
+      # str: File extension for video files
+      vid_suffix: <str>
+    
+    # dict: Augmentations (typically only for training)
+    augmentations: <dict>
+      # Example augmentations (keys must match Albumentations class names)
+    #   GaussianBlur:
+    #     blur_limit:
+    #     - 3
+    #     - 7
+    #     p: 0.3
+    #     sigma_limit: 0.1
+      # Rotate:
+      #   limit: <int>
+      #   p: <float>
+      # MotionBlur:
+      #   blur_limit: <list[int]>
+      #   p: <float>
+  
+  val_dataset:
+    # Same structure as train_dataset (typically no augmentations)
     ...
-    {MODE}_dataset:
-        dir:
-            path: "/path/to/data/dir/mode"
-            labels_suffix: ".slp"
-            vid_suffix: ".mp4"
-        ...
-    ...
-...
-```
-#### `augmentations`:
 
-This subsection contains params for albumentations. See [`albumentations`](https://albumentations.ai) for available visual augmentations. Other available augmentations include `NodeDropout` and `InstanceDropout`. Keys must match augmentation class name exactly and contain subsections with parameters for the augmentation
-
-##### Example
-```YAML
-augmentations: 
-    Rotate:
-        limit: 45
-        p: 0.3
-    ...
-    MotionBlur:
-        blur_limit: [3,7]
-        p: 0.3
-```
-### [`SleapDataset`](../reference/dreem/datasets/sleap_dataset.md) Args:
-* `slp_files`: (`str`) a list of .slp files storing tracking annotations
-* `video_files`: (`str`) a list of paths to video files
-* `anchors`: (`str` | `list` | `int`) One of:
-    * a string indicating a single node to center crops around
-    * a list of skeleton node names to be used as the center of crops
-    * an int indicating the number of anchors to randomly select
-    If unavailable then crop around the midpoint between all visible anchors.
-* `handle_missing`: how to handle missing single nodes. one of [`"drop"`, `"ignore"`, `"centroid"`].
-    * if `drop` then we dont include instances which are missing the `anchor`.
-    * if `ignore` then we use a mask instead of a crop and nan centroids/bboxes.
-    * if `centroid` then we default to the pose centroid as the node to crop around.
-### [`MicroscopyDataset`](../reference/dreem/datasets/microscopy_dataset.md)
-* `videos`: (`list[str | list[str]]`) paths to raw microscopy videos
-* `tracks`: (`list[str]`) paths to trackmate gt labels (either `.xml` or `.csv`)
-* `source`: file format of gt labels based on label generator. Either `"trackmate"` or `"isbi"`.
-### [`CellTrackingDataset`](../reference/dreem/datasets/cell_tracking_dataset.md)
-* `raw_images`: (`list[list[str] | list[list[str]]]`) paths to raw microscopy images
-* `gt_images`: (`list[list[str] | list[list[str]]]`) paths to gt label images
-* `gt_list`: (`list[str]`) An optional path to .txt file containing gt ids stored in cell
-                tracking challenge format: `"track_id", "start_frame",
-                "end_frame", "parent_id"`
-### `dataset` Examples
-#### [`SleapDataset`](../reference/dreem/datasets/sleap_dataset.md)
-```YAML
-...
-dataset:
-    train_dataset:
-        slp_files: ["/path/to/train/labels1.slp", "/path/to/train/labels2.slp", ..., "/path/to/train/labelsN.slp"]
-        video_files: ["/path/to/train/video1.mp4", "/path/to/train/video2.mp4", ..., "/path/to/train/videoN.mp4"]
-        padding: 5
-        crop_size: 128 
-        chunk: True
-        clip_length: 32
-        anchors: ["node1", "node2", ..."node_n"]
-        handle_missing: "drop"
-        augmentations: 
-            Rotate:
-                limit: 45
-                p: 0.3
-            ...
-            MotionBlur:
-                blur_limit: [3,7]
-                p: 0.3
-        ...
-    val_dataset:
-        slp_files: ["/path/to/val/labels1.slp", "/path/to/val/labels2.slp", ..., "/path/to/val/labelsN.slp"]
-        video_files: ["/path/to/val/video1.mp4", "/path/to/val/video2.mp4", ..., "/path/to/val/videoN.mp4"]
-        padding: 5
-        crop_size: 128 
-        chunk: True
-        clip_length: 32
-        anchors: ["node1", "node2", ..."node_n"]
-        handle_missing: "drop"
-        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
-    test_dataset:
-        slp_files: ["/path/to/test/labels1.slp", "/path/to/test/labels2.slp", ..., "/path/to/test/labelsN.slp"]
-        video_files: ["/path/to/test/video1.mp4", "/path/to/test/video2.mp4", ..., "/path/to/test/videoN.mp4"]
-        padding: 5
-        crop_size: 128 
-        chunk: True
-        clip_length: 32
-        anchors: ["node1", "node2", ..."node_n"]
-        handle_missing: "drop"
-        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
-...
-```
-#### [`MicroscopyDataset`](../reference/dreem/datasets/microscopy_dataset.md)
-```YAML
-dataset:
-    train_dataset:
-        tracks: ["/path/to/train/labels1.csv", "/path/to/train/labels2.csv", ..., "/path/to/train/labelsN.csv"]
-        videos: ["/path/to/train/video1.tiff", "/path/to/train/video2.tiff", ..., "/path/to/train/videoN.tiff"]
-        source: "trackmate"
-        padding: 5
-        crop_size: 128 
-        chunk: True
-        clip_length: 32
-        augmentations: 
-            Rotate:
-                limit: 45
-                p: 0.3
-            ...
-            MotionBlur:
-                blur_limit: [3,7]
-                p: 0.3
-        ...
-    val_dataset:
-        tracks: ["/path/to/val/labels1.csv", "/path/to/val/labels2.csv", ..., "/path/to/val/labelsN.csv"]
-        video: ["/path/to/val/video1.tiff", "/path/to/val/video2.tiff", ..., "/path/to/val/videoN.tiff"]
-        source: "trackmate"
-        padding: 5
-        crop_size: 128 
-        chunk: True
-        clip_length: 32
-        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
-    test_dataset:
-        tracks: ["/path/to/test/labels1.csv", "/path/to/test/labels2.csv", ..., "/path/to/test/labelsN.csv"]
-        videos: ["/path/to/test/video1.tiff", "/path/to/test/video2.tiff", ..., "/path/to/test/videoN.tiff"]
-        source: "trackmate"
-        padding: 5
-        crop_size: 128 
-        chunk: True
-        clip_length: 32
-        ... # we don't include augmentations bc usually you shouldn't use augmentations during val/test
-```
-## `dataloader`
-
-This section outlines the params needed for the dataloader. Should have a `train_dataloader` and optionally `val_dataloader`/`test_dataloader` keys. 
-> Below we list the args we found useful/necessary for the dataloaders. For more advanced users see [`torch.utils.data.Dataloader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for more ways to initialize the dataloaders
-
-* `shuffle`: (`bool`) Set to `True` to have the data reshuffled at every epoch (during training, this should always be `True` and during val/test usually `False`) 
-* `num_workers`: (`int`) How many subprocesses to use for data loading. 0 means that the data will be loaded in the main process.
-
-### Example
-```YAML
-...
+# Dataloader configuration
 dataloader:
-    train_dataloader:
-        shuffle: true
-        num_workers: 4
-    val_dataloader: # we leave out the `shuffle` field as default=`False` which is what we want
-        num_workers: 4
-    test_dataloader: # we leave out the `shuffle` field as default=`False` which is what we want
-        num_workers: 4
-```
+  train_dataloader:
+    # bool: Shuffle data (should be true for training, default: false)
+    shuffle: <bool>
 
-## `logging`:
-This section sets up logging for the training job. 
+  val_dataloader:
+    # bool: Shuffle data (should be false for validation, default: false)
+    shuffle: <bool>
 
-* `logger_type`: (`str`) Which logger to use. Available loggers are {`"CSVLogger"`, `"TensorBoardLogger"`,`"WandbLogger"`}
-
-> Below we list the arguments we found useful for the [`WandbLogger`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.wandb.html#module-lightning.pytorch.loggers.wandb) as this is the logger we use and recommend. Please see the documentation for the corresponding logger at [`lightning.loggers`](https://lightning.ai/docs/pytorch/stable/api_references.html#loggers) for respective available parameters.
-
-* `name`: (`str`) A short display name for this run, which is how you'll identify this run in the UI.
-* `save_dir`: (`str`) An absolute path to a directory where metadata will be stored. 
-* `version`: (`str`) A unique ID for this run, used for resuming. It must be unique in the project, and if you delete a run you can't reuse the ID.
-* `project`: (`str`)  The name of the project where you're sending the new run.
-* `log_model`: (`str`) Log checkpoints created by `ModelCheckpoint` as W&B artifacts
-* `group`: (`str`) Specify a group to organize individual runs into a larger experiment
-* `entity`: (`str`) An entity is a username or team name where you're sending runs
-* `notes`: (`str`) A longer description of the run, like a `-m `commit message in git.
-
-> See [`wandb.init()`](https://docs.wandb.ai/ref/python/init) and [`WandbLogger`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.wandb.html#module-lightning.pytorch.loggers.wandb) for more fine-grained config args.
-
-### Examples:
-Here we provide a couple examples for different available loggers
-#### [`wandb`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.wandb.html#module-lightning.pytorch.loggers.wandb)
-```YAML
-...
+# Logging configuration
 logging:
-  logger_type: "WandbLogger"
-  name: "example_train"
-  entity: "example_user"
-  job_type: "train"
-  notes: "Example train job"
-  dir: "./logs"
-  group: "example"
-  save_dir: './logs'
-  project: "GTR"
-  log_model: "all"
-  ...
-...
-```
+  # str | null: Logger type: "CSVLogger", "TensorBoardLogger", "WandbLogger", or null
+  logger_type: <str | null>
+  
+  # str: Display name for this run (default: "dreem_train")
+  name: <str>
+  
+  # str: Project name (for WandbLogger)
+  project: <str | null>
+  
+  # str: Entity/team name (for WandbLogger)
+  entity: <str | null>
+  
+  # bool: Log model checkpoints (default: true)
+  log_model: <bool>
+  
+  # str: Group name for organizing runs
+  group: <str>
 
-#### [`csv logger`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.loggers.csv_logs.html#module-lightning.pytorch.loggers.csv_logs):
-```YAML
-...
-logging:
-    save_dir: "./logs"
-    name: "example_train.csv"
-    version: 1
-    flush_logs_every_n_steps: 1
-    ...
-...
-``` 
-## `early_stopping`
-
-This section configures early stopping for training runs. 
-
-> Below we provide descriptions of the arguments we found useful for EarlyStopping. For advanced users, see [`lightning.callbacks.EarlyStopping](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.callbacks.EarlyStopping.html#lightning.pytorch.callbacks.EarlyStopping) for available arguments for more fine grained control
-
-* `monitor` (`str`): quantity to be monitored.
-* `min_delta` (`float`): minimum change in the monitored quantity to qualify as an improvement, i.e. an absolute change of less than or equal to min_delta, will count as no improvement.
-* `patience` (`int`): number of checks with no improvement after which training will be stopped. 
-* `mode` (`str`): one of 'min', 'max'. In 'min' mode, training will stop when the quantity monitored has stopped decreasing and in 'max' mode it will stop when the quantity monitored has stopped increasing.
-* `check_finite` (`bool`): When set True, stops training when the monitor becomes NaN or infinite.
-* `stopping_threshold` (`float`): Stop training immediately once the monitored quantity reaches this threshold.
-* `divergence_threshold` (`float`): Stop training as soon as the monitored quantity becomes worse than this threshold.
-
-### Example:
-```YAML
-...
+# Early stopping configuration
 early_stopping:
-  monitor: "val_loss"
-  min_delta: 0.1
-  patience: 10
-  mode: "min"
-  check_finite: true
-  stopping_threshold: 1e-8
-  divergence_threshold: 30
-  ...
-...
-```
+  # see Pytorch Lightning Early Stopping documentation
 
-## `checkpointing`
-
-This section enables model checkpointing during training
-
-* `monitor`: A list of metrics to save best models for. Usually should be `"val_{METRIC}"` notation.
-    > Note: We initialize a separate [`ModelCheckpoint`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.callbacks.ModelCheckpoint.html#lightning.pytorch.callbacks.ModelCheckpoint) for each metric to monitor.
-    > This means that you'll save at least $|monitor|$ checkpoints at the end of training.
-
-> Below we describe the arguments we found useful for checkpointing. For more fine grained control see [`lightning.callbacks.ModelCheckpoint`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.callbacks.ModelCheckpoint.html#lightning.pytorch.callbacks.ModelCheckpoint) for available checkpointing params and generally more info on how `lightning` sets up checkpoints
-
-* `dirpath`: (`str`) Directory to save the models. If left empty then we first try to save to `./models/[GROUP]/[NAME]` or `./models/[NAME]` if logger is `wandb` otherwise we just save to `./models` 
-* `save_last`: (`bool`): When `True`, saves a last.ckpt copy whenever a checkpoint file gets saved. Can be set to 'link' on a local filesystem to create a symbolic link. This allows accessing the latest checkpoint in a deterministic manner.
-* `save_top_k`: (`int`): if `save_top_k == k`, the best k models according to the quantity monitored will be saved. if `save_top_k == 0`, no models are saved. if `save_top_k == -1`, all models are saved. (Recommend -1)
-* `every_n_epochs`: (`int`) Number of epochs between checkpoints. This value must be `None` or non-negative. To disable saving top-k checkpoints, set `every_n_epochs = 0`. This argument does not impact the saving of `save_last=True` checkpoints.
-
-### Example:
-```YAML
-...
+# Checkpointing configuration
 checkpointing:
-    monitor: ["val_loss", "val_num_switches"] #saves a model for best validation loss and a model for best validation switch count separately
-    dirpath: "./models/example_run"
-    save_last: true # will always save the best run
-    save_top_k: -1
-    every_n_epochs: 10 # saves the every 10th model regardless of if its the best.
-    ...
-...
-```
+  # list[str]: Metrics to monitor for best models (e.g., ["val_loss"])
+  monitor: <list[str]>
+  
+  # str | null: Directory to save models (null = auto)
+  dirpath: <str | null>
+  
+  # bool: Save last checkpoint (default: true)
+  save_last: <bool>
+  
+  # int: Save top k models (-1 = all, 0 = none, default: -1)
+  save_top_k: <int>
+  
+  # int: Save every N epochs (default: 1)
+  every_n_epochs: <int>
 
-## `trainer`
-
-This section configures the `lightning.Trainer` object for training. 
-> Below we describe the arguments we found useful for the `Trainer`. If you're an advanced user, Please see `lightning.Trainer`(https://lightning.ai/docs/pytorch/stable/common/trainer.html) for more fine grained control and how the `trainer` works in general
-
-* `accelerator`: (`str`) Supports passing different accelerator types `(“cpu”, “gpu”, “tpu”, “ipu”, “hpu”, “mps”, “auto”)` as well as custom accelerator instances.
-* `strategy`: (`str`) Supports different training strategies with aliases as well custom strategies
-* `devices`: (`list[int]` | `str`| `int`)`The devices to use. Can be set to:
-    * a positive number (`int` | `str`) 
-    * a sequence of device indices (`list` | `str`), 
-    * the value `-1` to indicate all available devices should be used
-    *  "auto" for automatic selection based on the chosen accelerator 
-* `fast_dev_run`: (`int` | `bool`) Runs `n` (if set to `n` (`int`)) else `1` (if set to `True`) batch(es) of train, val and test to find any bugs (ie: a sort of unit test).
-* `check_val_every_n_epoch`: (`int`) Perform a validation loop every after every `N` training epochs
-* `enable_checkpointing`: (`bool`) If `True`, enable checkpointing. It will configure a default `ModelCheckpoint` callback if there is no user-defined `ModelCheckpoint` in callbacks.
-* `gradient_clip_val`:  (`float`) The value at which to clip gradients
-* `limit_train_batches`: (`int` | `float`) How much of training dataset to check (`float` = fraction, `int` = num_batches) (mostly for debugging)
-* `limit_test_batches`: (`int` | `float`) How much of test dataset to check (`float` = fraction, `int` = num_batches). (mostly for debugging)
-* `limit_val_batches`: (`int` | `float`) How much of validation dataset to check (`float` = fraction, `int` = num_batches) (mostly for debugging)
-* `limit_predict_batches`: (`int` | `float`) How much of prediction dataset to check (`float` = fraction, `int` = num_batches)
-* `log_every_n_steps`:  (`int`) How often to log within steps
-* `max_epochs`: (`int`) Stop training once this number of epochs is reached. To enable infinite training, set `max_epochs` = -1.
-* `min_epochs`: (`int`) Force training for at least these many epochs
-
-### Examples:
-```YAML
+# Trainer configuration
 trainer:
-  check_val_every_n_epoch: 1
-  enable_checkpointing: true
-  gradient_clip_val: null
-  limit_train_batches: 1.0
-  limit_test_batches: 1.0
-  limit_val_batches: 1.0
-  log_every_n_steps: 1
-  max_epochs: 100
-  min_epochs: 10
+  # str: Device type: "cpu", "gpu", "cuda", etc.
+  accelerator: <str>
+  
+  # str | null: Training strategy (optional)
+  strategy: <str | null>
+  
+  # list[int] | int | str: Device indices
+  devices: <list[int] | int | str>
+  
+  # int: Maximum number of epochs (default: 20, -1 = infinite)
+  max_epochs: <int>
+  
+  # int: Minimum number of epochs (default: 1)
+  min_epochs: <int>
+  
+  # int: Validate every N epochs (default: 1)
+  check_val_every_n_epoch: <int>
+  
+  # bool: Enable checkpointing (default: true)
+  enable_checkpointing: <bool>
+  
+  # float | int: Fraction or number of training batches (default: 1.0)
+  limit_train_batches: <float | int>
+  
+  # float | int: Fraction or number of validation batches (default: 1.0)
+  limit_val_batches: <float | int>
+  
+  # int: Log every N steps (default: 1)
+  log_every_n_steps: <int>
 ```
 
-<!-- ## `view_batch`
+## CLI Usage
 
-This section allows you to visualize the data before training
+Most parameters can be set via CLI flags. For example:
 
-* `enable`: (`bool`) whether or not to view a batch
-* `num_frames`: (`int`) The number of frames in the batch to visualize
-* `no_train`: (`bool`)  whether or not to train after visualization is complete
-
-### Examples:
-#### Off
-```YAML
-view_batch:
-  enable: False
-  num_frames: 0 #this arg can be anything
-  no_train: False #This can be false
+```bash
+dreem train ./data/train \
+  --val-dir ./data/val \
+  --crop-size 128 \
+  --epochs 20 \
+  --lr 0.0001 \
+  --d-model 128 \
+  --nhead 1 \
+  --encoder-layers 1 \
+  --decoder-layers 1 \
+  --anchor centroid \
+  --clip-length 32 \
 ```
-#### On, no training:
-```YAML
-view_batch:
-  enable: False
-  num_frames: 32 #this arg can be anything
-  no_train: True #training will not occur
-```
-#### On, with training: 
-```YAML
-view_batch:
-  enable: False
-  num_frames: 32 #this arg can be anything
-  no_train: True #training will not occur
-``` -->
+
+See `dreem train --help` for all available CLI options.
+
