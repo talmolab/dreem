@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://dreem.sleap.ai/dev/configs/inference/">
       
       
-        <link rel="prev" href="../eval/">
+        <link rel="prev" href="../config/">
       
       
         <link rel="next" href="../training/">
@@ -25,7 +25,7 @@
     
     
       
-        <title>Description of inference params - DREEM documentation</title>
+        <title>Inference Configuration - DREEM documentation</title>
       
     
     
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#description-of-inference-params" class="md-skip">
+        <a href="#inference-configuration" class="md-skip">
           Skip to content
         </a>
       
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Description of inference params
+              Inference Configuration
             
           </span>
         </div>
@@ -349,14 +349,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../usage/" class="md-nav__link">
+      <a href="../../visualizer/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Usage
+    Live Visualizer
   
 
     
@@ -376,14 +376,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/" class="md-nav__link">
+      <a href="../../usage/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Live Visualizer
+    Usage Guide
   
 
     
@@ -1091,34 +1091,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../eval/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Description of inference params
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1138,7 +1110,7 @@
   <span class="md-ellipsis">
     
   
-    Description of inference params
+    Inference Configuration
   
 
     
@@ -1156,7 +1128,7 @@
   <span class="md-ellipsis">
     
   
-    Description of inference params
+    Inference Configuration
   
 
     
@@ -1182,22 +1154,55 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tracker" class="md-nav__link">
+  <a href="#required-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        tracker
+        Required Parameters
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="tracker">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dataset-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dataset Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dataset Configuration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
+  <a href="#directory-based-input-recommended" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Examples:
+        Directory-based Input (Recommended)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file-based-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File-based Input
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dataset-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dataset Parameters
       
     </span>
   </a>
@@ -1210,22 +1215,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dataset" class="md-nav__link">
+  <a href="#tracker-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        dataset
+        Tracker Configuration
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dataset">
+    <nav class="md-nav" aria-label="Tracker Configuration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#basedataset-args" class="md-nav__link">
+  <a href="#core-tracking-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        BaseDataset args
+        Core Tracking Parameters
       
     </span>
   </a>
@@ -1233,10 +1238,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sleapdataset-args" class="md-nav__link">
+  <a href="#iou-and-threshold-settings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        SleapDataset Args:
+        IOU and Threshold Settings
       
     </span>
   </a>
@@ -1244,10 +1249,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#microscopydataset" class="md-nav__link">
+  <a href="#orientation-and-angle-constraints" class="md-nav__link">
     <span class="md-ellipsis">
       
-        MicroscopyDataset
+        Orientation and Angle Constraints
       
     </span>
   </a>
@@ -1255,21 +1260,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#celltrackingdataset" class="md-nav__link">
+  <a href="#advanced-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CellTrackingDataset
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dataset-examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        dataset Examples
+        Advanced Parameters
       
     </span>
   </a>
@@ -1282,38 +1276,54 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dataloader" class="md-nav__link">
+  <a href="#dataloader-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        dataloader
+        Dataloader Configuration
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dataloader">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#example_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Example
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#example-config" class="md-nav__link">
+  <a href="#trainer-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Example Config
+        Trainer Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other Parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI Usage
       
     </span>
   </a>
@@ -1343,7 +1353,7 @@
   <span class="md-ellipsis">
     
   
-    Description of training parameters
+    Training Configuration
   
 
     
@@ -2941,22 +2951,55 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tracker" class="md-nav__link">
+  <a href="#required-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        tracker
+        Required Parameters
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="tracker">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dataset-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dataset Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dataset Configuration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
+  <a href="#directory-based-input-recommended" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Examples:
+        Directory-based Input (Recommended)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file-based-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File-based Input
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dataset-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dataset Parameters
       
     </span>
   </a>
@@ -2969,22 +3012,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dataset" class="md-nav__link">
+  <a href="#tracker-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        dataset
+        Tracker Configuration
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dataset">
+    <nav class="md-nav" aria-label="Tracker Configuration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#basedataset-args" class="md-nav__link">
+  <a href="#core-tracking-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        BaseDataset args
+        Core Tracking Parameters
       
     </span>
   </a>
@@ -2992,10 +3035,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sleapdataset-args" class="md-nav__link">
+  <a href="#iou-and-threshold-settings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        SleapDataset Args:
+        IOU and Threshold Settings
       
     </span>
   </a>
@@ -3003,10 +3046,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#microscopydataset" class="md-nav__link">
+  <a href="#orientation-and-angle-constraints" class="md-nav__link">
     <span class="md-ellipsis">
       
-        MicroscopyDataset
+        Orientation and Angle Constraints
       
     </span>
   </a>
@@ -3014,21 +3057,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#celltrackingdataset" class="md-nav__link">
+  <a href="#advanced-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CellTrackingDataset
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dataset-examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        dataset Examples
+        Advanced Parameters
       
     </span>
   </a>
@@ -3041,38 +3073,54 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dataloader" class="md-nav__link">
+  <a href="#dataloader-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        dataloader
+        Dataloader Configuration
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dataloader">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#example_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Example
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#example-config" class="md-nav__link">
+  <a href="#trainer-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Example Config
+        Trainer Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other Parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI Usage
       
     </span>
   </a>
@@ -3099,172 +3147,178 @@
   
 
 
-<h1 id="description-of-inference-params">Description of inference params<a class="headerlink" href="#description-of-inference-params" title="Permanent link">&para;</a></h1>
-<p>Here we describe the parameters used for inference. See <a href="./#example-config">here</a> for an example inference config.</p>
+<h1 id="inference-configuration">Inference Configuration<a class="headerlink" href="#inference-configuration" title="Permanent link">&para;</a></h1>
+<p>This guide describes the parameters used for inference configuration. Most parameters can be set via CLI flags (see <code>dreem track --help</code> or <code>dreem eval --help</code>) or through a YAML config file.</p>
+<h2 id="required-parameters">Required Parameters<a class="headerlink" href="#required-parameters" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>ckpt_path</code>: (<code>str</code>) the path to the saved model checkpoint. Can optionally provide a list of models and this will trigger batch inference where each pod gets a model to run inference with.
-e.g:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nn">...</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">ckpt_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/model.ckpt&quot;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nn">...</span>
-</code></pre></div></li>
-<li><code>out_dir</code>: (<code>str</code>) a directory path where to store outputs.
-e.g:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nn">...</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nt">out_dir</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/results/dir&quot;</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nn">...</span>
-</code></pre></div></li>
+<li><code>ckpt_path</code> (<code>str</code>): Path to the model checkpoint file.</li>
+<li><code>outdir</code> (<code>str</code>): Directory where tracking results will be saved.</li>
 </ul>
-<h2 id="tracker"><code>tracker</code><a class="headerlink" href="#tracker" title="Permanent link">&para;</a></h2>
-<p>This section configures the tracker.</p>
+<h2 id="dataset-configuration">Dataset Configuration<a class="headerlink" href="#dataset-configuration" title="Permanent link">&para;</a></h2>
+<p>The <code>dataset.test_dataset</code> section configures the input data for inference.</p>
+<h3 id="directory-based-input-recommended">Directory-based Input (Recommended)<a class="headerlink" href="#directory-based-input-recommended" title="Permanent link">&para;</a></h3>
+<p>Use the <code>dir</code> section to automatically discover videos and labels in a directory:</p>
 <ul>
-<li><code>window_size</code>: (<code>int</code>) the size of the window used during sliding inference.</li>
-<li><code>use_vis_feats</code>: (<code>bool</code>) Whether or not to use visual feature extractor.</li>
-<li><code>overlap_thresh</code>: (<code>float</code>) the trajectory overlap threshold to be used for assignment.</li>
-<li><code>mult_thresh</code>: (<code>bool</code>) Whether or not to use weight threshold.</li>
-<li><code>decay_time</code>: (<code>float</code>) weight for <code>decay_time</code> postprocessing.</li>
-<li><code>iou</code>: (<code>str</code> | <code>None</code>) Either <code>{None, '', "mult" or "max"}</code>. Whether to use multiplicative or max iou reweighting.</li>
-<li><code>max_center_dist</code>: (<code>float</code>) distance threshold for filtering trajectory score matrix.</li>
-<li><code>persistent_tracking</code>: (<code>bool</code>) whether to keep a buffer across chunks or not.</li>
-<li><code>max_gap</code>: (<code>int</code>) the max number of frames a trajectory can be missing before termination.</li>
-<li><code>max_tracks</code>: (<code>int</code>) the maximum number of tracks that can be created while tracking.
-    We force the tracker to assign instances to a track instead of creating a new track if <code>max_tracks</code>has been reached.</li>
+<li><code>path</code> (<code>str</code>): Path to directory containing videos and labels (use absolute paths).</li>
+<li><code>labels_suffix</code> (<code>str</code>): File extension for label files (e.g., <code>.slp</code>, <code>.csv</code>, <code>.xml</code>).</li>
+<li><code>vid_suffix</code> (<code>str</code>): File extension for video files (e.g., <code>.mp4</code>, <code>.avi</code>, <code>.tif</code>, <code>.tiff</code>).</li>
 </ul>
-<h3 id="examples">Examples:<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nn">...</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nt">tracker</span><span class="p">:</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">window_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">overlap_thresh</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">mult_thresh</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">decay_time</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.9</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">iou</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;mult&quot;</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="nt">max_center_dist</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nn">...</span>
+<h3 id="file-based-input">File-based Input<a class="headerlink" href="#file-based-input" title="Permanent link">&para;</a></h3>
+<p>Alternatively, specify files explicitly:</p>
+<ul>
+<li><code>slp_files</code> (<code>list[str]</code>): List of paths to SLEAP label files (<code>.slp</code>).</li>
+<li><code>video_files</code> (<code>list[str]</code>): List of paths to video files.</li>
+</ul>
+<h3 id="dataset-parameters">Dataset Parameters<a class="headerlink" href="#dataset-parameters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>crop_size</code> (<code>int</code>): Size (in pixels) of the square bounding box around each instance. Should match the approximate size of your tracked objects.</li>
+<li><code>clip_length</code> (<code>int</code>): Number of frames per chunk when processing videos (default: 32).</li>
+<li><code>chunk</code> (<code>bool</code>): Whether to chunk videos into smaller clips (default: <code>true</code>).</li>
+<li><code>anchors</code> (<code>str</code> | <code>list[str]</code> | <code>int</code>): </li>
+<li>String: Single node name to center crops around (e.g., <code>"centroid"</code>).</li>
+<li>List: Multiple node names to use as crop centers.</li>
+<li>Integer: Number of anchors to randomly select.</li>
+<li><code>padding</code> (<code>int</code>): Amount of padding added to each side of the bounding box (default: 0).</li>
+<li><code>dilation_radius_px</code> (<code>int</code>): Size of mask around keypoint (pixels) to mask out background.</li>
+<li><code>max_detection_overlap</code> (<code>float</code>): IOU threshold above which detections are considered duplicates.</li>
+<li><code>detection_iou_threshold</code> (<code>bool</code>): Whether to use IOU threshold for detection filtering.</li>
+</ul>
+<h2 id="tracker-configuration">Tracker Configuration<a class="headerlink" href="#tracker-configuration" title="Permanent link">&para;</a></h2>
+<p>The <code>tracker</code> section controls tracking behavior and post-processing.</p>
+<h3 id="core-tracking-parameters">Core Tracking Parameters<a class="headerlink" href="#core-tracking-parameters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>max_tracks</code> (<code>int</code>): Maximum number of tracks that can be created. Set this to the number of objects you expect to track.</li>
+<li><code>overlap_thresh</code> (<code>float</code>): Trajectory overlap threshold for assignment (default: 0.01).</li>
+<li><code>max_center_dist</code> (<code>float</code>): Maximum distance (pixels) an instance can move between frames to be considered the same track.</li>
+<li><code>max_gap</code> (<code>int</code>): Maximum number of frames a trajectory can be missing before termination.</li>
+<li><code>confidence_threshold</code> (<code>float</code>): Threshold below which frames are flagged as potential errors (default: 0).</li>
+</ul>
+<h3 id="iou-and-threshold-settings">IOU and Threshold Settings<a class="headerlink" href="#iou-and-threshold-settings" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>iou</code> (<code>str</code> | <code>None</code>): IOU reweighting mode. Options: <code>"mult"</code> (multiplicative), <code>"max"</code>, or <code>None</code>.</li>
+<li><code>mult_thresh</code> (<code>bool</code>): Whether to use multiplicative threshold weighting.</li>
+</ul>
+<h3 id="orientation-and-angle-constraints">Orientation and Angle Constraints<a class="headerlink" href="#orientation-and-angle-constraints" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>max_angle_diff</code> (<code>float</code>): Maximum angle difference (degrees) allowed for track assignment.</li>
+<li><code>front_nodes</code> (<code>list[str]</code>): List of node names defining the front of the object for orientation.</li>
+<li><code>back_nodes</code> (<code>list[str]</code>): List of node names defining the back of the object for orientation.</li>
+<li><code>angle_diff_penalty_multiplier</code> (<code>float</code>): Multiplier for angle difference penalty (default: 1.0).</li>
+<li><code>distance_penalty_multiplier</code> (<code>float</code>): Multiplier for distance penalty (default: 2.0).</li>
+</ul>
+<h3 id="advanced-parameters">Advanced Parameters<a class="headerlink" href="#advanced-parameters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>decay_time</code> (<code>float</code> | <code>None</code>): Weight for temporal decay in post-processing. Set to <code>null</code> to disable.</li>
+</ul>
+<h2 id="dataloader-configuration">Dataloader Configuration<a class="headerlink" href="#dataloader-configuration" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>test_dataloader.num_workers</code> (<code>int</code>): Number of subprocesses for data loading. Use <code>0</code> for single-process loading.</li>
+<li><code>test_dataloader.shuffle</code> (<code>bool</code>): Whether to shuffle data (typically <code>false</code> for inference).</li>
+</ul>
+<h2 id="trainer-configuration">Trainer Configuration<a class="headerlink" href="#trainer-configuration" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>trainer.accelerator</code> (<code>str</code>): Device to use. Options: <code>"gpu"</code>, <code>"cuda"</code>, or <code>"cpu"</code>.</li>
+<li><code>trainer.devices</code> (<code>list[int]</code>): List of device indices (e.g., <code>[0]</code> for first GPU).</li>
+<li><code>trainer.limit_test_batches</code> (<code>float</code>): Fraction of test batches to process (default: 1.0).</li>
+</ul>
+<h2 id="other-parameters">Other Parameters<a class="headerlink" href="#other-parameters" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>save_frame_meta</code> (<code>bool</code>): Whether to save frame-level metadata (default: <code>false</code>).</li>
+<li><code>dataset.metrics.test</code> (<code>str</code> | <code>list[str]</code>): Metrics to compute during evaluation. Use <code>"all"</code> for all metrics.</li>
+</ul>
+<h2 id="example-configuration">Example Configuration<a class="headerlink" href="#example-configuration" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># str: Path to the model checkpoint file</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">ckpt_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;str&gt;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># str: Directory where tracking results will be saved</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">outdir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;str&gt;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nt">dataset</span><span class="p">:</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">test_dataset</span><span class="p">:</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="c1"># str: Node name to center crops around</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">anchors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;str&gt;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="c1"># int: Number of frames per chunk when processing videos (default: 32)</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="nt">clip_length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;int&gt;</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="c1"># int: Size (in pixels) of the square bounding box around each instance</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="c1">#      Should match approximate size of tracked objects</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span><span class="nt">crop_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;int&gt;</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="c1"># float: IOU threshold for detection filtering (default: 0; no filtering)</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="nt">max_detection_overlap</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="c1"># int: Size of mask around keypoint (in pixels) to mask out background (default: 0; no masking)</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">    </span><span class="nt">dilation_radius_px</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;int&gt;</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">    </span><span class="c1"># Directory-based input (recommended)</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="nt">dir</span><span class="p">:</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">      </span><span class="c1"># str: File extension for label files (e.g., &quot;.slp&quot;, &quot;.tif&quot;, &quot;.tiff&quot;)</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">      </span><span class="nt">labels_suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;str&gt;</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">      </span><span class="c1"># str: Path to directory containing videos and labels (use absolute paths)</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;str&gt;</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="w">      </span><span class="c1"># str: File extension for video files (e.g., &quot;.mp4&quot;, &quot;.avi&quot;, &quot;.tif&quot;, &quot;.tiff&quot;)</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="w">      </span><span class="nt">vid_suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;str&gt;</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="w">    </span><span class="c1"># int: Amount of padding added to each side of the bounding box (default: 0)</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="w">    </span><span class="nt">padding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;int&gt;</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a><span class="c1"># bool: Whether to save frame-level metadata (default: false)</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a><span class="nt">save_frame_meta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;bool&gt;</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a><span class="nt">tracker</span><span class="p">:</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a><span class="w">  </span><span class="c1"># float | null: Maximum angle difference (degrees) allowed for track assignment (optional)</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a><span class="w">  </span><span class="nt">max_angle_diff</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float | null&gt;</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a><span class="w">  </span><span class="c1"># float | null: Maximum distance (pixels) an instance can move between frames (optional)</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a><span class="w">  </span><span class="nt">max_center_dist</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float | null&gt;</span>
+<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a>
+<a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a><span class="w">  </span><span class="c1"># float: Multiplier for angle difference penalty (default: 1.0)</span>
+<a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a><span class="w">  </span><span class="nt">angle_diff_penalty_multiplier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>
+<a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a><span class="w">  </span><span class="c1"># list[str] | null: List of node names defining the front of the object for orientation (optional)</span>
+<a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a><span class="w">  </span><span class="nt">front_nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;list[str] | null&gt;</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a>
+<a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a><span class="w">  </span><span class="c1"># list[str] | null: List of node names defining the back of the object for orientation (optional)</span>
+<a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a><span class="w">  </span><span class="nt">back_nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;list[str] | null&gt;</span>
+<a id="__codelineno-0-57" name="__codelineno-0-57" href="#__codelineno-0-57"></a>
+<a id="__codelineno-0-58" name="__codelineno-0-58" href="#__codelineno-0-58"></a><span class="w">  </span><span class="c1"># float: Threshold below which frames are flagged as potential errors (default: 0)</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59" href="#__codelineno-0-59"></a><span class="w">  </span><span class="nt">confidence_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60" href="#__codelineno-0-60"></a>
+<a id="__codelineno-0-61" name="__codelineno-0-61" href="#__codelineno-0-61"></a><span class="w">  </span><span class="c1"># float: Multiplier for distance penalty (default: 2.0)</span>
+<a id="__codelineno-0-62" name="__codelineno-0-62" href="#__codelineno-0-62"></a><span class="w">  </span><span class="nt">distance_penalty_multiplier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-0-63" name="__codelineno-0-63" href="#__codelineno-0-63"></a>
+<a id="__codelineno-0-64" name="__codelineno-0-64" href="#__codelineno-0-64"></a><span class="w">  </span><span class="c1"># int: Maximum number of tracks that can be created</span>
+<a id="__codelineno-0-65" name="__codelineno-0-65" href="#__codelineno-0-65"></a><span class="w">  </span><span class="c1">#      Set to number of objects you expect to track</span>
+<a id="__codelineno-0-66" name="__codelineno-0-66" href="#__codelineno-0-66"></a><span class="w">  </span><span class="nt">max_tracks</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;int&gt;</span>
+<a id="__codelineno-0-67" name="__codelineno-0-67" href="#__codelineno-0-67"></a>
+<a id="__codelineno-0-68" name="__codelineno-0-68" href="#__codelineno-0-68"></a><span class="w">  </span><span class="c1"># bool: Whether to use multiplicative threshold weighting (default: true)</span>
+<a id="__codelineno-0-69" name="__codelineno-0-69" href="#__codelineno-0-69"></a><span class="w">  </span><span class="nt">mult_thresh</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;bool&gt;</span>
+<a id="__codelineno-0-70" name="__codelineno-0-70" href="#__codelineno-0-70"></a>
+<a id="__codelineno-0-71" name="__codelineno-0-71" href="#__codelineno-0-71"></a><span class="w">  </span><span class="c1"># float: Trajectory overlap threshold for assignment (default: 0.01)</span>
+<a id="__codelineno-0-72" name="__codelineno-0-72" href="#__codelineno-0-72"></a><span class="w">  </span><span class="nt">overlap_thresh</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-0-73" name="__codelineno-0-73" href="#__codelineno-0-73"></a>
+<a id="__codelineno-0-74" name="__codelineno-0-74" href="#__codelineno-0-74"></a><span class="nt">trainer</span><span class="p">:</span>
+<a id="__codelineno-0-75" name="__codelineno-0-75" href="#__codelineno-0-75"></a><span class="w">  </span><span class="c1"># str: Device to use: &quot;gpu&quot;, &quot;cuda&quot;, or &quot;cpu&quot;</span>
+<a id="__codelineno-0-76" name="__codelineno-0-76" href="#__codelineno-0-76"></a><span class="w">  </span><span class="nt">accelerator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;str&gt;</span>
+<a id="__codelineno-0-77" name="__codelineno-0-77" href="#__codelineno-0-77"></a>
+<a id="__codelineno-0-78" name="__codelineno-0-78" href="#__codelineno-0-78"></a><span class="w">  </span><span class="c1"># list[int]: List of device indices (e.g., [0] for first GPU)</span>
+<a id="__codelineno-0-79" name="__codelineno-0-79" href="#__codelineno-0-79"></a><span class="w">  </span><span class="nt">devices</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;list[int]&gt;</span>
 </code></pre></div>
-<h2 id="dataset"><code>dataset</code><a class="headerlink" href="#dataset" title="Permanent link">&para;</a></h2>
-<p>This section contains the params for initializing the datasets for training. Requires a <code>test_dataset</code> keys. </p>
-<h3 id="basedataset-args"><a href="../../reference/dreem/datasets/base_dataset/"><code>BaseDataset</code></a> args<a class="headerlink" href="#basedataset-args" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>padding</code>: An <code>int</code> representing the amount of padding to be added to each side of the bounding box size</li>
-<li><code>crop_size</code>: (<code>int</code>|<code>tuple</code>) the size of the bounding box around which a crop will form.</li>
-<li><code>chunk</code>: Whether or not to chunk videos into smaller clips to feed to model</li>
-<li><code>clip_length</code>: the number of frames in each chunk</li>
-<li><code>mode</code>: <code>train</code> or <code>val</code>. Determines whether this dataset is used for training or validation.</li>
-<li><code>n_chunks</code>: Number of chunks to subsample from. Can either a fraction of the dataset (ie <code>(0,1.0]</code>) or number of chunks</li>
-<li><code>seed</code>: set a seed for reproducibility</li>
-<li><code>gt_list</code>: An optional path to .txt file containing ground truth for cell tracking challenge datasets.</li>
-</ul>
-<h4 id="dir"><code>dir</code>:<a class="headerlink" href="#dir" title="Permanent link">&para;</a></h4>
-<p>This section allows you to pass a directory rather than paths to labels/videos individually</p>
-<ul>
-<li><code>path</code>: The path to the dir where the data is stored (recommend absolute path)</li>
-<li><code>labels_suffix</code>: (<code>str</code>) containing the file extension to search for labels files. e.g. <code>.slp</code>, <code>.csv</code>, or <code>.xml</code>.</li>
-<li><code>vid_suffix</code>: (<code>str</code>) containing the file extension to search for video files e.g <code>.mp4</code>, <code>.avi</code> or <code>.tif</code>.</li>
-</ul>
-<h5 id="examples_1">Examples:<a class="headerlink" href="#examples_1" title="Permanent link">&para;</a></h5>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nn">...</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nt">dataset</span><span class="p">:</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">{MODE}_dataset</span><span class="p p-Indicator">:</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="nt">dir</span><span class="p">:</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">            </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/data/dir/mode&quot;</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">            </span><span class="nt">labels_suffix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.slp&quot;</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">            </span><span class="nt">vid_suffix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.mp4&quot;</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">...</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="nn">...</span>
+<h2 id="cli-usage">CLI Usage<a class="headerlink" href="#cli-usage" title="Permanent link">&para;</a></h2>
+<p>Most parameters can be set via CLI flags. For example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data/inference<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>--checkpoint<span class="w"> </span>./models/model.ckpt<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>--crop-size<span class="w"> </span><span class="m">84</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span>--max-tracks<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span>--max-dist<span class="w"> </span><span class="m">30</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span>--confidence-threshold<span class="w"> </span><span class="m">0</span>.9<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span>--iou-mode<span class="w"> </span>mult
 </code></pre></div>
-<h4 id="augmentations"><code>augmentations</code>:<a class="headerlink" href="#augmentations" title="Permanent link">&para;</a></h4>
-<p>This subsection contains params for albumentations. See <a href="https://albumentations.ai"><code>albumentations</code></a> for available visual augmentations. Other available augmentations include <code>NodeDropout</code> and <code>InstanceDropout</code>. Keys must match augmentation class name exactly and contain subsections with parameters for the augmentation</p>
-<h5 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h5>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">augmentations</span><span class="p">:</span><span class="w"> </span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nt">Rotate</span><span class="p">:</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="nt">limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">45</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="nt">p</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.3</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="nt">MotionBlur</span><span class="p">:</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">        </span><span class="nt">blur_limit</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nv">7</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">        </span><span class="nt">p</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.3</span>
-</code></pre></div>
-<h3 id="sleapdataset-args"><a href="../../reference/dreem/datasets/sleap_dataset/"><code>SleapDataset</code></a> Args:<a class="headerlink" href="#sleapdataset-args" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>slp_files</code>: (<code>str</code>) a list of .slp files storing tracking annotations</li>
-<li><code>video_files</code>: (<code>str</code>) a list of paths to video files</li>
-<li><code>anchors</code>: (<code>str</code> | <code>list</code> | <code>int</code>) One of:<ul>
-<li>a string indicating a single node to center crops around</li>
-<li>a list of skeleton node names to be used as the center of crops</li>
-<li>an int indicating the number of anchors to randomly select
-If unavailable then crop around the midpoint between all visible anchors.</li>
-</ul>
-</li>
-<li><code>handle_missing</code>: how to handle missing single nodes. one of [<code>"drop"</code>, <code>"ignore"</code>, <code>"centroid"</code>].<ul>
-<li>if <code>drop</code> then we dont include instances which are missing the <code>anchor</code>.</li>
-<li>if <code>ignore</code> then we use a mask instead of a crop and nan centroids/bboxes.</li>
-<li>if <code>centroid</code> then we default to the pose centroid as the node to crop around.</li>
-</ul>
-</li>
-</ul>
-<h3 id="microscopydataset"><a href="../../reference/dreem/datasets/microscopy_dataset/"><code>MicroscopyDataset</code></a><a class="headerlink" href="#microscopydataset" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>videos</code>: (<code>list[str | list[str]]</code>) paths to raw microscopy videos</li>
-<li><code>tracks</code>: (<code>list[str]</code>) paths to trackmate gt labels (either <code>.xml</code> or <code>.csv</code>)</li>
-<li><code>source</code>: file format of gt labels based on label generator. Either <code>"trackmate"</code> or <code>"isbi"</code>.</li>
-</ul>
-<h3 id="celltrackingdataset"><a href="../../reference/dreem/datasets/cell_tracking_dataset/"><code>CellTrackingDataset</code></a><a class="headerlink" href="#celltrackingdataset" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>raw_images</code>: (<code>list[list[str] | list[list[str]]]</code>) paths to raw microscopy images</li>
-<li><code>gt_images</code>: (<code>list[list[str] | list[list[str]]]</code>) paths to gt label images</li>
-<li><code>gt_list</code>: (<code>list[str]</code>) An optional path to .txt file containing gt ids stored in cell
-                tracking challenge format: <code>"track_id", "start_frame",
-                "end_frame", "parent_id"</code></li>
-</ul>
-<h3 id="dataset-examples"><code>dataset</code> Examples<a class="headerlink" href="#dataset-examples" title="Permanent link">&para;</a></h3>
-<h4 id="sleapdataset"><a href="../../reference/dreem/datasets/sleap_dataset/"><code>SleapDataset</code></a><a class="headerlink" href="#sleapdataset" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nn">...</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nt">dataset</span><span class="p">:</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">test_dataset</span><span class="p">:</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">        </span><span class="nt">slp_files</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;/path/to/test/labels1.slp&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;/path/to/test/labels2.slp&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">...</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;/path/to/test/labelsN.slp&quot;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">        </span><span class="nt">video_files</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;/path/to/test/video1.mp4&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;/path/to/test/video2.mp4&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">...</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;/path/to/test/videoN.mp4&quot;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">        </span><span class="nt">padding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">        </span><span class="nt">crop_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">128</span><span class="w"> </span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">        </span><span class="nt">chunk</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">        </span><span class="nt">clip_length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">        </span><span class="nt">anchors</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;node1&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;node2&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">...&quot;node_n&quot;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">        </span><span class="nt">handle_missing</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;drop&quot;</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"> </span><span class="c1"># we don&#39;t include augmentations bc usually you shouldn&#39;t use augmentations during val/test</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="nn">...</span>
-</code></pre></div>
-<h4 id="microscopydataset_1"><a href="../../reference/dreem/datasets/microscopy_dataset/"><code>MicroscopyDataset</code></a><a class="headerlink" href="#microscopydataset_1" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">dataset</span><span class="p">:</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="nt">test_dataset</span><span class="p">:</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">        </span><span class="nt">tracks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;/path/to/test/labels1.csv&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;/path/to/test/labels2.csv&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">...</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;/path/to/test/labelsN.csv&quot;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">        </span><span class="nt">videos</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;/path/to/test/video1.tiff&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;/path/to/test/video2.tiff&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">...</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;/path/to/test/videoN.tiff&quot;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">        </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;trackmate&quot;</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">        </span><span class="nt">padding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">        </span><span class="nt">crop_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">128</span><span class="w"> </span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">        </span><span class="nt">chunk</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">        </span><span class="nt">clip_length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"> </span><span class="c1"># we don&#39;t include augmentations bc usually you shouldn&#39;t use augmentations during val/test</span>
-</code></pre></div>
-<h2 id="dataloader">dataloader<a class="headerlink" href="#dataloader" title="Permanent link">&para;</a></h2>
-<p>This section outlines the params needed for the dataloader. Should have a <code>train_dataloader</code> and optionally <code>val_dataloader</code>/<code>test_dataloader</code> keys. </p>
-<blockquote>
-<p>Below we list the args we found useful/necessary for the dataloaders. For more advanced users see <a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader"><code>torch.utils.data.Dataloader</code></a> for more ways to initialize the dataloaders</p>
-</blockquote>
-<ul>
-<li><code>shuffle</code>: (<code>bool</code>) Set to <code>True</code> to have the data reshuffled at every epoch (during training, this should always be <code>True</code> and during val/test usually <code>False</code>) </li>
-<li><code>num_workers</code>: (<code>int</code>) How many subprocesses to use for data loading. 0 means that the data will be loaded in the main process.</li>
-</ul>
-<h3 id="example_1">Example<a class="headerlink" href="#example_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nn">...</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nt">dataloader</span><span class="p">:</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="nt">test_dataloader</span><span class="p">:</span><span class="w"> </span><span class="c1"># we leave out the `shuffle` field as default=`False` which is what we want</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="nn">...</span>
-</code></pre></div>
-<h2 id="example-config">Example Config<a class="headerlink" href="#example-config" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>
-</code></pre></div>
+<p>See <code>dreem track --help</code> or <code>dreem eval --help</code> for all available CLI options.</p>
 
 
 
