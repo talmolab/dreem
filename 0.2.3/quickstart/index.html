@@ -382,10 +382,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#step-1-install-dependencies-colab-only" class="md-nav__link">
+  <a href="#step-1-install-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 1: Install dependencies (Colab only)
+        Step 1: Install dependencies
       
     </span>
   </a>
@@ -473,14 +473,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/" class="md-nav__link">
+      <a href="../visualizer/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Usage
+    Live Visualizer
   
 
     
@@ -500,14 +500,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../visualizer/" class="md-nav__link">
+      <a href="../usage/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Live Visualizer
+    Usage Guide
   
 
     
@@ -669,10 +669,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#step-1-install-dependencies-colab-only" class="md-nav__link">
+  <a href="#step-1-install-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 1: Install dependencies (Colab only)
+        Step 1: Install dependencies
       
     </span>
   </a>
@@ -1375,7 +1375,7 @@
   <span class="md-ellipsis">
     
   
-    Description of inference params
+    Inference Configuration
   
 
     
@@ -1403,7 +1403,7 @@
   <span class="md-ellipsis">
     
   
-    Description of training parameters
+    Training Configuration
   
 
     
@@ -3001,10 +3001,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#step-1-install-dependencies-colab-only" class="md-nav__link">
+  <a href="#step-1-install-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 1: Install dependencies (Colab only)
+        Step 1: Install dependencies
       
     </span>
   </a>
@@ -3099,16 +3099,14 @@
 
 <h1 id="quickstart">Quickstart<a class="headerlink" href="#quickstart" title="Permanent link">&para;</a></h1>
 <p><a href="https://colab.research.google.com/github/talmolab/dreem/blob/main/examples/quickstart.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
-<p>DREEM operations can be performed either through the command-line interface or through the API (for more advanced users). The CLI provides commands for training, tracking, evaluation, and visualization. All operations can be customized via config files. For a more in-depth walkthrough, see the <a href="../Examples/dreem-demo/">Examples</a> section. For a complete reference of all commands and options, see <a href="https://dreem.sleap.ai/reference/dreem/">the API Reference</a>.</p>
-<p>This quickstart walks you through tracking a social interaction between two flies from the SLEAP <a href="https://sleap.ai/datasets.html#fly32">fly32 dataset</a> using a pretrained model. <strong>Runtime</strong>: ~5–10 minutes. <strong>Hardware</strong>: CPU is sufficient. See <a href="../installation/">Installation</a> if you haven't installed DREEM yet.</p>
+<p>This quickstart walks you through tracking a social interaction between two flies from the SLEAP <a href="https://docs.sleap.ai/dev/reference/datasets/#flies13">flies13 dataset</a> using a pretrained model.</p>
+<p><strong>Runtime</strong>: ~5–10 minutes.<br />
+<strong>Hardware</strong>: CPU is sufficient.  </p>
 <hr />
-<h2 id="step-1-install-dependencies-colab-only">Step 1: Install dependencies (Colab only)<a class="headerlink" href="#step-1-install-dependencies-colab-only" title="Permanent link">&para;</a></h2>
-<p>If you're running in Colab, install DREEM and helpers in a cell:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="o">%</span><span class="n">pip</span> <span class="n">install</span> <span class="n">uv</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="err">!</span><span class="n">uv</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">dreem</span><span class="o">-</span><span class="n">track</span> <span class="n">huggingface_hub</span> <span class="n">opencv</span><span class="o">-</span><span class="n">python</span><span class="o">-</span><span class="n">headless</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="err">!</span><span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> <span class="n">ffmpeg</span> <span class="mi">2</span><span class="o">&gt;/</span><span class="n">dev</span><span class="o">/</span><span class="n">null</span> <span class="o">||</span> <span class="n">echo</span> <span class="s2">&quot;ffmpeg already installed or not on Linux&quot;</span>
+<h2 id="step-1-install-dependencies">Step 1: Install dependencies<a class="headerlink" href="#step-1-install-dependencies" title="Permanent link">&para;</a></h2>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="err">!</span><span class="n">uv</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">dreem</span><span class="o">-</span><span class="n">track</span>
 </code></pre></div>
-<p>If you're running locally, use the <a href="../installation/">installation guide</a>.</p>
+See the <a href="../installation/">installation guide</a> for more details.</p>
 <hr />
 <h2 id="step-2-download-sample-data">Step 2: Download sample data<a class="headerlink" href="#step-2-download-sample-data" title="Permanent link">&para;</a></h2>
 <p>Download the sample fly dataset (videos, <code>.slp</code> detections, and configs):</p>
@@ -3128,45 +3126,24 @@
 <hr />
 <h2 id="step-5-evaluate-tracking-optional">Step 5: Evaluate tracking (optional)<a class="headerlink" href="#step-5-evaluate-tracking-optional" title="Permanent link">&para;</a></h2>
 <p>If you have ground truth labels (e.g. in <code>./data/test</code>), run evaluation to get metrics (MOTA, IDF1, ID switches):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dreem<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>./data/test<span class="w"> </span>--checkpoint<span class="w"> </span>./models/animals-pretrained.ckpt<span class="w"> </span>--output<span class="w"> </span><span class="s2">&quot;./eval-results&quot;</span><span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span>--max-tracks<span class="w"> </span><span class="m">2</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dreem<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>./data/test<span class="w"> </span>--checkpoint<span class="w"> </span>./models/animals-pretrained.ckpt<span class="w"> </span>--output<span class="w"> </span>./eval-results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span>--max-tracks<span class="w"> </span><span class="m">2</span>
 </code></pre></div>
 <hr />
 <h2 id="step-6-visualize-results">Step 6: Visualize results<a class="headerlink" href="#step-6-visualize-results" title="Permanent link">&para;</a></h2>
-<p><strong>Option A – SLEAP GUI (full pose keypoints)</strong><br />
+<p><strong>Option A – DREEM Visualizer (browser-based)</strong><br />
+Head to the <a href="../visualizer/">live visualizer</a> to visualize your tracking results in your browser without any data leaving your machine.</p>
+<p><strong>Option B – SLEAP GUI (full pose keypoints)</strong><br />
 Install SLEAP (<a href="https://docs.sleap.ai/latest/">https://docs.sleap.ai/latest/</a>) and open the output <code>.slp</code> in SLEAP:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sleap-label<span class="w"> </span>results/&lt;your_output_file&gt;.slp
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sleap-label<span class="w"> </span>results/&lt;your_output_file&gt;.slp
 </code></pre></div>
-<p>The SLEAP GUI may not render on a remote server.</p>
-<p><strong>Option B – Quick animation in Python</strong><br />
-From the <code>examples/</code> directory you can use the helper script and load the latest result:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sleap_io</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sio</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">create_animation</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_tracking_animation</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">results_dir</span> <span class="o">=</span> <span class="s2">&quot;./results&quot;</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">result_files</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">results_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.slp&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;dreem_inference&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">])</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="n">result_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">results_dir</span><span class="p">,</span> <span class="n">result_files</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="n">pred_slp</span> <span class="o">=</span> <span class="n">sio</span><span class="o">.</span><span class="n">load_slp</span><span class="p">(</span><span class="n">result_path</span><span class="p">)</span>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="n">list_frames</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="k">for</span> <span class="n">lf</span> <span class="ow">in</span> <span class="n">pred_slp</span><span class="p">:</span>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">lf</span><span class="o">.</span><span class="n">instances</span><span class="p">:</span>
-<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>        <span class="n">centroid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>        <span class="n">track_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">track</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">if</span> <span class="n">instance</span><span class="o">.</span><span class="n">track</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
-<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>        <span class="n">list_frames</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;frame_id&quot;</span><span class="p">:</span> <span class="n">lf</span><span class="o">.</span><span class="n">frame_idx</span><span class="p">,</span> <span class="s2">&quot;track_id&quot;</span><span class="p">:</span> <span class="n">track_id</span><span class="p">,</span> <span class="s2">&quot;centroid&quot;</span><span class="p">:</span> <span class="n">centroid</span><span class="p">})</span>
-<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">list_frames</span><span class="p">)</span>
-<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>
-<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="n">video_path</span> <span class="o">=</span> <span class="s2">&quot;./data/inference/190719_090330_wt_18159206_rig1.2@15000-17560.mp4&quot;</span>  <span class="c1"># or glob for *.mp4</span>
-<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="n">create_tracking_animation</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">max_frames</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</code></pre></div>
-<hr />
+The SLEAP GUI may not render on a remote server.</p>
 <h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Run the <a href="../Examples/dreem-demo/">end-to-end demo</a> to train a model, evaluate, and visualize in a single notebook.</li>
+<li>Run the <a href="../Examples/dreem-demo/">end-to-end demo</a> to train and evaluate a model.</li>
+<li>Run the <a href="../Examples/microscopy-demo/">microscopy demo</a> to use CellPose for detection and a pretrained microscopy model for tracking.</li>
 <li>See the <a href="../usage/">Usage guide</a> for CLI options, config files, and workflows.</li>
 <li>Use SLEAP to generate detections on your own videos, then run DREEM tracking with the same pretrained checkpoint.</li>
+<li>For a complete reference of all commands and options, see <a href="https://dreem.sleap.ai/reference/dreem/">the API Reference</a>.</li>
 </ul>
 
 

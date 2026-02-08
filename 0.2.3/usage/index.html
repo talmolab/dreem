@@ -11,10 +11,10 @@
         <link rel="canonical" href="https://dreem.sleap.ai/0.2.3/usage/">
       
       
-        <link rel="prev" href="../quickstart/">
+        <link rel="prev" href="../visualizer/">
       
       
-        <link rel="next" href="../visualizer/">
+        <link rel="next" href="../Examples/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>Usage - DREEM documentation</title>
+        <title>Usage Guide - DREEM documentation</title>
       
     
     
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Usage
+              Usage Guide
             
           </span>
         </div>
@@ -346,6 +346,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Live Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -365,7 +392,7 @@
   <span class="md-ellipsis">
     
   
-    Usage
+    Usage Guide
   
 
     
@@ -383,7 +410,7 @@
   <span class="md-ellipsis">
     
   
-    Usage
+    Usage Guide
   
 
     
@@ -409,13 +436,63 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
+  <a href="#data-preparation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Installation
+        Data Preparation
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Data Preparation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-you-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You Need
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getting-detections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Detections
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#directory-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directory Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proofreading-ground-truth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proofreading Ground Truth
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -432,10 +509,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#generate-ground-truth-data" class="md-nav__link">
+  <a href="#required-arguments" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generate Ground Truth Data
+        Required Arguments
       
     </span>
   </a>
@@ -443,10 +520,32 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#training_1" class="md-nav__link">
+  <a href="#common-options" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Training
+        Common Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-config-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Config Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output
       
     </span>
   </a>
@@ -459,22 +558,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#eval-with-ground-truth-labels" class="md-nav__link">
+  <a href="#tracking-inference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Eval (with ground truth labels)
+        Tracking (Inference)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Eval (with ground truth labels)">
+    <nav class="md-nav" aria-label="Tracking (Inference)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#setup-data" class="md-nav__link">
+  <a href="#required-arguments_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Setup data
+        Required Arguments
       
     </span>
   </a>
@@ -482,21 +581,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#setup-config_1" class="md-nav__link">
+  <a href="#common-options_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Setup config
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#run-evaluation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Run evaluation
+        Common Options
       
     </span>
   </a>
@@ -519,37 +607,88 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CLI Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#config-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config Overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../visualizer/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Live Visualizer
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -1283,7 +1422,7 @@
   <span class="md-ellipsis">
     
   
-    Description of inference params
+    Inference Configuration
   
 
     
@@ -1311,7 +1450,7 @@
   <span class="md-ellipsis">
     
   
-    Description of training parameters
+    Training Configuration
   
 
     
@@ -2909,13 +3048,63 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
+  <a href="#data-preparation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Installation
+        Data Preparation
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Data Preparation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-you-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You Need
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getting-detections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Detections
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#directory-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directory Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proofreading-ground-truth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proofreading Ground Truth
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2932,10 +3121,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#generate-ground-truth-data" class="md-nav__link">
+  <a href="#required-arguments" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generate Ground Truth Data
+        Required Arguments
       
     </span>
   </a>
@@ -2943,10 +3132,32 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#training_1" class="md-nav__link">
+  <a href="#common-options" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Training
+        Common Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-config-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Config Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output
       
     </span>
   </a>
@@ -2959,22 +3170,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#eval-with-ground-truth-labels" class="md-nav__link">
+  <a href="#tracking-inference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Eval (with ground truth labels)
+        Tracking (Inference)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Eval (with ground truth labels)">
+    <nav class="md-nav" aria-label="Tracking (Inference)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#setup-data" class="md-nav__link">
+  <a href="#required-arguments_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Setup data
+        Required Arguments
       
     </span>
   </a>
@@ -2982,21 +3193,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#setup-config_1" class="md-nav__link">
+  <a href="#common-options_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Setup config
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#run-evaluation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Run evaluation
+        Common Options
       
     </span>
   </a>
@@ -3016,6 +3216,84 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CLI Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#config-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config Overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
   
 </li>
       
@@ -3040,242 +3318,288 @@
 
 
 <h1 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h1>
-<p>This page gives detailed instructions for using DREEM. We also have a <a href="../quickstart/">quickstart guide</a> and notebooks in the Examples section to help you get started.</p>
-<!-- ## Background
-
-This repo uses 3 main packages:
-
-1. [`hydra`](https://hydra.cc) for configurations
-2. [`pytorch`](https://pytorch.org) for model construction
-3. [`pytorch-lightning`](https://lightning.ai) for high-level training/eval/inference -->
-
-<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
-<p>Head over to the <a href="../installation/">installation guide</a> to get started.</p>
-<h2 id="training">Training<a class="headerlink" href="#training" title="Permanent link">&para;</a></h2>
-<p>DREEM enables you to train your own model based on your own annotated data. This can be useful when the pretrained models, or traditional approaches to tracking don't work well for your data.</p>
-<h3 id="generate-ground-truth-data">Generate Ground Truth Data<a class="headerlink" href="#generate-ground-truth-data" title="Permanent link">&para;</a></h3>
-<p>To train a model, you need:</p>
+<p>This guide covers the DREEM workflow: preparing data, training models, running inference, and evaluating results. For a hands-on introduction, see the <a href="../quickstart/">Quickstart</a> or the <a href="./Examples/">Examples</a>.</p>
+<h2 id="data-preparation">Data Preparation<a class="headerlink" href="#data-preparation" title="Permanent link">&para;</a></h2>
+<h3 id="what-you-need">What You Need<a class="headerlink" href="#what-you-need" title="Permanent link">&para;</a></h3>
+<p><strong>For training</strong>, you need:</p>
 <ol>
-<li>A video<ul>
-<li>For animal data see the <a href="https://imageio.readthedocs.io/en/v2.4.1/formats.html"><code>imageio</code></a> docs for supported file types. Common ones include mp4, avi, etc.</li>
-<li>For microscopy data we currently support <code>.tif</code> stacks.</li>
-</ul>
-</li>
-<li>A ground truth labels file in <a href="https://sleap.ai">SLEAP</a> or <a href="https://celltrackingchallenge.net">CellTrackingChallenge</a> format. This labels file must contain:<ol>
-<li>Detections (i.e. locations of the instances in each frame). This can come in the form of centroids or pose keypoints for SLEAP format data, or segmentation masks for Cell Tracking Challenge format data.</li>
-<li>Ground truth identities (also called tracks). These are temporally consistent labels that link detections across time.</li>
+<li><strong>Videos</strong> - <code>.mp4</code>, <code>.avi</code>, or <code>.tif</code> stacks (for microscopy)</li>
+<li><strong>Labels with ground truth tracks</strong> - Detections with temporally consistent identity labels in <a href="https://sleap.ai">SLEAP</a> (<code>.slp</code>) or <a href="https://celltrackingchallenge.net">Cell Tracking Challenge</a> format</li>
 </ol>
-</li>
+<p><strong>For inference</strong>, you need:</p>
+<ol>
+<li><strong>Videos</strong> - Same formats as above</li>
+<li><strong>Detections only</strong> - No ground truth tracks required; just detections in <a href="https://sleap.ai">SLEAP</a> (<code>.slp</code>) or <a href="https://celltrackingchallenge.net">Cell Tracking Challenge</a> format</li>
 </ol>
-<h4 id="get-initial-labels">Get Initial labels<a class="headerlink" href="#get-initial-labels" title="Permanent link">&para;</a></h4>
-<p>To generate your initial labels we recommend a couple methods:</p>
+<h3 id="getting-detections">Getting Detections<a class="headerlink" href="#getting-detections" title="Permanent link">&para;</a></h3>
+<p>DREEM decouples detection from tracking, so you can use any detection method. Here are some popular methods:</p>
 <ul>
-<li>For animal tracking, we recommend using <a href="https://sleap.ai">SLEAP</a>. SLEAP provides a graphical user interface that makes it easy to annotate data from scratch, and output the labels file in the SLEAP format.</li>
-<li>For microscopy tracking, check out <a href="https://www.cellpose.org">CellPose</a> or <a href="https://www.ilastik.org">Ilastik</a>. These methods output segmentation masks, but do not provide tracks. <a href="https://imagej.net/software/fiji/">Fiji</a> offers several end-to-end segmentation and tracking options. Recall that your labels file must contain tracks.</li>
+<li><strong>Animal tracking</strong>: <a href="https://sleap.ai">SLEAP</a> for pose estimation</li>
+<li><strong>Microscopy</strong>: <a href="https://www.cellpose.org">CellPose</a>, <a href="https://www.ilastik.org">Ilastik</a>, or <a href="https://imagej.net/plugins/trackmate/">TrackMate</a></li>
 </ul>
-<h4 id="proofreading">Proofreading<a class="headerlink" href="#proofreading" title="Permanent link">&para;</a></h4>
-<p>Once you have your labels file containing initial detections and tracks, you'll want to <a href="https://sleap.ai/tutorials/proofreading.html#track-proofreading">proofread</a> your labels. Obtaining good results relies on having accurate ground truth tracks. The annotated data should follow these guidelines:</p>
-<ol>
-<li>
-<p>No identity switches. This is important for training a model that maintains temporally consistent identities.</p>
-</li>
-<li>
-<p>Good detections. Since the input to the model is a crop centered around each detection, we want to make sure the coordinates we crop around are as accurate as possible.</p>
-</li>
-</ol>
-<p>We recommend using the <a href="https://sleap.ai/guides/gui.html"><code>sleap-label</code> GUI</a> for <a href="https://sleap.ai/guides/proofreading.html#id1">proofreading</a>. SLEAP provides tools that make it easy to correct errors in tracking.</p>
-<h5 id="converting-data-to-a-sleap-compatible-format">Converting data to a SLEAP compatible format<a class="headerlink" href="#converting-data-to-a-sleap-compatible-format" title="Permanent link">&para;</a></h5>
-<p>In order to use the SLEAP GUI you'll need to have your labels and videos in a SLEAP compatible format. Check out <a href="https://io.sleap.ai/latest/formats/">the sleap-io docs</a> for available formats. The easiest way to ensure your labels are compatible with sleap is to convert them to a <code>.slp</code> file. Otherwise if you used a different system (e.g DeepLabCut) check out <a href="https://sleap.ai/api/sleap.io.convert.html#module-sleap.io.convert"><code>sleap.io.convert</code></a> for available converters. With microscopy, we highly recommend starting out with TrackMate and then proofread in SLEAP's gui. Here is <a href="https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e">a converter from trackmate's output to a <code>.slp</code></a> file. In general, you can use <a href="https://io.sleap.ai/latest/"><code>sleap-io</code></a> to write a custom converter to <code>.slp</code> if you'd like to use the sleap-gui for proofreading.</p>
-<h4 id="organize-data">Organize data<a class="headerlink" href="#organize-data" title="Permanent link">&para;</a></h4>
-<p>For animal tracking, you'll need video/slp pairs in a directory that you can specify in the configuration files when training. For instance, you can have separate train/val/test directories, each with slp/video pairs. The naming convention is not important, as the .slp labels file has a reference to its associated video file when its created.</p>
-<p>For microscopy tracking, you'll need to organize your data in the Cell Tracking Challenge format. We've provided a sample directory structure below. Check out this <a href="https://public.celltrackingchallenge.net/documents/Naming%20and%20file%20content%20conventions.pdf">guide</a> for more details.</p>
-<p>Using the <strong>SLEAP</strong> format:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dataset_name/
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    train/
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        vid_1.{VID_EXTENSION}
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        vid_1.slp
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>            .
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>            .
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>            .
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        vid_n.{VID_EXTENSION}
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        vid_n.slp
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    val/
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        vid_1.{VID_EXTENSION}
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        vid_1.slp
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>            .
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>            .
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>            .
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>        vid_n.{VID_EXTENSION}
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>        vid_n.slp
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    test/ # optional; test sets are not automatically evaluated as part of training
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>        vid_1.{VID_EXTENSION}
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>        vid_1.slp
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>            .
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>            .
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>            .
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>        vid_n.slp
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>        vid_n.slp
-</code></pre></div>
-The <strong>CellTrackingChallenge</strong> format requires a directory with raw tifs, and a matching directory with labelled segmentation masks for the track labels. The directory structure is as follows:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dataset_name/
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    train/
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>        subdir_0/
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>            frame0.tif # these are raw images
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>            ...
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>            frameN.tif
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        subdir_0_GT/TRA # these are labelled segmentation masks
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>            frame0.tif
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>            ...
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>            frameN.tif
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>        subdir_1/
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>            frame0.tif
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>            ...
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>            frameN.tif
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        subdir_1_GT/TRA
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>            frame0.tif
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>            ...
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>            frameN.tif
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>        ...
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    val/
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>        subdir_0/
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>        subdir_0_GT/TRA
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>        subdir_1/
-<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>        subdir_1_GT/TRA
-<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>        ...
-<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>    test/ # optional; test sets are not automatically evaluated as part of training
-<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>        subdir_0/
-<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>        subdir_0_GT/TRA
-<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>        subdir_1/
-<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>        subdir_1_GT/TRA
-<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>        ...
+<h3 id="directory-structure">Directory Structure<a class="headerlink" href="#directory-structure" title="Permanent link">&para;</a></h3>
+<p><strong>SLEAP format</strong> (animal tracking):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dataset/
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── train/
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│   ├── video1.mp4
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│   ├── video1.slp
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│   ├── video2.mp4
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│   └── video2.slp
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>├── val/
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│   ├── video3.mp4
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│   └── video3.slp
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>└── test/  # optional
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    ├── video4.mp4
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    └── video4.slp
 </code></pre></div></p>
-<h3 id="training_1">Training<a class="headerlink" href="#training_1" title="Permanent link">&para;</a></h3>
-<p>Now that you have your dataset set up, let's start training a model! We provide a CLI that allows you to train with a simple command and a single yaml configuration file.</p>
-<h4 id="setup-config">Setup Config<a class="headerlink" href="#setup-config" title="Permanent link">&para;</a></h4>
-<p>The input into our training script is a <code>.yaml</code> file that contains all the parameters needed for training. Please see <a href="../configs/training/">here</a> for a detailed description of all the parameters and how to set up the config. We provide up-to-date sample configs on HuggingFace Hub in the <a href="https://huggingface.co/talmolab/microscopy-pretrained">talmolab/microscopy-pretrained</a> and <a href="https://huggingface.co/talmolab/animals-pretrained">talmolab/animals-pretrained</a>. In general, the best practice is to keep a single <code>base.yaml</code> file which has all the default arguments you'd like to use. Then you can have a second <code>.yaml</code> file which will override a specific set of parameters when training.</p>
-<h4 id="train-model">Train Model<a class="headerlink" href="#train-model" title="Permanent link">&para;</a></h4>
-<p>Once you have your config file and dataset set up, training is as easy as running</p>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span>
-</code></pre></div>
-where <code>CONFIG_DIR</code> is the directory that <code>hydra</code> should search for the <code>config.yaml</code> and <code>CONFIG_STEM</code> is the name of the config without the <code>.yaml</code> extension.</p>
-<p>e.g. If you have a config file called <code>base.yaml</code> inside your <code>/home/user/dreem_configs</code> directory you can call
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=</span>/home/user/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base
+<p><strong>Cell Tracking Challenge format</strong> (microscopy):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dataset/
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>├── train/
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>│   ├── seq_01/
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>│   │   ├── frame000.tif
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>│   │   └── ...
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>│   └── seq_01_GT/TRA/
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>│       ├── frame000.tif  # labeled masks
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>│       └── ...
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>└── val/
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    └── ...
 </code></pre></div></p>
-<blockquote>
-<p>Note: you can use relative paths as well but may be a bit riskier so we recommend absolute paths whenever possible.</p>
-</blockquote>
-<p>If you've been through the example notebooks, you'll notice that training was done using the API rather than the CLI. You can use whichever you prefer.</p>
-<h5 id="overriding-arguments">Overriding Arguments<a class="headerlink" href="#overriding-arguments" title="Permanent link">&para;</a></h5>
-<p>Instead of changing the <code>base.yaml</code> file every time you want to train a model using different configurations, <code>hydra</code> enables us to either</p>
+<h3 id="proofreading-ground-truth">Proofreading Ground Truth<a class="headerlink" href="#proofreading-ground-truth" title="Permanent link">&para;</a></h3>
+<p>Good tracking results require accurate ground truth. Before training:</p>
 <ol>
-<li>provide another <code>.yaml</code> file with a subset of the parameters to override</li>
-<li>provide the args to the cli directly</li>
+<li>Ensure <strong>no identity switches</strong> in your annotations</li>
+<li>Verify <strong>detection accuracy</strong> - crops are centered on each instance</li>
 </ol>
-<p>We recommend using the file-based override for logging and reproducibility.</p>
-<p>For overriding specific params with an override file, you can run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span><span class="w"> </span>++params_config<span class="o">=</span><span class="s2">&quot;/path/to/override_params.yaml&quot;</span>
+<p>Use <a href="https://sleap.ai/guides/proofreading.html"><code>sleap-label</code></a> for proofreading. For microscopy data, you can <a href="https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e">convert TrackMate output to SLEAP format</a> to use the SLEAP GUI.</p>
+<hr />
+<h2 id="training">Training<a class="headerlink" href="#training" title="Permanent link">&para;</a></h2>
+<p>Train a model with <code>dreem train</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dreem<span class="w"> </span>train<span class="w"> </span>./data/train<span class="w"> </span>--val-dir<span class="w"> </span>./data/val<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span>
 </code></pre></div>
-<p>e.g. If you have a <code>override_params.yaml</code> file inside your <code>/home/user/dreem_configs</code> directory that contains a only a small selection of parameters that you'd like to override, you can run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=</span>/home/user/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base<span class="w"> </span>++params_config<span class="o">=</span>/home/user/dreem_configs/override_params.yaml
+<h3 id="required-arguments">Required Arguments<a class="headerlink" href="#required-arguments" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TRAIN_DIR</code></td>
+<td>Path to training data directory</td>
+</tr>
+<tr>
+<td><code>--val-dir</code></td>
+<td>Path to validation data directory</td>
+</tr>
+<tr>
+<td><code>--crop-size</code></td>
+<td>Size of bounding box around each instance (pixels)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="common-options">Common Options<a class="headerlink" href="#common-options" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dreem<span class="w"> </span>train<span class="w"> </span>./data/train<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span>--val-dir<span class="w"> </span>./data/val<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span>--epochs<span class="w"> </span><span class="m">30</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span>--lr<span class="w"> </span><span class="m">0</span>.0001<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span>--run-name<span class="w"> </span>my_experiment<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span>--no-gpu<span class="w">  </span><span class="c1"># use CPU only</span>
 </code></pre></div>
-<!-- ###### CLI-based override
-For directly overriding a specific param via the command line directly you can use the `section.param=key` syntax as so:
-
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>BASE_CONFIG_STEM<span class="o">]</span><span class="w"> </span>section.param<span class="o">=</span>value
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--epochs</code></td>
+<td>20</td>
+<td>Maximum training epochs</td>
+</tr>
+<tr>
+<td><code>--lr</code></td>
+<td>0.0001</td>
+<td>Learning rate</td>
+</tr>
+<tr>
+<td><code>--d-model</code></td>
+<td>128</td>
+<td>Model embedding dimension</td>
+</tr>
+<tr>
+<td><code>--nhead</code></td>
+<td>1</td>
+<td>Number of attention heads</td>
+</tr>
+<tr>
+<td><code>--encoder-layers</code></td>
+<td>1</td>
+<td>Transformer encoder layers</td>
+</tr>
+<tr>
+<td><code>--decoder-layers</code></td>
+<td>1</td>
+<td>Transformer decoder layers</td>
+</tr>
+<tr>
+<td><code>--clip-length</code></td>
+<td>32</td>
+<td>Frames per training batch</td>
+</tr>
+<tr>
+<td><code>--run-name</code></td>
+<td>dreem_train</td>
+<td>Name for logging/checkpoints</td>
+</tr>
+<tr>
+<td><code>--gpu/--no-gpu</code></td>
+<td>GPU</td>
+<td>Use GPU or CPU</td>
+</tr>
+<tr>
+<td><code>--video-type</code></td>
+<td>mp4</td>
+<td>Video file extension (<code>mp4</code>, <code>tif</code>, etc.)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="using-config-files">Using Config Files<a class="headerlink" href="#using-config-files" title="Permanent link">&para;</a></h3>
+<p>For advanced options (augmentations, schedulers, callbacks), use a YAML config:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dreem<span class="w"> </span>train<span class="w"> </span>./data/train<span class="w"> </span>--val-dir<span class="w"> </span>./data/val<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span>--config<span class="w"> </span>./my_config.yaml
 </code></pre></div>
-
-e.g If now I want to override a couple parameters again, say change the number of attention heads and change the name of this run in my logger, I can pass `model.head=3` and `logger.name="test_nheads=3"` into 
-
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base<span class="w"> </span>model.nhead<span class="o">=</span><span class="m">3</span><span class="w"> </span>logger.name<span class="o">=</span><span class="s2">&quot;test_nheads=3&quot;</span>
+<p>See <a href="../configs/training/">Training Configuration</a> for all available options.</p>
+<h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h3>
+<p>Training saves checkpoints to <code>./models/{run_name}/</code>. The final checkpoint is named <code>*final*.ckpt</code>.</p>
+<hr />
+<h2 id="tracking-inference">Tracking (Inference)<a class="headerlink" href="#tracking-inference" title="Permanent link">&para;</a></h2>
+<p>Run tracking on videos without ground truth:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data/inference<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span>--checkpoint<span class="w"> </span>./models/my_model.ckpt<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span>
 </code></pre></div>
-> Note: using the `section.param` syntax for CLI override will only override if the parameter exists in your config file otherwise an error will be thrown
-> if you'd like add a new parameter you can add `++` to the front of `section.param` e.g `++model.nhead=3`, However in this case, if the parameter exists in the config it will throw an error.
-> thus if you'd like to overwrite when the parameter exists, otherwise create a new one you can add a single `+` to the front of `section.param` e.g `+model.nhead=3`. 
->When using `+`, you'll want to make sure you've matched the param exactly, otherwise it will simply add a new parameter with your spelling and the original value won't change. 
-> e.g doing `model.n_head=3` will cause the original `model.nhead` to stay the same and just add a `model.n_head` field.
-
-See [here](https://hydra.cc/docs/advanced/override_grammar/basic/) for more information on overriding params.
-
-> Note: You will usually only need the direct override or the file-based override however you can technically do both via 
-> <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>BASE_CONFIG_STEM<span class="o">]</span><span class="w"> </span>++params_config<span class="o">=</span><span class="s2">&quot;/path/to/params.yaml&quot;</span><span class="w"> </span>section.param<span class="o">=</span>value
+<h3 id="required-arguments_1">Required Arguments<a class="headerlink" href="#required-arguments_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>INPUT_DIR</code></td>
+<td>Path to input data directory</td>
+</tr>
+<tr>
+<td><code>--checkpoint</code></td>
+<td>Path to model checkpoint (<code>.ckpt</code>)</td>
+</tr>
+<tr>
+<td><code>--output</code></td>
+<td>Output directory for results</td>
+</tr>
+<tr>
+<td><code>--crop-size</code></td>
+<td>Bounding box size (should match training)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="common-options_1">Common Options<a class="headerlink" href="#common-options_1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data/inference<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span>--checkpoint<span class="w"> </span>./models/model.ckpt<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span>--max-tracks<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span>--confidence-threshold<span class="w"> </span><span class="m">0</span>.8
 </code></pre></div>
-> e.g. alongside the `params_to_override.yaml`
-> <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>dreem-train<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>base<span class="w"> </span>++params_config<span class="o">=</span>/home/aaprasad/dreem_configs/params_to_override.yaml<span class="w"> </span>model.nhead<span class="o">=</span><span class="m">3</span><span class="w"> </span>logger.name<span class="o">=</span><span class="s2">&quot;test_nheads=3&quot;</span>
-</code></pre></div>
-> but the `--config-base=[CONFIG_DIR] --config-name=[BASE_CONFIG_STEM]` arguments are always required. 
-> However, be careful to ensure there are no conflicts when combining CLI and file-based override syntax
-> (e.g make sure `section.param` doesn't appear both in your override file and in the CLI). 
-> This is because hydra does not make a distinction, it will first overwrite with the CLI value and then overwrite with the params file value.
-> this means that it will always default to the params file value when there are conflicts. -->
-
-<h4 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h4>
-<p>The output of the train script will be at least 1 <code>ckpt</code> file, assuming you've configured the <code>checkpointing</code> section of the config correctly.</p>
-<h2 id="eval-with-ground-truth-labels">Eval (with ground truth labels)<a class="headerlink" href="#eval-with-ground-truth-labels" title="Permanent link">&para;</a></h2>
-<p>To test the performance of your model, you can use the <code>dreem-eval</code> CLI. It computes multi-object tracking metrics on your test data and outputs it in h5 format.</p>
-<h3 id="setup-data">Setup data<a class="headerlink" href="#setup-data" title="Permanent link">&para;</a></h3>
-<p>Note that your data should have ground truth labels. You can arrange it in a /test directory as shown above.</p>
-<h3 id="setup-config_1">Setup config<a class="headerlink" href="#setup-config_1" title="Permanent link">&para;</a></h3>
-<p>Samples are available at <a href="https://huggingface.co/talmolab/microscopy-pretrained">talmolab/microscopy-pretrained</a> and <a href="https://huggingface.co/talmolab/animals-pretrained">talmolab/animals-pretrained</a>, while a detailed walkthrough is available <a href="../configs/inference/">here</a></p>
-<h3 id="run-evaluation">Run evaluation<a class="headerlink" href="#run-evaluation" title="Permanent link">&para;</a></h3>
-<p>We provide a CLI that allows you to evaluate your model with a simple command and a single yaml configuration file.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>dreem-eval<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span>
-</code></pre></div>
-<!-- #### Overriding Parameters.
-Because there aren't as many parameters during inference as during training we recommend just using the cli-based override rather than the file based but you're more than welcome to do so.
-
-In order to override params via the CLI, we can use the same `hydra` `section.param` syntax:
-
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>dreem-eval<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span><span class="w"> </span>section.param<span class="o">=[</span>VALUE<span class="o">]</span>
-</code></pre></div>
-e.g if I want to set the window size of the tracker to 32 instead of 8 through `tracker.window_size=32` and use a different model saved in `/home/aaprasad/models/new_best.ckpt` I can do:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>dreem-eval<span class="w"> </span>--config-base<span class="o">=</span>/home/aaprasad/dreem_configs<span class="w"> </span>--config-name<span class="o">=</span>track<span class="w"> </span><span class="nv">ckpt_path</span><span class="o">=</span><span class="s2">&quot;/home/aaprasad/models/new_best.ckpt&quot;</span><span class="w"> </span>tracker.window_size<span class="o">=</span><span class="m">32</span><span class="sb">`</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="sb">```</span><span class="w"> </span>--&gt;
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1">### Output</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>Tracking<span class="w"> </span>results<span class="w"> </span>will<span class="w"> </span>be<span class="w"> </span>saved<span class="w"> </span>as<span class="w"> </span>.slp,<span class="w"> </span>and<span class="w"> </span>the<span class="w"> </span>evaluation<span class="w"> </span>metrics<span class="w"> </span>will<span class="w"> </span>be<span class="w"> </span>saved<span class="w"> </span><span class="k">in</span><span class="w"> </span>an<span class="w"> </span>hdf5<span class="w"> </span>file<span class="w"> </span>saved<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span><span class="sb">`</span>outdir<span class="sb">`</span><span class="w"> </span>argument.<span class="w"> </span>We<span class="w"> </span>provide<span class="w"> </span>a<span class="w"> </span>script<span class="w"> </span>to<span class="w"> </span>extract<span class="w"> </span>the<span class="w"> </span>results<span class="w"> </span>from<span class="w"> </span>the<span class="w"> </span>h5<span class="w"> </span>file,<span class="w"> </span>which<span class="w"> </span>you<span class="w"> </span>can<span class="w"> </span>find<span class="w"> </span><span class="k">in</span><span class="w"> </span>the<span class="w"> </span>repository<span class="w"> </span><span class="o">[</span>here<span class="o">](</span>https://github.com/talmolab/dreem/blob/main/scripts/extract_metrics.ipynb<span class="o">)</span>.
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="c1">## Inference</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>In<span class="w"> </span>general,<span class="w"> </span>you<span class="w"> </span>will<span class="w"> </span>likely<span class="w"> </span>not<span class="w"> </span>have<span class="w"> </span>access<span class="w"> </span>to<span class="w"> </span>ground<span class="w"> </span>truth<span class="w"> </span>labels<span class="w"> </span><span class="k">for</span><span class="w"> </span>your<span class="w"> </span>videos.<span class="w"> </span>In<span class="w"> </span>this<span class="w"> </span><span class="k">case</span>,<span class="w"> </span>you<span class="w"> </span>can<span class="w"> </span>use<span class="w"> </span>DREEM<span class="w"> </span>to<span class="w"> </span>run<span class="w"> </span>inference<span class="w"> </span>on<span class="w"> </span>your<span class="w"> </span>videos<span class="w"> </span>using<span class="w"> </span>a<span class="w"> </span>pretrained<span class="w"> </span>model<span class="w"> </span>or<span class="w"> </span>a<span class="w"> </span>model<span class="w"> </span>you<span class="w"> </span>trained<span class="w"> </span>yourself.
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="c1">### Setup Data</span>
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="c1">#### Get detections</span>
-<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>One<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>main<span class="w"> </span>advantages<span class="w"> </span>of<span class="w"> </span>DREEM<span class="w"> </span>is<span class="w"> </span>that<span class="w"> </span>we<span class="w"> </span>*decouple*<span class="w"> </span>detection<span class="w"> </span>and<span class="w"> </span>tracking<span class="w"> </span>so<span class="w"> </span>you<span class="w"> </span>can<span class="w"> </span>use<span class="w"> </span>state<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>art,<span class="w"> </span>off-the-shelf<span class="w"> </span>detection<span class="w"> </span>models.<span class="w"> </span>This<span class="w"> </span>means<span class="w"> </span>that<span class="w"> </span><span class="k">in</span><span class="w"> </span>order<span class="w"> </span>to<span class="w"> </span>run<span class="w"> </span>inference<span class="w"> </span><span class="o">(</span>tracking<span class="o">)</span><span class="w"> </span>with<span class="w"> </span>our<span class="w"> </span>model<span class="w"> </span>you<span class="s1">&#39;ll need the following:</span>
-<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>
-<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="s1">1. A model saved as a `.ckpt` file</span>
-<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="s1">2. A video (same as in training)</span>
-<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="s1">3. A labels file. This labels file is slightly different than in training since we now only need detections but no ground truth tracks. So, you don&#39;</span>t<span class="w"> </span>need<span class="w"> </span>to<span class="w"> </span>run<span class="w"> </span>a<span class="w"> </span>tracking<span class="w"> </span>method<span class="w"> </span>and<span class="w"> </span>proofread<span class="w"> </span>the<span class="w"> </span>results.<span class="w"> </span>You<span class="w"> </span>can<span class="w"> </span>simply<span class="w"> </span>run<span class="w"> </span>your<span class="w"> </span>detection<span class="w"> </span>model<span class="w"> </span>of<span class="w"> </span>choice<span class="w"> </span>and<span class="w"> </span>convert<span class="w"> </span>the<span class="w"> </span>data<span class="w"> </span>to<span class="w"> </span>SLEAP<span class="w"> </span>or<span class="w"> </span>CellTrackingChallenge<span class="w"> </span>format.
-<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>
-<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="c1">#### Organize Data</span>
-<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>
-<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>See<span class="w"> </span>the<span class="w"> </span><span class="o">[</span>training<span class="w"> </span>section<span class="o">](</span><span class="c1">#organize-data) for more details on how to organize your data.</span>
-<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a>
-<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a><span class="c1">### Set up config</span>
-<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a>
-<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a>See<span class="w"> </span>the<span class="w"> </span><span class="o">[</span><span class="nb">eval</span><span class="w"> </span>section<span class="o">](</span><span class="c1">#eval-with-ground-truth-labels) for more details on how to set up a config file. The format for eval and inference is the same.</span>
-<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a>
-<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a><span class="c1">### Run Inference</span>
-<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a>
-<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a>Similar<span class="w"> </span>to<span class="w"> </span><span class="sb">`</span>dreem-eval<span class="sb">`</span>,<span class="w"> </span>you<span class="w"> </span>can<span class="w"> </span>run<span class="w"> </span>inference<span class="w"> </span>via:
-<a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a>
-<a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a><span class="sb">```</span>bash
-<a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a>dreem-track<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span>
-</code></pre></div>
-<!-- 
-
-#### Overriding Parameters.
-Because there aren't as many parameters during inference as during training we recommend just using the cli-based override rather than the file based but you're more than welcome to do so.
-
-In order to override params via the CLI, we can use the same `hydra` `section.param` syntax:
-
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>dreem-track<span class="w"> </span>--config-base<span class="o">=[</span>CONFIG_DIR<span class="o">]</span><span class="w"> </span>--config-name<span class="o">=[</span>CONFIG_STEM<span class="o">]</span><span class="w"> </span>section.param<span class="o">=[</span>VALUE<span class="o">]</span>
-</code></pre></div>
-e.g if I want to set the window size of the tracker to 32 instead of 8 through `tracker.window_size=32` and use a different model saved in `/home/aaprasad/models/new_best.ckpt` I can do:
-```bash
-dreem-track --config-base=/home/aaprasad/dreem_configs --config-name=track ckpt_path="/home/aaprasad/models/new_best.ckpt" tracker.window_size=32`
-``` -->
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--max-tracks</code></td>
+<td>Maximum number of tracks (set to number of animals/cells)</td>
+</tr>
+<tr>
+<td><code>--confidence-threshold</code></td>
+<td>Flag low-confidence predictions for review</td>
+</tr>
+<tr>
+<td><code>--max-dist</code></td>
+<td>Maximum center distance between frames</td>
+</tr>
+<tr>
+<td><code>--max-gap</code></td>
+<td>Maximum frame gap for track continuity</td>
+</tr>
+<tr>
+<td><code>--anchor</code></td>
+<td>Keypoint name to use as centroid (default: <code>centroid</code>)</td>
+</tr>
+<tr>
+<td><code>--video-type</code></td>
+<td>Video file extension</td>
+</tr>
+<tr>
+<td><code>--no-gpu</code></td>
+<td>Run on CPU</td>
+</tr>
+</tbody>
+</table>
 <h3 id="output_1">Output<a class="headerlink" href="#output_1" title="Permanent link">&para;</a></h3>
-<p>Tracking results will be saved as .slp in the directory specified by the <code>outdir</code> argument. If you don't enter an <code>outdir</code> in the config, it will save to <code>./results</code>.</p>
-<p>You should now be ready to use DREEM to train and track your own data!</p>
+<p>Results are saved as <code>.slp</code> files in the output directory. Open them in SLEAP or the <a href="../visualizer/">DREEM Visualizer</a>.</p>
+<hr />
+<h2 id="evaluation">Evaluation<a class="headerlink" href="#evaluation" title="Permanent link">&para;</a></h2>
+<p>Evaluate tracking against ground truth labels:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>dreem<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>./data/test<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span>--checkpoint<span class="w"> </span>./models/model.ckpt<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span>--output<span class="w"> </span>./eval_results<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span>
+</code></pre></div>
+<p>This computes standard MOT metrics (MOTA, IDF1, ID switches) and saves results to the output directory.</p>
+<h3 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h3>
+<p><code>dreem eval</code> accepts the same options as <code>dreem track</code>. The input directory must contain ground truth labels.</p>
+<h3 id="output_2">Output<a class="headerlink" href="#output_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>.slp</code> files with predicted tracks</li>
+<li><code>motmetrics.csv</code> with evaluation metrics</li>
+<li><code>.h5</code> file with detailed results</li>
+</ul>
+<hr />
+<h2 id="cli-reference">CLI Reference<a class="headerlink" href="#cli-reference" title="Permanent link">&para;</a></h2>
+<p>Get help for any command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>dreem<span class="w"> </span>--help
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>dreem<span class="w"> </span>train<span class="w"> </span>--help
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>dreem<span class="w"> </span>track<span class="w"> </span>--help
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>dreem<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--help
+</code></pre></div>
+<h3 id="config-overrides">Config Overrides<a class="headerlink" href="#config-overrides" title="Permanent link">&para;</a></h3>
+<p>Override individual config values with <code>--set</code>:</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>model.ckpt<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span>--set<span class="w"> </span>tracker.window_size<span class="o">=</span><span class="m">16</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span>--set<span class="w"> </span>tracker.decay_time<span class="o">=</span><span class="m">0</span>.9
+</code></pre></div>
+For fine grained control, use a config file as mentioned above.</p>
+<hr />
+<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../quickstart/">Quickstart</a> - Run tracking in 5 minutes</li>
+<li><a href="../Examples/dreem-demo/">End-to-end Demo</a> - Full training and evaluation workflow</li>
+<li><a href="../Examples/microscopy-demo/">Microscopy Demo</a> - CellPose + DREEM pipeline</li>
+<li><a href="./configs/">Configuration Reference</a> - All config options</li>
+</ul>
 
 
 

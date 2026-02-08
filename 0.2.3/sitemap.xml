@@ -2,274 +2,274 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/cli/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/installation/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/quickstart/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/usage/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/visualizer/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/Examples/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/Examples/dreem-demo/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/Examples/microscopy-demo/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/configs/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/configs/config/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/configs/eval/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/configs/inference/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/configs/training/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/io/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/io/asso_matrix/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/io/config/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/io/frame/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/io/instance/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/io/track/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/io/visualize/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/models/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/models/global_tracking_transformer/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/models/gtr_runner/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/models/model_parts/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/SUMMARY/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/_version/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/cli/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/datasets/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/datasets/base_dataset/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/datasets/cell_tracking_dataset/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/datasets/data_utils/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/datasets/microscopy_dataset/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/datasets/preprocessors/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/datasets/sleap_dataset/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/datasets/tracking_dataset/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/inference/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/inference/boxes/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/inference/eval/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/inference/metrics/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/inference/post_processing/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/inference/post_processing_utils/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/inference/track/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/inference/track_queue/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/inference/tracker/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/io/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/io/association_matrix/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/io/config/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/io/flags/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/io/frame/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/io/instance/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/io/track/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/io/visualize/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/models/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/models/attention_head/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/models/embedding/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/models/global_tracking_transformer/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/models/gtr_runner/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/models/mlp/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/models/model_utils/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/models/transformer/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/models/visual_encoder/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/training/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/training/losses/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/training/train/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/utils/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
     <url>
          <loc>https://dreem.sleap.ai/0.2.3/reference/dreem/utils/processors/</loc>
-         <lastmod>2026-02-06</lastmod>
+         <lastmod>2026-02-08</lastmod>
     </url>
 </urlset>
