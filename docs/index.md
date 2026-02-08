@@ -23,9 +23,9 @@ Tracking complete! Results saved to results/
 ## Key Features
 
 - ✅ **Command-Line & API Access:** Use DREEM via a simple CLI or integrate into your own Python scripts.
-- **Pretrained Models:** Get started quickly with models trained for [microscopy](https://huggingface.co/talmolab/microscopy-pretrained) and [animal](https://huggingface.co/talmolab/animals-pretrained) domains. Available on Hugging Face.
+- ✅ **Pretrained Models:** Get started quickly with models trained for [microscopy](https://huggingface.co/talmolab/microscopy-pretrained) and [animal](https://huggingface.co/talmolab/animals-pretrained) domains. Available on Hugging Face.
 - ✅ **Configurable Workflows:** Easily customize training and inference using YAML configuration files.
-- ✅ **Visualization:** Visualize tracking results in your browser without any data leaving your machine, or use the SLEAP GUI for a more detailed view.
+- ✅ **Visualization:** [Visualize](./visualizer.md) tracking results in your browser without any data leaving your machine, or use the SLEAP GUI for a more detailed view.
 - ✅ **Examples:** Step-by-step notebooks and guides for common workflows.
 
 ## Installation
