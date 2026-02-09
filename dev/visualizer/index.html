@@ -2819,6 +2819,16 @@
 </div>
 <hr />
 <div id="visualizer-app">
+  <div class="viz-demos">
+    <button class="viz-demo-btn" id="demo-animals" data-slp="../assets/demos/animals.slp" data-video="../assets/demos/animals.mp4">
+      <div class="viz-demo-title">Animals Demo</div>
+      <div class="viz-demo-desc">Pose tracking on animal behavior</div>
+    </button>
+    <button class="viz-demo-btn" id="demo-microscopy" data-slp="../assets/demos/microscopy.slp" data-video="../assets/demos/microscopy.mp4">
+      <div class="viz-demo-title">Microscopy Demo</div>
+      <div class="viz-demo-desc">Cell tracking on microscopy data</div>
+    </button>
+  </div>
   <div class="viz-layout">
     <div class="viz-panel">
       <label for="slp-file">SLP File</label>
@@ -2875,6 +2885,48 @@
 }
 
 #visualizer-app * { box-sizing: border-box; }
+
+.viz-demos {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.viz-demo-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--viz-line);
+  background: var(--viz-panel);
+  color: var(--md-typeset-color);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  text-align: left;
+}
+
+.viz-demo-btn:hover {
+  border-color: var(--viz-accent);
+  background: rgba(255, 152, 0, 0.08);
+}
+
+.viz-demo-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.viz-demo-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.viz-demo-desc {
+  font-size: 12px;
+  color: var(--viz-muted);
+  margin-top: 4px;
+}
 
 .viz-layout {
   display: grid;
@@ -3033,6 +3085,9 @@
   .viz-layout {
     grid-template-columns: 1fr;
   }
+  .viz-demos {
+    flex-direction: column;
+  }
 }
 </style>
 
@@ -3054,6 +3109,8 @@ const seek = document.querySelector("#seek");
 const playBtn = document.querySelector("#play-btn");
 const frameLabel = document.querySelector("#frame-label");
 const coordsEl = document.querySelector("#coords");
+const demoAnimalsBtn = document.querySelector("#demo-animals");
+const demoMicroscopyBtn = document.querySelector("#demo-microscopy");
 
 const ctx = canvas.getContext("2d");
 
@@ -3384,23 +3441,12 @@ const hasEmbeddedImages = () => {
   return labels.videos.some((v) => v.backend?.dataset || v.backendMetadata?.dataset);
 };
 
-const handleLoad = async () => {
-  const file = fileInput?.files?.[0];
-  const videoFile = videoFileInput?.files?.[0];
-
-  if (!file) {
-    setStatus("Select an SLP file to begin.");
-    return;
-  }
-
-  const slpSource = await file.arrayBuffer();
-  const slpFilename = file.name;
-
+const doLoad = async (slpSource, slpFilename, videoObjectUrl) => {
   loadBtn.disabled = true;
   setStatus("Loading SLP...");
 
   try {
-    const useEmbedded = !videoFile;
+    const useEmbedded = !videoObjectUrl;
 
     labels = await loadSlp(slpSource, {
       openVideos: useEmbedded,
@@ -3430,13 +3476,11 @@ const handleLoad = async () => {
       updateEmbeddedFrame(0);
       setStatus("Ready. Use slider or arrow keys to navigate.");
     } else {
-      if (!videoFile) {
+      if (!videoObjectUrl) {
         setStatus("No video provided and no embedded images found.");
         loadBtn.disabled = false;
         return;
       }
-
-      const videoSource = URL.createObjectURL(videoFile);
 
       setMeta({
         frames: frameCount,
@@ -3448,14 +3492,14 @@ const handleLoad = async () => {
       });
 
       setStatus("Loading video metadata...");
-      videoModel = await loadVideo(videoSource);
+      videoModel = await loadVideo(videoObjectUrl);
       frameTimes = await videoModel.getFrameTimes();
       fps = videoModel.fps ?? labels.video?.fps ?? 30;
 
       setStatus("Loading video...");
       videoEl.style.display = "block";
       playBtn.style.display = "inline-block";
-      videoEl.src = videoSource;
+      videoEl.src = videoObjectUrl;
       await videoEl.play().catch(() => {});
       videoEl.pause();
       await new Promise((resolve) => {
@@ -3477,6 +3521,58 @@ const handleLoad = async () => {
     setStatus(`Load failed: ${message}`);
     console.error(error);
   } finally {
+    loadBtn.disabled = false;
+  }
+};
+
+const handleLoad = async () => {
+  const file = fileInput?.files?.[0];
+  const videoFile = videoFileInput?.files?.[0];
+
+  if (!file) {
+    setStatus("Select an SLP file to begin.");
+    return;
+  }
+
+  const slpSource = await file.arrayBuffer();
+  const slpFilename = file.name;
+  const videoObjectUrl = videoFile ? URL.createObjectURL(videoFile) : null;
+  await doLoad(slpSource, slpFilename, videoObjectUrl);
+};
+
+const loadDemo = async (name) => {
+  const btn = document.querySelector(`#demo-${name}`);
+  const slpUrl = btn?.dataset.slp;
+  const videoUrl = btn?.dataset.video;
+  if (!slpUrl) return;
+
+  setStatus(`Loading ${name} demo...`);
+  document.querySelectorAll(".viz-demo-btn").forEach(b => b.disabled = true);
+
+  try {
+    const fetches = [fetch(slpUrl)];
+    if (videoUrl) fetches.push(fetch(videoUrl));
+    const responses = await Promise.all(fetches);
+
+    for (const resp of responses) {
+      if (!resp.ok) throw new Error(`Failed to fetch ${resp.url}: ${resp.status}`);
+    }
+
+    const slpSource = await responses[0].arrayBuffer();
+    const slpFilename = slpUrl.split("/").pop();
+    let videoObjectUrl = null;
+    if (responses[1]) {
+      const videoBlob = await responses[1].blob();
+      videoObjectUrl = URL.createObjectURL(videoBlob);
+    }
+
+    await doLoad(slpSource, slpFilename, videoObjectUrl);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    setStatus(`Demo load failed: ${message}`);
+    console.error(error);
+  } finally {
+    document.querySelectorAll(".viz-demo-btn").forEach(b => b.disabled = false);
     loadBtn.disabled = false;
   }
 };
@@ -3545,6 +3641,8 @@ document.addEventListener("keydown", (e) => {
 });
 
 loadBtn.addEventListener("click", handleLoad);
+demoAnimalsBtn?.addEventListener("click", () => loadDemo("animals"));
+demoMicroscopyBtn?.addEventListener("click", () => loadDemo("microscopy"));
 </script>
 
 <hr />
