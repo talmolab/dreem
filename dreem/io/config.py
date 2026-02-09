@@ -557,7 +557,7 @@ class Config:
         callbacks: list[pl.callbacks.Callback] | None = None,
         logger: pl.loggers.WandbLogger | None = None,
         devices: int = 1,
-        accelerator: str = "gpu",
+        accelerator: str = "auto",
     ) -> pl.Trainer:
         """Getter for the lightning trainer.
 
