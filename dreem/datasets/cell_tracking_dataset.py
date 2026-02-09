@@ -274,9 +274,7 @@ class CellTrackingDataset(BaseDataset):
                 pose = {"centroid": dict_centroids[gt_track_ids[j]]}  # more formatting
                 crop_raw = data_utils.crop_bbox(img, bboxes[j])
                 if self.apply_mask_to_crop:
-                    if (
-                        self.augmentations is not None
-                    ):  # TODO: change this to a flag that the user passes in apply_mask_to_crop
+                    if self.augmentations is not None:
                         cropped_mask = data_utils.crop_bbox(aug_mask, bboxes[j])
                         # filter for the instance of interest
                         cropped_mask[cropped_mask != gt_track_ids[j]] = 0

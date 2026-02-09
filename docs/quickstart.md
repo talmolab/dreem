@@ -1,95 +1,82 @@
 # Quickstart
 
-DREEM operations can be performed either through the command-line interface or through the API (for more advanced users). The CLI provides all the commands for the main functionalities from training a model to running eval and inference to generating visualizations. All operations can be customized via configs that are managed by Hydra. For a more in-depth walkthrough of DREEM, see the Examples section. For a complete reference of all commands and options, see [the API Reference](https://dreem.sleap.ai/reference/dreem/). 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/main/examples/quickstart.ipynb)
 
-To quickly test your installation and familiarize yourself with DREEM, you can follow the quickstart guide below.
+This quickstart walks you through tracking a social interaction between two flies from the SLEAP [flies13 dataset](https://docs.sleap.ai/dev/reference/datasets/#flies13) using a pretrained model.
 
-## Fly tracking
+**Runtime**: ~5–10 minutes.  
+**Hardware**: CPU is sufficient.  
 
-In this example we will track a social interaction between two flies from the SLEAP [fly32 dataset](https://sleap.ai/datasets.html#fly32) using a pretrained model. This example assumes that you have a conda environment installed with the dreem package. Please see [the installation guide](./index.md#installation) if you haven't installed it yet.
+---
 
-### Download the data
-First, we need at least one video and a set of corresponding detections to work with. For this example, we provide a video and a `.slp` file with pose keypoints for the video. This dataset can be downloaded from Hugging Face. The dataset includes configuration files needed for running inference.
+## Step 1: Install dependencies
 
-First, make sure you have `huggingface-hub` installed (it should already be installed in your environment if you installed using the commands on the [installation page](./installation.md)):
+```python
+!uv pip install dreem-track
+```
+See the [installation guide](installation.md) for more details.
+
+---
+
+## Step 2: Download sample data
+
+Download the sample fly dataset (videos, `.slp` detections, and configs):
 
 ```bash
-pip install huggingface_hub
+hf download talmolab/sample-flies --repo-type dataset --local-dir ./data
 ```
 
-Download the dataset. The ```--local-dir``` flag allows you to specify the download location on your computer.
+Ensure `huggingface_hub` is installed (`pip install huggingface_hub`); the `hf` CLI comes with it.
+
+---
+
+## Step 3: Download pretrained model
+
+Download a pretrained DREEM model (trained on mice, flies, zebrafish):
 
 ```bash
-huggingface-cli download talmolab/sample-flies --repo-type dataset --local-dir ./data
+hf download talmolab/animals-pretrained animals-pretrained.ckpt --local-dir=./models
 ```
 
-### Download a model
-Now we'll pull a pretrained model trained on various animal data in order to run inference.
+---
+
+## Step 4: Run tracking
+
+Run tracking on the inference data. Use a crop size that matches your instance size (here, 70 pixels) and set `--max-tracks` to the number of animals (2 for this dataset):
 
 ```bash
-huggingface-cli download talmolab/animals-pretrained animals-pretrained.ckpt --local-dir=./models
+dreem track ./data/inference --checkpoint ./models/animals-pretrained.ckpt --output ./results --crop-size 70 --max-tracks 2
 ```
 
-To confirm this downloaded properly you can run
-```bash
-ls animals-pretrained.ckpt
-```
+---
 
-Your directory structure should look like this:
-```bash
-./data
-    /test
-        190719_090330_wt_18159206_rig1.2@15000-17560.mp4
-        GT_190719_090330_wt_18159206_rig1.2@15000-17560.slp
-    /train
-        190612_110405_wt_18159111_rig2.2@4427.mp4
-        GT_190612_110405_wt_18159111_rig2.2@4427.slp
-    /val
-        two_flies.mp4
-        GT_two_flies.slp
-    /inference
-        190719_090330_wt_18159206_rig1.2@15000-17560.mp4
-        190719_090330_wt_18159206_rig1.2@15000-17560.slp
-    /configs
-        inference.yaml
-        base.yaml
-        eval.yaml
-./models
-    animals-pretrained.ckpt
-```
+## Step 5: Evaluate tracking (optional)
 
-### Run Tracking
-
-Tracking is easy to run using the CLI. Simply specify the path to the directory containing ```inference.yaml``` and the path to the model checkpoint.
+If you have ground truth labels (e.g. in `./data/test`), run evaluation to get metrics (MOTA, IDF1, ID switches):
 
 ```bash
-dreem-track --config-dir=./data/configs --config-name=inference ckpt_path=./models/animals-pretrained.ckpt
-```
-If you want to evaluate the tracking accuracy, you can use the `dreem-eval` command, a drop-in replacement for `dreem-track` that outputs evaluation metrics and a detailed frame-by-frame multi-object tracking event log.
-You can use it with this command. Note the different eval config file; this is only for illustrative purposes, to specify a test dataset path that has ground truth labels.
-
- ```bash
-dreem-eval --config-dir=./data/configs --config-name=eval ckpt_path=./models/animals-pretrained.ckpt
+dreem eval ./data/test --checkpoint ./models/animals-pretrained.ckpt --output ./eval-results --crop-size 70 --max-tracks 2
 ```
 
-Once completed, it should output a file in a new `results` folder called `GT_190719_090330_wt_18159206_rig1.2@15000-17560.<timestamp>dreem_inference.slp`
+---
 
-### Visualize Results
-First, we recommend visualizing the outputs of the tracks you just made. You can do so by first installing sleap via [its installation guide](https://sleap.ai/#quick-install) and then running
+## Step 6: Visualize results
+
+**Option A – DREEM Visualizer (browser-based)**  
+Head to the [live visualizer](visualizer.md) to visualize your tracking results in your browser without any data leaving your machine.
+
+**Option B – SLEAP GUI (full pose keypoints)**  
+Install SLEAP ([https://docs.sleap.ai/latest/](https://docs.sleap.ai/latest/)) and open the output `.slp` in SLEAP:
 
 ```bash
-sleap-label results/GT_190719_090330_wt_18159206_rig1.2@15000-17560.<timestamp>dreem_inference.slp
+sleap-label results/<your_output_file>.slp
 ```
-Note that the sleap-label command opens the SLEAP GUI which may not render on a remote server. 
+The SLEAP GUI may not render on a remote server.
 
-### Check out the example notebooks
-Once you're ready to dive deeper, head over to the Examples section and check out the notebooks there. Go through the end-to-end demo 
-of the DREEM pipeline, from obtaining data to training a model, evaluating on a held-out dataset, and visualizing the results, all in the notebook. We also have
-microscopy examples in which we use an off-the-shelf detection model to show how DREEM can be used with existing tools.
+## Next steps
 
-### Run through full workflow 
-For more detail on the CLI, configuration files, and more, see the [Usage Guide](./usage.md)
-
-### Get some SLEAP and sweet DREEMs!
-
-The animal checkpoint we used above was trained on mice, flies and zebrafish. You can generate detections on raw videos via SLEAP and then use our pretrained model as we just did to run tracking.
+- Run the [end-to-end demo](Examples/dreem-demo.md) to train and evaluate a model.
+- Run the [microscopy demo](Examples/microscopy-demo.md) to use CellPose for detection and a pretrained microscopy model for tracking.
+- See the [Usage guide](usage.md) for CLI options, config files, and workflows.
+- Use SLEAP to generate detections on your own videos, then run DREEM tracking with the same pretrained checkpoint.
+- For a complete reference of all commands and options, see [the API Reference](https://dreem.sleap.ai/reference/dreem/).

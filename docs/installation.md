@@ -1,27 +1,54 @@
-<!-- ### Basic
+# Installation
+
+The easiest way to install DREEM is with [uv](https://docs.astral.sh/uv/). 
+
+In a new directory:
+
 ```bash
-pip install dreem-tracker
-```  
--->
-#### Clone the repository:
+uv venv && source .venv/bin/activate
+uv pip install dreem-track
+```
+
+Or install as a standalone tool without creating a virtual environment:
+
+```bash
+uv tool install dreem-track
+```
+
+You can also use pip:
+
+```bash
+pip install dreem-track
+```
+
+## GPU Support
+
+DREEM automatically uses GPU acceleration when available:
+
+- **Linux/Windows**: CUDA-enabled GPUs are supported out of the box
+- **macOS (Apple Silicon)**: MPS acceleration is used automatically
+
+No additional configuration is needed.
+
+## Development Installation
+
 ```bash
 git clone https://github.com/talmolab/dreem && cd dreem
+uv sync --extra torch-cuda128 
 ```
-#### Set up in a new conda environment:
-##### Linux/Windows:
-###### GPU-accelerated (requires CUDA/nvidia gpu)
+
+## Verify Installation
+
+Check that DREEM is installed correctly:
+
 ```bash
-conda env create -f environment.yml && conda activate dreem
+dreem --help
 ```
-###### CPU:
+
+## Uninstall
+
 ```bash
-conda env create -f environment_cpu.yml && conda activate dreem
-```
-#### OSX (Apple Silicon)
-```bash
-conda env create -f environment_osx-arm64.yml && conda activate dreem
-```
-### Uninstall
-```
-conda env remove -n dreem
+uv pip uninstall dreem-track
+# or
+uv tool uninstall dreem-track
 ```

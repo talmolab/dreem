@@ -49,7 +49,6 @@ theme:
 
 plugins:
   - search
-  - privacy
   - mkdocs-jupyter
   - mike
   - autorefs
@@ -117,22 +116,6 @@ markdown_extensions:
       #base_path: !relative $docs_dir
 
 extra:
-  consent:
-    title: Cookie consent
-    description: >- 
-      We use cookies to recognize your repeated visits and preferences, as well
-      as to measure the effectiveness of our documentation and whether users
-      find what they're searching for. With your consent, you're helping us to
-      make our documentation better.
-    actions:
-      - accept
-      - reject
-      - manage
-
-  analytics:
-    provider: google
-    property: G-V7MWLE7LXW
-
   version:
     provider: mike
 
@@ -144,18 +127,23 @@ extra:
 
 extra_css:
   - css/mkdocstrings.css
+  - css/termynal.css
 
-copyright: >
-  Copyright &copy; 2024 - 2025 Talmo Lab –
-  <a href="#__consent">Change cookie settings</a>
+extra_javascript:
+  - js/termynal.js
+  - js/custom.js
+
+copyright: Copyright &copy; 2024 - 2025 Talmo Lab
 nav:
   - Overview: index.md
   - Installation: installation.md
   - Quickstart: quickstart.md
-  - Usage: usage.md
+  - Live Visualizer: visualizer.md
+  - Usage Guide: usage.md
   - Examples:
-    - Microscopy: Examples/microscopy-demo-simple.md
-    - Microscopy - in-depth API usage: Examples/microscopy-demo-full-api.md
+    - Overview: Examples/index.md
+    - Quickstart: quickstart.md
+    - Microscopy: Examples/microscopy-demo.md
     - End-to-end: Examples/dreem-demo.md
   - Core API:
     - i/o: io/
