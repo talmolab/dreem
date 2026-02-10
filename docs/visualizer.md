@@ -19,6 +19,18 @@ Visualize your DREEM tracking results directly in the browser. Upload an SLP fil
     </button>
   </div>
   <div class="viz-layout">
+    <div class="viz-main">
+      <div class="viz-player">
+        <video id="video" playsinline muted></video>
+        <canvas id="overlay"></canvas>
+      </div>
+      <div class="viz-controls">
+        <button id="play-btn">Play</button>
+        <input id="seek" type="range" min="0" max="0" value="0" step="1" />
+        <span id="frame-label" class="viz-pill">Frame 0</span>
+      </div>
+    </div>
+
     <div class="viz-panel">
       <label for="slp-file">SLP File</label>
       <input id="slp-file" type="file" accept=".slp,.h5,.hdf5" />
@@ -30,22 +42,6 @@ Visualize your DREEM tracking results directly in the browser. Upload an SLP fil
       <button id="load-btn">Load</button>
       <div class="viz-status" id="status">Select an SLP file to begin.</div>
       <div class="viz-meta" id="meta"></div>
-    </div>
-
-    <div class="viz-main">
-      <div class="viz-player">
-        <video id="video" playsinline muted></video>
-        <canvas id="overlay"></canvas>
-      </div>
-      <div class="viz-controls">
-        <button id="play-btn">Play</button>
-        <input id="seek" type="range" min="0" max="0" value="0" step="1" />
-        <span id="frame-label" class="viz-pill">Frame 0</span>
-      </div>
-      <div class="viz-panel viz-coords">
-        <div class="viz-coords-label">Coordinates & Track Info</div>
-        <pre id="coords" class="viz-coords-body">—</pre>
-      </div>
     </div>
   </div>
 </div>
@@ -119,7 +115,7 @@ Visualize your DREEM tracking results directly in the browser. Upload an SLP fil
 
 .viz-layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 1fr;
   gap: 20px;
   align-items: start;
   margin-top: 1rem;
@@ -197,7 +193,7 @@ Visualize your DREEM tracking results directly in the browser. Upload an SLP fil
   overflow: hidden;
   border: 1px solid var(--viz-line);
   background: #000;
-  min-height: 300px;
+  min-height: 500px;
 }
 
 .viz-player video {
@@ -244,36 +240,7 @@ Visualize your DREEM tracking results directly in the browser. Upload an SLP fil
   white-space: nowrap;
 }
 
-.viz-coords {
-  margin-top: 12px;
-}
-
-.viz-coords-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--viz-muted);
-  margin-bottom: 6px;
-}
-
-.viz-coords-body {
-  margin: 0;
-  max-height: 200px;
-  overflow: auto;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.4;
-  background: var(--viz-panel);
-  border: 1px solid var(--viz-line);
-  border-radius: 10px;
-  padding: 10px;
-  white-space: pre;
-}
-
 @media (max-width: 900px) {
-  .viz-layout {
-    grid-template-columns: 1fr;
-  }
   .viz-demos {
     flex-direction: column;
   }
@@ -283,7 +250,7 @@ Visualize your DREEM tracking results directly in the browser. Upload an SLP fil
 <script type="module">
 // Import sleap-io.js from CDN
 const sleapioUrl = "https://unpkg.com/@talmolab/sleap-io.js@0.1.9/dist/index.js";
-const { loadSlp, loadVideo } = await import(sleapioUrl);
+const { loadSlp } = await import(sleapioUrl);
 
 // DOM elements
 const fileInput = document.querySelector("#slp-file");
@@ -357,11 +324,9 @@ const formatFrameCoords = (frame, skeleton) => {
 
 // State
 let labels = null;
-let videoModel = null;
-let frameTimes = null;
 let framesByIndex = new Map();
 let skeleton = null;
-let fps = 30;
+let videoFps = 30;
 let maxFrame = 0;
 let frameCount = 0;
 let currentFrame = 0;
@@ -373,6 +338,9 @@ let renderToken = 0;
 let embeddedMode = false;
 let labeledFramesList = [];
 let currentLabeledFrameIndex = 0;
+// trackCentroids: Map<trackKey, Array<{frameIdx, x, y}>> sorted by frameIdx
+let trackCentroids = new Map();
+const TRAIL_LENGTH = 100;
 
 const setStatus = (message) => {
   statusEl.textContent = message;
@@ -410,14 +378,43 @@ const configureCanvas = (width, height, setPlayerHeight = false) => {
   }
 };
 
+const computeCentroid = (instance) => {
+  let sumX = 0, sumY = 0, count = 0;
+  for (const point of instance.points) {
+    if (!point || !point.visible) continue;
+    const [x, y] = point.xy;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+    sumX += x;
+    sumY += y;
+    count++;
+  }
+  if (count === 0) return null;
+  return { x: sumX / count, y: sumY / count };
+};
+
 const buildFrameIndex = () => {
   framesByIndex = new Map();
+  trackCentroids = new Map();
   let instanceCount = 0;
   for (const frame of labels.labeledFrames) {
     if (!Number.isFinite(frame.frameIdx)) continue;
     framesByIndex.set(frame.frameIdx, frame);
     instanceCount += frame.instances.length;
+
+    frame.instances.forEach((instance, idx) => {
+      const trackKey = getTrackKey(instance.track) ?? `untracked_${idx}`;
+      const centroid = computeCentroid(instance);
+      if (!centroid) return;
+      if (!trackCentroids.has(trackKey)) trackCentroids.set(trackKey, []);
+      trackCentroids.get(trackKey).push({ frameIdx: frame.frameIdx, ...centroid });
+    });
   }
+
+  // Sort each track's centroids by frame index
+  for (const [, trail] of trackCentroids) {
+    trail.sort((a, b) => a.frameIdx - b.frameIdx);
+  }
+
   const frameIndices = Array.from(framesByIndex.keys()).filter((value) => Number.isFinite(value));
   maxFrame = frameIndices.length ? Math.max(...frameIndices) : 0;
   frameCount = frameIndices.length;
@@ -429,6 +426,61 @@ const buildFrameIndex = () => {
   });
 
   return instanceCount;
+};
+
+const drawMotionTrail = (trackKey, frameIdx, color) => {
+  const trail = trackCentroids.get(trackKey);
+  if (!trail || trail.length < 2) return;
+
+  // Find the index of the current frame (or closest before it) via binary search
+  let hi = trail.length - 1, lo = 0;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (trail[mid].frameIdx <= frameIdx) lo = mid + 1;
+    else hi = mid - 1;
+  }
+  const endIdx = hi; // last entry at or before frameIdx
+  if (endIdx < 0) return;
+
+  const startIdx = Math.max(0, endIdx - TRAIL_LENGTH + 1);
+  const segment = trail.slice(startIdx, endIdx + 1);
+  if (segment.length < 2) return;
+
+  // Draw trail with fading opacity (oldest = 0.15, newest = 0.9)
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  for (let i = 1; i < segment.length; i++) {
+    const t = i / (segment.length - 1);
+    ctx.globalAlpha = 0.15 + t * 0.75;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5 + t * 2.5;
+    ctx.beginPath();
+    ctx.moveTo(segment[i - 1].x, segment[i - 1].y);
+    ctx.lineTo(segment[i].x, segment[i].y);
+    ctx.stroke();
+  }
+
+  // Draw dots at trail positions
+  for (let i = 0; i < segment.length; i++) {
+    const t = i / (segment.length - 1);
+    ctx.globalAlpha = 0.2 + t * 0.8;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(segment[i].x, segment[i].y, 1.5 + t * 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.lineCap = "butt";
+  ctx.lineJoin = "miter";
+};
+
+const drawTrailsForFrame = (frameIdx) => {
+  if (!ctx || !trackCentroids.size) return;
+  for (const [trackKey] of trackCentroids) {
+    const color = trackColors.get(trackKey) ?? colors[0];
+    drawMotionTrail(trackKey, frameIdx, color);
+  }
 };
 
 const drawSkeleton = (frame, skel) => {
@@ -463,37 +515,53 @@ const drawSkeleton = (frame, skel) => {
       ctx.fill();
     });
 
-    // Draw track label
+    // Draw track label at centroid offset
     const trackKey = getTrackKey(instance.track);
-    if (trackKey != null && instance.points.length > 0) {
-      const firstVisible = instance.points.find(p => p.visible && !Number.isNaN(p.xy[0]));
-      if (firstVisible) {
-        ctx.font = "bold 12px sans-serif";
+    if (trackKey != null) {
+      const centroid = computeCentroid(instance);
+      if (centroid) {
+        const label = `${trackKey}`;
+        const fontSize = Math.max(12, Math.round(Math.min(canvas.width, canvas.height) * 0.05));
+        const offset = Math.round(fontSize * 0.5);
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "bottom";
+        // Background pill for readability
+        const metrics = ctx.measureText(label);
+        const px = centroid.x + offset;
+        const py = centroid.y - offset;
+        const pad = Math.round(fontSize * 0.25);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+        ctx.beginPath();
+        ctx.roundRect(px - pad, py - metrics.actualBoundingBoxAscent - pad, metrics.width + pad * 2, metrics.actualBoundingBoxAscent + pad * 2, pad);
+        ctx.fill();
         ctx.fillStyle = color;
-        ctx.fillText(`T${trackKey}`, firstVisible.xy[0] + 8, firstVisible.xy[1] - 8);
+        ctx.fillText(label, px, py);
+        ctx.textAlign = "start";
+        ctx.textBaseline = "alphabetic";
       }
     }
   });
 };
 
-const renderExternalFrame = async (frameIdx) => {
+const renderExternalFrame = (frameIdx) => {
   if (!ctx || !skeleton) return;
   const frame = framesByIndex.get(frameIdx);
-  if (!frame) return;
-  const token = ++renderToken;
-  const videoFrame = await videoModel?.getFrame(frameIdx);
-  if (token !== renderToken) return;
+
+  // Seek video: frameIdx maps directly to time via fps
+  const time = frameIdx / videoFps;
+  if (Math.abs(videoEl.currentTime - time) > 0.001) {
+    videoEl.currentTime = time;
+  }
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (videoFrame instanceof ImageBitmap) {
-    ctx.drawImage(videoFrame, 0, 0, canvas.width, canvas.height);
-  } else if (videoFrame instanceof ImageData) {
-    ctx.putImageData(videoFrame, 0, 0);
-  }
+  drawTrailsForFrame(frameIdx);
 
-  drawSkeleton(frame, skeleton);
-  formatFrameCoords(frame, skeleton);
+  if (frame) {
+    drawSkeleton(frame, skeleton);
+    formatFrameCoords(frame, skeleton);
+  }
 };
 
 const renderEmbeddedFrame = async (labeledFrameIndex) => {
@@ -541,48 +609,15 @@ const renderEmbeddedFrame = async (labeledFrameIndex) => {
     ctx.fillText(`(No embedded image data)`, canvas.width / 2, canvas.height / 2 + 24);
   }
 
+  drawTrailsForFrame(frame.frameIdx);
   drawSkeleton(frame, skeleton);
   formatFrameCoords(frame, skeleton);
 };
 
-const updateFpsFromVideo = () => {
-  if (frameTimes?.length) return;
-  if (!Number.isFinite(videoEl.duration) || videoEl.duration <= 0) return;
-  if (!frameCount) return;
-  fps = frameCount / videoEl.duration;
-};
 
-const getFrameIndexForTime = (time) => {
+const frameIndexForTime = (time) => {
   if (!Number.isFinite(time)) return 0;
-  if (frameTimes?.length) {
-    let low = 0;
-    let high = frameTimes.length - 1;
-    while (low <= high) {
-      const mid = Math.floor((low + high) / 2);
-      const value = frameTimes[mid];
-      if (value === time) return mid;
-      if (value < time) low = mid + 1;
-      else high = mid - 1;
-    }
-    const idx = Math.min(frameTimes.length - 1, Math.max(0, low));
-    const prev = Math.max(0, idx - 1);
-    return Math.abs(frameTimes[idx] - time) < Math.abs(frameTimes[prev] - time) ? idx : prev;
-  }
-  return Math.min(maxFrame, Math.max(0, Math.round(time * fps)));
-};
-
-const getTimeForFrameIndex = (frameIdx) => {
-  if (frameTimes?.length && frameTimes[frameIdx] != null) return frameTimes[frameIdx];
-  return frameIdx / fps;
-};
-
-const updateFrameFromVideo = (time = 0) => {
-  const frameIdx = getFrameIndexForTime(time);
-  if (!Number.isFinite(frameIdx)) return;
-  currentFrame = frameIdx;
-  seek.value = String(frameIdx);
-  frameLabel.textContent = `Frame ${frameIdx}`;
-  renderExternalFrame(frameIdx);
+  return Math.min(maxFrame, Math.max(0, Math.round(time * videoFps)));
 };
 
 const updateEmbeddedFrame = (labeledFrameIndex) => {
@@ -595,16 +630,23 @@ const updateEmbeddedFrame = (labeledFrameIndex) => {
   renderEmbeddedFrame(labeledFrameIndex);
 };
 
-const playLoop = (timestamp) => {
+const playLoop = () => {
   if (!isPlaying) return;
-  if (!playbackStartTime) playbackStartTime = timestamp;
-  const elapsed = (timestamp - playbackStartTime) / 1000;
-  const startTime = getTimeForFrameIndex(playbackStartFrame);
-  const nextFrame = getFrameIndexForTime(startTime + elapsed);
-  if (nextFrame !== currentFrame) {
-    updateFrameFromVideo(startTime + elapsed);
+  const time = videoEl.currentTime;
+  const frameIdx = frameIndexForTime(time);
+  if (frameIdx !== currentFrame) {
+    currentFrame = frameIdx;
+    seek.value = String(frameIdx);
+    frameLabel.textContent = `Frame ${frameIdx}`;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawTrailsForFrame(frameIdx);
+    const frame = framesByIndex.get(frameIdx);
+    if (frame) {
+      drawSkeleton(frame, skeleton);
+      formatFrameCoords(frame, skeleton);
+    }
   }
-  if (currentFrame >= maxFrame) {
+  if (videoEl.ended || currentFrame >= maxFrame) {
     stopPlayback();
     return;
   }
@@ -614,13 +656,13 @@ const playLoop = (timestamp) => {
 const startPlayback = () => {
   if (isPlaying) return;
   isPlaying = true;
-  playbackStartTime = 0;
-  playbackStartFrame = currentFrame;
+  videoEl.play().catch(() => {});
   playHandle = requestAnimationFrame(playLoop);
 };
 
 const stopPlayback = () => {
   isPlaying = false;
+  videoEl.pause();
   if (playHandle) cancelAnimationFrame(playHandle);
   playHandle = null;
 };
@@ -631,6 +673,7 @@ const hasEmbeddedImages = () => {
 };
 
 const doLoad = async (slpSource, slpFilename, videoObjectUrl) => {
+  canvas.style.display = "";
   loadBtn.disabled = true;
   setStatus("Loading SLP...");
 
@@ -680,29 +723,48 @@ const doLoad = async (slpSource, slpFilename, videoObjectUrl) => {
         mode: "external video",
       });
 
-      setStatus("Loading video metadata...");
-      videoModel = await loadVideo(videoObjectUrl);
-      frameTimes = await videoModel.getFrameTimes();
-      fps = videoModel.fps ?? labels.video?.fps ?? 30;
-
       setStatus("Loading video...");
       videoEl.style.display = "block";
       playBtn.style.display = "inline-block";
       videoEl.src = videoObjectUrl;
-      await videoEl.play().catch(() => {});
-      videoEl.pause();
       await new Promise((resolve) => {
         if (videoEl.readyState >= 1) return resolve();
         videoEl.addEventListener("loadedmetadata", resolve, { once: true });
       });
 
-      const shape = videoModel?.shape;
-      configureCanvas(shape?.[2], shape?.[1]);
-      updateFpsFromVideo();
+      // Detect actual fps from the video using requestVideoFrameCallback
+      videoFps = await new Promise((resolve) => {
+        if (!("requestVideoFrameCallback" in videoEl)) {
+          // Fallback: estimate from total SLP frames / video duration
+          const est = maxFrame / videoEl.duration;
+          resolve(est > 0 ? est : 30);
+          return;
+        }
+        videoEl.currentTime = 0;
+        videoEl.requestVideoFrameCallback((now, meta1) => {
+          videoEl.requestVideoFrameCallback((now2, meta2) => {
+            const dt = meta2.mediaTime - meta1.mediaTime;
+            videoEl.pause();
+            videoEl.currentTime = 0;
+            resolve(dt > 0 ? Math.round(1 / dt) : 30);
+          });
+          videoEl.play().catch(() => {});
+        });
+        videoEl.play().catch(() => {});
+      });
+
+      // Clamp maxFrame to video duration
+      const videoMaxFrame = Math.floor(videoEl.duration * videoFps);
+      if (videoMaxFrame > 0 && videoMaxFrame < maxFrame) {
+        maxFrame = videoMaxFrame;
+      }
+
+      configureCanvas(videoEl.videoWidth, videoEl.videoHeight);
+      videoEl.currentTime = 0;
       seek.max = String(maxFrame);
       currentFrame = 0;
       renderToken = 0;
-      updateFrameFromVideo(0);
+      renderExternalFrame(0);
       setStatus("Ready. Use Play or arrow keys to navigate.");
     }
   } catch (error) {
@@ -733,27 +795,22 @@ const loadDemo = async (name) => {
   const btn = document.querySelector(`#demo-${name}`);
   const slpUrl = btn?.dataset.slp;
   const videoUrl = btn?.dataset.video;
-  if (!slpUrl) return;
+  if (!slpUrl || !videoUrl) return;
 
   setStatus(`Loading ${name} demo...`);
   document.querySelectorAll(".viz-demo-btn").forEach(b => b.disabled = true);
 
   try {
-    const fetches = [fetch(slpUrl)];
-    if (videoUrl) fetches.push(fetch(videoUrl));
-    const responses = await Promise.all(fetches);
+    canvas.style.display = "";
 
-    for (const resp of responses) {
-      if (!resp.ok) throw new Error(`Failed to fetch ${resp.url}: ${resp.status}`);
-    }
+    const [slpResp, videoResp] = await Promise.all([fetch(slpUrl), fetch(videoUrl)]);
+    if (!slpResp.ok) throw new Error(`Failed to fetch SLP: ${slpResp.status}`);
+    if (!videoResp.ok) throw new Error(`Failed to fetch video: ${videoResp.status}`);
 
-    const slpSource = await responses[0].arrayBuffer();
+    const slpSource = await slpResp.arrayBuffer();
+    const videoBlob = await videoResp.blob();
+    const videoObjectUrl = URL.createObjectURL(videoBlob);
     const slpFilename = slpUrl.split("/").pop();
-    let videoObjectUrl = null;
-    if (responses[1]) {
-      const videoBlob = await responses[1].blob();
-      videoObjectUrl = URL.createObjectURL(videoBlob);
-    }
 
     await doLoad(slpSource, slpFilename, videoObjectUrl);
   } catch (error) {
