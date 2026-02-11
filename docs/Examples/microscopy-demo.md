@@ -1,4 +1,4 @@
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/main/examples/microscopy-demo.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/docs/examples/microscopy-demo.ipynb)
 
 ## DREEM workflow for microscopy
 ### From raw tiff stacks to tracked identities
@@ -79,23 +79,13 @@ diam_px = 25
 ```python
 gpu_flag = "--gpu" if torch.cuda.is_available() else "--no-gpu"
 
-print("Running CellPose segmentation with uv...")
-result = subprocess.run(
-    [
-        "uv", "run", "run_cellpose_segmentation.py",
-        "--data_path", data_path,
-        "--output_path", segmented_path,
-        "--diameter", str(diam_px),
-        gpu_flag,
-    ],
-    check=True,
-    capture_output=True,
-    text=True,
+# runs Cellpose and outputs files to segmented_path
+masks = run_cellpose_segmentation(
+    data_path,
+    segmented_path,
+    diameter=diam_px,
+    gpu=gpu_flag,
 )
-print(result.stdout)
-if result.stderr:
-    print("Errors/Warnings:", result.stderr)
-
 # Load the original stack and masks for visualization
 tiff_files = [
     f for f in os.listdir(data_path) if f.endswith(".tif") or f.endswith(".tiff")
