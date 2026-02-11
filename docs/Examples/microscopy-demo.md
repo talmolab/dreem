@@ -13,6 +13,7 @@ To run this demo, we have provided sample data and model checkpoints. A GPU is r
 
 ```python
 !uv pip install dreem-track
+!uv pip install cellpose tifffile
 ```
 
 #### Import necessary packages
@@ -23,8 +24,8 @@ import torch
 import numpy as np
 import tifffile
 import matplotlib.pyplot as plt
-import pandas as pd
 from huggingface_hub import hf_hub_download
+from dreem.utils import run_cellpose_segmentation
 import subprocess
 ```
 
@@ -78,23 +79,13 @@ diam_px = 25
 ```python
 gpu_flag = "--gpu" if torch.cuda.is_available() else "--no-gpu"
 
-print("Running CellPose segmentation with uv...")
-result = subprocess.run(
-    [
-        "uv", "run", "run_cellpose_segmentation.py",
-        "--data_path", data_path,
-        "--output_path", segmented_path,
-        "--diameter", str(diam_px),
-        gpu_flag,
-    ],
-    check=True,
-    capture_output=True,
-    text=True,
+# runs Cellpose and outputs files to segmented_path
+masks = run_cellpose_segmentation(
+    data_path,
+    segmented_path,
+    diameter=diam_px,
+    gpu=gpu_flag,
 )
-print(result.stdout)
-if result.stderr:
-    print("Errors/Warnings:", result.stderr)
-
 # Load the original stack and masks for visualization
 tiff_files = [
     f for f in os.listdir(data_path) if f.endswith(".tif") or f.endswith(".tiff")
