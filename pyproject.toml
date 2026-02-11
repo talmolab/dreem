@@ -31,8 +31,8 @@ dependencies = [
     "av",
     # Image processing
     "albumentations",
-    "opencv-python<4.9.0",
-    "numpy<2.0",  # Required for opencv-python<4.9.0 compatibility
+    "opencv-python",
+    "numpy",  # Required for opencv-python<4.9.0 compatibility
     # Configuration
     "hydra-core",
     # Data I/O
