@@ -13,6 +13,7 @@ To run this demo, we have provided sample data and model checkpoints. A GPU is r
 
 ```python
 !uv pip install dreem-track
+!uv pip install cellpose tifffile
 ```
 
 #### Import necessary packages
@@ -23,8 +24,8 @@ import torch
 import numpy as np
 import tifffile
 import matplotlib.pyplot as plt
-import pandas as pd
 from huggingface_hub import hf_hub_download
+from dreem.utils import run_cellpose_segmentation
 import subprocess
 ```
 
