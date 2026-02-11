@@ -1,4 +1,3 @@
-
 r"""Helper script to run CellPose segmentation using uv for dependency management.
 
 This allows running CellPose without global installation.
@@ -16,6 +15,7 @@ Or use as a module:
 
 import os
 import numpy as np
+
 
 def run_cellpose_segmentation(
     data_path,
@@ -46,6 +46,7 @@ def run_cellpose_segmentation(
     """
     import tifffile
     from cellpose import models
+
     # Create output directory
     os.makedirs(output_path, exist_ok=True)
 
