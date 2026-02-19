@@ -5,9 +5,7 @@
 
 This notebook will walk you through the typical workflow for microscopy identity tracking. We start with a raw tiff stack, pass it through an off-the-shelf detection model, and feed those detections into DREEM. 
 
-This notebook uses a simple entrypoint into the tracking code. You only need to specify a configuration file, and a few lines of code!
-
-To run this demo, we have provided sample data and model checkpoints. A GPU is recommended if you run the CellPose segmentation step, otherwise the tracking will run on a CPU.
+To run this demo, you can use your own data or our sample data. A GPU is recommended for the CellPose segmentation step.
 
 ### Install DREEM
 
@@ -94,9 +92,6 @@ Update the path below to the path to the directory containing the tiff files. If
 
 ```python
 data_path = "./data/dynamicnuclearnet/test_1" # <-- update this to the path to the directory containing the tiff files
-
-segmented_path = f"{data_path}_GT/TRA"
-os.makedirs(segmented_path, exist_ok=True)
 base_name = os.path.dirname(data_path)
 ```
 
@@ -114,7 +109,7 @@ gpu_flag = "--gpu" if torch.cuda.is_available() else "--no-gpu"
 # runs Cellpose and outputs files to segmented_path
 masks = run_cellpose_segmentation(
     data_path,
-    segmented_path,
+    custom_segmented_path,
     diameter=instance_diameter_px,
     gpu=gpu_flag,
 )
@@ -124,7 +119,7 @@ tiff_files = [
 ]
 tiff_files.sort()  # Ensure consistent ordering
 first_img = tifffile.imread(os.path.join(data_path, tiff_files[0]))
-mask_path = os.path.join(segmented_path, f"{os.path.splitext(tiff_files[0])[0]}.tif")
+mask_path = os.path.join(custom_segmented_path, f"{os.path.splitext(tiff_files[0])[0]}.tif")
 first_mask = tifffile.imread(mask_path)
 ```
 

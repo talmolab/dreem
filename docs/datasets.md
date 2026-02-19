@@ -1,6 +1,6 @@
 # Datasets
 
-Here we provide information and download links for datasets used for training and evaluating DREEM across a range of tracking scenarios. Datasets are organized into two categories: **Animals** (behavioral tracking of whole organisms) and **Microscopy** (tracking of cells and subcellular structures). All datasets, including metadata, is available on [Google Drive](https://drive.google.com/drive/u/0/folders/0ACXbRsrn_M0JUk9PVA).
+Here we provide information and download links for datasets used for training and evaluating DREEM across a range of tracking scenarios. Datasets are organized into two categories: **Animals** (behavioral tracking of whole organisms) and **Microscopy** (tracking of cells and subcellular structures). All datasets, including metadata, are available on [Google Drive](https://drive.google.com/drive/u/0/folders/0ACXbRsrn_M0JUk9PVA).
 
 !!! hint
 
@@ -45,12 +45,13 @@ Here we provide information and download links for datasets used for training an
 | Num Animals   | 2 |
 | Frames        | ~1.05M |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/12x5Fgs9I9MujuqaB1cVG-PDgzXuaRdTQ) |
-| Credit        | Talmolab, Salk Institute for Biological Studies
+| Credit        | [Talmolab, Salk Institute for Biological Studies](https://talmolab.org)
 
 ---
 
 ### `mice_hc`
 ![mice_hc](assets/images/docs-dataset-mice-hc.png){ width="400" }
+
 | Name          | `mice_hc` |
 |---------------|-----------|
 | Description   | Pairs of mice (*Mus musculus*) in a home cage setting, imaged from above. Short clips extracted from longer social interaction recordings. Animals can be low contrast against the bedding background. |
@@ -59,8 +60,7 @@ Here we provide information and download links for datasets used for training an
 | Num Animals   | 2 |
 | Frames        | ~31K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1vTTM8LNT4cYqG8HpVmqJeQ67VgsXdzVY) |
-| Credit        | [Pereira, T. D. et al. SLEAP: A deep learning system for multi-animal pose
-tracking. Nat. Methods 19, 486–495 (2022).](https://www.nature.com/articles/s41592-022-01426-1)
+| Credit        | [Pereira, T. D. et al. SLEAP: A deep learning system for multi-animal pose tracking. Nat. Methods 19, 486–495 (2022).](https://www.nature.com/articles/s41592-022-01426-1)
 
 ---
 
@@ -90,8 +90,7 @@ tracking. Nat. Methods 19, 486–495 (2022).](https://www.nature.com/articles/s4
 | Num Animals   | 2–8 |
 | Frames        | ~94K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1JpyktfS6Pr3yAYNS7QZ3wqKWO0araMmI) |
-| Credit        | [Pereira, T. D. et al. SLEAP: A deep learning system for multi-animal pose
-tracking. Nat. Methods 19, 486–495 (2022).](https://www.nature.com/articles/s41592-022-01426-1)
+| Credit        | [Pereira, T. D. et al. SLEAP: A deep learning system for multi-animal pose tracking. Nat. Methods 19, 486–495 (2022).](https://www.nature.com/articles/s41592-022-01426-1)
 
 ---
 
@@ -106,9 +105,7 @@ tracking. Nat. Methods 19, 486–495 (2022).](https://www.nature.com/articles/s4
 | Num Animals   | 10 |
 | Frames        | 27K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1hLxTgByAxkQA8gFDCpCALSgKb-O4VQcy) |
-| Credit        | [Romero-Ferrero, F., Bergomi, M. G., Hinz, R. C., Heras, F. J. H. & de Polavieja,
-G. G. idtracker.ai: tracking all individuals in small or large collectives of unmarked
-animals. Nat. Methods 16, 179–182 (2019)](https://www.nature.com/articles/s41592-018-0295-5)
+| Credit        | [Romero-Ferrero, F., Bergomi, M. G., Hinz, R. C., Heras, F. J. H. & de Polavieja, G. G. idtracker.ai: tracking all individuals in small or large collectives of unmarked animals. Nat. Methods 16, 179–182 (2019)](https://www.nature.com/articles/s41592-018-0295-5)
 
 ---
 
@@ -170,5 +167,4 @@ animals. Nat. Methods 16, 179–182 (2019)](https://www.nature.com/articles/s415
 | Num Objects   | 2–95 per frame |
 | Frames        | ~20K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1sTTNtdOeYHkchptevMVAhoimd84UgoPm) |
-| Credit        | [Ker, D. F. E. et al. Phase contrast time-lapse microscopy datasets with automated
-and manual cell tracking annotations. Sci. Data 5, 180237 (2018)](https://pmc.ncbi.nlm.nih.gov/articles/PMC6233481/)
+| Credit        | [Ker, D. F. E. et al. Phase contrast time-lapse microscopy datasets with automated and manual cell tracking annotations. Sci. Data 5, 180237 (2018)](https://pmc.ncbi.nlm.nih.gov/articles/PMC6233481)
