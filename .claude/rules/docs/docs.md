@@ -6,8 +6,8 @@ This project uses **MkDocs** with the Material theme for documentation, and **mi
 
 - Serve docs locally: `uv run mkdocs serve`
 - Build docs: `uv run mkdocs build`
-- Deploy a version: `uv run mike deploy <version> --push`
-- Set default version: `uv run mike set-default <version> --push`
+- Deploy a version: `uv run mike deploy <version> latest --update-aliases --push`
+- Set default version: `uv run mike set-default latest --push`
 
 Configuration is in `mkdocs.yml`. The site is hosted at https://dreem.sleap.ai/.
 

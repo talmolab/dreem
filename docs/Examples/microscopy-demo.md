@@ -1,4 +1,4 @@
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/main/examples/microscopy-demo.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/talmolab/dreem/blob/docs/examples/microscopy-demo.ipynb)
 
 ## DREEM workflow for microscopy
 ### From raw tiff stacks to tracked identities
@@ -93,7 +93,7 @@ Here we use CellPose to create segmentation masks for our instances.
 Update the path below to the path to the directory containing the tiff files. If you are using our sample data, the path is already set.
 
 ```python
-data_path = "./data/dynamicnuclearnet/test_1" # <-- update this to the path to your data
+data_path = "./data/dynamicnuclearnet/test_1" # <-- update this to the path to the directory containing the tiff files
 
 segmented_path = f"{data_path}_GT/TRA"
 os.makedirs(segmented_path, exist_ok=True)
@@ -103,7 +103,7 @@ base_name = os.path.dirname(data_path)
 Set the approximate diameter (in pixels) of the instances you want to segment
 
 ```python
-diam_px = 25
+instance_diameter_px = 25
 ```
 
 ### Run detection model
@@ -115,7 +115,7 @@ gpu_flag = "--gpu" if torch.cuda.is_available() else "--no-gpu"
 masks = run_cellpose_segmentation(
     data_path,
     segmented_path,
-    diameter=diam_px,
+    diameter=instance_diameter_px,
     gpu=gpu_flag,
 )
 # Load the original stack and masks for visualization
@@ -145,7 +145,7 @@ plt.show()
 This assumes you have the run the CellPose segmentation step. The output is a single tiff file with all frames, as well as configurations used for tracking (this will help reproduce results). The location is what you set below with the --output flag.
 
 ```
-!dreem track {base_name} --checkpoint ./models/pretrained-microscopy.ckpt --output ./results-dnn --video-type tif --crop-size 32
+!dreem track {base_name} --checkpoint ./models/pretrained-microscopy.ckpt --output ./results --video-type tif --crop-size {instance_diameter_px}
 ```
 
 ### Visualize the results
