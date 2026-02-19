@@ -35,7 +35,7 @@ Ensure `huggingface_hub` is installed (`pip install huggingface_hub`); the `hf` 
 Download a pretrained DREEM model (trained on mice, flies, zebrafish):
 
 ```bash
-hf download talmolab/animals-pretrained animals-pretrained.ckpt --local-dir=./models
+hf download talmolab/dreem-animals-pretrained animals-pretrained.ckpt --local-dir=./models
 ```
 
 ---
