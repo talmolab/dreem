@@ -201,9 +201,9 @@ class Config:
                     gt_path = os.path.join(dir_path, subdir, "TRA")
                     raw_img_path = os.path.join(dir_path, subdir.replace("_GT", ""))
                     # get filepaths for all tif files in gt_path
-                    gt_list.append(glob.glob(os.path.join(gt_path, "*.tif")))
+                    gt_list.append(glob.glob(os.path.join(gt_path, "*.tif*")))
                     # get filepaths for all tif files in raw_img_path
-                    raw_img_list.append(glob.glob(os.path.join(raw_img_path, "*.tif")))
+                    raw_img_list.append(glob.glob(os.path.join(raw_img_path, "*.tif*")))
                     man_track_file = glob.glob(os.path.join(gt_path, "man_track.txt"))
                     if len(man_track_file) > 0:
                         ctc_track_meta.append(man_track_file[0])
@@ -334,7 +334,7 @@ class Config:
                 dataset_params.update(overrides)
             return SleapDataset(**dataset_params)
 
-        elif self.labels_suffix == ".tif":
+        elif self.labels_suffix == ".tif" or self.labels_suffix == ".tiff":
             # for CTC datasets, pass in a list of gt and raw image directories, eaech of which contain tifs
             ctc_track_meta = None
             list_dir_path = self.data_dirs  # don't modify self.data_dirs

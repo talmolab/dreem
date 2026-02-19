@@ -35,7 +35,7 @@ Here we provide information and download links for datasets used for training an
 ## Animals
 
 ### `mice_btc`
-![mice_btc](assets/images/example.mice_hc.jpg)
+![mice_btc](assets/images/docs-dataset-btc.png){ width="400" }
 
 | Name          | `mice_btc` |
 |---------------|------------|
@@ -45,12 +45,12 @@ Here we provide information and download links for datasets used for training an
 | Num Animals   | 2 |
 | Frames        | ~1.05M |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/12x5Fgs9I9MujuqaB1cVG-PDgzXuaRdTQ) |
+| Credit        | Talmolab, Salk Institute for Biological Studies
 
 ---
 
 ### `mice_hc`
-![mice_hc](assets/images/example.mice_of.jpg)
-
+![mice_hc](assets/images/docs-dataset-mice-hc.png){ width="400" }
 | Name          | `mice_hc` |
 |---------------|-----------|
 | Description   | Pairs of mice (*Mus musculus*) in a home cage setting, imaged from above. Short clips extracted from longer social interaction recordings. Animals can be low contrast against the bedding background. |
@@ -59,11 +59,13 @@ Here we provide information and download links for datasets used for training an
 | Num Animals   | 2 |
 | Frames        | ~31K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1vTTM8LNT4cYqG8HpVmqJeQ67VgsXdzVY) |
+| Credit        | [Pereira, T. D. et al. SLEAP: A deep learning system for multi-animal pose
+tracking. Nat. Methods 19, 486–495 (2022).](https://www.nature.com/articles/s41592-022-01426-1)
 
 ---
 
 ### `slap2m`
-![slap2m](assets/images/example.gerbils.jpg)
+![slap2m](assets/images/docs-dataset-slap2m.png){ width="400" }
 
 | Name          | `slap2m` |
 |---------------|----------|
@@ -73,11 +75,12 @@ Here we provide information and download links for datasets used for training an
 | Num Animals   | 1–4 |
 | Frames        | ~294K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1Pgfg-W9uv9Xe39jK2Aj2rUpqERlycTU0) |
+| Credit        | Faulkner Lab, Princeton University
 
 ---
 
 ### `flies13`
-![flies13](assets/images/example.flies13.jpg)
+![flies13](assets/images/docs-dataset-flies.png){ width="400" }
 
 | Name          | `flies13` |
 |---------------|-----------|
@@ -87,11 +90,13 @@ Here we provide information and download links for datasets used for training an
 | Num Animals   | 2–8 |
 | Frames        | ~94K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1JpyktfS6Pr3yAYNS7QZ3wqKWO0araMmI) |
+| Credit        | [Pereira, T. D. et al. SLEAP: A deep learning system for multi-animal pose
+tracking. Nat. Methods 19, 486–495 (2022).](https://www.nature.com/articles/s41592-022-01426-1)
 
 ---
 
 ### `zebrafish10`
-![zebrafish10](assets/images/example.bees.jpg)
+![zebrafish10](assets/images/docs-dataset-zebrafish.png){ width="400" }
 
 | Name          | `zebrafish10` |
 |---------------|---------------|
@@ -101,13 +106,16 @@ Here we provide information and download links for datasets used for training an
 | Num Animals   | 10 |
 | Frames        | 27K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1hLxTgByAxkQA8gFDCpCALSgKb-O4VQcy) |
+| Credit        | [Romero-Ferrero, F., Bergomi, M. G., Hinz, R. C., Heras, F. J. H. & de Polavieja,
+G. G. idtracker.ai: tracking all individuals in small or large collectives of unmarked
+animals. Nat. Methods 16, 179–182 (2019)](https://www.nature.com/articles/s41592-018-0295-5)
 
 ---
 
 ## Microscopy
 
 ### `lysosomes`
-![lysosomes](assets/images/example.fly32.jpg)
+![lysosomes](assets/images/docs-dataset-lysosomes.png){ width="400" }
 
 | Name          | `lysosomes` |
 |---------------|-------------|
@@ -117,11 +125,12 @@ Here we provide information and download links for datasets used for training an
 | Num Objects   | 1–8 per frame |
 | Frames        | ~3.9K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1OVNifmkSE3O_KVWy1LxI2kEUCDpCWdca) |
+| Credit        | [ManorLab, University of California, San Diego](https://manorlab.ucsd.edu/)
 
 ---
 
 ### `dynamicnuclearnet`
-![dynamicnuclearnet](assets/images/example.mice_of.jpg)
+![dynamicnuclearnet](assets/images/docs-dataset-dynamic-nuclear-net.png){ width="400" }
 
 | Name          | `dynamicnuclearnet` |
 |---------------|---------------------|
@@ -131,11 +140,12 @@ Here we provide information and download links for datasets used for training an
 | Num Objects   | 3–249 per frame |
 | Frames        | ~6.7K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1XGG8Z56P0BeG80GYdOSrh5tUYrTnQykA) |
+| Credit        | [Schwartz, M. S. et al. Caliban: Accurate cell tracking and lineage construction in live-cell imaging experiments with deep learning. bioRxiv 803205 (2019).](https://doi.org/10.1101/803205)
 
 ---
 
 ### `motchallenge`
-![motchallenge](assets/images/example.bees.jpg)
+![motchallenge](assets/images/docs-dataset-motchallenge.png){ width="400" }
 
 | Name          | `motchallenge` |
 |---------------|--------------------|
@@ -145,11 +155,12 @@ Here we provide information and download links for datasets used for training an
 | Num Objects   | 0–117 per frame |
 | Frames        | ~80K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1Ua3ZC2gYbV2HukJaXfQI2TmUJTdFQxR5) |
+| Credit        | [Anjum, S. & Gurari, D. Ctmc: Cell tracking with mitosis detection dataset challenge 982–983 (2020).](https://openaccess.thecvf.com/content_CVPRW_2020/papers/w57/Anjum_CTMC_Cell_Tracking_With_Mitosis_Detection_Dataset_Challenge_CVPRW_2020_paper.pdf)
 
 ---
 
 ### `phase_contrast`
-![phase_contrast](assets/images/example.gerbils.jpg)
+![phase_contrast](assets/images/docs-dataset-phase-contrast.png){ width="400" }
 
 | Name          | `phase_contrast` |
 |---------------|---------------|
@@ -159,3 +170,5 @@ Here we provide information and download links for datasets used for training an
 | Num Objects   | 2–95 per frame |
 | Frames        | ~20K |
 | Download      | [Google Drive](https://drive.google.com/drive/folders/1sTTNtdOeYHkchptevMVAhoimd84UgoPm) |
+| Credit        | [Ker, D. F. E. et al. Phase contrast time-lapse microscopy datasets with automated
+and manual cell tracking annotations. Sci. Data 5, 180237 (2018)](https://pmc.ncbi.nlm.nih.gov/articles/PMC6233481/)
