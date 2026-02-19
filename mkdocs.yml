@@ -1,6 +1,7 @@
 site_name: DREEM documentation
 site_url: https://dreem.sleap.ai/
 repo_url: https://github.com/talmolab/dreem
+edit_uri: edit/main/docs/
 
 theme:
   name: material
@@ -46,6 +47,7 @@ theme:
     # - navigation.instant.preview
     - content.code.select
     - content.footnote.tooltips
+    - content.action.view
 
 plugins:
   - search
@@ -138,6 +140,7 @@ nav:
   - Overview: index.md
   - Installation: installation.md
   - Quickstart: quickstart.md
+  - Datasets: datasets.md
   - Live Visualizer: visualizer.md
   - Usage Guide: usage.md
   - Examples:

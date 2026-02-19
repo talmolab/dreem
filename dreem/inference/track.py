@@ -107,7 +107,7 @@ def track_ctc(
             for instance in frame.instances:
                 mask = instance.mask.cpu().numpy()
                 track_id = instance.pred_track_id.cpu().numpy().item()
-                mask = mask.astype(np.uint8)
+                mask = mask.astype(np.uint16)
                 mask[mask != 0] = track_id
                 frame_masks.append(mask)
 
@@ -120,7 +120,7 @@ def track_ctc(
                     _, height, width = img_shape
                 elif len(img_shape) == 2:
                     height, width = img_shape
-                frame_mask = np.zeros((height, width), dtype=np.uint8)
+                frame_mask = np.zeros((height, width), dtype=np.uint16)
 
             pred_imgs.append(frame_mask)
     pred_imgs = np.stack(pred_imgs)
