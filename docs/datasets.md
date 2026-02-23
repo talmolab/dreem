@@ -1,6 +1,6 @@
 # Datasets
 
-Here we provide information and download links for datasets used for training and evaluating DREEM across a range of tracking scenarios. Datasets are organized into two categories: **Animals** (behavioral tracking of whole organisms) and **Microscopy** (tracking of cells and subcellular structures). All datasets, including metadata, are available on [Google Drive](https://drive.google.com/drive/u/0/folders/0ACXbRsrn_M0JUk9PVA).
+Here we provide information and download links for datasets used for training and evaluating DREEM across a range of tracking scenarios. Datasets are organized into two categories: **Animals** (behavioral tracking of whole organisms) and **Microscopy** (tracking of cells and subcellular structures). All datasets, including metadata, are available on Google Drive. See below for links to individual datasets.
 
 !!! hint
 

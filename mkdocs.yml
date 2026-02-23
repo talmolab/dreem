@@ -141,11 +141,11 @@ nav:
   - Installation: installation.md
   - Quickstart: quickstart.md
   - Datasets: datasets.md
+  - Models: models.md
   - Live Visualizer: visualizer.md
   - Usage Guide: usage.md
   - Examples:
     - Overview: Examples/index.md
-    - Quickstart: quickstart.md
     - Microscopy: Examples/microscopy-demo.md
     - End-to-end: Examples/dreem-demo.md
   - Core API:
