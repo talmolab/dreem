@@ -343,6 +343,62 @@ eval_cmd = app.command(name="eval")(_create_inference_command("eval"))
 
 
 @app.command()
+def convert(
+    format: Annotated[
+        str, typer.Argument(help="Source format to convert from (e.g. 'trackmate')")
+    ],
+    labels: Annotated[
+        list[Path] | None,
+        typer.Option("--labels", "-l", help="Paths to label files (CSV/XLSX)"),
+    ] = None,
+    videos: Annotated[
+        list[Path] | None,
+        typer.Option("--videos", "-v", help="Paths to video files (TIF, ND2, etc.)"),
+    ] = None,
+    output: Annotated[
+        Path,
+        typer.Option("--output", "-o", help="Output directory for converted files"),
+    ] = Path("."),
+    to_npy: Annotated[
+        bool,
+        typer.Option("--to-npy", "-n", help="Convert TIF videos to .npy format"),
+    ] = False,
+    to_mp4: Annotated[
+        bool,
+        typer.Option("--to-mp4", "-m", help="Convert videos to .mp4 format"),
+    ] = False,
+) -> None:
+    """Convert external tracking formats to .slp files.
+
+    Usage: dreem convert trackmate -l labels1.csv -l labels2.csv -v video1.tif -v video2.tif
+    """
+    supported_formats = ["trackmate"]
+    if format not in supported_formats:
+        console.print(
+            f"[red]Error: Unknown format '{format}'. "
+            f"Supported formats: {', '.join(supported_formats)}[/red]"
+        )
+        raise typer.Exit(1)
+
+    if not labels or not videos:
+        console.print("[red]Error: Both --labels and --videos are required.[/red]")
+        raise typer.Exit(1)
+
+    if format == "trackmate":
+        from dreem.utils.convert import convert_trackmate
+
+        convert_trackmate(
+            label_files=[str(f) for f in labels],
+            vid_files=[str(f) for f in videos],
+            out_dir=str(output),
+            to_npy=to_npy,
+            to_mp4=to_mp4,
+        )
+
+    console.print("[green]Conversion complete.[/green]")
+
+
+@app.command()
 def train(
     train_dir: Annotated[Path, typer.Argument(help="Training data directory")],
     val_dir: Annotated[
