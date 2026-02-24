@@ -141,7 +141,7 @@ nav:
   - Installation: installation.md
   - Quickstart: quickstart.md
   - Datasets: datasets.md
-  - Models: models.md
+  - Models: models_pg.md
   - Live Visualizer: visualizer.md
   - Usage Guide: usage.md
   - Examples:
