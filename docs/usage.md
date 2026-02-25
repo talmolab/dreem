@@ -62,7 +62,7 @@ Good tracking results require accurate ground truth. Before training:
 1. Ensure **no identity switches** in your annotations
 2. Verify **detection accuracy** - crops are centered on each instance
 
-Use [`sleap-label`](https://sleap.ai/guides/proofreading.html) for proofreading. For microscopy data, you can [convert TrackMate output to SLEAP format](https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e) to use the SLEAP GUI.
+Use [`sleap-label`](https://sleap.ai/guides/proofreading.html) for proofreading. For microscopy data, you can convert TrackMate output to SLEAP format using `dreem convert` (see below) to use the SLEAP GUI.
 
 ---
 
@@ -195,6 +195,51 @@ This computes standard MOT metrics (MOTA, IDF1, ID switches) and saves results t
 
 ---
 
+## Converting External Formats
+
+Convert tracking data from external tools (e.g., TrackMate) to SLEAP `.slp` format:
+
+```bash
+dreem convert trackmate \
+    -l ./data/labels1.csv -l ./data/labels2.csv \
+    -v ./data/video1.tif -v ./data/video2.tif \
+    --output ./converted \
+    --to-mp4
+```
+
+### Required Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `FORMAT` | Source format to convert from (currently: `trackmate`) |
+| `--labels`, `-l` | Paths to label files (repeat for multiple files) |
+| `--videos`, `-v` | Paths to video files (repeat for multiple files) |
+
+### Common Options
+
+```bash
+dreem convert trackmate \
+    -l labels.csv \
+    -v video.tif \
+    --output ./converted \
+    --to-mp4  # convert TIF to MP4
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--output`, `-o` | `.` | Output directory for converted files |
+| `--to-mp4`, `-m` | - | Convert TIF/ND2 videos to `.mp4` format |
+| `--to-npy`, `-n` | - | Convert TIF videos to `.npy` format |
+
+### Output
+
+- `.slp` files with tracks and detections (one per video)
+- `.mp4` or `.npy` video files (if `--to-mp4` or `--to-npy` is set)
+
+1-indexed frame numbers from TrackMate are automatically converted to 0-indexed.
+
+---
+
 ## CLI Reference
 
 Get help for any command:
@@ -204,6 +249,7 @@ dreem --help
 dreem train --help
 dreem track --help
 dreem eval --help
+dreem convert --help
 ```
 
 ### Config Overrides

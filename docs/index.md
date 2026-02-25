@@ -58,7 +58,6 @@ Explore the Examples section for notebooks that walk you through the DREEM pipel
 ## Get Help
 
 - **Questions?** Open an issue on [GitHub](https://github.com/talmolab/dreem/issues).
-- **Contributions:** We welcome contributions! See our [Contributing Guide](#) for details (link to be added).
 
 
 <!-- ## Citing DREEM

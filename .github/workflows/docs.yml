@@ -12,6 +12,10 @@ on:
       - "mkdocs.yml"
       - ".github/workflows/docs.yml"
 
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: false
+
 jobs:
   docs:
     name: Docs
@@ -49,7 +53,9 @@ jobs:
         if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: uv run mike deploy --update-aliases --allow-empty --push "${{ github.event.release.tag_name }}" latest
+        run: |
+          uv run mike deploy --update-aliases --allow-empty --push "${{ github.event.release.tag_name }}" latest
+          uv run mike set-default latest --push
 
       - name: Build and upload docs (dev)
         if: ${{ github.event_name == 'push' }}
