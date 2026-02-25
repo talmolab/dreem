@@ -13,6 +13,7 @@ dreem --help
 | `dreem train` | Train a DREEM model |
 | `dreem track` | Run tracking inference (no ground truth) |
 | `dreem eval` | Evaluate tracking against ground truth |
+| `dreem convert` | Convert external tracking formats to `.slp` files |
 
 ---
 
@@ -146,6 +147,51 @@ dreem eval ./data/test \
 - `.slp` files with predicted tracks
 - `motmetrics.csv` with evaluation metrics
 - `.h5` file with detailed results
+
+---
+
+## Convert
+
+Convert tracking data from external formats to SLEAP `.slp` files.
+
+```bash
+dreem convert FORMAT --labels PATH --videos PATH [OPTIONS]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `FORMAT` | Yes | Source format to convert from (currently: `trackmate`) |
+| `--labels`, `-l` | Yes | Paths to label files — repeat for multiple (e.g., `-l file1.csv -l file2.csv`) |
+| `--videos`, `-v` | Yes | Paths to video files — repeat for multiple (e.g., `-v file1.tif -v file2.tif`) |
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--output`, `-o` | `.` | Output directory for converted files |
+| `--to-mp4`, `-m` | - | Convert TIF/ND2 videos to `.mp4` format |
+| `--to-npy`, `-n` | - | Convert TIF videos to `.npy` format |
+
+### Example
+
+```bash
+dreem convert trackmate \
+    -l ./data/labels1.csv \
+    -l ./data/labels2.csv \
+    -v ./data/video1.tif \
+    -v ./data/video2.tif \
+    --output ./converted \
+    --to-mp4
+```
+
+### Output
+
+- `.slp` files with tracks and detections (one per label/video pair)
+- `.mp4` or `.npy` video files (if `--to-mp4` or `--to-npy` is set)
+
+1-indexed frame numbers are automatically converted to 0-indexed.
 
 ---
 

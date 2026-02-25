@@ -54,11 +54,7 @@ def make_labels(video_path: str, trajectories_path: str) -> sio.Labels:
     traj["TRACK_ID"] = traj["TRACK_ID"].fillna(-1)
 
     if traj["FRAME"].min() == 1:
-        zero_index = input(
-            "Labels file seems to be 1 indexed. Would you like to 0 index it? (y/n) "
-        )
-        if "y" in zero_index.lower():
-            traj["FRAME"] = traj["FRAME"] - 1
+        traj["FRAME"] = traj["FRAME"] - 1
 
     skel = sio.Skeleton(nodes=["centroid"])
 
@@ -110,6 +106,14 @@ def tif2mp4(video_path: str, out_dir: str = ".", fps: int = 30) -> bool:
         True on success.
     """
     frames = imread(video_path)
+    # Normalize to uint8 if needed (e.g., 16-bit microscopy images)
+    if frames.dtype != np.uint8:
+        fmin = frames.min()
+        fmax = frames.max()
+        if fmax > fmin:
+            frames = ((frames - fmin) / (fmax - fmin) * 255).astype(np.uint8)
+        else:
+            frames = np.zeros_like(frames, dtype=np.uint8)
     with imageio.get_writer(
         f"{out_dir}/{Path(video_path).stem}.mp4", fps=fps, macro_block_size=1
     ) as writer:
@@ -131,9 +135,12 @@ def nd2mp4(video_path: str, out_dir: str = ".", fps: int = 30) -> bool:
     """
     from nd2reader import ND2Reader
 
-    with ND2Reader(video_path) as nd2, imageio.get_writer(
-        f"{out_dir}/{Path(video_path).stem}.mp4", fps=fps, macro_block_size=1
-    ) as mp4:
+    with (
+        ND2Reader(video_path) as nd2,
+        imageio.get_writer(
+            f"{out_dir}/{Path(video_path).stem}.mp4", fps=fps, macro_block_size=1
+        ) as mp4,
+    ):
         for frame in tqdm(nd2):
             mp4.append_data(frame)
 
