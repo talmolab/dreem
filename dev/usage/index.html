@@ -701,6 +701,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#converting-external-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Converting External Formats
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Converting External Formats">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-arguments_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required Arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-options_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cli-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3313,6 +3363,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#converting-external-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Converting External Formats
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Converting External Formats">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-arguments_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required Arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-options_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cli-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3432,7 +3532,7 @@
 <li>Ensure <strong>no identity switches</strong> in your annotations</li>
 <li>Verify <strong>detection accuracy</strong> - crops are centered on each instance</li>
 </ol>
-<p>Use <a href="https://sleap.ai/guides/proofreading.html"><code>sleap-label</code></a> for proofreading. For microscopy data, you can <a href="https://gist.github.com/aaprasad/5243be0785a40e9dafa1697ce2258e3e">convert TrackMate output to SLEAP format</a> to use the SLEAP GUI.</p>
+<p>Use <a href="https://sleap.ai/guides/proofreading.html"><code>sleap-label</code></a> for proofreading. For microscopy data, you can convert TrackMate output to SLEAP format using <code>dreem convert</code> (see below) to use the SLEAP GUI.</p>
 <hr />
 <h2 id="training">Training<a class="headerlink" href="#training" title="Permanent link">&para;</a></h2>
 <p>Train a model with <code>dreem train</code>:</p>
@@ -3639,19 +3739,91 @@
 <li><code>.h5</code> file with detailed results</li>
 </ul>
 <hr />
+<h2 id="converting-external-formats">Converting External Formats<a class="headerlink" href="#converting-external-formats" title="Permanent link">&para;</a></h2>
+<p>Convert tracking data from external tools (e.g., TrackMate) to SLEAP <code>.slp</code> format:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>dreem<span class="w"> </span>convert<span class="w"> </span>trackmate<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span>-l<span class="w"> </span>./data/labels1.csv<span class="w"> </span>-l<span class="w"> </span>./data/labels2.csv<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span>-v<span class="w"> </span>./data/video1.tif<span class="w"> </span>-v<span class="w"> </span>./data/video2.tif<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span>--output<span class="w"> </span>./converted<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span>--to-mp4
+</code></pre></div>
+<h3 id="required-arguments_2">Required Arguments<a class="headerlink" href="#required-arguments_2" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FORMAT</code></td>
+<td>Source format to convert from (currently: <code>trackmate</code>)</td>
+</tr>
+<tr>
+<td><code>--labels</code>, <code>-l</code></td>
+<td>Paths to label files (repeat for multiple files)</td>
+</tr>
+<tr>
+<td><code>--videos</code>, <code>-v</code></td>
+<td>Paths to video files (repeat for multiple files)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="common-options_2">Common Options<a class="headerlink" href="#common-options_2" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>dreem<span class="w"> </span>convert<span class="w"> </span>trackmate<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span>-l<span class="w"> </span>labels.csv<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span>-v<span class="w"> </span>video.tif<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span>--output<span class="w"> </span>./converted<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span>--to-mp4<span class="w">  </span><span class="c1"># convert TIF to MP4</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--output</code>, <code>-o</code></td>
+<td><code>.</code></td>
+<td>Output directory for converted files</td>
+</tr>
+<tr>
+<td><code>--to-mp4</code>, <code>-m</code></td>
+<td>-</td>
+<td>Convert TIF/ND2 videos to <code>.mp4</code> format</td>
+</tr>
+<tr>
+<td><code>--to-npy</code>, <code>-n</code></td>
+<td>-</td>
+<td>Convert TIF videos to <code>.npy</code> format</td>
+</tr>
+</tbody>
+</table>
+<h3 id="output_3">Output<a class="headerlink" href="#output_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>.slp</code> files with tracks and detections (one per video)</li>
+<li><code>.mp4</code> or <code>.npy</code> video files (if <code>--to-mp4</code> or <code>--to-npy</code> is set)</li>
+</ul>
+<p>1-indexed frame numbers from TrackMate are automatically converted to 0-indexed.</p>
+<hr />
 <h2 id="cli-reference">CLI Reference<a class="headerlink" href="#cli-reference" title="Permanent link">&para;</a></h2>
 <p>Get help for any command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>dreem<span class="w"> </span>--help
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>dreem<span class="w"> </span>train<span class="w"> </span>--help
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>dreem<span class="w"> </span>track<span class="w"> </span>--help
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>dreem<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--help
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>dreem<span class="w"> </span>--help
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>dreem<span class="w"> </span>train<span class="w"> </span>--help
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>dreem<span class="w"> </span>track<span class="w"> </span>--help
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>dreem<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--help
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>dreem<span class="w"> </span>convert<span class="w"> </span>--help
 </code></pre></div>
 <h3 id="config-overrides">Config Overrides<a class="headerlink" href="#config-overrides" title="Permanent link">&para;</a></h3>
 <p>Override individual config values with <code>--set</code>:</p>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>model.ckpt<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span>--set<span class="w"> </span>tracker.window_size<span class="o">=</span><span class="m">16</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span>--set<span class="w"> </span>tracker.decay_time<span class="o">=</span><span class="m">0</span>.9
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>model.ckpt<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span>--set<span class="w"> </span>tracker.window_size<span class="o">=</span><span class="m">16</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span>--set<span class="w"> </span>tracker.decay_time<span class="o">=</span><span class="m">0</span>.9
 </code></pre></div>
 For fine grained control, use a config file as mentioned above.</p>
 <hr />
