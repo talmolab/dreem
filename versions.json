@@ -8,15 +8,14 @@
     "version": "0.5.0",
     "title": "0.5.0",
     "aliases": [
+      "set-default",
       "latest"
     ]
   },
   {
     "version": "0.4",
     "title": "0.4",
-    "aliases": [
-      "set-default"
-    ]
+    "aliases": []
   },
   {
     "version": "0.2.3",
