@@ -204,6 +204,14 @@ def _create_inference_command(mode: str):
         max_dist: Annotated[
             float | None, typer.Option("--max-dist", "-md", help="Max center distance")
         ] = None,
+        max_dist_multiplier: Annotated[
+            float | None,
+            typer.Option(
+                "--max-dist-multiplier",
+                "-mdm",
+                help="Multiplier applied to the max-dist penalty (default: 1.0 if max_dist is provided)",
+            ),
+        ] = None,
         max_gap: Annotated[
             int | None, typer.Option("--max-gap", "-mg", help="Max frame gap")
         ] = None,
@@ -283,6 +291,7 @@ def _create_inference_command(mode: str):
             "dataset.test_dataset.dir.vid_suffix": f".{video_type}",
             "tracker.iou": iou_mode,
             "tracker.max_center_dist": max_dist,
+            "tracker.distance_penalty_multiplier": max_dist_multiplier,
             "tracker.overlap_thresh": overlap_thresh,
             "dataset.test_dataset.crop_size": crop_size,
             "dataset.test_dataset.max_detection_overlap": max_detection_overlap,
