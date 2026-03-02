@@ -144,4 +144,27 @@ This assumes you have the run the CellPose segmentation step. The output is a si
 ```
 
 ### Visualize the results
-To visualize the tracked tiff stacks, you can use tools like ImageJ, Fiji, or Napari plugins.
+
+Load the original images and the tracked segmentation masks from the output directory:
+
+```python
+images = tifffile.TiffSequence(os.path.join(data_path, "*.tif")).asarray().astype(np.uint16)
+labels = tifffile.TiffSequence(os.path.join(custom_segmented_path, "*.tif")).asarray().astype(np.uint16)
+```
+
+Then use an interactive slider to browse frames with track overlays:
+
+```python
+from ipywidgets import interact, IntSlider
+import matplotlib.pyplot as plt
+
+def browse(z=0):
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+    ax.imshow(images[z], cmap="gray")
+    masked = np.ma.masked_where(labels[z] == 0, labels[z])
+    ax.imshow(masked, cmap="tab20", alpha=0.6, interpolation="nearest")
+    ax.set_title(f"Z={z}")
+    plt.show()
+
+interact(browse, z=IntSlider(min=0, max=len(images)-1, step=1))
+```
