@@ -159,10 +159,14 @@ dreem track ./data/inference \
 | `--max-tracks` | Maximum number of tracks (set to number of animals/cells) |
 | `--confidence-threshold` | Flag low-confidence predictions for review |
 | `--max-dist` | Maximum center distance between frames |
+| `--max-dist-multiplier` | Penalty multiplier applied when center distance exceeds `--max-dist` |
 | `--max-gap` | Maximum frame gap for track continuity |
 | `--anchor` | Keypoint name to use as centroid (default: `centroid`) |
 | `--video-type` | Video file extension |
 | `--no-gpu` | Run on CPU |
+
+!!! tip "Using `--max-dist` to enforce distance or motion based constraints"
+    If you know the maximum distance the instances in your data can travel frame over frame, using `--max-dist` can help track them better. It penalizes matches that exceed the threshold you set. Using `--max-dist-multiplier` multiplies this distance penalty relative to the model's association scores, pushing tracking behavior closer to a pure distance-based tracker.
 
 ### Output
 

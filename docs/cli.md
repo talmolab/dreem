@@ -93,6 +93,7 @@ dreem track INPUT_DIR --checkpoint PATH --output DIR --crop-size SIZE [OPTIONS]
 | `--max-tracks`, `-mx` | - | Maximum number of tracks |
 | `--confidence-threshold`, `-conf` | `0` | Threshold for flagging low-confidence predictions. Results saved to the suggested frames section of the output .slp file. |
 | `--max-dist`, `-md` | - | Maximum center distance between frames |
+| `--max-dist-multiplier`, `-mdm` | - | Penalty multiplier applied when center distance exceeds `--max-dist` (default: `1.0`) |
 | `--max-gap`, `-mg` | - | Maximum frame gap for track continuity |
 | `--iou-mode`, `-iou` | `mult` | IOU mode (`mult` or `add`) |
 | `--overlap-thresh`, `-ot` | - | Overlap threshold |
