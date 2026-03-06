@@ -152,7 +152,7 @@ def track_sleap(
     if save_frame_meta:
         h5_path = os.path.join(
             outdir,
-            f"{dataloader.dataset.slp_files[0].split('/')[-1].replace('.slp', '')}_frame_meta.h5",
+            f"{Path(dataloader.dataset.slp_files[0]).stem}_frame_meta.h5",
         )
         if os.path.exists(h5_path):
             os.remove(h5_path)
@@ -218,7 +218,7 @@ def run(cfg: DictConfig) -> sio.Labels | np.ndarray:
         )
         dataloader = pred_cfg.get_dataloader(dataset, mode="test")
         if isinstance(vid_file, list):
-            save_file_name = vid_file[0].split("/")[-2]
+            save_file_name = Path(vid_file[0]).parent.name
         else:
             save_file_name = vid_file
 
