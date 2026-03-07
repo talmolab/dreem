@@ -187,14 +187,47 @@ def track_sleap(
     return pred_slp
 
 
-def run(cfg: DictConfig) -> sio.Labels | np.ndarray | None:
+def _summarize_preds(
+    preds: sio.Labels | np.ndarray,
+) -> dict:
+    """Extract summary statistics from predictions.
+
+    Args:
+        preds: Predictions (SLEAP Labels or numpy array for CTC)
+
+    Returns:
+        Dict with num_frames, num_tracks, and track_ids (as Python ints)
+    """
+    if isinstance(preds, np.ndarray):
+        track_ids = sorted(int(x) for x in set(np.unique(preds)) - {0})
+        num_frames = preds.shape[0]
+    else:
+        all_ids = set()
+        num_frames = len(preds)
+        for lf in preds:
+            for inst in lf.instances:
+                tid = inst.track.name if inst.track else None
+                if tid is not None:
+                    all_ids.add(int(tid))
+        track_ids = sorted(all_ids)
+    return {
+        "num_frames": num_frames,
+        "num_tracks": len(track_ids),
+        "track_ids": track_ids,
+    }
+
+
+def run(cfg: DictConfig) -> dict:
     """Run tracking inference based on config.
 
     Args:
         cfg: A DictConfig containing checkpoint path and data configuration
 
     Returns:
-        Predictions (SLEAP Labels or numpy array for CTC), or None if no data found
+        Dict with keys: "preds" (SLEAP Labels or numpy array), "output_paths"
+        (list of absolute path strings), and "summary" (dict with num_frames,
+        num_tracks, track_ids as Python ints). Returns empty results if no
+        data found.
     """
     pred_cfg = Config(cfg)
 
@@ -215,6 +248,7 @@ def run(cfg: DictConfig) -> sio.Labels | np.ndarray | None:
     os.makedirs(outdir, exist_ok=True)
 
     preds = None
+    output_paths = []
     for label_file, vid_file in zip(labels_files, vid_files):
         dataset = pred_cfg.get_dataset(
             label_files=[label_file],
@@ -243,6 +277,18 @@ def run(cfg: DictConfig) -> sio.Labels | np.ndarray | None:
             )
             preds.save(outpath)
 
-        print(f"Saved: {os.path.abspath(outpath)}")
+        outpath = os.path.abspath(outpath)
+        output_paths.append(outpath)
+        summary = _summarize_preds(preds)
+        print(f"Saved: {outpath}")
+        print(
+            f"  Frames: {summary['num_frames']}, "
+            f"Tracks: {summary['num_tracks']}, "
+            f"IDs: {summary['track_ids']}"
+        )
 
-    return preds
+    return {
+        "preds": preds,
+        "output_paths": output_paths,
+        "summary": summary if output_paths else {},
+    }

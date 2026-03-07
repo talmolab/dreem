@@ -159,16 +159,28 @@ plt.show()
 This assumes you have run the CellPose segmentation step above. The output is a single TIFF file with all frames, as well as the configuration used for tracking (for reproducibility).
 
 ```python
-gpu_flag = "--gpu" if torch.cuda.is_available() else "--no-gpu"
+from dreem.inference.track import run as run_tracking
+from omegaconf import OmegaConf
 
-!dreem track {dataset_dir} --checkpoint ./models/pretrained-microscopy.ckpt --output {results_path} --video-type tif --crop-size {instance_diameter_px} {gpu_flag}
+accelerator = "gpu" if torch.cuda.is_available() else "cpu"
 
-# Find the tracking output (most recent .dreem_inference.tif in results)
-import glob
+tracking_cfg = OmegaConf.load(os.path.join(os.path.dirname(__import__("dreem").__file__), "configs", "defaults", "track.yaml"))
+OmegaConf.update(tracking_cfg, "ckpt_path", os.path.abspath("./models/pretrained-microscopy.ckpt"))
+OmegaConf.update(tracking_cfg, "outdir", results_path)
+OmegaConf.update(tracking_cfg, "dataset.test_dataset.dir.path", dataset_dir)
+OmegaConf.update(tracking_cfg, "dataset.test_dataset.dir.vid_suffix", ".tif")
+OmegaConf.update(tracking_cfg, "dataset.test_dataset.dir.labels_suffix", ".tif")
+OmegaConf.update(tracking_cfg, "dataset.test_dataset.crop_size", instance_diameter_px)
+OmegaConf.update(tracking_cfg, "trainer.accelerator", accelerator)
 
-tracked_files = sorted(glob.glob(os.path.join(results_path, "*.dreem_inference.*.tif")))
-tracked_path = tracked_files[-1]
-print(f"\nResults saved to: {tracked_path}")
+result = run_tracking(tracking_cfg)
+
+tracked_path = result["output_paths"][-1]
+summary = result["summary"]
+print(f"\nTracked path:   {tracked_path}")
+print(f"Frames:         {summary['num_frames']}")
+print(f"Unique tracks:  {summary['num_tracks']}")
+print(f"Track IDs:      {summary['track_ids']}")
 ```
 
 ### Visualize the results
@@ -192,8 +204,10 @@ seg_files = sorted(
 )
 detections = np.stack([tifffile.imread(os.path.join(segmented_path, f)) for f in seg_files])
 
+# Use track IDs from run() summary (already Python ints)
+track_ids = summary["track_ids"]
+
 # Build a stable color map: one consistent color per track ID across all frames
-track_ids = sorted(set(np.unique(tracked)) - {0})
 rng = np.random.RandomState(42)
 base_colors = plt.cm.tab20(np.linspace(0, 1, 20))[:, :3]
 if len(track_ids) > 20:
@@ -207,12 +221,10 @@ for i, tid in enumerate(track_ids):
 # Precompute centroids per frame for trajectory trails
 centroids = defaultdict(dict)  # centroids[frame_idx][track_id] = (row, col)
 for t in range(tracked.shape[0]):
-    ids_in_frame = set(np.unique(tracked[t])) - {0}
-    if ids_in_frame:
-        labels = tracked[t]
-        for tid in ids_in_frame:
-            ys, xs = np.where(labels == tid)
-            centroids[t][tid] = (ys.mean(), xs.mean())
+    ids_in_frame = set(int(x) for x in np.unique(tracked[t])) - {0}
+    for tid in ids_in_frame:
+        ys, xs = np.where(tracked[t] == tid)
+        centroids[t][tid] = (ys.mean(), xs.mean())
 
 print(f"Frames: {len(images)}")
 print(f"Unique tracks: {len(track_ids)}")
