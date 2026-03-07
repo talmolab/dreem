@@ -3388,11 +3388,11 @@ for each instance in the video.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="sleap_io.Labels">Labels</span> | <span title="numpy.ndarray">ndarray</span></code>
+                  <code><span title="sleap_io.Labels">Labels</span> | <span title="numpy.ndarray">ndarray</span> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Predictions (SLEAP Labels or numpy array for CTC)</p>
+                <p>Predictions (SLEAP Labels or numpy array for CTC), or None if no data found</p>
               </div>
             </td>
           </tr>
@@ -3402,14 +3402,14 @@ for each instance in the video.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>dreem/inference/track.py</code></summary>
-              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-190" name="__codelineno-0-190"></a><a href="#__codelineno-0-190"><span class="linenos" data-linenos="190 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">DictConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sio</span><span class="o">.</span><span class="n">Labels</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+              <div class="highlight"><pre><span></span><code><a id="__codelineno-0-190" name="__codelineno-0-190"></a><a href="#__codelineno-0-190"><span class="linenos" data-linenos="190 "></span></a><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">DictConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sio</span><span class="o">.</span><span class="n">Labels</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-191" name="__codelineno-0-191"></a><a href="#__codelineno-0-191"><span class="linenos" data-linenos="191 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run tracking inference based on config.</span>
 <a id="__codelineno-0-192" name="__codelineno-0-192"></a><a href="#__codelineno-0-192"><span class="linenos" data-linenos="192 "></span></a>
 <a id="__codelineno-0-193" name="__codelineno-0-193"></a><a href="#__codelineno-0-193"><span class="linenos" data-linenos="193 "></span></a><span class="sd">    Args:</span>
 <a id="__codelineno-0-194" name="__codelineno-0-194"></a><a href="#__codelineno-0-194"><span class="linenos" data-linenos="194 "></span></a><span class="sd">        cfg: A DictConfig containing checkpoint path and data configuration</span>
 <a id="__codelineno-0-195" name="__codelineno-0-195"></a><a href="#__codelineno-0-195"><span class="linenos" data-linenos="195 "></span></a>
 <a id="__codelineno-0-196" name="__codelineno-0-196"></a><a href="#__codelineno-0-196"><span class="linenos" data-linenos="196 "></span></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-197" name="__codelineno-0-197"></a><a href="#__codelineno-0-197"><span class="linenos" data-linenos="197 "></span></a><span class="sd">        Predictions (SLEAP Labels or numpy array for CTC)</span>
+<a id="__codelineno-0-197" name="__codelineno-0-197"></a><a href="#__codelineno-0-197"><span class="linenos" data-linenos="197 "></span></a><span class="sd">        Predictions (SLEAP Labels or numpy array for CTC), or None if no data found</span>
 <a id="__codelineno-0-198" name="__codelineno-0-198"></a><a href="#__codelineno-0-198"><span class="linenos" data-linenos="198 "></span></a><span class="sd">    &quot;&quot;&quot;</span>
 <a id="__codelineno-0-199" name="__codelineno-0-199"></a><a href="#__codelineno-0-199"><span class="linenos" data-linenos="199 "></span></a>    <span class="n">pred_cfg</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 <a id="__codelineno-0-200" name="__codelineno-0-200"></a><a href="#__codelineno-0-200"><span class="linenos" data-linenos="200 "></span></a>
