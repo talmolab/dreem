@@ -173,28 +173,129 @@ print(f"\nResults saved to: {tracked_path}")
 
 ### Visualize the results
 
-Load the original images and the tracked output:
+Load the raw images, detection masks, and tracked output, then browse interactively.
+
+The viewer shows three panels:
+- **Raw image** — original microscopy frame
+- **Detections** — CellPose segmentation masks (untracked)
+- **Tracked** — DREEM identity assignments with ID labels and trajectory trails
 
 ```python
+from collections import defaultdict
+
+# Load raw images, detection masks, and tracked output
 images = tifffile.TiffSequence(os.path.join(data_path, "*.tif")).asarray().astype(np.uint16)
 tracked = tifffile.imread(tracked_path).astype(np.uint16)
+
+seg_files = sorted(
+    f for f in os.listdir(segmented_path) if f.endswith(".tif") or f.endswith(".tiff")
+)
+detections = np.stack([tifffile.imread(os.path.join(segmented_path, f)) for f in seg_files])
+
+# Build a stable color map: one consistent color per track ID across all frames
+track_ids = sorted(set(np.unique(tracked)) - {0})
+rng = np.random.RandomState(42)
+base_colors = plt.cm.tab20(np.linspace(0, 1, 20))[:, :3]
+if len(track_ids) > 20:
+    extra = plt.cm.tab20b(np.linspace(0, 1, 20))[:, :3]
+    base_colors = np.vstack([base_colors, extra])
+shuffled_idx = rng.permutation(len(base_colors))
+id_to_color = {}
+for i, tid in enumerate(track_ids):
+    id_to_color[tid] = base_colors[shuffled_idx[i % len(base_colors)]]
+
+# Precompute centroids per frame for trajectory trails
+centroids = defaultdict(dict)  # centroids[frame_idx][track_id] = (row, col)
+for t in range(tracked.shape[0]):
+    ids_in_frame = set(np.unique(tracked[t])) - {0}
+    if ids_in_frame:
+        labels = tracked[t]
+        for tid in ids_in_frame:
+            ys, xs = np.where(labels == tid)
+            centroids[t][tid] = (ys.mean(), xs.mean())
+
+print(f"Frames: {len(images)}")
+print(f"Unique tracks: {len(track_ids)}")
+print(f"Track IDs: {track_ids}")
 ```
 
-Then use an interactive slider to browse frames with tracked identity overlays:
+Then use an interactive slider to browse frames with the three-panel view:
 
 ```python
-import matplotlib.pyplot as plt
 from ipywidgets import IntSlider, interact
+
+TRAIL_LENGTH = 10  # number of past frames to show trajectory trails
+
+
+def colorize_masks(mask_frame, color_map):
+    """Convert a label mask to an RGBA image using a color map."""
+    h, w = mask_frame.shape
+    rgba = np.zeros((h, w, 4), dtype=np.float32)
+    for tid in set(np.unique(mask_frame)) - {0}:
+        color = color_map.get(tid, [0.5, 0.5, 0.5])
+        region = mask_frame == tid
+        rgba[region, :3] = color
+        rgba[region, 3] = 0.6
+    return rgba
 
 
 def browse(z=0):
-    """Browse frames with tracked identity overlay."""
-    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-    ax.imshow(images[z], cmap="gray")
-    masked = np.ma.masked_where(tracked[z] == 0, tracked[z])
-    ax.imshow(masked, cmap="tab20", alpha=0.6, interpolation="nearest")
-    ax.set_title(f"Frame {z}")
+    """Browse frames: raw image, detection masks, and tracked identities."""
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 6))
+
+    # Panel 1: Raw image
+    ax1.imshow(images[z], cmap="gray")
+    ax1.set_title("Raw Image")
+    ax1.axis("off")
+
+    # Panel 2: Detection masks (untracked)
+    ax2.imshow(images[z], cmap="gray")
+    det_mask = detections[z]
+    det_rgba = np.zeros((*det_mask.shape, 4), dtype=np.float32)
+    det_ids = set(np.unique(det_mask)) - {0}
+    det_colors = plt.cm.Set3(np.linspace(0, 1, max(len(det_ids), 1)))
+    for i, did in enumerate(sorted(det_ids)):
+        region = det_mask == did
+        det_rgba[region, :3] = det_colors[i % len(det_colors)][:3]
+        det_rgba[region, 3] = 0.5
+    ax2.imshow(det_rgba, interpolation="nearest")
+    ax2.set_title(f"Detections ({len(det_ids)} cells)")
+    ax2.axis("off")
+
+    # Panel 3: Tracked identities with labels and trails
+    ax3.imshow(images[z], cmap="gray")
+    tracked_rgba = colorize_masks(tracked[z], id_to_color)
+    ax3.imshow(tracked_rgba, interpolation="nearest")
+
+    # Draw centroid labels and trajectory trails
+    for tid, (cy, cx) in centroids[z].items():
+        color = id_to_color.get(tid, [0.5, 0.5, 0.5])
+
+        # Trail: connect centroids from recent frames
+        trail_x, trail_y = [], []
+        for prev in range(max(0, z - TRAIL_LENGTH), z + 1):
+            if tid in centroids[prev]:
+                py, px = centroids[prev][tid]
+                trail_x.append(px)
+                trail_y.append(py)
+        if len(trail_x) > 1:
+            ax3.plot(trail_x, trail_y, color=color, linewidth=1.5, alpha=0.8)
+
+        # ID label at centroid
+        ax3.text(
+            cx, cy, str(tid),
+            color="white", fontsize=7, fontweight="bold",
+            ha="center", va="center",
+            bbox=dict(boxstyle="round,pad=0.15", facecolor=color, alpha=0.7, edgecolor="none"),
+        )
+
+    ids_in_frame = set(np.unique(tracked[z])) - {0}
+    ax3.set_title(f"Tracked ({len(ids_in_frame)} cells, {len(track_ids)} total tracks)")
+    ax3.axis("off")
+
+    plt.tight_layout()
     plt.show()
 
-interact(browse, z=IntSlider(min=0, max=len(images)-1, step=1))
+
+interact(browse, z=IntSlider(min=0, max=len(images) - 1, step=1, description="Frame:"))
 ```
