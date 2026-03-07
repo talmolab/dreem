@@ -161,19 +161,24 @@ This assumes you have run the CellPose segmentation step above. The output is a 
 ```python
 !dreem track {dataset_dir} --checkpoint ./models/pretrained-microscopy.ckpt --output {results_path} --video-type tif --crop-size {instance_diameter_px}
 
-print(f"\nResults saved to: {results_path}")
+# Find the tracking output (most recent .dreem_inference.tif in results)
+import glob
+
+tracked_files = sorted(glob.glob(os.path.join(results_path, "*.dreem_inference.*.tif")))
+tracked_path = tracked_files[-1]
+print(f"\nResults saved to: {tracked_path}")
 ```
 
 ### Visualize the results
 
-Load the original images and the tracked segmentation masks from the output directory:
+Load the original images and the tracked output:
 
 ```python
 images = tifffile.TiffSequence(os.path.join(data_path, "*.tif")).asarray().astype(np.uint16)
-labels = tifffile.TiffSequence(os.path.join(segmented_path, "*.tif")).asarray().astype(np.uint16)
+tracked = tifffile.imread(tracked_path).astype(np.uint16)
 ```
 
-Then use an interactive slider to browse frames with track overlays:
+Then use an interactive slider to browse frames with tracked identity overlays:
 
 ```python
 import matplotlib.pyplot as plt
@@ -181,12 +186,12 @@ from ipywidgets import IntSlider, interact
 
 
 def browse(z=0):
-    """Browse frames with segmentation overlay."""
+    """Browse frames with tracked identity overlay."""
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.imshow(images[z], cmap="gray")
-    masked = np.ma.masked_where(labels[z] == 0, labels[z])
+    masked = np.ma.masked_where(tracked[z] == 0, tracked[z])
     ax.imshow(masked, cmap="tab20", alpha=0.6, interpolation="nearest")
-    ax.set_title(f"Z={z}")
+    ax.set_title(f"Frame {z}")
     plt.show()
 
 interact(browse, z=IntSlider(min=0, max=len(images)-1, step=1))
