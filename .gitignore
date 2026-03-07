@@ -157,6 +157,7 @@ site/
 AGENTS.md
 agents/
 .cursor/
+.claude/settings.local.json
 run_tracker.py
 run_trainer.py
 

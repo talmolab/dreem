@@ -64,30 +64,30 @@ Skip this cell if you already have a directory of individual TIFF frames. If you
 ```python
 input_path = "./data/your_video.mp4"  # <-- update this to your uploaded file
 
-base = os.path.splitext(os.path.basename(input_path))[0]
-data_path = os.path.abspath(f"./data/{base}/{base}")
-os.makedirs(data_path, exist_ok=True)
-
-# Detect file type and convert to individual TIFF frames
-ext = os.path.splitext(input_path)[1].lower()
-
-if ext in (".tif", ".tiff"):
-    # Multi-page TIFF stack
-    stack = tifffile.imread(input_path)
-    if stack.ndim == 2:
-        raise ValueError("Input TIFF is a single frame, not a stack.")
-    for i in range(stack.shape[0]):
-        tifffile.imwrite(os.path.join(data_path, f"frame_{i:05d}.tif"), stack[i])
-    print(f"Extracted {stack.shape[0]} frames from TIFF stack to: {data_path}")
-elif ext in (".avi", ".mp4"):
-    # Video file
-    video = sio.load_video(input_path)
-    for i, frame in enumerate(video):
-        frame = frame[..., 0] if frame.ndim == 3 else frame
-        tifffile.imwrite(os.path.join(data_path, f"frame_{i:05d}.tif"), frame)
-    print(f"Extracted {len(video)} frames from video to: {data_path}")
+if not os.path.exists(input_path):
+    print(f"Skipping: {input_path} not found. Using sample data from Option 2.")
 else:
-    raise ValueError(f"Unsupported file type: {ext}. Use .tif, .tiff, .avi, or .mp4")
+    base = os.path.splitext(os.path.basename(input_path))[0]
+    data_path = os.path.abspath(f"./data/{base}/{base}")
+    os.makedirs(data_path, exist_ok=True)
+
+    ext = os.path.splitext(input_path)[1].lower()
+
+    if ext in (".tif", ".tiff"):
+        stack = tifffile.imread(input_path)
+        if stack.ndim == 2:
+            raise ValueError("Input TIFF is a single frame, not a stack.")
+        for i in range(stack.shape[0]):
+            tifffile.imwrite(os.path.join(data_path, f"frame_{i:05d}.tif"), stack[i])
+        print(f"Extracted {stack.shape[0]} frames from TIFF stack to: {data_path}")
+    elif ext in (".avi", ".mp4"):
+        video = sio.load_video(input_path)
+        for i, frame in enumerate(video):
+            frame = frame[..., 0] if frame.ndim == 3 else frame
+            tifffile.imwrite(os.path.join(data_path, f"frame_{i:05d}.tif"), frame)
+        print(f"Extracted {len(video)} frames from video to: {data_path}")
+    else:
+        raise ValueError(f"Unsupported file type: {ext}. Use .tif, .tiff, .avi, or .mp4")
 ```
 
 ### Option 2: Use Sample Data
