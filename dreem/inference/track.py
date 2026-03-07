@@ -187,14 +187,14 @@ def track_sleap(
     return pred_slp
 
 
-def run(cfg: DictConfig) -> sio.Labels | np.ndarray:
+def run(cfg: DictConfig) -> sio.Labels | np.ndarray | None:
     """Run tracking inference based on config.
 
     Args:
         cfg: A DictConfig containing checkpoint path and data configuration
 
     Returns:
-        Predictions (SLEAP Labels or numpy array for CTC)
+        Predictions (SLEAP Labels or numpy array for CTC), or None if no data found
     """
     pred_cfg = Config(cfg)
 

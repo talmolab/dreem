@@ -159,7 +159,9 @@ plt.show()
 This assumes you have run the CellPose segmentation step above. The output is a single TIFF file with all frames, as well as the configuration used for tracking (for reproducibility).
 
 ```python
-!dreem track {dataset_dir} --checkpoint ./models/pretrained-microscopy.ckpt --output {results_path} --video-type tif --crop-size {instance_diameter_px}
+gpu_flag = "--gpu" if torch.cuda.is_available() else "--no-gpu"
+
+!dreem track {dataset_dir} --checkpoint ./models/pretrained-microscopy.ckpt --output {results_path} --video-type tif --crop-size {instance_diameter_px} {gpu_flag}
 
 # Find the tracking output (most recent .dreem_inference.tif in results)
 import glob
