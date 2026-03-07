@@ -59,13 +59,19 @@ Supported input formats:
 
 #### Convert a video or TIFF stack to individual TIFF frames
 
-Skip this cell if you already have a directory of individual TIFF frames. If you uploaded a `.avi`, `.mp4`, or single multi-page `.tif` file, set `input_path` below and run the cell.
+Skip this cell if you already have a directory of individual TIFF frames. Set `input_path` in the cell below, then run the conversion cell.
 
 ```python
-input_path = "./data/your_video.mp4"  # <-- update this to your uploaded file
+# input_path = "./data/my_video.mp4"           # video file (.avi, .mp4)
+# input_path = "./data/my_stack.tif"            # multi-page TIFF stack
+input_path = None
+```
 
-if not os.path.exists(input_path):
-    print(f"Skipping: {input_path} not found. Using sample data from Option 2.")
+```python
+if input_path is None or not os.path.exists(input_path):
+    if input_path is not None:
+        print(f"Skipping: {input_path} not found.")
+    print("Using sample data from Option 2.")
 else:
     base = os.path.splitext(os.path.basename(input_path))[0]
     data_path = os.path.abspath(f"./data/{base}/{base}")
