@@ -159,6 +159,8 @@ plt.show()
 This assumes you have run the CellPose segmentation step above. The output is a single TIFF file with all frames, as well as the configuration used for tracking (for reproducibility).
 
 ```python
+import glob
+
 from dreem.inference.track import run as run_tracking
 from omegaconf import OmegaConf
 
@@ -175,8 +177,18 @@ OmegaConf.update(tracking_cfg, "trainer.accelerator", accelerator)
 
 result = run_tracking(tracking_cfg)
 
-tracked_path = result["output_paths"][-1]
-summary = result["summary"]
+# Extract output path and summary from structured result
+if isinstance(result, dict):
+    tracked_path = result["output_paths"][-1]
+    summary = result["summary"]
+else:
+    # Fallback for older dreem versions that return preds directly
+    tracked_files = sorted(glob.glob(os.path.join(results_path, "*.dreem_inference.*.tif")))
+    tracked_path = tracked_files[-1]
+    tracked_data = tifffile.imread(tracked_path)
+    track_ids_arr = sorted(set(int(x) for x in np.unique(tracked_data)) - {0})
+    summary = {"num_frames": tracked_data.shape[0], "num_tracks": len(track_ids_arr), "track_ids": track_ids_arr}
+
 print(f"\nTracked path:   {tracked_path}")
 print(f"Frames:         {summary['num_frames']}")
 print(f"Unique tracks:  {summary['num_tracks']}")
