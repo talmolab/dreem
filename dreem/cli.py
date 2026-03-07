@@ -327,8 +327,6 @@ def _create_inference_command(mode: str):
             from dreem.inference.track import run as run_tracking
 
             run_tracking(cfg)
-            outdir = cfg.outdir if "outdir" in cfg else "./results"
-            console.print(f"[green]Results saved to {outdir}[/green]")
 
         else:
             from dreem.inference.eval import run as run_eval

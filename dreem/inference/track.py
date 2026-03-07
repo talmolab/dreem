@@ -237,5 +237,6 @@ def run(cfg: DictConfig) -> sio.Labels | np.ndarray:
             )
             preds.save(outpath)
 
-    logger.info(f"Results saved to {outdir}")
+        print(f"Saved: {os.path.abspath(outpath)}")
+
     return preds
