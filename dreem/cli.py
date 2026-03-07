@@ -16,13 +16,13 @@ logging.basicConfig(
     format="%(levelname)s - %(message)s",
 )
 
-import typer
-from omegaconf import DictConfig, OmegaConf
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
+import typer  # noqa: E402
+from omegaconf import DictConfig, OmegaConf  # noqa: E402
+from rich.console import Console  # noqa: E402
+from rich.panel import Panel  # noqa: E402
+from rich.table import Table  # noqa: E402
 
-from dreem._version import __version__
+from dreem._version import __version__  # noqa: E402
 
 app = typer.Typer(
     name="dreem",
@@ -34,12 +34,14 @@ logger = logging.getLogger("dreem.cli")
 
 
 def version_callback(value: bool) -> None:
+    """Print version and exit."""
     if value:
         console.print(f"dreem {__version__}")
         raise typer.Exit()
 
 
 def get_timestamp() -> str:
+    """Get current timestamp string."""
     return datetime.now().strftime("%m-%d-%Y-%H-%M-%S")
 
 
@@ -514,7 +516,6 @@ def train(
         "logging.name": run_name,
         "logging.logger_type": logger,
         "trainer.accelerator": "cpu" if gpu is False else "gpu",
-        "logging.name": run_name,
     }
 
     cfg = build_config("train", config, set_, **cli_overrides)

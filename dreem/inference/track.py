@@ -1,6 +1,12 @@
 """API for running tracking inference."""
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pandas as pd
 import os
 from datetime import datetime
 from pathlib import Path
@@ -46,7 +52,7 @@ def get_timestamp() -> str:
 
 def export_trajectories(
     frames_pred: list[Frame], save_path: str | None = None
-) -> "pd.DataFrame":
+) -> pd.DataFrame:
     """Convert trajectories to data frame and save as .csv.
 
     Args:
