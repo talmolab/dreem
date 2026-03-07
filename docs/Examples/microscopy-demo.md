@@ -44,78 +44,61 @@ model_path = hf_hub_download(
 
 ## Data
 
-### Option 1: Upload Your Own Data
+Set `data_path` below to point to your data. Supported formats:
 
-Upload your files directly using the **Colab file browser**: click the folder icon in the left sidebar, navigate into `./data/`, and drag and drop your files in.
+- **Directory of TIFFs** (default): Set `data_path` to the folder containing individual `.tif` frame files.
+- **TIFF stack**: Set `data_path` to a single multi-page `.tif` file — it will be split into individual frames automatically.
+- **Video**: Set `data_path` to a `.mp4` or `.avi` file — frames will be extracted automatically.
 
-Supported input formats:
-
-- **TIFF directory**: A folder of individual TIFF frame files. Upload into `./data/<your_folder_name>/<video_name>/`.
-- **TIFF stack**: A single multi-page TIFF file. Upload to `./data/` and set `data_path` to the file path.
-- **Video** (`.avi`, `.mp4`): Upload to `./data/`, then run the video conversion cell below.
-
-> If you do not have your own data, skip ahead to **Option 2** to download our sample dataset.
-
-
-#### Convert a video or TIFF stack to individual TIFF frames
-
-Skip this cell if you already have a directory of individual TIFF frames. Set `input_path` in the cell below, then run the conversion cell.
+Leave `data_path = None` to download and use our sample dataset (**DynamicNuclearNet** — 42 frames of fluorescent cell nuclei, credit: [Van Valen Lab](https://doi.org/10.1101/803205)).
 
 ```python
-# input_path = "./data/my_video.mp4"           # video file (.avi, .mp4)
-# input_path = "./data/my_stack.tif"            # multi-page TIFF stack
-input_path = None
+# data_path = "./data/my_folder/my_tiffs"       # directory of individual .tif frames
+# data_path = "./data/my_stack.tif"              # multi-page TIFF stack
+# data_path = "./data/my_video.mp4"              # video file (.avi, .mp4)
+data_path = None                                  # None = download sample dataset
 ```
 
 ```python
-if input_path is None or not os.path.exists(input_path):
-    if input_path is not None:
-        print(f"Skipping: {input_path} not found.")
-    print("Using sample data from Option 2.")
-else:
-    base = os.path.splitext(os.path.basename(input_path))[0]
-    data_path = os.path.abspath(f"./data/{base}/{base}")
-    os.makedirs(data_path, exist_ok=True)
+if data_path is None:
+    # Download sample dataset
+    from huggingface_hub import snapshot_download
 
-    ext = os.path.splitext(input_path)[1].lower()
+    snapshot_download(
+        repo_id="talmolab/microscopy-demo",
+        repo_type="dataset",
+        local_dir="./data",
+    )
+    data_path = os.path.abspath("./data/dynamicnuclearnet/test_1")
+    print(f"Downloaded sample data to: {data_path}")
+else:
+    data_path = os.path.abspath(data_path)
+
+# If data_path is a file (video or TIFF stack), convert to a directory of TIFFs
+if os.path.isfile(data_path):
+    ext = os.path.splitext(data_path)[1].lower()
+    base = os.path.splitext(os.path.basename(data_path))[0]
+    tiff_dir = os.path.join(os.path.dirname(data_path), base, base)
+    os.makedirs(tiff_dir, exist_ok=True)
 
     if ext in (".tif", ".tiff"):
-        stack = tifffile.imread(input_path)
+        stack = tifffile.imread(data_path)
         if stack.ndim == 2:
             raise ValueError("Input TIFF is a single frame, not a stack.")
         for i in range(stack.shape[0]):
-            tifffile.imwrite(os.path.join(data_path, f"frame_{i:05d}.tif"), stack[i])
-        print(f"Extracted {stack.shape[0]} frames from TIFF stack to: {data_path}")
+            tifffile.imwrite(os.path.join(tiff_dir, f"frame_{i:05d}.tif"), stack[i])
+        print(f"Extracted {stack.shape[0]} frames from TIFF stack to: {tiff_dir}")
     elif ext in (".avi", ".mp4"):
-        video = sio.load_video(input_path)
+        video = sio.load_video(data_path)
         for i, frame in enumerate(video):
             frame = frame[..., 0] if frame.ndim == 3 else frame
-            tifffile.imwrite(os.path.join(data_path, f"frame_{i:05d}.tif"), frame)
-        print(f"Extracted {len(video)} frames from video to: {data_path}")
+            tifffile.imwrite(os.path.join(tiff_dir, f"frame_{i:05d}.tif"), frame)
+        print(f"Extracted {len(video)} frames from video to: {tiff_dir}")
     else:
         raise ValueError(f"Unsupported file type: {ext}. Use .tif, .tiff, .avi, or .mp4")
-```
+    data_path = tiff_dir
 
-### Option 2: Use Sample Data
-
-If you don't have your own data, run the cell below to download our sample microscopy dataset from HuggingFace. The download includes:
-
-- **DynamicNuclearNet** — cell nuclei imaged with fluorescence microscopy. A single tiff stack of 42 frames. Data credit to Van Valen Lab (https://doi.org/10.1101/803205)
-
-```python
-!hf download talmolab/microscopy-demo --repo-type dataset --local-dir ./data
-```
-
-## Detection
-
-Here we use CellPose to create segmentation masks for our instances.
-
-Update `data_path` below to point to the directory containing your individual TIFF frame files. If you are using the sample data from Option 2, the default path is already correct.
-
-```python
-data_path = os.path.abspath("./data/dynamicnuclearnet/test_1")  # <-- update if using your own data
-
-# Derive paths from data_path
+# Derive all paths from data_path
 dataset_dir = os.path.dirname(data_path)
 segmented_path = os.path.join(dataset_dir, os.path.basename(data_path) + "_GT", "TRA")
 results_path = os.path.abspath("./results")
@@ -124,6 +107,10 @@ print(f"Data path:      {data_path}")
 print(f"Segmented path: {segmented_path}")
 print(f"Results path:   {results_path}")
 ```
+
+## Detection
+
+Here we use CellPose to create segmentation masks for our instances.
 
 Set the approximate diameter (in pixels) of the instances you want to segment:
 
