@@ -187,7 +187,7 @@ convention = "google"
 
 [tool.codespell]
 skip = "*.po,*.ts,./docs/_build,./docs/venv,./site,*.ipynb,.git,__pycache__,*.csv"
-ignore-words-list = "te,sleeap,thinc,mot,MOT"
+ignore-words-list = "te,sleeap,thinc,mot,MOT,ines"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
