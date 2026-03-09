@@ -36,7 +36,8 @@ dependencies = [
     # Configuration
     "hydra-core",
     # Data I/O
-    "sleap-io",
+    "sleap-io[all]>=0.6.5,<0.7.0",
+    # "sleap-io[all] @ file:///${PROJECT_ROOT}/../sleap-io",  # dev: editable local install
     # Visualization
     "matplotlib",
     "seaborn",
