@@ -64,9 +64,7 @@ def _get_ctc_paths_from_dir(dir_path: str):
             gt_path = os.path.join(dir_path, subdir, "TRA")
             raw_img_path = os.path.join(dir_path, subdir.replace("_GT", ""))
             gt_list.append(sorted(glob.glob(os.path.join(gt_path, "*.tif*"))))
-            raw_img_list.append(
-                sorted(glob.glob(os.path.join(raw_img_path, "*.tif*")))
-            )
+            raw_img_list.append(sorted(glob.glob(os.path.join(raw_img_path, "*.tif*"))))
     return gt_list, raw_img_list
 
 
@@ -169,9 +167,7 @@ class TestGlobOrdering:
             # Method 3: Dataset ordering (how tracked output would be ordered)
             gt_list, _ = _get_ctc_paths_from_dir(tmp)
             dataset_gt_files = gt_list[0]
-            tracked_equiv = np.stack(
-                [tifffile.imread(f) for f in dataset_gt_files]
-            )
+            tracked_equiv = np.stack([tifffile.imread(f) for f in dataset_gt_files])
 
             # All three should match frame-for-frame
             for z in range(n_frames):
@@ -211,9 +207,7 @@ class TestGlobOrdering:
 
             # Load masks in both orders
             sorted_masks = np.stack([tifffile.imread(f) for f in sorted_files])
-            unsorted_masks = np.stack(
-                [tifffile.imread(f) for f in unsorted_files]
-            )
+            unsorted_masks = np.stack([tifffile.imread(f) for f in unsorted_files])
 
             # Unsorted should NOT match sorted (proving unsorted glob causes mismatch)
             assert not np.array_equal(sorted_masks, unsorted_masks), (
@@ -223,9 +217,7 @@ class TestGlobOrdering:
 
             # Re-sorting the shuffled files should restore correct order
             resorted_files = sorted(unsorted_files)
-            resorted_masks = np.stack(
-                [tifffile.imread(f) for f in resorted_files]
-            )
+            resorted_masks = np.stack([tifffile.imread(f) for f in resorted_files])
             assert np.array_equal(sorted_masks, resorted_masks), (
                 "Re-sorting the shuffled files should restore correct order"
             )

@@ -203,7 +203,9 @@ class Config:
                     # get filepaths for all tif files in gt_path
                     gt_list.append(sorted(glob.glob(os.path.join(gt_path, "*.tif*"))))
                     # get filepaths for all tif files in raw_img_path
-                    raw_img_list.append(sorted(glob.glob(os.path.join(raw_img_path, "*.tif*"))))
+                    raw_img_list.append(
+                        sorted(glob.glob(os.path.join(raw_img_path, "*.tif*")))
+                    )
                     man_track_file = glob.glob(os.path.join(gt_path, "man_track.txt"))
                     if len(man_track_file) > 0:
                         ctc_track_meta.append(man_track_file[0])
