@@ -2998,12 +2998,15 @@
 <h1 id="pretrained-models">Pretrained Models<a class="headerlink" href="#pretrained-models" title="Permanent link">&para;</a></h1>
 <p>DREEM provides pretrained models for multi-object tracking across two domains: animals and microscopy. Both models are available on Hugging Face and can be used directly with the <code>dreem</code> CLI using shortnames.</p>
 <h2 id="quick-usage">Quick Usage<a class="headerlink" href="#quick-usage" title="Permanent link">&para;</a></h2>
-<p>Use pretrained models by passing a shortname to <code>--checkpoint</code>. The model is automatically downloaded from HuggingFace and cached locally (in <code>~/.cache/huggingface/hub/</code>):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Animal tracking (mice, flies, zebrafish)</span>
+<p>Use pretrained models by passing a shortname, HuggingFace repo ID, or URL to <code>--checkpoint</code>. The model and config are automatically downloaded from HuggingFace and cached locally (in <code>~/.cache/huggingface/hub/</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Using a shortname</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>animals<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Microscopy tracking (cells, organelles)</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>microscopy<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">128</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Using a HuggingFace repo ID</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>talmolab/dreem-animals-pretrained<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Using a HuggingFace URL</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>https://huggingface.co/talmolab/dreem-animals-pretrained<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span>
 </code></pre></div>
 <hr />
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
