@@ -3467,7 +3467,7 @@ and will be compared against later frames for assignment.</p>
 <a id="__codelineno-0-243" name="__codelineno-0-243"></a><a href="#__codelineno-0-243"><span class="linenos" data-linenos="243 "></span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Merge queues into a single list of Frames containing corresponding instances.</span>
 <a id="__codelineno-0-244" name="__codelineno-0-244"></a><a href="#__codelineno-0-244"><span class="linenos" data-linenos="244 "></span></a>
 <a id="__codelineno-0-245" name="__codelineno-0-245"></a><a href="#__codelineno-0-245"><span class="linenos" data-linenos="245 "></span></a><span class="sd">        Args:</span>
-<a id="__codelineno-0-246" name="__codelineno-0-246"></a><a href="#__codelineno-0-246"><span class="linenos" data-linenos="246 "></span></a><span class="sd">            context_start_frame_id: The frame_id of the last frame in the context i.e. just before the start of the current batch</span>
+<a id="__codelineno-0-246" name="__codelineno-0-246"></a><a href="#__codelineno-0-246"><span class="linenos" data-linenos="246 "></span></a><span class="sd">            device: The device to move the frames to.</span>
 <a id="__codelineno-0-247" name="__codelineno-0-247"></a><a href="#__codelineno-0-247"><span class="linenos" data-linenos="247 "></span></a><span class="sd">            track_ids: A list of trajectorys to merge. If None, then merge all</span>
 <a id="__codelineno-0-248" name="__codelineno-0-248"></a><a href="#__codelineno-0-248"><span class="linenos" data-linenos="248 "></span></a><span class="sd">                queues, otherwise filter queues by track_ids then merge.</span>
 <a id="__codelineno-0-249" name="__codelineno-0-249"></a><a href="#__codelineno-0-249"><span class="linenos" data-linenos="249 "></span></a>
@@ -4217,17 +4217,18 @@ If the corresponding trajectory is not already in the queue then create a new qu
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>context_start_frame_id</code>
+                <code>device</code>
             </td>
             <td>
+                  <code><span title="str">str</span> | <span title="torch.device">device</span> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The frame_id of the last frame in the context i.e. just before the start of the current batch</p>
+                <p>The device to move the frames to.</p>
               </div>
             </td>
             <td>
-                <em>required</em>
+                  <code>None</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -4285,7 +4286,7 @@ containing the corresponding instances.</p>
 <a id="__codelineno-0-243" name="__codelineno-0-243"></a><a href="#__codelineno-0-243"><span class="linenos" data-linenos="243 "></span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge queues into a single list of Frames containing corresponding instances.</span>
 <a id="__codelineno-0-244" name="__codelineno-0-244"></a><a href="#__codelineno-0-244"><span class="linenos" data-linenos="244 "></span></a>
 <a id="__codelineno-0-245" name="__codelineno-0-245"></a><a href="#__codelineno-0-245"><span class="linenos" data-linenos="245 "></span></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-246" name="__codelineno-0-246"></a><a href="#__codelineno-0-246"><span class="linenos" data-linenos="246 "></span></a><span class="sd">        context_start_frame_id: The frame_id of the last frame in the context i.e. just before the start of the current batch</span>
+<a id="__codelineno-0-246" name="__codelineno-0-246"></a><a href="#__codelineno-0-246"><span class="linenos" data-linenos="246 "></span></a><span class="sd">        device: The device to move the frames to.</span>
 <a id="__codelineno-0-247" name="__codelineno-0-247"></a><a href="#__codelineno-0-247"><span class="linenos" data-linenos="247 "></span></a><span class="sd">        track_ids: A list of trajectorys to merge. If None, then merge all</span>
 <a id="__codelineno-0-248" name="__codelineno-0-248"></a><a href="#__codelineno-0-248"><span class="linenos" data-linenos="248 "></span></a><span class="sd">            queues, otherwise filter queues by track_ids then merge.</span>
 <a id="__codelineno-0-249" name="__codelineno-0-249"></a><a href="#__codelineno-0-249"><span class="linenos" data-linenos="249 "></span></a>
