@@ -47,6 +47,8 @@ dependencies = [
     # Models
     "timm",
     "huggingface-hub",
+    # Visual encoder
+    "scikit-image",
     # CLI
     "typer>=0.12.0",
     "rich>=13.0.0",
@@ -54,7 +56,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-encoder = ["scikit-image"]  # Required for visual encoder functionality
+gpu = ["torch", "torchvision>=0.20.0"]  # Alias for latest CUDA version (torch-cuda130)
 torch = ["torch", "torchvision>=0.20.0"]
 torch-cpu = ["torch", "torchvision>=0.20.0"]
 torch-cuda118 = ["torch", "torchvision>=0.20.0"]
@@ -104,6 +106,7 @@ constraint-dependencies = [
 ]
 conflicts = [
     [
+        { extra = "gpu" },
         { extra = "torch-cpu" },
         { extra = "torch-cuda118" },
         { extra = "torch-cuda128" },
@@ -114,15 +117,17 @@ conflicts = [
 [tool.uv.sources]
 torch = [
     { index = "pytorch-cpu", extra = "torch-cpu" },
-    { index = "pytorch-cu118", extra = "torch-cuda118", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
-    { index = "pytorch-cu128", extra = "torch-cuda128", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
-    { index = "pytorch-cu130", extra = "torch-cuda130", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
+    { index = "pytorch-cu118", extra = "torch-cuda118", marker = "(platform_machine == 'x86_64' or platform_machine == 'AMD64') and sys_platform != 'darwin'" },
+    { index = "pytorch-cu128", extra = "torch-cuda128", marker = "(platform_machine == 'x86_64' or platform_machine == 'AMD64') and sys_platform != 'darwin'" },
+    { index = "pytorch-cu130", extra = "torch-cuda130", marker = "(platform_machine == 'x86_64' or platform_machine == 'AMD64') and sys_platform != 'darwin'" },
+    { index = "pytorch-cu130", extra = "gpu", marker = "(platform_machine == 'x86_64' or platform_machine == 'AMD64') and sys_platform != 'darwin'" },
 ]
 torchvision = [
     { index = "pytorch-cpu", extra = "torch-cpu" },
-    { index = "pytorch-cu118", extra = "torch-cuda118", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
-    { index = "pytorch-cu128", extra = "torch-cuda128", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
-    { index = "pytorch-cu130", extra = "torch-cuda130", marker = "platform_machine == 'x86_64' and sys_platform != 'darwin'" },
+    { index = "pytorch-cu118", extra = "torch-cuda118", marker = "(platform_machine == 'x86_64' or platform_machine == 'AMD64') and sys_platform != 'darwin'" },
+    { index = "pytorch-cu128", extra = "torch-cuda128", marker = "(platform_machine == 'x86_64' or platform_machine == 'AMD64') and sys_platform != 'darwin'" },
+    { index = "pytorch-cu130", extra = "torch-cuda130", marker = "(platform_machine == 'x86_64' or platform_machine == 'AMD64') and sys_platform != 'darwin'" },
+    { index = "pytorch-cu130", extra = "gpu", marker = "(platform_machine == 'x86_64' or platform_machine == 'AMD64') and sys_platform != 'darwin'" },
 ]
 
 [[tool.uv.index]]
