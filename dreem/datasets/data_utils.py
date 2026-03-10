@@ -331,7 +331,6 @@ def nms(ioms: torch.Tensor, threshold: float) -> list[int]:
     Returns:
         list of indices of the boxes to keep
     """
-    keep_inds = []
     x, y = np.where(ioms > threshold)
     coords = np.stack([x, y], axis=-1)
     self_mask = coords[:, 0] == coords[:, 1]  # diagonal elements are self-ious

@@ -60,6 +60,8 @@ class Tracker:
             iou: Either [None, '', "mult" or "max"]
                  Whether to use multiplicative or max iou reweighting.
             max_center_dist: distance threshold for filtering trajectory score matrix.
+            distance_penalty_multiplier: multiplier for the distance penalty.
+            angle_diff_penalty_multiplier: multiplier for the angle difference penalty.
             max_gap: the max number of frames a trajectory can be missing before termination.
             max_tracks: the maximum number of tracks that can be created while tracking.
                 We force the tracker to assign instances to a track instead of creating a new track if max_tracks has been reached.
@@ -381,9 +383,6 @@ class Tracker:
 
         # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj
         traj_score = torch.mm(asso_nonquery, id_inds.cpu())  # (n_query, n_traj)
-        assoc_col_pred_id_map = {
-            i: unique_ids[i].item() for i in range(unique_ids.shape[0])
-        }
         traj_score_df = pd.DataFrame(
             traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
         )
@@ -430,7 +429,6 @@ class Tracker:
         last_poses = []
         for ind in last_inds.cpu():  # its important to index nonquery_poses by last_inds as this maintains ordering that matches the association matrix ordering
             last_poses.append(nonquery_poses[ind])
-        last_pred_ids = [pred_track_id for _, pred_track_id, _ in last_poses]
 
         if self.max_center_dist is not None and self.max_center_dist > 0:
             last_boxes_px = last_boxes.cpu()

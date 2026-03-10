@@ -288,6 +288,7 @@ def test_embedding_kwargs():
 
 
 def test_multianchor_embedding():
+    """Test multi-anchor embedding computation."""
     frames = 32
     objects = 10
     d_model = 256
@@ -423,7 +424,6 @@ def test_transformer_embedding():
     feats = 256
     num_frames = 3
     num_detected = 10
-    img_shape = (1, 50, 50)
 
     frames = []
 

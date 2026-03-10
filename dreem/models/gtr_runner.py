@@ -4,23 +4,25 @@ import gc
 import logging
 import os
 from datetime import datetime
+from math import inf
 from pathlib import Path
 from typing import TYPE_CHECKING
-from math import inf
+
 import h5py
 import numpy as np
 import sleap_io as sio
 import tifffile
 import torch
-from pytorch_lightning import LightningModule
 from omegaconf import DictConfig
+from pytorch_lightning import LightningModule
+from sleap_io.model.suggestions import SuggestionFrame
+
 from dreem.datasets import CellTrackingDataset
 from dreem.inference import metrics
+from dreem.io.flags import FrameFlagCode
 from dreem.models import GlobalTrackingTransformer
 from dreem.models.model_utils import init_optimizer, init_scheduler
 from dreem.training.losses import AssoLoss
-from dreem.io.flags import FrameFlagCode
-from sleap_io.model.suggestions import SuggestionFrame
 
 if TYPE_CHECKING:
     from dreem.io import AssociationMatrix, Frame, Instance

@@ -14,6 +14,7 @@ Or use as a module:
 """
 
 import os
+
 import numpy as np
 
 

@@ -1,5 +1,5 @@
 """Config for pytests."""
 
-from tests.fixtures.configs import *
-from tests.fixtures.datasets import *
-from tests.fixtures.torch import *
+from tests.fixtures.configs import *  # noqa: F403
+from tests.fixtures.datasets import *  # noqa: F403
+from tests.fixtures.torch import *  # noqa: F403

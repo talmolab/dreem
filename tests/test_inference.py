@@ -21,6 +21,7 @@ from dreem.models import GlobalTrackingTransformer, GTRRunner
 
 
 def test_track_queue():
+    """Test TrackQueue operations."""
     window_size = 8
     max_gap = 10
     img_shape = (3, 1024, 1024)
@@ -167,19 +168,8 @@ def test_weight_iou():  # set_default_device
     Tests each postprocessing method to ensure that
     it filters only when the condition is satisfied.
     """
-    T = 8
-    k = 5
-    D = 512
     M = 5
     N_t = 5
-    N_p = N_t * (T - 1)
-    N = N_t * T
-    weight_iou = IOUWeighting(method="mult")
-
-    reid_features = torch.rand((1, N_t, D))
-    asso_nonk = torch.rand((N_t, N_p))
-
-    decay_time = 0
 
     asso_output = torch.rand((N_t, M))
     ious = torch.rand((N_t, M))
@@ -253,6 +243,7 @@ def get_ckpt(ckpt_path: str):
 
 
 def test_track(tmp_path, inference_config):
+    """Test end-to-end tracking inference pipeline."""
     ckpt_path = tmp_path / "model.ckpt"
     get_ckpt(ckpt_path)
 
@@ -834,7 +825,6 @@ def test_confidence_flagging_high_confidence():
 
     # Create low entropy scores (peaked distribution = high confidence)
     n_query = 3
-    n_traj = 3
     # One-hot-like distribution has low entropy
     traj_score = torch.tensor(
         [
@@ -871,7 +861,6 @@ def test_confidence_flagging_mixed_entropy():
     frame = Frame(video_id=0, frame_id=0, img_shape=img_shape, instances=instances)
 
     n_query = 3
-    n_traj = 3
     # Mix of high and low entropy rows
     traj_score = torch.tensor(
         [

@@ -43,7 +43,6 @@ def test_asso_loss():
 
 def test_basic_gtr_runner():
     """Test basic GTR Runner."""
-    feats = 128
     num_frames = 2
     num_detected = 3
     img_shape = (1, 128, 128)

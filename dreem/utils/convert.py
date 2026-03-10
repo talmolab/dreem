@@ -1,10 +1,11 @@
 """Conversion utilities for importing tracking data from external formats to .slp files."""
 
+from pathlib import Path
+
+import imageio
 import numpy as np
 import pandas as pd
 import sleap_io as sio
-import imageio
-from pathlib import Path
 from tifffile import imread
 from tqdm import tqdm
 

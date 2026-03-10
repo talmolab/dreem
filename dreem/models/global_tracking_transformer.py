@@ -94,6 +94,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
         Args:
             ref_instances: List of instances from chunk containing crops of objects + gt label info
             query_instances: list of instances used as query in decoder.
+            retain_crops: Whether to retain crops after feature extraction.
 
         Returns:
             An N_T x N association matrix
@@ -119,6 +120,7 @@ class GlobalTrackingTransformer(torch.nn.Module):
         Args:
             instances: A list of instances to compute features for
             force_recompute: indicate whether to compute features for all instances regardless of if they have instances
+            retain_crops: Whether to retain crops after feature extraction.
         """
         if not force_recompute:
             instances_to_compute = [
