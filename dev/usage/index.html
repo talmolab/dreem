@@ -2442,6 +2442,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/dreem/io/pretrained/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pretrained
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/dreem/io/track/" class="md-nav__link">
         
   
@@ -3640,11 +3668,18 @@
 <p>Training saves checkpoints to <code>./models/{run_name}/</code>. The final checkpoint is named <code>*final*.ckpt</code>.</p>
 <hr />
 <h2 id="tracking-inference">Tracking (Inference)<a class="headerlink" href="#tracking-inference" title="Permanent link">&para;</a></h2>
-<p>Run tracking on videos without ground truth:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data/inference<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span>--checkpoint<span class="w"> </span>./models/my_model.ckpt<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span>
+<p>Run tracking on videos without ground truth. You can use a pretrained model shortname (<code>animals</code> or <code>microscopy</code>) which auto-downloads from HuggingFace, or pass a local checkpoint path:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Using a pretrained shortname (auto-downloads and caches from HuggingFace)</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data/inference<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span>--checkpoint<span class="w"> </span>animals<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># Using a local checkpoint</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data/inference<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span>--checkpoint<span class="w"> </span>./models/my_model.ckpt<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">    </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span>
 </code></pre></div>
 <h3 id="required-arguments_1">Required Arguments<a class="headerlink" href="#required-arguments_1" title="Permanent link">&para;</a></h3>
 <table>
@@ -3661,7 +3696,7 @@
 </tr>
 <tr>
 <td><code>--checkpoint</code></td>
-<td>Path to model checkpoint (<code>.ckpt</code>)</td>
+<td>Pretrained shortname (<code>animals</code>, <code>microscopy</code>) or path to a <code>.ckpt</code> file</td>
 </tr>
 <tr>
 <td><code>--output</code></td>
@@ -3675,7 +3710,7 @@
 </table>
 <h3 id="common-options_1">Common Options<a class="headerlink" href="#common-options_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data/inference<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span>--checkpoint<span class="w"> </span>./models/model.ckpt<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span>--checkpoint<span class="w"> </span>animals<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span>--max-tracks<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="se">\</span>
@@ -3733,7 +3768,7 @@
 <h2 id="evaluation">Evaluation<a class="headerlink" href="#evaluation" title="Permanent link">&para;</a></h2>
 <p>Evaluate tracking against ground truth labels:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>dreem<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>./data/test<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span>--checkpoint<span class="w"> </span>./models/model.ckpt<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span>--checkpoint<span class="w"> </span>animals<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span>--output<span class="w"> </span>./eval_results<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span>
 </code></pre></div>

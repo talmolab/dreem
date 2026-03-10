@@ -404,10 +404,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-3-download-pretrained-model" class="md-nav__link">
+  <a href="#step-3-run-tracking" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 3: Download pretrained model
+        Step 3: Run tracking
       
     </span>
   </a>
@@ -415,21 +415,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-4-run-tracking" class="md-nav__link">
+  <a href="#step-4-evaluate-tracking-optional" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 4: Run tracking
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-5-evaluate-tracking-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Step 5: Evaluate tracking (optional)
+        Step 4: Evaluate tracking (optional)
       
     </span>
   </a>
@@ -2219,6 +2208,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/dreem/io/pretrained/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pretrained
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/dreem/io/track/" class="md-nav__link">
         
   
@@ -2951,10 +2968,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-3-download-pretrained-model" class="md-nav__link">
+  <a href="#step-3-run-tracking" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 3: Download pretrained model
+        Step 3: Run tracking
       
     </span>
   </a>
@@ -2962,21 +2979,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-4-run-tracking" class="md-nav__link">
+  <a href="#step-4-evaluate-tracking-optional" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 4: Run tracking
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-5-evaluate-tracking-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Step 5: Evaluate tracking (optional)
+        Step 4: Evaluate tracking (optional)
       
     </span>
   </a>
@@ -3050,19 +3056,21 @@ See the <a href="../installation/">installation guide</a> for more details.</p>
 </code></pre></div>
 <p>Ensure <code>huggingface_hub</code> is installed (<code>pip install huggingface_hub</code>); the <code>hf</code> CLI comes with it.</p>
 <hr />
-<h2 id="step-3-download-pretrained-model">Step 3: Download pretrained model<a class="headerlink" href="#step-3-download-pretrained-model" title="Permanent link">&para;</a></h2>
-<p>Download a pretrained DREEM model (trained on mice, flies, zebrafish):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>hf<span class="w"> </span>download<span class="w"> </span>talmolab/dreem-animals-pretrained<span class="w"> </span>animals-pretrained.ckpt<span class="w"> </span>--local-dir<span class="o">=</span>./models
+<h2 id="step-3-run-tracking">Step 3: Run tracking<a class="headerlink" href="#step-3-run-tracking" title="Permanent link">&para;</a></h2>
+<p>Run tracking on the inference data using the <code>animals</code> pretrained model. The checkpoint is automatically downloaded from <a href="https://huggingface.co/talmolab/dreem-animals-pretrained">HuggingFace</a> and cached locally. Use a crop size that matches your instance size (here, 70 pixels) and set <code>--max-tracks</code> to the number of animals (2 for this dataset):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data/inference<span class="w"> </span>--checkpoint<span class="w"> </span>animals<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span>--max-tracks<span class="w"> </span><span class="m">2</span>
 </code></pre></div>
-<hr />
-<h2 id="step-4-run-tracking">Step 4: Run tracking<a class="headerlink" href="#step-4-run-tracking" title="Permanent link">&para;</a></h2>
-<p>Run tracking on the inference data. Use a crop size that matches your instance size (here, 70 pixels) and set <code>--max-tracks</code> to the number of animals (2 for this dataset):</p>
+<p>Available pretrained shortnames: <code>animals</code> (multi-species animal tracking) and <code>microscopy</code> (cell/organelle tracking). See <a href="../models_pg/">Pretrained Models</a> for details.</p>
+<div class="admonition tip">
+<p class="admonition-title">Using a local checkpoint</p>
+<p>You can also pass a local path to <code>--checkpoint</code> instead of a shortname:
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data/inference<span class="w"> </span>--checkpoint<span class="w"> </span>./models/animals-pretrained.ckpt<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span>--max-tracks<span class="w"> </span><span class="m">2</span>
-</code></pre></div>
+</code></pre></div></p>
+</div>
 <hr />
-<h2 id="step-5-evaluate-tracking-optional">Step 5: Evaluate tracking (optional)<a class="headerlink" href="#step-5-evaluate-tracking-optional" title="Permanent link">&para;</a></h2>
+<h2 id="step-4-evaluate-tracking-optional">Step 4: Evaluate tracking (optional)<a class="headerlink" href="#step-4-evaluate-tracking-optional" title="Permanent link">&para;</a></h2>
 <p>If you have ground truth labels (e.g. in <code>./data/test</code>), run evaluation to get metrics (MOTA, IDF1, ID switches):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dreem<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>./data/test<span class="w"> </span>--checkpoint<span class="w"> </span>./models/animals-pretrained.ckpt<span class="w"> </span>--output<span class="w"> </span>./eval-results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span>--max-tracks<span class="w"> </span><span class="m">2</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dreem<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>./data/test<span class="w"> </span>--checkpoint<span class="w"> </span>animals<span class="w"> </span>--output<span class="w"> </span>./eval-results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span>--max-tracks<span class="w"> </span><span class="m">2</span>
 </code></pre></div>
 <hr />
 <h2 id="step-6-visualize-results">Step 6: Visualize results<a class="headerlink" href="#step-6-visualize-results" title="Permanent link">&para;</a></h2>

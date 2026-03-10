@@ -436,6 +436,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#quick-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2175,6 +2186,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/dreem/io/pretrained/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pretrained
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/dreem/io/track/" class="md-nav__link">
         
   
@@ -2885,6 +2924,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#quick-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2946,13 +2996,21 @@
 
 
 <h1 id="pretrained-models">Pretrained Models<a class="headerlink" href="#pretrained-models" title="Permanent link">&para;</a></h1>
-<p>DREEM provides pretrained models for multi-object tracking across two domains: animals and microscopy. Both models are available on Hugging Face and can be used directly with the <code>dreem</code> CLI.</p>
+<p>DREEM provides pretrained models for multi-object tracking across two domains: animals and microscopy. Both models are available on Hugging Face and can be used directly with the <code>dreem</code> CLI using shortnames.</p>
+<h2 id="quick-usage">Quick Usage<a class="headerlink" href="#quick-usage" title="Permanent link">&para;</a></h2>
+<p>Use pretrained models by passing a shortname to <code>--checkpoint</code>. The model is automatically downloaded from HuggingFace and cached locally (in <code>~/.cache/huggingface/hub/</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Animal tracking (mice, flies, zebrafish)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>animals<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Microscopy tracking (cells, organelles)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>microscopy<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">128</span>
+</code></pre></div>
 <hr />
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Model</th>
+<th>Shortname</th>
 <th>Domain</th>
 <th>Training Data</th>
 <th>Hugging Face</th>
@@ -2960,13 +3018,13 @@
 </thead>
 <tbody>
 <tr>
-<td><a href="#animals"><code>dreem-animals-pretrained</code></a></td>
+<td><code>animals</code></td>
 <td>Animals</td>
 <td>~1M frames across multiple species</td>
 <td><a href="https://huggingface.co/talmolab/dreem-animals-pretrained">talmolab/dreem-animals-pretrained</a></td>
 </tr>
 <tr>
-<td><a href="#microscopy"><code>dreem-microscopy-pretrained</code></a></td>
+<td><code>microscopy</code></td>
 <td>Microscopy</td>
 <td>~100K frames across cells and organelles</td>
 <td><a href="https://huggingface.co/talmolab/dreem-microscopy-pretrained">talmolab/dreem-microscopy-pretrained</a></td>
@@ -2984,6 +3042,10 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><strong>Shortname</strong></td>
+<td><code>animals</code></td>
+</tr>
 <tr>
 <td><strong>Input format</strong></td>
 <td>Videos with detection labels in <code>.slp</code> format</td>
@@ -3010,6 +3072,8 @@
 </tr>
 </tbody>
 </table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>animals<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span>
+</code></pre></div>
 <hr />
 <h2 id="microscopy">Microscopy<a class="headerlink" href="#microscopy" title="Permanent link">&para;</a></h2>
 <p>A general-purpose microscopy identity tracking model trained on ~100K frames of proofread, identity-tracked public data spanning diverse biological scales, from organelles to cell nuclei.</p>
@@ -3021,6 +3085,10 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><strong>Shortname</strong></td>
+<td><code>microscopy</code></td>
+</tr>
 <tr>
 <td><strong>Input format</strong></td>
 <td>Videos with detection labels in <code>.slp</code> or Cell Tracking Challenge format</td>
@@ -3047,6 +3115,8 @@
 </tr>
 </tbody>
 </table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span>--checkpoint<span class="w"> </span>microscopy<span class="w"> </span>--output<span class="w"> </span>./results<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">128</span>
+</code></pre></div>
 
 
 
