@@ -22,7 +22,7 @@ from rich.console import Console  # noqa: E402
 from rich.panel import Panel  # noqa: E402
 from rich.table import Table  # noqa: E402
 
-from dreem._version import __version__  # noqa: E402
+from dreem.version import __version__  # noqa: E402
 
 app = typer.Typer(
     name="dreem",
