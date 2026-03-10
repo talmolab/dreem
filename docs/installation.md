@@ -25,16 +25,28 @@ pip install dreem-track
 
 DREEM automatically uses GPU acceleration when available:
 
-- **Linux/Windows**: CUDA-enabled GPUs are supported out of the box
+- **Linux/Windows**: CUDA-enabled GPUs are supported via the `gpu` extra
 - **macOS (Apple Silicon)**: MPS acceleration is used automatically
 
-No additional configuration is needed.
+To install with GPU (CUDA) support:
+
+```bash
+uv pip install "dreem-track[gpu]"
+```
+
+Or with `uv tool`:
+
+```bash
+uv tool install "dreem-track[gpu]"
+```
+
+For a specific CUDA version, you can use `torch-cuda118`, `torch-cuda128`, or `torch-cuda130` instead of `gpu`.
 
 ## Development Installation
 
 ```bash
 git clone https://github.com/talmolab/dreem && cd dreem
-uv sync --extra torch-cuda128 
+uv sync --extra gpu
 ```
 
 ## Verify Installation
