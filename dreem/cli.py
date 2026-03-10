@@ -22,6 +22,7 @@ from rich.console import Console  # noqa: E402
 from rich.panel import Panel  # noqa: E402
 from rich.table import Table  # noqa: E402
 
+from dreem.io.pretrained import is_pretrained_shortname, resolve_checkpoint  # noqa: E402  # isort: skip
 from dreem.version import __version__  # noqa: E402
 
 app = typer.Typer(
@@ -137,7 +138,12 @@ def _create_inference_command(mode: str):
     def command(
         input_path: Annotated[Path, typer.Argument(help="Input data directory")],
         checkpoint: Annotated[
-            Path, typer.Option("--checkpoint", "-ckpt", help="Model checkpoint path")
+            str,
+            typer.Option(
+                "--checkpoint",
+                "-ckpt",
+                help="Model checkpoint path or pretrained shortname (animals, microscopy)",
+            ),
         ],
         output: Annotated[
             Path, typer.Option("--output", "-o", help="Output directory")
@@ -267,7 +273,11 @@ def _create_inference_command(mode: str):
         if verbose:
             logging.getLogger("dreem").setLevel(logging.INFO)
 
-        if not checkpoint.exists():
+        if is_pretrained_shortname(checkpoint):
+            console.print(f"[cyan]Resolving pretrained model: {checkpoint}[/cyan]")
+            checkpoint = resolve_checkpoint(checkpoint)
+            console.print(f"[green]Using checkpoint: {checkpoint}[/green]")
+        elif not Path(checkpoint).exists():
             console.print(f"[red]Error: Checkpoint not found: {checkpoint}[/red]")
             raise typer.Exit(1)
 

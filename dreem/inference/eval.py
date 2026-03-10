@@ -5,6 +5,7 @@ import logging
 from omegaconf import DictConfig
 
 from dreem.io import Config
+from dreem.io.pretrained import resolve_checkpoint
 from dreem.models import GTRRunner
 
 logger = logging.getLogger("dreem.inference")
@@ -21,6 +22,7 @@ def run(cfg: DictConfig) -> None:
     if checkpoint is None:
         raise ValueError("Checkpoint path not found in config")
 
+    checkpoint = resolve_checkpoint(checkpoint)
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     overrides_dict = model.setup_tracking(eval_cfg, mode="eval")
     logger.info(

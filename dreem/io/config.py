@@ -119,6 +119,7 @@ class Config:
         Returns:
             A global tracking transformer with parameters indicated by cfg
         """
+        from dreem.io.pretrained import resolve_checkpoint
         from dreem.models import GlobalTrackingTransformer, GTRRunner
 
         model_params = self.get("model", {})
@@ -126,6 +127,7 @@ class Config:
         ckpt_path = model_params.pop("ckpt_path", None)
 
         if ckpt_path is not None and len(ckpt_path) > 0:
+            ckpt_path = resolve_checkpoint(ckpt_path)
             return GTRRunner.load_from_checkpoint(ckpt_path).model
 
         return GlobalTrackingTransformer(**model_params)
@@ -168,9 +170,12 @@ class Config:
             else:
                 params[arg] = sub_params
 
+        from dreem.io.pretrained import resolve_checkpoint
+
         ckpt_path = params["model_cfg"].pop("ckpt_path", None)
 
         if ckpt_path is not None and ckpt_path != "":
+            ckpt_path = resolve_checkpoint(ckpt_path)
             model = GTRRunner.load_from_checkpoint(
                 ckpt_path, tracker_cfg=params["tracker_cfg"], **runner_params
             )

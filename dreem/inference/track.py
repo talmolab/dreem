@@ -24,6 +24,7 @@ from tqdm import tqdm
 from dreem.datasets import CellTrackingDataset
 from dreem.io import Config, Frame
 from dreem.io.flags import FrameFlagCode
+from dreem.io.pretrained import resolve_checkpoint
 from dreem.models import GTRRunner
 
 logger = logging.getLogger("dreem.inference")
@@ -237,6 +238,7 @@ def run(cfg: DictConfig) -> dict:
             "Model checkpoint not found. Please provide a valid checkpoint path."
         )
 
+    checkpoint = resolve_checkpoint(checkpoint)
     model = GTRRunner.load_from_checkpoint(checkpoint, strict=False)
     overrides_dict = model.setup_tracking(pred_cfg, mode="inference")
 

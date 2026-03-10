@@ -30,32 +30,30 @@ Ensure `huggingface_hub` is installed (`pip install huggingface_hub`); the `hf` 
 
 ---
 
-## Step 3: Download pretrained model
+## Step 3: Run tracking
 
-Download a pretrained DREEM model (trained on mice, flies, zebrafish):
+Run tracking on the inference data using the `animals` pretrained model. The checkpoint is automatically downloaded from [HuggingFace](https://huggingface.co/talmolab/dreem-animals-pretrained) and cached locally. Use a crop size that matches your instance size (here, 70 pixels) and set `--max-tracks` to the number of animals (2 for this dataset):
 
 ```bash
-hf download talmolab/dreem-animals-pretrained animals-pretrained.ckpt --local-dir=./models
+dreem track ./data/inference --checkpoint animals --output ./results --crop-size 70 --max-tracks 2
 ```
+
+Available pretrained shortnames: `animals` (multi-species animal tracking) and `microscopy` (cell/organelle tracking). See [Pretrained Models](models_pg.md) for details.
+
+!!! tip "Using a local checkpoint"
+    You can also pass a local path to `--checkpoint` instead of a shortname:
+    ```bash
+    dreem track ./data/inference --checkpoint ./models/animals-pretrained.ckpt --output ./results --crop-size 70 --max-tracks 2
+    ```
 
 ---
 
-## Step 4: Run tracking
-
-Run tracking on the inference data. Use a crop size that matches your instance size (here, 70 pixels) and set `--max-tracks` to the number of animals (2 for this dataset):
-
-```bash
-dreem track ./data/inference --checkpoint ./models/animals-pretrained.ckpt --output ./results --crop-size 70 --max-tracks 2
-```
-
----
-
-## Step 5: Evaluate tracking (optional)
+## Step 4: Evaluate tracking (optional)
 
 If you have ground truth labels (e.g. in `./data/test`), run evaluation to get metrics (MOTA, IDF1, ID switches):
 
 ```bash
-dreem eval ./data/test --checkpoint ./models/animals-pretrained.ckpt --output ./eval-results --crop-size 70 --max-tracks 2
+dreem eval ./data/test --checkpoint animals --output ./eval-results --crop-size 70 --max-tracks 2
 ```
 
 ---
