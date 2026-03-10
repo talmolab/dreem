@@ -72,20 +72,17 @@ Homepage = "https://github.com/talmolab/dreem"
 Repository = "https://github.com/talmolab/dreem"
 
 # =============================================================================
-# Build system - using Hatchling
+# Build system - using Setuptools
 # =============================================================================
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
 
-[tool.hatch.build.targets.wheel]
-packages = ["dreem"]
+[tool.setuptools.packages.find]
+include = ["dreem*"]
 
-[tool.hatch.version]
-source = "vcs"
-
-[tool.hatch.build.hooks.vcs]
-version-file = "dreem/_version.py"
+[tool.setuptools.dynamic]
+version = {attr = "dreem.version.__version__"}
 
 # =============================================================================
 # uv configuration for PyTorch with CUDA support
@@ -176,7 +173,7 @@ dev = [
 # =============================================================================
 [tool.ruff]
 line-length = 88
-exclude = ["dreem/_version.py"]
+exclude = ["dreem/version.py"]
 
 [tool.ruff.lint]
 select = [

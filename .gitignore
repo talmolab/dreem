@@ -161,7 +161,5 @@ agents/
 run_tracker.py
 run_trainer.py
 
-# Auto-generated version file
-dreem/_version.py
 
 scratch/
