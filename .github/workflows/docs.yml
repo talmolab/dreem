@@ -6,14 +6,18 @@ on:
     types:
       - published
   push:
+    branches:
+      - main
     paths:
       - "dreem/**"
       - "docs/**"
       - "mkdocs.yml"
       - ".github/workflows/docs.yml"
 
+# Prevent race conditions when PR is merged (last PR commit + push to main)
+# Only one docs deployment runs at a time; additional runs queue up
 concurrency:
-  group: docs-deploy
+  group: docs-deployment
   cancel-in-progress: false
 
 jobs:
@@ -21,15 +25,17 @@ jobs:
     name: Docs
     runs-on: "ubuntu-latest"
     permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
       contents: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Fetch all history for all branches
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
@@ -54,11 +60,86 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          uv run mike deploy --update-aliases --allow-empty --push "${{ github.event.release.tag_name }}" latest
-          uv run mike set-default latest --push
+          # Fetch the latest gh-pages state to reduce conflicts
+          git fetch origin gh-pages --depth=1 || true
 
-      - name: Build and upload docs (dev)
+          # Build and commit docs locally (without pushing)
+          uv run mike deploy --update-aliases --allow-empty "${{ github.event.release.tag_name }}" latest
+
+          # Push with retry logic to handle race conditions
+          for i in {1..3}; do
+            if git push origin gh-pages; then
+              echo "Successfully pushed documentation for ${{ github.event.release.tag_name }}"
+              break
+            else
+              echo "Push failed (attempt $i/3)"
+              if [ $i -eq 3 ]; then
+                echo "Failed to push documentation after 3 attempts"
+                exit 1
+              fi
+              echo "Fetching latest gh-pages and rebasing..."
+              git fetch origin gh-pages
+              git rebase origin/gh-pages
+              sleep 2
+            fi
+          done
+
+      - name: Build docs (dev)
         if: ${{ github.event_name == 'push' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: uv run mike deploy --update-aliases --allow-empty --push dev
+        run: |
+          # Fetch the latest gh-pages state to reduce conflicts
+          git fetch origin gh-pages --depth=1 || true
+
+          # Build and commit docs locally (without pushing)
+          uv run mike deploy --update-aliases --allow-empty dev
+
+      - name: Push docs (dev)
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          # Push with retry logic to handle race conditions
+          for i in {1..3}; do
+            if git push origin gh-pages; then
+              echo "Successfully pushed dev documentation"
+              break
+            else
+              echo "Push failed (attempt $i/3)"
+              if [ $i -eq 3 ]; then
+                echo "Failed to push documentation after 3 attempts"
+                exit 1
+              fi
+              echo "Fetching latest gh-pages and rebasing..."
+              git fetch origin gh-pages
+              git rebase origin/gh-pages
+              sleep 2
+            fi
+          done
+
+      - name: Reorder versions.json on gh-pages
+        if: ${{ github.event_name == 'release' || github.event_name == 'push' }}
+        run: |
+          # Copy the reordering script to temp location before switching branches
+          cp scripts/reorder_versions.py /tmp/reorder_versions.py
+
+          # Fetch and checkout gh-pages branch
+          git fetch origin gh-pages
+          git checkout gh-pages
+
+          # Run the reordering script
+          uv run python /tmp/reorder_versions.py versions.json
+
+          # Commit and push if there are changes
+          if git diff --quiet; then
+            echo "No changes to versions.json"
+          else
+            git add versions.json
+            git commit -m "Reorder versions.json for proper version dropdown sorting"
+            git push origin gh-pages
+          fi
+
+          # Switch back to the original branch
+          git checkout -
+
+          # Clean up temp file
+          rm /tmp/reorder_versions.py
