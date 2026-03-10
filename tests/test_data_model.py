@@ -1,4 +1,4 @@
-"""Tests for Instance, Frame, and AssociationMatrix Objects"""
+"""Tests for Instance, Frame, and AssociationMatrix Objects."""
 
 import numpy as np
 import pandas as pd
@@ -65,6 +65,7 @@ def test_instance():
 
 
 def test_frame():
+    """Test Frame data structure."""
     n_detected = 2
     n_traj = 3
     video_id = 0
@@ -130,6 +131,7 @@ def test_frame():
 
 
 def test_association_matrix():
+    """Test AssociationMatrix data structure."""
     n_traj = 2
     total_instances = 32
     n_query = 2
@@ -193,6 +195,7 @@ def test_association_matrix():
 
 
 def test_track():
+    """Test Track data structure."""
     instances = [Instance(gt_track_id=0, pred_track_id=0) for i in range(32)]
 
     track = Track(0, instances=instances)

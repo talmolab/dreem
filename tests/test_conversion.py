@@ -1,9 +1,10 @@
 """Tests for dreem.utils.convert and the CLI convert command."""
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 import sleap_io as sio
-from pathlib import Path
 
 from dreem.utils.convert import convert_trackmate, tif2mp4, tif2npy
 
@@ -82,6 +83,7 @@ def test_convert_trackmate_missing_files(tmp_path):
 def test_convert_cli(trackmate_lysosomes, tmp_path):
     """Test the CLI convert command end-to-end via CliRunner."""
     from typer.testing import CliRunner
+
     from dreem.cli import app
 
     tif_path, csv_path = trackmate_lysosomes
@@ -112,6 +114,7 @@ def test_convert_cli(trackmate_lysosomes, tmp_path):
 def test_convert_cli_unknown_format(tmp_path):
     """Test the CLI rejects unknown conversion formats."""
     from typer.testing import CliRunner
+
     from dreem.cli import app
 
     runner = CliRunner()

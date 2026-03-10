@@ -5,6 +5,12 @@ from dreem.io.config import Config
 from dreem.io.flags import FrameFlagCode
 from dreem.io.frame import Frame
 from dreem.io.instance import Instance
+from dreem.io.pretrained import (
+    is_pretrained_shortname,
+    list_pretrained_models,
+    resolve_checkpoint,
+    resolve_config,
+)
 from dreem.io.track import Track
 
 __all__ = [
@@ -14,4 +20,8 @@ __all__ = [
     "FrameFlagCode",
     "Instance",
     "Track",
+    "is_pretrained_shortname",
+    "list_pretrained_models",
+    "resolve_checkpoint",
+    "resolve_config",
 ]

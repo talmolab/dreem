@@ -79,7 +79,7 @@ dreem track INPUT_DIR --checkpoint PATH --output DIR --crop-size SIZE [OPTIONS]
 | Argument | Required | Description |
 |----------|----------|-------------|
 | `INPUT_DIR` | Yes | Input data directory |
-| `--checkpoint`, `-ckpt` | Yes | Model checkpoint path (`.ckpt`) |
+| `--checkpoint`, `-ckpt` | Yes | Model checkpoint: local path, shortname (`animals`, `microscopy`), HuggingFace repo (`org/repo`), or HuggingFace URL |
 | `--output`, `-o` | Yes | Output directory |
 | `--crop-size`, `-cs` | Yes | Crop size (should match training) |
 
@@ -111,6 +111,18 @@ dreem track INPUT_DIR --checkpoint PATH --output DIR --crop-size SIZE [OPTIONS]
 
 ### Example
 
+Using a pretrained shortname (auto-downloads from HuggingFace):
+
+```bash
+dreem track ./data/inference \
+    --checkpoint animals \
+    --output ./results \
+    --crop-size 70 \
+    --max-tracks 5
+```
+
+Using a local checkpoint path:
+
 ```bash
 dreem track ./data/inference \
     --checkpoint ./models/model.ckpt \
@@ -137,7 +149,7 @@ Same as `dreem track`. The input directory must contain ground truth labels.
 
 ```bash
 dreem eval ./data/test \
-    --checkpoint ./models/model.ckpt \
+    --checkpoint animals \
     --output ./eval_results \
     --crop-size 70 \
     --max-tracks 5

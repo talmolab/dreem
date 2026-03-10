@@ -1,4 +1,4 @@
-"""Tests for `config.py`"""
+"""Tests for `config.py`."""
 
 import torch
 from omegaconf import OmegaConf, open_dict
@@ -58,6 +58,7 @@ def test_getters(base_config, sleap_data_dir):
 
     Args:
         base_config: the config params to override
+        sleap_data_dir: path to the sleap test data directory
     """
     base_cfg = OmegaConf.load(base_config)
     cfg = Config(base_cfg)

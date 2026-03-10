@@ -243,7 +243,7 @@ class TrackQueue:
         """Merge queues into a single list of Frames containing corresponding instances.
 
         Args:
-            context_start_frame_id: The frame_id of the last frame in the context i.e. just before the start of the current batch
+            device: The device to move the frames to.
             track_ids: A list of trajectorys to merge. If None, then merge all
                 queues, otherwise filter queues by track_ids then merge.
 

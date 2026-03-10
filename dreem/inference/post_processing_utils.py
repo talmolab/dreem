@@ -1,3 +1,5 @@
+"""Post-processing utilities for tracking inference."""
+
 import logging
 from typing import Callable
 

@@ -125,9 +125,16 @@ Training saves checkpoints to `./models/{run_name}/`. The final checkpoint is na
 
 ## Tracking (Inference)
 
-Run tracking on videos without ground truth:
+Run tracking on videos without ground truth. You can use a pretrained model shortname (`animals` or `microscopy`) which auto-downloads from HuggingFace, or pass a local checkpoint path:
 
 ```bash
+# Using a pretrained shortname (auto-downloads and caches from HuggingFace)
+dreem track ./data/inference \
+    --checkpoint animals \
+    --output ./results \
+    --crop-size 70
+
+# Using a local checkpoint
 dreem track ./data/inference \
     --checkpoint ./models/my_model.ckpt \
     --output ./results \
@@ -139,7 +146,7 @@ dreem track ./data/inference \
 | Argument | Description |
 |----------|-------------|
 | `INPUT_DIR` | Path to input data directory |
-| `--checkpoint` | Path to model checkpoint (`.ckpt`) |
+| `--checkpoint` | Pretrained shortname (`animals`, `microscopy`), HuggingFace repo (`org/repo`), HuggingFace URL, or local path to a `.ckpt` file |
 | `--output` | Output directory for results |
 | `--crop-size` | Bounding box size (should match training) |
 
@@ -147,7 +154,7 @@ dreem track ./data/inference \
 
 ```bash
 dreem track ./data/inference \
-    --checkpoint ./models/model.ckpt \
+    --checkpoint animals \
     --output ./results \
     --crop-size 70 \
     --max-tracks 5 \
@@ -180,7 +187,7 @@ Evaluate tracking against ground truth labels:
 
 ```bash
 dreem eval ./data/test \
-    --checkpoint ./models/model.ckpt \
+    --checkpoint animals \
     --output ./eval_results \
     --crop-size 70
 ```
