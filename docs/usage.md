@@ -146,7 +146,7 @@ dreem track ./data/inference \
 | Argument | Description |
 |----------|-------------|
 | `INPUT_DIR` | Path to input data directory |
-| `--checkpoint` | Pretrained shortname (`animals`, `microscopy`) or path to a `.ckpt` file |
+| `--checkpoint` | Pretrained shortname (`animals`, `microscopy`), HuggingFace repo (`org/repo`), HuggingFace URL, or local path to a `.ckpt` file |
 | `--output` | Output directory for results |
 | `--crop-size` | Bounding box size (should match training) |
 

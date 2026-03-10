@@ -79,7 +79,7 @@ dreem track INPUT_DIR --checkpoint PATH --output DIR --crop-size SIZE [OPTIONS]
 | Argument | Required | Description |
 |----------|----------|-------------|
 | `INPUT_DIR` | Yes | Input data directory |
-| `--checkpoint`, `-ckpt` | Yes | Model checkpoint path (`.ckpt`) or pretrained shortname (`animals`, `microscopy`) |
+| `--checkpoint`, `-ckpt` | Yes | Model checkpoint: local path, shortname (`animals`, `microscopy`), HuggingFace repo (`org/repo`), or HuggingFace URL |
 | `--output`, `-o` | Yes | Output directory |
 | `--crop-size`, `-cs` | Yes | Crop size (should match training) |
 

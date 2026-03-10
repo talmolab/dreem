@@ -9,6 +9,7 @@ from dreem.io.pretrained import (
     is_pretrained_shortname,
     list_pretrained_models,
     resolve_checkpoint,
+    resolve_config,
 )
 from dreem.io.track import Track
 
@@ -22,4 +23,5 @@ __all__ = [
     "is_pretrained_shortname",
     "list_pretrained_models",
     "resolve_checkpoint",
+    "resolve_config",
 ]

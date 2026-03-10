@@ -22,7 +22,13 @@ from rich.console import Console  # noqa: E402
 from rich.panel import Panel  # noqa: E402
 from rich.table import Table  # noqa: E402
 
-from dreem.io.pretrained import is_pretrained_shortname, resolve_checkpoint  # noqa: E402  # isort: skip
+from dreem.io.pretrained import (  # noqa: E402  # isort: skip
+    _is_hf_repo_id,
+    _parse_hf_url,
+    is_pretrained_shortname,
+    resolve_checkpoint,
+    resolve_config,
+)
 from dreem.version import __version__  # noqa: E402
 
 app = typer.Typer(
@@ -142,7 +148,7 @@ def _create_inference_command(mode: str):
             typer.Option(
                 "--checkpoint",
                 "-ckpt",
-                help="Model checkpoint path or pretrained shortname (animals, microscopy)",
+                help="Model checkpoint: local path, shortname (animals, microscopy), HuggingFace repo (org/repo), or HuggingFace URL",
             ),
         ],
         output: Annotated[
@@ -273,8 +279,19 @@ def _create_inference_command(mode: str):
         if verbose:
             logging.getLogger("dreem").setLevel(logging.INFO)
 
-        if is_pretrained_shortname(checkpoint):
+        is_hf_model = (
+            is_pretrained_shortname(checkpoint)
+            or _is_hf_repo_id(checkpoint)
+            or _parse_hf_url(checkpoint) is not None
+        )
+        if is_hf_model:
             console.print(f"[cyan]Resolving pretrained model: {checkpoint}[/cyan]")
+            # Auto-load config from HuggingFace if user didn't provide one
+            if config is None:
+                hf_config = resolve_config(checkpoint)
+                if hf_config is not None:
+                    config = Path(hf_config)
+                    console.print(f"[green]Using config: {config}[/green]")
             checkpoint = resolve_checkpoint(checkpoint)
             console.print(f"[green]Using checkpoint: {checkpoint}[/green]")
         elif not Path(checkpoint).exists():

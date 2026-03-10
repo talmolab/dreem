@@ -4,14 +4,17 @@ DREEM provides pretrained models for multi-object tracking across two domains: a
 
 ## Quick Usage
 
-Use pretrained models by passing a shortname to `--checkpoint`. The model is automatically downloaded from HuggingFace and cached locally (in `~/.cache/huggingface/hub/`):
+Use pretrained models by passing a shortname, HuggingFace repo ID, or URL to `--checkpoint`. The model and config are automatically downloaded from HuggingFace and cached locally (in `~/.cache/huggingface/hub/`):
 
 ```bash
-# Animal tracking (mice, flies, zebrafish)
+# Using a shortname
 dreem track ./data --checkpoint animals --output ./results --crop-size 70
 
-# Microscopy tracking (cells, organelles)
-dreem track ./data --checkpoint microscopy --output ./results --crop-size 128
+# Using a HuggingFace repo ID
+dreem track ./data --checkpoint talmolab/dreem-animals-pretrained --output ./results --crop-size 70
+
+# Using a HuggingFace URL
+dreem track ./data --checkpoint https://huggingface.co/talmolab/dreem-animals-pretrained --output ./results --crop-size 70
 ```
 
 ---
