@@ -17,18 +17,8 @@ logging.basicConfig(
 )
 
 import typer  # noqa: E402
-from omegaconf import DictConfig, OmegaConf  # noqa: E402
 from rich.console import Console  # noqa: E402
-from rich.panel import Panel  # noqa: E402
-from rich.table import Table  # noqa: E402
 
-from dreem.io.pretrained import (  # noqa: E402  # isort: skip
-    _is_hf_repo_id,
-    _parse_hf_url,
-    is_pretrained_shortname,
-    resolve_checkpoint,
-    resolve_config,
-)
 from dreem.version import __version__  # noqa: E402
 
 app = typer.Typer(
@@ -52,8 +42,10 @@ def get_timestamp() -> str:
     return datetime.now().strftime("%m-%d-%Y-%H-%M-%S")
 
 
-def load_default_config(command: str) -> DictConfig:
+def load_default_config(command: str):
     """Load default config for a command."""
+    from omegaconf import OmegaConf
+
     config_path = Path(__file__).parent / "configs" / "defaults" / f"{command}.yaml"
     return OmegaConf.load(config_path)
 
@@ -63,8 +55,10 @@ def build_config(
     config_file: Path | None,
     overrides: list[str] | None,
     **cli_args,
-) -> DictConfig:
+):
     """Build config with priority: defaults < config_file < cli_args."""
+    from omegaconf import OmegaConf
+
     cfg = load_default_config(command)
 
     if config_file:
@@ -81,10 +75,10 @@ def build_config(
     return cfg
 
 
-def _flatten_config(
-    cfg: DictConfig, parent_key: str = "", sep: str = "."
-) -> dict[str, Any]:
+def _flatten_config(cfg, parent_key: str = "", sep: str = ".") -> dict[str, Any]:
     """Recursively flatten nested OmegaConf config into dot-notation keys."""
+    from omegaconf import OmegaConf
+
     items = {}
     for key, value in cfg.items():
         new_key = f"{parent_key}{sep}{key}" if parent_key else key
@@ -96,11 +90,15 @@ def _flatten_config(
 
 
 def print_config(
-    cfg: DictConfig,
+    cfg,
     title: str = "Configuration",
     save_path: Path | None = None,
 ) -> None:
     """Print config summary as Rich table and optionally save to YAML."""
+    from omegaconf import OmegaConf
+    from rich.panel import Panel
+    from rich.table import Table
+
     table = Table.grid(padding=(0, 2))
     table.add_column(style="bold cyan")
     table.add_column()
@@ -276,6 +274,14 @@ def _create_inference_command(mode: str):
         ] = False,
     ) -> None:
         """Shared implementation for track and eval commands."""
+        from dreem.io.pretrained import (
+            _is_hf_repo_id,
+            _parse_hf_url,
+            is_pretrained_shortname,
+            resolve_checkpoint,
+            resolve_config,
+        )
+
         if verbose:
             logging.getLogger("dreem").setLevel(logging.INFO)
 
@@ -507,6 +513,8 @@ def train(
     ] = False,
 ) -> None:
     """Train a DREEM model."""
+    from omegaconf import OmegaConf
+
     if verbose:
         logging.getLogger("dreem").setLevel(logging.INFO)
 
@@ -563,3 +571,15 @@ def train(
 
     run_training(cfg)
     console.print("[green]Training complete.[/green]")
+
+
+@app.command()
+def system() -> None:
+    """Display system information and GPU status.
+
+    Shows Python version, platform, PyTorch version, CUDA availability,
+    driver version with compatibility check, GPU details, and package versions.
+    """
+    from dreem.system_info import print_system_info
+
+    print_system_info()

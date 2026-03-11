@@ -1,16 +1,5 @@
 """Top-level package for dreem."""
 
-# from .training import run
-from dreem.inference.tracker import Tracker
-from dreem.io.association_matrix import AssociationMatrix
-from dreem.io.config import Config
-from dreem.io.frame import Frame
-from dreem.io.instance import Instance
-from dreem.io.visualize import annotate_video
-from dreem.models.global_tracking_transformer import GlobalTrackingTransformer
-from dreem.models.gtr_runner import GTRRunner
-from dreem.models.transformer import Transformer
-from dreem.models.visual_encoder import VisualEncoder
 from dreem.version import __version__
 
 __all__ = [
@@ -26,6 +15,34 @@ __all__ = [
     "VisualEncoder",
     "__version__",
 ]
+
+_LAZY_IMPORTS: dict[str, tuple[str, str]] = {
+    "Tracker": ("dreem.inference.tracker", "Tracker"),
+    "AssociationMatrix": ("dreem.io.association_matrix", "AssociationMatrix"),
+    "Config": ("dreem.io.config", "Config"),
+    "Frame": ("dreem.io.frame", "Frame"),
+    "Instance": ("dreem.io.instance", "Instance"),
+    "annotate_video": ("dreem.io.visualize", "annotate_video"),
+    "GlobalTrackingTransformer": (
+        "dreem.models.global_tracking_transformer",
+        "GlobalTrackingTransformer",
+    ),
+    "GTRRunner": ("dreem.models.gtr_runner", "GTRRunner"),
+    "Transformer": ("dreem.models.transformer", "Transformer"),
+    "VisualEncoder": ("dreem.models.visual_encoder", "VisualEncoder"),
+}
+
+
+def __getattr__(name: str):
+    if name in _LAZY_IMPORTS:
+        module_path, attr_name = _LAZY_IMPORTS[name]
+        import importlib
+
+        module = importlib.import_module(module_path)
+        value = getattr(module, attr_name)
+        globals()[name] = value  # Cache for subsequent access
+        return value
+    raise AttributeError(f"module 'dreem' has no attribute {name!r}")
 
 
 def setup_logging():
