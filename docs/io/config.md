@@ -1,2 +1,2 @@
 # `Config` 
-::: dreem.io.Config
+::: dreem.io.config.Config

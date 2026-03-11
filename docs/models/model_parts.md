@@ -1,14 +1,14 @@
 # Model Parts
 
-## ::: dreem.models.VisualEncoder
+## ::: dreem.models.visual_encoder.VisualEncoder
 
-## ::: dreem.models.Transformer
+## ::: dreem.models.transformer.Transformer
 
 ### ::: dreem.models.transformer.TransformerEncoder
 
 #### ::: dreem.models.transformer.TransformerEncoderLayer
 
-##### ::: dreem.models.Embedding
+##### ::: dreem.models.embedding.Embedding
 
 ### ::: dreem.models.transformer.TransformerDecoder
 
