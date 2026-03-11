@@ -1,2 +1,2 @@
 # `Frame` 
-::: dreem.io.Frame
+::: dreem.io.frame.Frame

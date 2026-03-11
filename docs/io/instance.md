@@ -1,2 +1,2 @@
 # `Instance` 
-::: dreem.io.Instance
+::: dreem.io.instance.Instance
