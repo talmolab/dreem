@@ -32,7 +32,7 @@ def run(cfg: DictConfig) -> None:
     labels_files, vid_files = eval_cfg.get_data_paths(
         "test", eval_cfg.cfg.dataset.test_dataset
     )
-    trainer = eval_cfg.get_trainer()
+    trainer = eval_cfg.get_trainer(mode="eval")
     for label_file, vid_file in zip(labels_files, vid_files):
         dataset = eval_cfg.get_dataset(
             label_files=[label_file],

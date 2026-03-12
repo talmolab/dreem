@@ -46,7 +46,8 @@ dreem train TRAIN_DIR --val-dir VAL_DIR --crop-size SIZE [OPTIONS]
 | `--decoder-layers` | `1` | Transformer decoder layers |
 | `--anchor`, `-a` | `centroid` | Anchor keypoint name |
 | `--clip-length`, `-cl` | `32` | Frames per training batch |
-| `--gpu/--no-gpu`, `-g` | GPU | Use GPU or CPU |
+| `--device` | `auto` | Accelerator: `auto`, `gpu`, `cpu`, `mps` |
+| `--gpu/--no-gpu`, `-g` | - | **Deprecated.** Use `--device` instead |
 | `--config`, `-c` | - | YAML config file for advanced options |
 | `--logger`, `-l` | - | Logger type (e.g., `WandbLogger`) |
 | `--run-name`, `-rn` | `dreem_train` | Run name for logging/checkpoints |
@@ -103,7 +104,9 @@ dreem track INPUT_DIR --checkpoint PATH --output DIR --crop-size SIZE [OPTIONS]
 | `--slp-file`, `-slp` | - | Specific SLEAP label files (can repeat) |
 | `--video-file`, `-vid` | - | Specific video files (can repeat) |
 | `--save-meta`, `-sm` | - | Save frame metadata |
-| `--gpu/--no-gpu`, `-g` | GPU | Use GPU or CPU |
+| `--device` | `auto` | Accelerator: `auto`, `gpu`, `cpu`, `mps` |
+| `--gpu/--no-gpu`, `-g` | - | **Deprecated.** Use `--device` instead |
+| `--limit-batches` | - | Limit inference to N batches (for debugging) |
 | `--config`, `-c` | - | YAML config file |
 | `--set`, `-s` | - | Config overrides |
 | `--quiet`, `-q` | - | Suppress progress output |

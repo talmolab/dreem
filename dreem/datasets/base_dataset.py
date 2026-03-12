@@ -231,7 +231,7 @@ class BaseDataset(Dataset):
 
         else:
             self.chunked_frame_idx = self.frame_idx
-            self.label_idx = [i for i in range(len(self.labels))]
+            self.label_idx = list(range(len(self.frame_idx)))
 
     def __len__(self) -> int:
         """Get the size of the dataset.
