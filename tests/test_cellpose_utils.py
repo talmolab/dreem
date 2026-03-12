@@ -184,9 +184,7 @@ class TestSetupCtcDirsArrays:
 
         # Verify files
         raw_files = sorted(os.listdir(os.path.join(tmp_path, "test_seq")))
-        mask_files = sorted(
-            os.listdir(os.path.join(tmp_path, "test_seq_GT", "TRA"))
-        )
+        mask_files = sorted(os.listdir(os.path.join(tmp_path, "test_seq_GT", "TRA")))
         assert len(raw_files) == 5
         assert len(mask_files) == 5
         assert raw_files[0] == "frame_00000.tif"
@@ -270,9 +268,7 @@ class TestSetupCtcDirsCompat:
         frames = np.random.randint(0, 255, (5, 32, 32), dtype=np.uint8)
         masks = np.random.randint(0, 10, (5, 32, 32), dtype=np.uint16)
 
-        result = setup_ctc_dirs(
-            frames, masks, output_dir=str(tmp_path), name="test_0"
-        )
+        result = setup_ctc_dirs(frames, masks, output_dir=str(tmp_path), name="test_0")
 
         # Verify the structure matches CTC convention:
         # {dataset_dir}/test_0/*.tif (raw)
