@@ -3522,9 +3522,14 @@
 <td>Frames per training batch</td>
 </tr>
 <tr>
+<td><code>--device</code></td>
+<td><code>auto</code></td>
+<td>Accelerator: <code>auto</code>, <code>gpu</code>, <code>cpu</code>, <code>mps</code></td>
+</tr>
+<tr>
 <td><code>--gpu/--no-gpu</code>, <code>-g</code></td>
-<td>GPU</td>
-<td>Use GPU or CPU</td>
+<td>-</td>
+<td><strong>Deprecated.</strong> Use <code>--device</code> instead</td>
 </tr>
 <tr>
 <td><code>--config</code>, <code>-c</code></td>
@@ -3693,9 +3698,19 @@
 <td>Save frame metadata</td>
 </tr>
 <tr>
+<td><code>--device</code></td>
+<td><code>auto</code></td>
+<td>Accelerator: <code>auto</code>, <code>gpu</code>, <code>cpu</code>, <code>mps</code></td>
+</tr>
+<tr>
 <td><code>--gpu/--no-gpu</code>, <code>-g</code></td>
-<td>GPU</td>
-<td>Use GPU or CPU</td>
+<td>-</td>
+<td><strong>Deprecated.</strong> Use <code>--device</code> instead</td>
+</tr>
+<tr>
+<td><code>--limit-batches</code></td>
+<td>-</td>
+<td>Limit inference to N batches (for debugging)</td>
 </tr>
 <tr>
 <td><code>--config</code>, <code>-c</code></td>
