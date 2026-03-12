@@ -91,7 +91,7 @@ dreem train ./data/train \
     --epochs 30 \
     --lr 0.0001 \
     --run-name my_experiment \
-    --no-gpu  # use CPU only
+    --device cpu  # use CPU only
 ```
 
 | Option | Default | Description |
@@ -104,7 +104,7 @@ dreem train ./data/train \
 | `--decoder-layers` | 1 | Transformer decoder layers |
 | `--clip-length` | 32 | Frames per training batch |
 | `--run-name` | dreem_train | Name for logging/checkpoints |
-| `--gpu/--no-gpu` | GPU | Use GPU or CPU |
+| `--device` | `auto` | Accelerator: `auto`, `gpu`, `cpu`, `mps` |
 | `--video-type` | mp4 | Video file extension (`mp4`, `tif`, etc.) |
 
 ### Using Config Files
@@ -170,7 +170,7 @@ dreem track ./data/inference \
 | `--max-gap` | Maximum frame gap for track continuity |
 | `--anchor` | Keypoint name to use as centroid (default: `centroid`) |
 | `--video-type` | Video file extension |
-| `--no-gpu` | Run on CPU |
+| `--device cpu` | Run on CPU |
 
 !!! tip "Using `--max-dist` to enforce distance or motion based constraints"
     If you know the maximum distance the instances in your data can travel frame over frame, using `--max-dist` can help track them better. It penalizes matches that exceed the threshold you set. Using `--max-dist-multiplier` multiplies this distance penalty relative to the model's association scores, pushing tracking behavior closer to a pure distance-based tracker.
