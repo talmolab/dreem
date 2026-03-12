@@ -75,6 +75,33 @@ def build_config(
     return cfg
 
 
+def _resolve_accelerator(device: str, gpu: bool | None) -> str:
+    """Resolve accelerator from --device and deprecated --gpu flags.
+
+    Args:
+        device: Value from --device flag (e.g. "auto", "gpu", "cpu", "mps").
+        gpu: Value from deprecated --gpu/--no-gpu flag, or None if not provided.
+
+    Returns:
+        Resolved accelerator string.
+    """
+    if gpu is not None:
+        if device != "auto":
+            warnings.warn(
+                "Both --device and --gpu were provided; --device takes precedence",
+                UserWarning,
+                stacklevel=3,
+            )
+            return device
+        warnings.warn(
+            "--gpu/--no-gpu is deprecated, use --device instead",
+            FutureWarning,
+            stacklevel=3,
+        )
+        return "cpu" if gpu is False else "gpu"
+    return device
+
+
 def _strip_training_config_sections(cfg):
     """Remove training-only config sections for inference/eval.
 
@@ -343,15 +370,7 @@ def _create_inference_command(mode: str):
             console.print(f"[red]Error: Input path not found: {input_path}[/red]")
             raise typer.Exit(1)
 
-        if gpu is not None:
-            warnings.warn(
-                "--gpu/--no-gpu is deprecated, use --device instead",
-                FutureWarning,
-                stacklevel=2,
-            )
-            accelerator = "cpu" if gpu is False else "gpu"
-        else:
-            accelerator = device
+        accelerator = _resolve_accelerator(device, gpu)
 
         cli_overrides = {
             "ckpt_path": str(checkpoint),
@@ -585,15 +604,7 @@ def train(
         console.print(f"[red]Error: Validation directory not found: {val_dir}[/red]")
         raise typer.Exit(1)
 
-    if gpu is not None:
-        warnings.warn(
-            "--gpu/--no-gpu is deprecated, use --device instead",
-            FutureWarning,
-            stacklevel=2,
-        )
-        accelerator = "cpu" if gpu is False else "gpu"
-    else:
-        accelerator = device
+    accelerator = _resolve_accelerator(device, gpu)
 
     cli_overrides = {
         "dataset.train_dataset.dir.path": str(train_dir),

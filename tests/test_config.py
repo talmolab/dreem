@@ -233,3 +233,32 @@ def test_strip_training_config_sections():
     assert "tracker" in result
     assert "trainer" in result
     assert "dataset" in result
+
+
+def test_resolve_accelerator():
+    """Test _resolve_accelerator handles --device/--gpu conflicts."""
+    import warnings
+
+    from dreem.cli import _resolve_accelerator
+
+    # --device only (no --gpu)
+    assert _resolve_accelerator("auto", None) == "auto"
+    assert _resolve_accelerator("mps", None) == "mps"
+    assert _resolve_accelerator("cpu", None) == "cpu"
+
+    # --gpu only (deprecated, --device at default "auto")
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        assert _resolve_accelerator("auto", True) == "gpu"
+        assert any(issubclass(x.category, FutureWarning) for x in w)
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        assert _resolve_accelerator("auto", False) == "cpu"
+        assert any(issubclass(x.category, FutureWarning) for x in w)
+
+    # Both --device and --gpu: --device takes precedence with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        assert _resolve_accelerator("mps", True) == "mps"
+        assert any(issubclass(x.category, UserWarning) for x in w)

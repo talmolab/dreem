@@ -461,6 +461,33 @@ def test_cell_tracking_dataset(cell_tracking):
     assert gt_track_ids_1.all() == gt_track_ids_2.all()
 
 
+def test_cell_tracking_dataset_no_chunk(cell_tracking):
+    """Test CellTrackingDataset with chunk=False doesn't crash.
+
+    Regression test: create_chunks_other() previously accessed self.labels
+    which is None for CTC datasets. Should use self.frame_idx instead.
+
+    Args:
+        cell_tracking: HL60 nuclei fixture used for testing
+    """
+    raw_img_list, gt_list, ctc_track_meta, data_dir = cell_tracking
+    ds = CellTrackingDataset(
+        raw_img_list=raw_img_list,
+        gt_list=gt_list,
+        data_dirs=data_dir,
+        crop_size=128,
+        chunk=False,
+        clip_length=8,
+        ctc_track_meta=ctc_track_meta,
+    )
+
+    # chunk=False: one entry per dataset, all frames in one batch
+    assert len(ds) == 1
+    assert len(ds.label_idx) == 1
+    assert ds.label_idx[0] == 0
+    assert len(ds.chunked_frame_idx[0]) == len(ds.frame_idx[0])
+
+
 def test_tracking_dataset(two_flies):
     """Test lightning dataset logic.
 
