@@ -294,3 +294,80 @@ def run(cfg: DictConfig) -> dict:
         "output_paths": output_paths,
         "summary": summary if output_paths else {},
     }
+
+
+def run_tracking(
+    frames: str | np.ndarray,
+    masks: str | np.ndarray,
+    checkpoint: str,
+    crop_size: int = 25,
+    output_dir: str = "./results",
+    device: str = "auto",
+    ctc_paths: dict[str, str] | None = None,
+    **tracker_overrides,
+) -> dict:
+    """Run tracking with minimal configuration.
+
+    A convenience wrapper that handles CTC directory setup, config construction,
+    and inference in a single call. Accepts flexible input formats for frames
+    and masks (directories, TIFF stacks, video files, numpy arrays).
+
+    Args:
+        frames: Raw video frames. Can be a path to a directory of TIFFs,
+            a TIFF stack, a video file (.mp4/.avi/.mov), a numpy array (T,H,W),
+            or a sleap_io.Video object.
+        masks: Segmentation masks in the same formats as frames.
+        checkpoint: Path to model checkpoint, shortname (e.g., "microscopy"),
+            or HuggingFace repo ID.
+        crop_size: Bounding box crop size in pixels.
+        output_dir: Where to save results and intermediate files.
+        device: Accelerator ("auto", "gpu", "cpu", "mps").
+        ctc_paths: Pre-built CTC directory paths dict (with keys "raw_dir",
+            "dataset_dir", and optionally "mask_dir"). If provided,
+            ``setup_ctc_dirs()`` is skipped and these paths are used directly.
+        **tracker_overrides: Extra tracker config overrides
+            (e.g., window_size=16, overlap_thresh=0.05).
+
+    Returns:
+        Dict with "preds" (numpy array of tracked masks), "output_paths"
+        (list of absolute path strings), and "summary" (dict with num_frames,
+        num_tracks, track_ids).
+    """
+    from omegaconf import OmegaConf
+
+    if ctc_paths is not None:
+        paths = ctc_paths
+    else:
+        from dreem.utils.ctc_helpers import setup_ctc_dirs
+
+        # Set up CTC directory structure in a cache directory
+        cache_dir = os.path.join(output_dir, ".dreem_cache")
+        paths = setup_ctc_dirs(frames, masks, output_dir=cache_dir)
+
+    # Load default tracking config
+    default_cfg_path = os.path.join(
+        os.path.dirname(__file__), "..", "configs", "defaults", "track.yaml"
+    )
+    cfg = OmegaConf.load(default_cfg_path)
+
+    # Configure paths and model
+    with OmegaConf.read_write(cfg):
+        cfg.ckpt_path = checkpoint
+        cfg.outdir = output_dir
+        cfg.dataset.test_dataset.dir.path = paths["dataset_dir"]
+        cfg.dataset.test_dataset.dir.labels_suffix = ".tif"
+        cfg.dataset.test_dataset.dir.vid_suffix = ".tif"
+        cfg.dataset.test_dataset.crop_size = crop_size
+
+        # Map device to Lightning accelerator
+        if device == "auto":
+            cfg.trainer = {"accelerator": "auto", "devices": 1}
+        elif device in ("gpu", "cpu", "mps"):
+            cfg.trainer = {"accelerator": device, "devices": 1}
+
+        # Apply tracker overrides
+        if tracker_overrides:
+            for key, value in tracker_overrides.items():
+                OmegaConf.update(cfg, f"tracker.{key}", value)
+
+    return run(cfg)
