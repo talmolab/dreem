@@ -4,6 +4,7 @@ import torch
 from omegaconf import OmegaConf, open_dict
 
 from dreem.io import Config
+from dreem.io.config import _TRAINING_ONLY_CONFIG_SECTIONS
 from dreem.models import GlobalTrackingTransformer, GTRRunner
 
 
@@ -149,3 +150,86 @@ def test_missing(base_config):
         for key in keys:
             cfg.cfg.pop(key)
             assert isinstance(cfg.get_gtr_runner(), GTRRunner)
+
+
+def test_get_trainer_inference_mode():
+    """Test that training-only keys are stripped in inference mode."""
+    cfg_dict = OmegaConf.create(
+        {
+            "trainer": {
+                "strategy": "ddp_find_unused_parameters_true",
+                "max_epochs": 100,
+                "accumulate_grad_batches": 4,
+                "accelerator": "gpu",
+                "devices": 4,
+                "enable_progress_bar": True,
+            }
+        }
+    )
+    cfg = Config(cfg_dict)
+
+    # Inference mode should strip training-only keys
+    trainer = cfg.get_trainer(mode="inference")
+    assert trainer.num_devices == 1
+
+    # Verify inference defaults are applied
+    cfg2 = Config(OmegaConf.create({"trainer": {"strategy": "ddp"}}))
+    trainer2 = cfg2.get_trainer(mode="inference")
+    assert trainer2.num_devices == 1
+
+    # Training mode (mode=None) should preserve all keys
+    cfg3 = Config(
+        OmegaConf.create(
+            {
+                "trainer": {
+                    "max_epochs": 50,
+                    "accelerator": "cpu",
+                    "devices": 1,
+                }
+            }
+        )
+    )
+    trainer3 = cfg3.get_trainer(mode=None)
+    assert trainer3.max_epochs == 50
+
+
+def test_get_trainer_inference_defaults():
+    """Test that inference defaults are applied when keys are missing."""
+    cfg = Config(OmegaConf.create({"trainer": {}}))
+    trainer = cfg.get_trainer(mode="inference")
+
+    # Should get inference defaults
+    assert trainer.num_devices == 1
+
+
+def test_strip_training_config_sections():
+    """Test that CLI helper strips training-only sections."""
+    from dreem.cli import _strip_training_config_sections
+
+    cfg = OmegaConf.create(
+        {
+            "model": {"d_model": 128},
+            "tracker": {"window_size": 8},
+            "trainer": {"accelerator": "auto"},
+            "dataset": {"test_dataset": {}},
+            "optimizer": {"lr": 0.001},
+            "scheduler": {"type": "ReduceLROnPlateau"},
+            "loss": {"neg_unmatched": True},
+            "early_stopping": {"patience": 5},
+            "checkpointing": {"monitor": "val_loss"},
+            "logging": {"name": "test"},
+            "runner": {"metrics": True},
+        }
+    )
+
+    result = _strip_training_config_sections(cfg)
+
+    # Training-only sections should be removed
+    for section in _TRAINING_ONLY_CONFIG_SECTIONS:
+        assert section not in result, f"{section} should have been stripped"
+
+    # Non-training sections should be preserved
+    assert "model" in result
+    assert "tracker" in result
+    assert "trainer" in result
+    assert "dataset" in result

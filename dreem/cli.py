@@ -75,6 +75,24 @@ def build_config(
     return cfg
 
 
+def _strip_training_config_sections(cfg):
+    """Remove training-only config sections for inference/eval.
+
+    Strips sections like optimizer, scheduler, loss, etc. that are present
+    in pretrained model configs but irrelevant (and potentially harmful)
+    during inference.
+    """
+    from omegaconf import open_dict
+
+    from dreem.io.config import _TRAINING_ONLY_CONFIG_SECTIONS
+
+    with open_dict(cfg):
+        for section in _TRAINING_ONLY_CONFIG_SECTIONS:
+            if section in cfg:
+                del cfg[section]
+    return cfg
+
+
 def _flatten_config(cfg, parent_key: str = "", sep: str = ".") -> dict[str, Any]:
     """Recursively flatten nested OmegaConf config into dot-notation keys."""
     from omegaconf import OmegaConf
@@ -253,9 +271,26 @@ def _create_inference_command(mode: str):
         save_meta: Annotated[
             bool, typer.Option("--save-meta", "-sm", help="Save frame metadata")
         ] = False,
+        device: Annotated[
+            str,
+            typer.Option("--device", "-d", help="Accelerator: auto, gpu, cpu, mps"),
+        ] = "auto",
         gpu: Annotated[
-            bool, typer.Option("--gpu/--no-gpu", "-g", help="Use GPU for inference")
-        ] = True,
+            bool | None,
+            typer.Option(
+                "--gpu/--no-gpu",
+                "-g",
+                help="[deprecated] Use --device instead",
+                hidden=True,
+            ),
+        ] = None,
+        limit_batches: Annotated[
+            float | None,
+            typer.Option(
+                "--limit-batches",
+                help="Limit inference to N batches (for debugging)",
+            ),
+        ] = None,
         config: Annotated[
             Path | None,
             typer.Option("--config", "-c", help="Config file (overrides defaults)"),
@@ -308,6 +343,16 @@ def _create_inference_command(mode: str):
             console.print(f"[red]Error: Input path not found: {input_path}[/red]")
             raise typer.Exit(1)
 
+        if gpu is not None:
+            warnings.warn(
+                "--gpu/--no-gpu is deprecated, use --device instead",
+                FutureWarning,
+                stacklevel=2,
+            )
+            accelerator = "cpu" if gpu is False else "gpu"
+        else:
+            accelerator = device
+
         cli_overrides = {
             "ckpt_path": str(checkpoint),
             "outdir": str(output),
@@ -339,10 +384,14 @@ def _create_inference_command(mode: str):
             "tracker.front_nodes": list(front_nodes) if front_nodes else None,
             "tracker.back_nodes": list(back_nodes) if back_nodes else None,
             "save_frame_meta": save_meta,
-            "trainer.accelerator": "cpu" if gpu is False else "gpu",
+            "trainer.accelerator": accelerator,
         }
 
+        if limit_batches is not None:
+            cli_overrides["trainer.limit_predict_batches"] = limit_batches
+
         cfg = build_config("track", config, set_, **cli_overrides)
+        _strip_training_config_sections(cfg)
 
         config_title = (
             "Track Configuration" if mode == "track" else "Eval Configuration"
@@ -479,9 +528,19 @@ def train(
     clip_length: Annotated[
         int | None, typer.Option("--clip-length", "-cl", help="Clip length")
     ] = 32,
+    device: Annotated[
+        str,
+        typer.Option("--device", "-d", help="Accelerator: auto, gpu, cpu, mps"),
+    ] = "auto",
     gpu: Annotated[
-        bool, typer.Option("--gpu/--no-gpu", "-g", help="Use GPU for training")
-    ] = True,
+        bool | None,
+        typer.Option(
+            "--gpu/--no-gpu",
+            "-g",
+            help="[deprecated] Use --device instead",
+            hidden=True,
+        ),
+    ] = None,
     config: Annotated[
         Path | None,
         typer.Option("--config", "-c", help="Config file (overrides defaults)"),
@@ -526,6 +585,16 @@ def train(
         console.print(f"[red]Error: Validation directory not found: {val_dir}[/red]")
         raise typer.Exit(1)
 
+    if gpu is not None:
+        warnings.warn(
+            "--gpu/--no-gpu is deprecated, use --device instead",
+            FutureWarning,
+            stacklevel=2,
+        )
+        accelerator = "cpu" if gpu is False else "gpu"
+    else:
+        accelerator = device
+
     cli_overrides = {
         "dataset.train_dataset.dir.path": str(train_dir),
         "dataset.val_dataset.dir.path": str(val_dir),
@@ -550,7 +619,7 @@ def train(
         "dataset.val_dataset.crop_size": crop_size,
         "logging.name": run_name,
         "logging.logger_type": logger,
-        "trainer.accelerator": "cpu" if gpu is False else "gpu",
+        "trainer.accelerator": accelerator,
     }
 
     cfg = build_config("train", config, set_, **cli_overrides)

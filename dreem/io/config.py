@@ -20,6 +20,62 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("dreem.io")
 
+_TRAINING_ONLY_TRAINER_KEYS = frozenset(
+    {
+        # DDP / multi-GPU training
+        "strategy",
+        "sync_batchnorm",
+        "use_distributed_sampler",
+        # Gradient / optimization
+        "accumulate_grad_batches",
+        "gradient_clip_val",
+        "gradient_clip_algorithm",
+        # Epoch / step limits
+        "max_epochs",
+        "min_epochs",
+        "max_steps",
+        "min_steps",
+        "max_time",
+        # Validation schedule
+        "check_val_every_n_epoch",
+        "val_check_interval",
+        "num_sanity_val_steps",
+        # Batch limits (runtime-specific, exposed as CLI flag instead)
+        "limit_train_batches",
+        "limit_val_batches",
+        "limit_test_batches",
+        "limit_predict_batches",
+        # Misc training
+        "overfit_batches",
+        "log_every_n_steps",
+        "reload_dataloaders_every_n_epochs",
+        "detect_anomaly",
+        "enable_autolog_hparams",
+        # Runtime environment-specific
+        "accelerator",
+        "devices",
+    }
+)
+
+_INFERENCE_TRAINER_DEFAULTS = {
+    "accelerator": "auto",
+    "devices": 1,
+    "enable_checkpointing": False,
+    "enable_model_summary": False,
+}
+
+_TRAINING_ONLY_CONFIG_SECTIONS = frozenset(
+    {
+        "optimizer",
+        "scheduler",
+        "loss",
+        "early_stopping",
+        "checkpointing",
+        "logging",
+        "runner",
+    }
+)
+
 
 class Config:
     """Class handling loading components based on config params."""
@@ -565,6 +621,7 @@ class Config:
         logger: pl.loggers.WandbLogger | None = None,
         devices: int = 1,
         accelerator: str = "auto",
+        mode: str | None = None,
     ) -> pl.Trainer:
         """Getter for the lightning trainer.
 
@@ -574,16 +631,35 @@ class Config:
             logger: the Wandb logger used for logging during training
             devices: The number of gpus to be used. 0 means cpu
             accelerator: either "gpu" or "cpu" specifies which device to use
+            mode: One of None, "inference", or "eval". When set to "inference"
+                or "eval", training-only keys are stripped from the trainer
+                config and safe inference defaults are applied.
 
         Returns:
             A lightning Trainer with specified params
         """
+        _log = logging.getLogger(__name__)
         trainer_params = self.get("trainer", {})
         profiler = trainer_params.pop("profiler", None)
-        # if len(trainer_params) == 0:
-        #     print(
-        #         "`trainer` key was not found in cfg or was empty. Using defaults for `pl.Trainer`!"
-        #     )
+
+        if mode in ("inference", "eval"):
+            stripped = [
+                k for k in list(trainer_params) if k in _TRAINING_ONLY_TRAINER_KEYS
+            ]
+            for k in stripped:
+                trainer_params.pop(k)
+            if stripped:
+                _log.info(
+                    f"Stripped training-only trainer keys for {mode} mode: {stripped}"
+                )
+
+            for k, v in _INFERENCE_TRAINER_DEFAULTS.items():
+                if k not in trainer_params:
+                    trainer_params[k] = v
+
+            # Disable logging for inference/eval unless explicitly provided
+            if logger is None:
+                logger = False
 
         if "accelerator" not in trainer_params:
             trainer_params["accelerator"] = accelerator
