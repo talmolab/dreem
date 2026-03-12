@@ -12,7 +12,7 @@ To run this demo, you can use your own data or our sample data.
 ### Install DREEM
 
 ```python
-!uv pip install dreem-track cellpose tifffile
+!uv pip install dreem-track cellpose
 ```
 
 ### Import necessary packages
@@ -22,24 +22,19 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-import sleap_io as sio
 import tifffile
 import torch
-from huggingface_hub import hf_hub_download
 
-from dreem.utils import run_cellpose_segmentation
+from dreem.inference.track import run_tracking
+from dreem.utils import run_cellpose_segmentation, setup_ctc_dirs
 ```
 ### Download a pretrained model
 
 ```python
-model_save_dir = "./models"
-os.makedirs(model_save_dir, exist_ok=True)
+# DREEM supports pretrained model shortnames that auto-download from HuggingFace.
+# No manual download needed — just pass "microscopy" as the checkpoint.
+model_path = "microscopy"
 os.makedirs("./data", exist_ok=True)
-model_path = hf_hub_download(
-    repo_id="talmolab/microscopy-pretrained",
-    filename="pretrained-microscopy.ckpt",
-    local_dir=model_save_dir,
-)
 ```
 
 ## Data
@@ -47,8 +42,11 @@ model_path = hf_hub_download(
 Set `data_path` below to point to your data. Supported formats:
 
 - **Directory of TIFFs** (default): Set `data_path` to the folder containing individual `.tif` frame files.
-- **TIFF stack**: Set `data_path` to a single multi-page `.tif` file — it will be split into individual frames automatically.
-- **Video**: Set `data_path` to a `.mp4` or `.avi` file — frames will be extracted automatically.
+- **TIFF stack**: Set `data_path` to a single multi-page `.tif` file.
+- **Video**: Set `data_path` to a `.mp4` or `.avi` file.
+- **Numpy array**: Pass a `(T, H, W)` array directly to the segmentation and tracking functions.
+
+All formats are handled automatically — no manual frame extraction needed.
 
 Leave `data_path = None` to download and use our sample dataset (**DynamicNuclearNet** — 42 frames of fluorescent cell nuclei, credit: [Van Valen Lab](https://doi.org/10.1101/803205)).
 
@@ -74,38 +72,11 @@ if data_path is None:
 else:
     data_path = os.path.abspath(data_path)
 
-# If data_path is a file (video or TIFF stack), convert to a directory of TIFFs
-if os.path.isfile(data_path):
-    ext = os.path.splitext(data_path)[1].lower()
-    base = os.path.splitext(os.path.basename(data_path))[0]
-    tiff_dir = os.path.join(os.path.dirname(data_path), base, base)
-    os.makedirs(tiff_dir, exist_ok=True)
-
-    if ext in (".tif", ".tiff"):
-        stack = tifffile.imread(data_path)
-        if stack.ndim == 2:
-            raise ValueError("Input TIFF is a single frame, not a stack.")
-        for i in range(stack.shape[0]):
-            tifffile.imwrite(os.path.join(tiff_dir, f"frame_{i:05d}.tif"), stack[i])
-        print(f"Extracted {stack.shape[0]} frames from TIFF stack to: {tiff_dir}")
-    elif ext in (".avi", ".mp4"):
-        video = sio.load_video(data_path)
-        for i, frame in enumerate(video):
-            frame = frame[..., 0] if frame.ndim == 3 else frame
-            tifffile.imwrite(os.path.join(tiff_dir, f"frame_{i:05d}.tif"), frame)
-        print(f"Extracted {len(video)} frames from video to: {tiff_dir}")
-    else:
-        raise ValueError(f"Unsupported file type: {ext}. Use .tif, .tiff, .avi, or .mp4")
-    data_path = tiff_dir
-
-# Derive all paths from data_path
-dataset_dir = os.path.dirname(data_path)
-segmented_path = os.path.join(dataset_dir, os.path.basename(data_path) + "_GT", "TRA")
+# data_path can be a directory of TIFFs, a TIFF stack, or a video file.
+# No manual extraction needed — the new APIs handle all formats directly.
 results_path = os.path.abspath("./results")
-
-print(f"Data path:      {data_path}")
-print(f"Segmented path: {segmented_path}")
-print(f"Results path:   {results_path}")
+print(f"Data path:    {data_path}")
+print(f"Results path: {results_path}")
 ```
 
 ## Detection
@@ -124,22 +95,26 @@ probability_threshold = 0.0
 ```python
 use_gpu = torch.cuda.is_available()
 
+# run_cellpose_segmentation now accepts any format: directory, TIFF stack, video, or numpy array.
+# With output_path=None, masks are returned as an array without writing to disk.
 masks = run_cellpose_segmentation(
     data_path,
-    segmented_path,
     diameter=instance_diameter_px,
     gpu=use_gpu,
     cellprob_threshold=probability_threshold,
 )
 
-# Load the original stack and masks for visualization
-tiff_files = sorted(
-    f for f in os.listdir(data_path) if f.endswith(".tif") or f.endswith(".tiff")
-)
-first_img = tifffile.imread(os.path.join(data_path, tiff_files[0]))
-first_mask = tifffile.imread(
-    os.path.join(segmented_path, f"{os.path.splitext(tiff_files[0])[0]}.tif")
-)
+# Set up CTC directory structure for tracking (writes frames + masks as individual TIFFs)
+ctc_paths = setup_ctc_dirs(data_path, masks, output_dir=results_path)
+dataset_dir = ctc_paths["dataset_dir"]
+segmented_path = ctc_paths["mask_dir"]
+
+# Load the first frame and mask for visualization
+from dreem.utils.run_cellpose_segmentation import _to_frame_array
+
+images_stack = _to_frame_array(data_path)
+first_img = images_stack[0]
+first_mask = masks[0]
 ```
 
 #### View the segmentation result and original image
@@ -159,35 +134,19 @@ plt.show()
 This assumes you have run the CellPose segmentation step above. The output is a single TIFF file with all frames, as well as the configuration used for tracking (for reproducibility).
 
 ```python
-import glob
+# run_tracking() is a convenience wrapper that handles config construction and inference.
+# It accepts flexible input formats and a checkpoint shortname.
+result = run_tracking(
+    frames=data_path,
+    masks=masks,
+    checkpoint=model_path,
+    crop_size=instance_diameter_px,
+    output_dir=results_path,
+    device="gpu" if torch.cuda.is_available() else "cpu",
+)
 
-from dreem.inference.track import run as run_tracking
-from omegaconf import OmegaConf
-
-accelerator = "gpu" if torch.cuda.is_available() else "cpu"
-
-tracking_cfg = OmegaConf.load(os.path.join(os.path.dirname(__import__("dreem").__file__), "configs", "defaults", "track.yaml"))
-OmegaConf.update(tracking_cfg, "ckpt_path", os.path.abspath("./models/pretrained-microscopy.ckpt"))
-OmegaConf.update(tracking_cfg, "outdir", results_path)
-OmegaConf.update(tracking_cfg, "dataset.test_dataset.dir.path", dataset_dir)
-OmegaConf.update(tracking_cfg, "dataset.test_dataset.dir.vid_suffix", ".tif")
-OmegaConf.update(tracking_cfg, "dataset.test_dataset.dir.labels_suffix", ".tif")
-OmegaConf.update(tracking_cfg, "dataset.test_dataset.crop_size", instance_diameter_px)
-OmegaConf.update(tracking_cfg, "trainer.accelerator", accelerator)
-
-result = run_tracking(tracking_cfg)
-
-# Extract output path and summary from structured result
-if isinstance(result, dict):
-    tracked_path = result["output_paths"][-1]
-    summary = result["summary"]
-else:
-    # Fallback for older dreem versions that return preds directly
-    tracked_files = sorted(glob.glob(os.path.join(results_path, "*.dreem_inference.*.tif")))
-    tracked_path = tracked_files[-1]
-    tracked_data = tifffile.imread(tracked_path)
-    track_ids_arr = sorted(set(int(x) for x in np.unique(tracked_data)) - {0})
-    summary = {"num_frames": tracked_data.shape[0], "num_tracks": len(track_ids_arr), "track_ids": track_ids_arr}
+tracked_path = result["output_paths"][-1]
+summary = result["summary"]
 
 print(f"\nTracked path:   {tracked_path}")
 print(f"Frames:         {summary['num_frames']}")
@@ -207,14 +166,12 @@ The viewer shows three panels:
 ```python
 from collections import defaultdict
 
-# Load raw images, detection masks, and tracked output
-images = tifffile.TiffSequence(os.path.join(data_path, "*.tif")).asarray().astype(np.uint16)
-tracked = tifffile.imread(tracked_path).astype(np.uint16)
+# Load raw images and tracked output
+from dreem.utils.run_cellpose_segmentation import _to_frame_array
 
-seg_files = sorted(
-    f for f in os.listdir(segmented_path) if f.endswith(".tif") or f.endswith(".tiff")
-)
-detections = np.stack([tifffile.imread(os.path.join(segmented_path, f)) for f in seg_files])
+images = _to_frame_array(data_path).astype(np.uint16)
+tracked = tifffile.imread(tracked_path).astype(np.uint16)
+detections = masks.astype(np.uint16) if isinstance(masks, np.ndarray) else _to_frame_array(segmented_path).astype(np.uint16)
 
 # Use track IDs from run() summary (already Python ints)
 track_ids = summary["track_ids"]

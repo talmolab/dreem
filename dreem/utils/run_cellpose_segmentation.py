@@ -9,8 +9,8 @@ Usage:
         --diameter 25
 
 Or use as a module:
-    from run_cellpose_segmentation import run_cellpose_segmentation
-    run_cellpose_segmentation(data_path, output_path, diameter=25, gpu=True)
+    from dreem.utils import run_cellpose_segmentation
+    masks = run_cellpose_segmentation(data_path, diameter=25, gpu=True)
 """
 
 import os
@@ -18,50 +18,78 @@ import os
 import numpy as np
 
 
+def _to_frame_array(data):
+    """Convert any supported input to a (T, H, W) grayscale numpy array.
+
+    Supports: directory of TIFFs, TIFF stack, video file (.mp4/.avi/.mov),
+    numpy array (T,H,W) or (T,H,W,C), or sleap_io.Video object.
+
+    Args:
+        data: Input data as a file path (str), numpy array, or sleap_io.Video.
+
+    Returns:
+        A numpy array with shape (T, H, W).
+
+    Raises:
+        ValueError: If the input array has unsupported dimensions.
+        FileNotFoundError: If the input path does not exist.
+    """
+    if isinstance(data, np.ndarray):
+        if data.ndim == 4:  # (T, H, W, C) -> grayscale
+            data = data[..., 0]
+        if data.ndim != 3:
+            raise ValueError(f"Expected 3D array (T, H, W), got {data.ndim}D")
+        return data
+
+    import sleap_io as sio
+
+    if isinstance(data, str):
+        if not os.path.exists(data):
+            raise FileNotFoundError(f"Path does not exist: {data}")
+        video = sio.load_video(data, grayscale=True)
+    elif isinstance(data, sio.Video):
+        video = data
+    else:
+        raise TypeError(
+            f"Unsupported data type: {type(data)}. "
+            "Expected str, np.ndarray, or sleap_io.Video."
+        )
+
+    frames = video[:]  # (T, H, W, 1) for grayscale or (T, H, W)
+    if frames.ndim == 4:
+        frames = np.squeeze(frames, axis=-1)  # (T, H, W)
+    return frames
+
+
 def run_cellpose_segmentation(
-    data_path,
-    output_path,
+    data,
+    output_path=None,
     diameter=25,
     gpu=True,
     cellprob_threshold=0.0,
 ):
-    """Run CellPose segmentation on a directory of tiff files.
+    """Run CellPose segmentation on image data.
 
-    Parameters
-    ----------
-    data_path : str
-        Path to directory containing input tiff files
-    output_path : str
-        Path to directory where segmentation masks will be saved
-    diameter : int, default=25
-        Approximate diameter (in pixels) of instances to segment
-    gpu : bool, default=True
-        Use GPU if available
-    cellprob_threshold : float, default=0.0
-        Cell probability threshold
+    Supports directories of TIFFs, TIFF stacks, video files, numpy arrays,
+    and sleap_io.Video objects as input.
+
+    Args:
+        data: Input data. Can be a path to a directory of TIFFs, a TIFF stack,
+            a video file (.mp4/.avi/.mov), a numpy array (T,H,W) or (T,H,W,C),
+            or a sleap_io.Video object.
+        output_path: Path to directory where segmentation masks will be saved.
+            If None, masks are returned without writing to disk.
+        diameter: Approximate diameter (in pixels) of instances to segment.
+        gpu: Use GPU if available.
+        cellprob_threshold: Cell probability threshold.
 
     Returns:
-    --------
-    all_masks : numpy.ndarray
-        Array of segmentation masks
+        Numpy array of segmentation masks with shape (T, H, W).
     """
-    import tifffile
     from cellpose import models
 
-    # Create output directory
-    os.makedirs(output_path, exist_ok=True)
-
-    # Load tiff files
-    tiff_files = [
-        f for f in os.listdir(data_path) if f.endswith(".tif") or f.endswith(".tiff")
-    ]
-    tiff_files.sort()  # Ensure consistent ordering
-
-    if not tiff_files:
-        raise ValueError(f"No tiff files found in {data_path}")
-
-    print(f"Loading {len(tiff_files)} tiff files from {data_path}...")
-    stack = np.stack([tifffile.imread(os.path.join(data_path, f)) for f in tiff_files])
+    # Load frames from any supported input format
+    stack = _to_frame_array(data)
     frames, Y, X = stack.shape
     print(f"Loaded stack: {frames} frames, {Y}x{X} pixels")
 
@@ -85,71 +113,16 @@ def run_cellpose_segmentation(
         )
         all_masks[i] = masks
 
-    # Save segmentation masks
-    print(f"Saving masks to {output_path}...")
-    for i, (mask, filename) in enumerate(zip(all_masks, tiff_files)):
-        new_tiff_path = os.path.join(
-            output_path, f"{os.path.splitext(filename)[0]}.tif"
-        )
-        tifffile.imwrite(new_tiff_path, mask)
-        print(f"Saved frame {i + 1} to {new_tiff_path}")
+    # Save segmentation masks if output_path is provided
+    if output_path is not None:
+        import tifffile
+
+        os.makedirs(output_path, exist_ok=True)
+        print(f"Saving masks to {output_path}...")
+        for i, mask in enumerate(all_masks):
+            tiff_path = os.path.join(output_path, f"frame_{i:05d}.tif")
+            tifffile.imwrite(tiff_path, mask)
+            print(f"Saved frame {i + 1} to {tiff_path}")
 
     print("Segmentation complete!")
     return all_masks
-
-
-# def main():
-#     """Command-line interface for CellPose segmentation."""
-#     parser = argparse.ArgumentParser(
-#         description="Run CellPose segmentation on a directory of tiff files"
-#     )
-#     parser.add_argument(
-#         "--data_path",
-#         type=str,
-#         required=True,
-#         help="Path to directory containing input tiff files",
-#     )
-#     parser.add_argument(
-#         "--output_path",
-#         type=str,
-#         required=True,
-#         help="Path to directory where segmentation masks will be saved",
-#     )
-#     parser.add_argument(
-#         "--diameter",
-#         type=int,
-#         default=25,
-#         help="Approximate diameter (in pixels) of instances to segment (default: 25)",
-#     )
-#     parser.add_argument(
-#         "--gpu",
-#         action="store_true",
-#         default=True,
-#         help="Use GPU if available (default: True)",
-#     )
-#     parser.add_argument(
-#         "--no-gpu",
-#         dest="gpu",
-#         action="store_false",
-#         help="Disable GPU usage",
-#     )
-#     parser.add_argument(
-#         "--cellprob_threshold",
-#         type=float,
-#         default=0.0,
-#         help="Cell probability threshold (default: 0.0)",
-#     )
-
-#     args = parser.parse_args()
-
-#     run_cellpose_segmentation(
-#         data_path=args.data_path,
-#         output_path=args.output_path,
-#         diameter=args.diameter,
-#         gpu=args.gpu,
-#         cellprob_threshold=args.cellprob_threshold,
-#     )
-
-
-# if __name__ == "__main__":
-#     main()

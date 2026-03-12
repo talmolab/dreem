@@ -33,6 +33,7 @@ dependencies = [
     "albumentations",
     "opencv-python",
     "numpy",  # Required for opencv-python<4.9.0 compatibility
+    "tifffile",
     # Configuration
     "hydra-core",
     # Data I/O
