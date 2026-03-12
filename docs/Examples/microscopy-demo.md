@@ -25,8 +25,8 @@ import numpy as np
 import tifffile
 import torch
 
-from dreem.inference.track import run_tracking
-from dreem.utils import run_cellpose_segmentation, setup_ctc_dirs
+from dreem.inference import run_tracking
+from dreem.utils import load_frames, run_cellpose_segmentation, setup_ctc_dirs
 ```
 ### Download a pretrained model
 
@@ -110,9 +110,7 @@ dataset_dir = ctc_paths["dataset_dir"]
 segmented_path = ctc_paths["mask_dir"]
 
 # Load the first frame and mask for visualization
-from dreem.utils.run_cellpose_segmentation import _to_frame_array
-
-images_stack = _to_frame_array(data_path)
+images_stack = load_frames(data_path)
 first_img = images_stack[0]
 first_mask = masks[0]
 ```
@@ -142,6 +140,7 @@ result = run_tracking(
     checkpoint=model_path,
     crop_size=instance_diameter_px,
     output_dir=results_path,
+    ctc_paths=ctc_paths,  # reuse dirs from segmentation step
     device="gpu" if torch.cuda.is_available() else "cpu",
 )
 
@@ -167,11 +166,9 @@ The viewer shows three panels:
 from collections import defaultdict
 
 # Load raw images and tracked output
-from dreem.utils.run_cellpose_segmentation import _to_frame_array
-
-images = _to_frame_array(data_path).astype(np.uint16)
+images = load_frames(data_path).astype(np.uint16)
 tracked = tifffile.imread(tracked_path).astype(np.uint16)
-detections = masks.astype(np.uint16) if isinstance(masks, np.ndarray) else _to_frame_array(segmented_path).astype(np.uint16)
+detections = masks.astype(np.uint16) if isinstance(masks, np.ndarray) else load_frames(segmented_path).astype(np.uint16)
 
 # Use track IDs from run() summary (already Python ints)
 track_ids = summary["track_ids"]

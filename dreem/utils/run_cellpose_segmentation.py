@@ -1,52 +1,74 @@
-r"""Helper script to run CellPose segmentation using uv for dependency management.
+r"""Utilities for running CellPose segmentation and loading image data.
 
-This allows running CellPose without global installation.
+Provides:
+    load_frames(): Convert directories, TIFF stacks, videos, or arrays to (T,H,W).
+    run_cellpose_segmentation(): Run CellPose on any supported input format.
 
-Usage:
-    uv run run_cellpose_segmentation.py \\
-        --data_path ./data/dynamicnuclearnet/test_1 \\
-        --output_path ./data/dynamicnuclearnet/test_1_GT/TRA \\
-        --diameter 25
-
-Or use as a module:
-    from dreem.utils import run_cellpose_segmentation
-    masks = run_cellpose_segmentation(data_path, diameter=25, gpu=True)
+Example:
+    from dreem.utils import load_frames, run_cellpose_segmentation
+    masks = run_cellpose_segmentation("./data/my_tiffs", diameter=25, gpu=True)
 """
+
+from __future__ import annotations
 
 import os
 
 import numpy as np
 
 
-def _to_frame_array(data):
-    """Convert any supported input to a (T, H, W) grayscale numpy array.
+def load_frames(
+    data: str | np.ndarray,
+    grayscale: str | bool = "first_channel",
+) -> np.ndarray:
+    """Convert any supported input to a (T, H, W) numpy array.
 
     Supports: directory of TIFFs, TIFF stack, video file (.mp4/.avi/.mov),
     numpy array (T,H,W) or (T,H,W,C), or sleap_io.Video object.
 
     Args:
         data: Input data as a file path (str), numpy array, or sleap_io.Video.
+        grayscale: How to handle color channels.
+            - ``"first_channel"`` (default): For 4D arrays, take ``data[..., 0]``.
+              For video/TIFF files loaded via sleap_io, load as grayscale.
+            - ``"luminance"``: For 4D arrays, compute weighted sum
+              ``0.299*R + 0.587*G + 0.114*B``. For video/TIFF files loaded via
+              sleap_io, load as grayscale (sleap-io handles conversion).
+            - ``False``: Return as-is with no channel conversion. 4D arrays stay
+              4D, and videos are loaded in color.
 
     Returns:
-        A numpy array with shape (T, H, W).
+        A numpy array with shape (T, H, W) when grayscale is enabled, or
+        (T, H, W, C) when ``grayscale=False`` and the input has color channels.
 
     Raises:
         ValueError: If the input array has unsupported dimensions.
         FileNotFoundError: If the input path does not exist.
     """
     if isinstance(data, np.ndarray):
-        if data.ndim == 4:  # (T, H, W, C) -> grayscale
-            data = data[..., 0]
-        if data.ndim != 3:
+        if data.ndim == 4 and grayscale != False:  # noqa: E712
+            if grayscale == "luminance" and data.shape[-1] >= 3:
+                data = (
+                    0.299 * data[..., 0] + 0.587 * data[..., 1] + 0.114 * data[..., 2]
+                ).astype(data.dtype)
+            else:
+                # "first_channel" or fallback
+                data = data[..., 0]
+        if grayscale != False and data.ndim != 3:  # noqa: E712
             raise ValueError(f"Expected 3D array (T, H, W), got {data.ndim}D")
+        if grayscale == False and data.ndim not in (3, 4):  # noqa: E712
+            raise ValueError(
+                f"Expected 3D or 4D array (T, H, W[, C]), got {data.ndim}D"
+            )
         return data
 
     import sleap_io as sio
 
+    load_grayscale = grayscale != False  # noqa: E712
+
     if isinstance(data, str):
         if not os.path.exists(data):
             raise FileNotFoundError(f"Path does not exist: {data}")
-        video = sio.load_video(data, grayscale=True)
+        video = sio.load_video(data, grayscale=load_grayscale)
     elif isinstance(data, sio.Video):
         video = data
     else:
@@ -55,19 +77,19 @@ def _to_frame_array(data):
             "Expected str, np.ndarray, or sleap_io.Video."
         )
 
-    frames = video[:]  # (T, H, W, 1) for grayscale or (T, H, W)
-    if frames.ndim == 4:
+    frames = video[:]  # (T, H, W, 1) for grayscale or (T, H, W) or (T, H, W, C)
+    if load_grayscale and frames.ndim == 4:
         frames = np.squeeze(frames, axis=-1)  # (T, H, W)
     return frames
 
 
 def run_cellpose_segmentation(
-    data,
-    output_path=None,
-    diameter=25,
-    gpu=True,
-    cellprob_threshold=0.0,
-):
+    data: str | np.ndarray,
+    output_path: str | None = None,
+    diameter: int = 25,
+    gpu: bool = True,
+    cellprob_threshold: float = 0.0,
+) -> np.ndarray:
     """Run CellPose segmentation on image data.
 
     Supports directories of TIFFs, TIFF stacks, video files, numpy arrays,
@@ -89,7 +111,7 @@ def run_cellpose_segmentation(
     from cellpose import models
 
     # Load frames from any supported input format
-    stack = _to_frame_array(data)
+    stack = load_frames(data)
     frames, Y, X = stack.shape
     print(f"Loaded stack: {frames} frames, {Y}x{X} pixels")
 

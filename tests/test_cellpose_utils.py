@@ -6,10 +6,10 @@ import numpy as np
 import pytest
 import tifffile
 
-from dreem.utils.run_cellpose_segmentation import _to_frame_array
+from dreem.utils import load_frames
 
 # ---------------------------------------------------------------------------
-# _to_frame_array tests
+# load_frames tests
 # ---------------------------------------------------------------------------
 
 CELL_TRACKING_DIR = os.path.join(
@@ -17,12 +17,12 @@ CELL_TRACKING_DIR = os.path.join(
 )
 
 
-class TestToFrameArrayDirectory:
+class TestLoadFramesDirectory:
     """Test loading from a directory of TIFFs."""
 
     def test_loads_from_directory(self):
         """Load frames from test directory."""
-        frames = _to_frame_array(CELL_TRACKING_DIR)
+        frames = load_frames(CELL_TRACKING_DIR)
         assert isinstance(frames, np.ndarray)
         assert frames.ndim == 3
         # test_0 has 11 frames
@@ -30,7 +30,7 @@ class TestToFrameArrayDirectory:
 
     def test_frame_order_matches_sorted_filenames(self):
         """Verify frame order matches sorted filename order."""
-        frames = _to_frame_array(CELL_TRACKING_DIR)
+        frames = load_frames(CELL_TRACKING_DIR)
         tiff_files = sorted(
             f for f in os.listdir(CELL_TRACKING_DIR) if f.endswith(".tif")
         )
@@ -38,19 +38,19 @@ class TestToFrameArrayDirectory:
         np.testing.assert_array_equal(frames[0], first_frame)
 
 
-class TestToFrameArrayNumpy:
+class TestLoadFramesNumpy:
     """Test numpy array passthrough."""
 
     def test_3d_passthrough(self):
         """3D array passes through unchanged."""
         arr = np.random.randint(0, 255, (5, 64, 64), dtype=np.uint8)
-        result = _to_frame_array(arr)
+        result = load_frames(arr)
         np.testing.assert_array_equal(result, arr)
 
     def test_4d_to_grayscale(self):
         """4D array is converted to grayscale by taking first channel."""
         arr = np.random.randint(0, 255, (5, 64, 64, 3), dtype=np.uint8)
-        result = _to_frame_array(arr)
+        result = load_frames(arr)
         assert result.ndim == 3
         assert result.shape == (5, 64, 64)
         np.testing.assert_array_equal(result, arr[..., 0])
@@ -59,16 +59,16 @@ class TestToFrameArrayNumpy:
         """2D array raises ValueError."""
         arr = np.random.randint(0, 255, (64, 64), dtype=np.uint8)
         with pytest.raises(ValueError, match="Expected 3D array"):
-            _to_frame_array(arr)
+            load_frames(arr)
 
     def test_5d_raises(self):
         """5D array raises ValueError."""
         arr = np.zeros((2, 3, 64, 64, 3), dtype=np.uint8)
         with pytest.raises(ValueError, match="Expected 3D array"):
-            _to_frame_array(arr)
+            load_frames(arr)
 
 
-class TestToFrameArrayTiffStack:
+class TestLoadFramesTiffStack:
     """Test loading from a multi-page TIFF stack."""
 
     def test_loads_tiff_stack(self, tmp_path):
@@ -77,13 +77,13 @@ class TestToFrameArrayTiffStack:
         tiff_path = str(tmp_path / "stack.tif")
         tifffile.imwrite(tiff_path, stack)
 
-        result = _to_frame_array(tiff_path)
+        result = load_frames(tiff_path)
         assert result.ndim == 3
         assert result.shape[0] == 5
         np.testing.assert_array_equal(result, stack)
 
 
-class TestToFrameArrayVideo:
+class TestLoadFramesVideo:
     """Test loading from a video file."""
 
     def test_loads_mp4(self, tmp_path):
@@ -96,25 +96,69 @@ class TestToFrameArrayVideo:
             writer.append_data(frame)
         writer.close()
 
-        result = _to_frame_array(video_path)
+        result = load_frames(video_path)
         assert result.ndim == 3
         assert result.shape[0] == 10
         assert result.shape[1] == 32
         assert result.shape[2] == 32
 
 
-class TestToFrameArrayErrors:
+class TestLoadFramesGrayscale:
+    """Test grayscale conversion options."""
+
+    def test_first_channel_default(self):
+        """Default grayscale='first_channel' takes channel 0."""
+        arr = np.random.randint(0, 255, (5, 64, 64, 3), dtype=np.uint8)
+        result = load_frames(arr)
+        assert result.ndim == 3
+        np.testing.assert_array_equal(result, arr[..., 0])
+
+    def test_luminance(self):
+        """grayscale='luminance' computes weighted sum."""
+        arr = np.zeros((2, 4, 4, 3), dtype=np.uint8)
+        arr[..., 0] = 100  # R
+        arr[..., 1] = 150  # G
+        arr[..., 2] = 200  # B
+        result = load_frames(arr, grayscale="luminance")
+        assert result.ndim == 3
+        assert result.shape == (2, 4, 4)
+        expected = 0.299 * 100 + 0.587 * 150 + 0.114 * 200
+        np.testing.assert_allclose(result[0, 0, 0], expected, atol=1)
+
+    def test_grayscale_false_preserves_4d(self):
+        """grayscale=False keeps 4D array as-is."""
+        arr = np.random.randint(0, 255, (5, 64, 64, 3), dtype=np.uint8)
+        result = load_frames(arr, grayscale=False)
+        assert result.ndim == 4
+        assert result.shape == (5, 64, 64, 3)
+        np.testing.assert_array_equal(result, arr)
+
+    def test_grayscale_false_3d_passthrough(self):
+        """grayscale=False with 3D array passes through."""
+        arr = np.random.randint(0, 255, (5, 64, 64), dtype=np.uint8)
+        result = load_frames(arr, grayscale=False)
+        assert result.ndim == 3
+        np.testing.assert_array_equal(result, arr)
+
+    def test_grayscale_false_2d_raises(self):
+        """grayscale=False with 2D array raises ValueError."""
+        arr = np.random.randint(0, 255, (64, 64), dtype=np.uint8)
+        with pytest.raises(ValueError, match="Expected 3D or 4D array"):
+            load_frames(arr, grayscale=False)
+
+
+class TestLoadFramesErrors:
     """Test error handling."""
 
     def test_nonexistent_path(self):
         """Non-existent path raises FileNotFoundError."""
         with pytest.raises(FileNotFoundError, match="Path does not exist"):
-            _to_frame_array("/nonexistent/path/video.tif")
+            load_frames("/nonexistent/path/video.tif")
 
     def test_unsupported_type(self):
         """Unsupported input type raises TypeError."""
         with pytest.raises(TypeError, match="Unsupported data type"):
-            _to_frame_array(42)
+            load_frames(42)
 
 
 # ---------------------------------------------------------------------------
@@ -239,7 +283,7 @@ class TestSetupCtcDirsFromFile:
         assert len(raw_files) == 4
 
     def test_from_directory(self, tmp_path):
-        """Extract frames from a directory of TIFFs into CTC structure."""
+        """Use existing directory of TIFFs directly (no copy)."""
         from dreem.utils.ctc_helpers import setup_ctc_dirs
 
         # Create a directory of TIFFs
@@ -252,10 +296,85 @@ class TestSetupCtcDirsFromFile:
             )
 
         out_dir = str(tmp_path / "output")
-        setup_ctc_dirs(src_dir, output_dir=out_dir)
+        result = setup_ctc_dirs(src_dir, output_dir=out_dir)
 
-        # Name should be auto-derived from directory name: "my_frames"
-        assert os.path.isdir(os.path.join(out_dir, "my_frames"))
+        # Should point directly at the source directory, not copy
+        assert result["raw_dir"] == os.path.abspath(src_dir)
+
+
+class TestSetupCtcDirsDirectoryFastPath:
+    """Test that existing directories are used directly without copying."""
+
+    def test_raw_dir_points_to_existing(self, tmp_path):
+        """When raw_frames is a dir, raw_dir points there directly."""
+        from dreem.utils.ctc_helpers import setup_ctc_dirs
+
+        src_dir = str(tmp_path / "existing_frames")
+        os.makedirs(src_dir)
+        for i in range(3):
+            tifffile.imwrite(
+                os.path.join(src_dir, f"frame_{i:05d}.tif"),
+                np.random.randint(0, 255, (32, 32), dtype=np.uint8),
+            )
+
+        out_dir = str(tmp_path / "output")
+        result = setup_ctc_dirs(src_dir, output_dir=out_dir)
+
+        # raw_dir should point at original, not a copy
+        assert result["raw_dir"] == os.path.abspath(src_dir)
+        # No copy should have been created under output
+        assert not os.path.exists(os.path.join(out_dir, "existing_frames"))
+
+    def test_mask_dir_points_to_existing(self, tmp_path):
+        """When masks is a dir, mask_dir points there directly."""
+        from dreem.utils.ctc_helpers import setup_ctc_dirs
+
+        frames = np.random.randint(0, 255, (3, 32, 32), dtype=np.uint8)
+        mask_src = str(tmp_path / "existing_masks")
+        os.makedirs(mask_src)
+        for i in range(3):
+            tifffile.imwrite(
+                os.path.join(mask_src, f"mask_{i:05d}.tif"),
+                np.random.randint(0, 10, (32, 32), dtype=np.uint16),
+            )
+
+        out_dir = str(tmp_path / "output")
+        result = setup_ctc_dirs(frames, mask_src, output_dir=out_dir, name="test")
+
+        assert result["mask_dir"] == os.path.abspath(mask_src)
+
+
+class TestSetupCtcDirsShapeValidation:
+    """Test frame/mask count validation."""
+
+    def test_mismatched_array_counts(self, tmp_path):
+        """Mismatched frame and mask counts raise ValueError."""
+        from dreem.utils.ctc_helpers import setup_ctc_dirs
+
+        frames = np.random.randint(0, 255, (5, 32, 32), dtype=np.uint8)
+        masks = np.random.randint(0, 10, (3, 32, 32), dtype=np.uint16)
+
+        with pytest.raises(ValueError, match="Frame count mismatch"):
+            setup_ctc_dirs(frames, masks, output_dir=str(tmp_path), name="bad")
+
+    def test_mismatched_dir_and_array(self, tmp_path):
+        """Mismatched directory file count and mask array count raise ValueError."""
+        from dreem.utils.ctc_helpers import setup_ctc_dirs
+
+        # Create directory with 5 TIFFs
+        src_dir = str(tmp_path / "frames")
+        os.makedirs(src_dir)
+        for i in range(5):
+            tifffile.imwrite(
+                os.path.join(src_dir, f"frame_{i:05d}.tif"),
+                np.random.randint(0, 255, (32, 32), dtype=np.uint8),
+            )
+
+        # Masks with only 3 frames
+        masks = np.random.randint(0, 10, (3, 32, 32), dtype=np.uint16)
+
+        with pytest.raises(ValueError, match="Frame count mismatch"):
+            setup_ctc_dirs(src_dir, masks, output_dir=str(tmp_path / "out"))
 
 
 class TestSetupCtcDirsCompat:

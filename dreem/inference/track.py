@@ -297,14 +297,15 @@ def run(cfg: DictConfig) -> dict:
 
 
 def run_tracking(
-    frames,
-    masks,
-    checkpoint,
-    crop_size=25,
-    output_dir="./results",
-    device="auto",
+    frames: str | np.ndarray,
+    masks: str | np.ndarray,
+    checkpoint: str,
+    crop_size: int = 25,
+    output_dir: str = "./results",
+    device: str = "auto",
+    ctc_paths: dict[str, str] | None = None,
     **tracker_overrides,
-):
+) -> dict:
     """Run tracking with minimal configuration.
 
     A convenience wrapper that handles CTC directory setup, config construction,
@@ -321,6 +322,9 @@ def run_tracking(
         crop_size: Bounding box crop size in pixels.
         output_dir: Where to save results and intermediate files.
         device: Accelerator ("auto", "gpu", "cpu", "mps").
+        ctc_paths: Pre-built CTC directory paths dict (with keys "raw_dir",
+            "dataset_dir", and optionally "mask_dir"). If provided,
+            ``setup_ctc_dirs()`` is skipped and these paths are used directly.
         **tracker_overrides: Extra tracker config overrides
             (e.g., window_size=16, overlap_thresh=0.05).
 
@@ -331,11 +335,14 @@ def run_tracking(
     """
     from omegaconf import OmegaConf
 
-    from dreem.utils.ctc_helpers import setup_ctc_dirs
+    if ctc_paths is not None:
+        paths = ctc_paths
+    else:
+        from dreem.utils.ctc_helpers import setup_ctc_dirs
 
-    # Set up CTC directory structure in a cache directory
-    cache_dir = os.path.join(output_dir, ".dreem_cache")
-    paths = setup_ctc_dirs(frames, masks, output_dir=cache_dir)
+        # Set up CTC directory structure in a cache directory
+        cache_dir = os.path.join(output_dir, ".dreem_cache")
+        paths = setup_ctc_dirs(frames, masks, output_dir=cache_dir)
 
     # Load default tracking config
     default_cfg_path = os.path.join(

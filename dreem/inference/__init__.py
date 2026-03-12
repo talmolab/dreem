@@ -2,10 +2,12 @@
 
 __all__ = [
     "Tracker",
+    "run_tracking",
 ]
 
 _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "Tracker": ("dreem.inference.tracker", "Tracker"),
+    "run_tracking": ("dreem.inference.track", "run_tracking"),
 }
 
 
