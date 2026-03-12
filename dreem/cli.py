@@ -300,7 +300,7 @@ def _create_inference_command(mode: str):
         ] = False,
         device: Annotated[
             str,
-            typer.Option("--device", "-d", help="Accelerator: auto, gpu, cpu, mps"),
+            typer.Option("--device", help="Accelerator: auto, gpu, cpu, mps"),
         ] = "auto",
         gpu: Annotated[
             bool | None,

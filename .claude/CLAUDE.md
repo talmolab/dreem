@@ -52,7 +52,7 @@ dreem train TRAIN_DIR --val-dir VAL_DIR --crop-size 128 --epochs 30
 ```
 
 **Common flags:**
-- `--device` / `-d`: Accelerator (`auto`, `gpu`, `cpu`, `mps`; default: `auto`)
+- `--device`: Accelerator (`auto`, `gpu`, `cpu`, `mps`; default: `auto`)
 - `--config` / `-c`: Override with a YAML config file
 - `--set` / `-s`: Override individual config values (e.g., `--set tracker.max_tracks=5`)
 - `--verbose`: Enable detailed logging
