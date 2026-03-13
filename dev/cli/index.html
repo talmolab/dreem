@@ -1464,6 +1464,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#render" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Render">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#options_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto-render-after-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-render after tracking
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#config-overrides" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3393,6 +3465,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#render" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Render">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#options_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto-render-after-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-render after tracking
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#config-overrides" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3459,6 +3603,10 @@
 <tr>
 <td><code>dreem convert</code></td>
 <td>Convert external tracking formats to <code>.slp</code> files</td>
+</tr>
+<tr>
+<td><code>dreem render</code></td>
+<td>Render tracking results as video (CTC masks or SLEAP labels)</td>
 </tr>
 </tbody>
 </table>
@@ -3726,6 +3874,11 @@
 <td>Output format: <code>native</code> (<code>.tif</code>/<code>.slp</code>), <code>csv</code>, or <code>both</code></td>
 </tr>
 <tr>
+<td><code>--render</code>, <code>-R</code></td>
+<td>-</td>
+<td>Render tracked results to video at this path (CTC masks or SLEAP labels)</td>
+</tr>
+<tr>
 <td><code>--save-meta</code>, <code>-sm</code></td>
 <td>-</td>
 <td>Save frame metadata</td>
@@ -3878,17 +4031,185 @@
 </ul>
 <p>1-indexed frame numbers are automatically converted to 0-indexed.</p>
 <hr />
+<h2 id="render">Render<a class="headerlink" href="#render" title="Permanent link">&para;</a></h2>
+<p>Render tracking results as videos with colored overlays, trajectory trails, and ID labels. Supports both CTC-format mask TIFF stacks and SLEAP <code>.slp</code> label files.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>dreem<span class="w"> </span>render<span class="w"> </span>INPUT_PATH<span class="w"> </span>--output<span class="w"> </span>PATH<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</code></pre></div>
+<h3 id="arguments_3">Arguments<a class="headerlink" href="#arguments_3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>INPUT_PATH</code></td>
+<td>Yes</td>
+<td>Input file: tracked mask TIFF (<code>.tif</code>/<code>.tiff</code>) or SLEAP labels (<code>.slp</code>)</td>
+</tr>
+<tr>
+<td><code>--output</code>, <code>-o</code></td>
+<td>Yes</td>
+<td>Output video file path (e.g., <code>output.mp4</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="options_3">Options<a class="headerlink" href="#options_3" title="Permanent link">&para;</a></h3>
+<p><strong>Common options (both formats):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--palette</code>, <code>-p</code></td>
+<td><code>distinct</code></td>
+<td>Color palette name</td>
+</tr>
+<tr>
+<td><code>--trail-length</code></td>
+<td><code>10</code></td>
+<td>Trail length in frames</td>
+</tr>
+<tr>
+<td><code>--show-ids/--no-ids</code></td>
+<td><code>show-ids</code></td>
+<td>Show track ID labels</td>
+</tr>
+<tr>
+<td><code>--show-trails/--no-trails</code></td>
+<td><code>show-trails</code></td>
+<td>Show trajectory trails</td>
+</tr>
+<tr>
+<td><code>--fps</code></td>
+<td><code>30.0</code></td>
+<td>Output video frame rate</td>
+</tr>
+<tr>
+<td><code>--scale</code></td>
+<td><code>1.0</code></td>
+<td>Scale factor for rendering</td>
+</tr>
+<tr>
+<td><code>--quiet</code>, <code>-q</code></td>
+<td>-</td>
+<td>Suppress progress output</td>
+</tr>
+</tbody>
+</table>
+<p><strong>CTC mask options (<code>.tif</code>/<code>.tiff</code>):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--raw-frames</code>, <code>-r</code></td>
+<td>-</td>
+<td>Raw video/TIFF frames for background (default: black)</td>
+</tr>
+<tr>
+<td><code>--mask-alpha</code></td>
+<td><code>0.5</code></td>
+<td>Mask overlay opacity (0–1)</td>
+</tr>
+<tr>
+<td><code>--show-masks/--no-masks</code></td>
+<td><code>show-masks</code></td>
+<td>Show mask overlays</td>
+</tr>
+<tr>
+<td><code>--show-centroids/--no-centroids</code></td>
+<td><code>show-centroids</code></td>
+<td>Show centroid markers</td>
+</tr>
+</tbody>
+</table>
+<p><strong>SLEAP label options (<code>.slp</code>):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--line-width</code></td>
+<td><code>2.0</code></td>
+<td>Skeleton edge line width</td>
+</tr>
+<tr>
+<td><code>--show-nodes/--no-nodes</code></td>
+<td><code>show-nodes</code></td>
+<td>Show keypoint markers</td>
+</tr>
+<tr>
+<td><code>--show-edges/--no-edges</code></td>
+<td><code>show-edges</code></td>
+<td>Show skeleton edges</td>
+</tr>
+</tbody>
+</table>
+<h3 id="example_4">Example<a class="headerlink" href="#example_4" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># CTC masks: render with raw frames as background</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>dreem<span class="w"> </span>render<span class="w"> </span>./results/tracked.tif<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span>--output<span class="w"> </span>./results/visualization.mp4<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span>--raw-frames<span class="w"> </span>./data/raw.tif<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span>--trail-length<span class="w"> </span><span class="m">15</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span>--fps<span class="w"> </span><span class="m">15</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="c1"># CTC masks: render on black background, no ID labels</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>dreem<span class="w"> </span>render<span class="w"> </span>./results/tracked.tif<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">    </span>--output<span class="w"> </span>./results/visualization.mp4<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">    </span>--no-ids
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="c1"># SLEAP labels: render with tracks</span>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>dreem<span class="w"> </span>render<span class="w"> </span>./results/tracked.slp<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="w">    </span>--output<span class="w"> </span>./results/visualization.mp4
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="c1"># SLEAP labels: render without skeleton edges</span>
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>dreem<span class="w"> </span>render<span class="w"> </span>./results/tracked.slp<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a><span class="w">    </span>--output<span class="w"> </span>./results/visualization.mp4<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="w">    </span>--no-edges
+</code></pre></div>
+<h3 id="auto-render-after-tracking">Auto-render after tracking<a class="headerlink" href="#auto-render-after-tracking" title="Permanent link">&para;</a></h3>
+<p>Use the <code>--render</code> flag on <code>dreem track</code> to automatically render after tracking (works with both CTC and SLEAP outputs):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">    </span>--checkpoint<span class="w"> </span>microscopy<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span>--render<span class="w"> </span>./results/video.mp4
+</code></pre></div>
+<h3 id="output_2">Output<a class="headerlink" href="#output_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>.mp4</code> video file with colored overlays and annotations</li>
+</ul>
+<hr />
 <h2 id="config-overrides">Config Overrides<a class="headerlink" href="#config-overrides" title="Permanent link">&para;</a></h2>
 <p>Override any config value using <code>--set</code> with dot notation:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">    </span>--checkpoint<span class="w"> </span>model.ckpt<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span>--set<span class="w"> </span>tracker.window_size<span class="o">=</span><span class="m">16</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">    </span>--set<span class="w"> </span>tracker.decay_time<span class="o">=</span><span class="m">0</span>.9
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>dreem<span class="w"> </span>track<span class="w"> </span>./data<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">    </span>--checkpoint<span class="w"> </span>model.ckpt<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span>--output<span class="w"> </span>./results<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span>--set<span class="w"> </span>tracker.window_size<span class="o">=</span><span class="m">16</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span>--set<span class="w"> </span>tracker.decay_time<span class="o">=</span><span class="m">0</span>.9
 </code></pre></div>
 <p>For complex configurations, use a YAML file with <code>--config</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>dreem<span class="w"> </span>train<span class="w"> </span>./data/train<span class="w"> </span>--val-dir<span class="w"> </span>./data/val<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span>--config<span class="w"> </span>./my_config.yaml
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>dreem<span class="w"> </span>train<span class="w"> </span>./data/train<span class="w"> </span>--val-dir<span class="w"> </span>./data/val<span class="w"> </span>--crop-size<span class="w"> </span><span class="m">70</span><span class="w"> </span>--config<span class="w"> </span>./my_config.yaml
 </code></pre></div>
 <p>See <a href="../configs/training/">Training Config</a> and <a href="../configs/inference/">Inference Config</a> for all available options.</p>
 
