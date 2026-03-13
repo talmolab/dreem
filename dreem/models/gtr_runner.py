@@ -295,6 +295,9 @@ class GTRRunner(LightningModule):
             logger.info(self.metrics["test"])
             self.test_results["save_frame_meta"] = save_frame_meta
             self.test_results["save_path"] = tracker_cfg.get("outdir", ".")
+            self.test_results["output_format"] = tracker_cfg.cfg.get(
+                "output_format", "native"
+            )
             os.makedirs(self.test_results["save_path"], exist_ok=True)
         overrides_dict = {
             "max_tracks": self.tracker_cfg.get("max_tracks", inf),
@@ -402,52 +405,63 @@ class GTRRunner(LightningModule):
                         gta_group.attrs[f"track_{gt_track_id}"] = gta
 
         # save the tracking results to a slp/labelled masks file
-        if isinstance(self.trainer.test_dataloaders.dataset, CellTrackingDataset):
-            outpath = os.path.join(
-                self.test_results["save_path"],
-                f"{vid_name}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.tif",
-            )
-            pred_imgs = []
-            for frame in preds:
-                frame_masks = []
-                for instance in frame.instances:
-                    # centroid = instance.centroid["centroid"]  # Currently unused but available if needed
-                    mask = instance.mask.cpu().numpy()
-                    track_id = instance.pred_track_id.cpu().numpy().item()
-                    mask = mask.astype(np.uint8)
-                    mask[mask != 0] = track_id  # label the mask with the track id
-                    frame_masks.append(mask)
-                frame_mask = np.max(frame_masks, axis=0)
-                pred_imgs.append(frame_mask)
-            pred_imgs = np.stack(pred_imgs)
-            tifffile.imwrite(outpath, pred_imgs.astype(np.uint16))
-        else:
-            outpath = os.path.join(
-                self.test_results["save_path"],
-                f"{vid_name}.dreem_inference.{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}.slp",
-            )
-            pred_slp = []
-            suggestions = []
-            logger.info(f"Saving inference results to {outpath}")
-            # save the tracking results to a slp file
-            tracks = {}
-            for frame in preds:
-                if frame.frame_id.item() == 0:
-                    video = (
-                        sio.Video(frame.video)
-                        if isinstance(frame.video, str)
-                        else sio.Video
-                    )
-                if frame.has_flag(FrameFlagCode.LOW_CONFIDENCE):
-                    suggestion = SuggestionFrame(
-                        video=video, frame_idx=frame.frame_id.item()
-                    )
-                    suggestions.append(suggestion)
-                lf, tracks = frame.to_slp(tracks, video=video)
-                pred_slp.append(lf)
-            pred_slp = sio.Labels(pred_slp, suggestions=suggestions)
+        output_format = self.test_results.get("output_format", "native")
+        timestamp = datetime.now().strftime("%m-%d-%Y-%H-%M-%S")
 
-            pred_slp.save(outpath)
+        if output_format in ("native", "both"):
+            if isinstance(self.trainer.test_dataloaders.dataset, CellTrackingDataset):
+                outpath = os.path.join(
+                    self.test_results["save_path"],
+                    f"{vid_name}.dreem_inference.{timestamp}.tif",
+                )
+                pred_imgs = []
+                for frame in preds:
+                    frame_masks = []
+                    for instance in frame.instances:
+                        mask = instance.mask.cpu().numpy()
+                        track_id = instance.pred_track_id.cpu().numpy().item()
+                        mask = mask.astype(np.uint8)
+                        mask[mask != 0] = track_id
+                        frame_masks.append(mask)
+                    frame_mask = np.max(frame_masks, axis=0)
+                    pred_imgs.append(frame_mask)
+                pred_imgs = np.stack(pred_imgs)
+                tifffile.imwrite(outpath, pred_imgs.astype(np.uint16))
+            else:
+                outpath = os.path.join(
+                    self.test_results["save_path"],
+                    f"{vid_name}.dreem_inference.{timestamp}.slp",
+                )
+                pred_slp = []
+                suggestions = []
+                logger.info(f"Saving inference results to {outpath}")
+                tracks = {}
+                for frame in preds:
+                    if frame.frame_id.item() == 0:
+                        video = (
+                            sio.Video(frame.video)
+                            if isinstance(frame.video, str)
+                            else sio.Video
+                        )
+                    if frame.has_flag(FrameFlagCode.LOW_CONFIDENCE):
+                        suggestion = SuggestionFrame(
+                            video=video, frame_idx=frame.frame_id.item()
+                        )
+                        suggestions.append(suggestion)
+                    lf, tracks = frame.to_slp(tracks, video=video)
+                    pred_slp.append(lf)
+                pred_slp = sio.Labels(pred_slp, suggestions=suggestions)
+                pred_slp.save(outpath)
+
+        if output_format in ("csv", "both"):
+            from dreem.inference.track import export_trajectories
+
+            csv_path = os.path.join(
+                self.test_results["save_path"],
+                f"{vid_name}.dreem_inference.{timestamp}.csv",
+            )
+            export_trajectories(preds, save_path=csv_path)
+            logger.info(f"Saved CSV trajectories to {csv_path}")
 
         # clear the preds
         self.test_results["preds"] = []

@@ -17,4 +17,5 @@ dataset:
     anchors: "centroid"
 
 save_frame_meta: false
+output_format: "native"
 outdir: "./results"

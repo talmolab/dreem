@@ -54,48 +54,56 @@ def get_timestamp() -> str:
 def export_trajectories(
     frames_pred: list[Frame], save_path: str | None = None
 ) -> pd.DataFrame:
-    """Convert trajectories to data frame and save as .csv.
+    """Convert tracked frames to a tabular DataFrame and optionally save as CSV.
 
     Args:
         frames_pred: A list of Frames with predicted track ids.
         save_path: The path to save the predicted trajectories to.
 
     Returns:
-        A DataFrame containing the predicted track id and centroid coordinates
-        for each instance in the video.
+        A DataFrame with columns: frame, detection_idx, track_id, confidence,
+        centroid_x, centroid_y.
     """
     import pandas as pd
 
-    save_dict = {}
-    frame_ids = []
-    X, Y = [], []
-    pred_track_ids = []
-    track_scores = []
+    rows: list[dict] = []
     for frame in frames_pred:
-        for i, instance in enumerate(frame.instances):
-            frame_ids.append(frame.frame_id.item())
-            bbox = instance.bbox.squeeze()
-            y = (bbox[2] + bbox[0]) / 2
-            x = (bbox[3] + bbox[1]) / 2
-            X.append(x.item())
-            Y.append(y.item())
-            track_scores.append(instance.track_score)
-            pred_track_ids.append(instance.pred_track_id.item())
-
-    save_dict["Frame"] = frame_ids
-    save_dict["X"] = X
-    save_dict["Y"] = Y
-    save_dict["Pred_track_id"] = pred_track_ids
-    save_dict["Track_score"] = track_scores
-    save_df = pd.DataFrame(save_dict)
+        frame_id = frame.frame_id.item()
+        for det_idx, instance in enumerate(frame.instances):
+            centroid = instance.centroid.get("centroid")
+            if centroid is not None:
+                cx, cy = float(centroid[0]), float(centroid[1])
+            else:
+                bbox = instance.bbox.squeeze()
+                cx = float((bbox[3] + bbox[1]) / 2)
+                cy = float((bbox[2] + bbox[0]) / 2)
+            rows.append(
+                {
+                    "frame": frame_id,
+                    "detection_idx": det_idx,
+                    "track_id": instance.pred_track_id.item(),
+                    "confidence": instance.track_score,
+                    "centroid_x": cx,
+                    "centroid_y": cy,
+                }
+            )
+    columns = [
+        "frame",
+        "detection_idx",
+        "track_id",
+        "confidence",
+        "centroid_x",
+        "centroid_y",
+    ]
+    df = pd.DataFrame(rows, columns=columns)
     if save_path:
-        save_df.to_csv(save_path, index=False)
-    return save_df
+        df.to_csv(save_path, index=False)
+    return df
 
 
 def track_ctc(
     model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader
-) -> np.ndarray:
+) -> tuple[np.ndarray, list[Frame]]:
     """Run tracking inference for Cell Tracking Challenge format.
 
     Args:
@@ -104,12 +112,15 @@ def track_ctc(
         dataloader: Dataloader containing inference data
 
     Returns:
-        Stacked numpy array of predicted mask images
+        Tuple of (stacked numpy array of predicted mask images, list of Frame
+        objects with predicted track ids).
     """
     preds = trainer.predict(model, dataloader)
     pred_imgs = []
+    all_frames: list[Frame] = []
     for batch in preds:
         for frame in batch:
+            all_frames.append(frame)
             frame_masks = []
             for instance in frame.instances:
                 mask = instance.mask.cpu().numpy()
@@ -131,7 +142,7 @@ def track_ctc(
 
             pred_imgs.append(frame_mask)
     pred_imgs = np.stack(pred_imgs)
-    return pred_imgs
+    return pred_imgs, all_frames
 
 
 def track_sleap(
@@ -140,7 +151,7 @@ def track_sleap(
     dataloader: torch.utils.data.DataLoader,
     outdir: str,
     overrides_dict: dict,
-) -> sio.Labels:
+) -> tuple[sio.Labels, list[Frame]]:
     """Run tracking inference for SLEAP format.
 
     Args:
@@ -151,7 +162,8 @@ def track_sleap(
         overrides_dict: Dictionary of config overrides
 
     Returns:
-        SLEAP Labels object with predicted tracks
+        Tuple of (SLEAP Labels object with predicted tracks, list of Frame
+        objects with predicted track ids).
     """
     suggestions = []
     preds = trainer.predict(model, dataloader)
@@ -167,8 +179,10 @@ def track_sleap(
             h5f.create_dataset("vid_name", data=preds[0][0].vid_name)
     pred_slp = []
     tracks = {}
+    all_frames: list[Frame] = []
     for batch in tqdm(preds, desc="Saving .slp and frame metadata"):
         for frame in batch:
+            all_frames.append(frame)
             if frame.frame_id.item() == 0:
                 video = (
                     sio.Video(frame.video)
@@ -185,7 +199,7 @@ def track_sleap(
             if save_frame_meta:
                 store_frame_metadata(frame, h5_path)
     pred_slp = sio.Labels(pred_slp, suggestions=suggestions)
-    return pred_slp
+    return pred_slp, all_frames
 
 
 def _summarize_preds(
@@ -249,6 +263,8 @@ def run(cfg: DictConfig) -> dict:
     outdir = pred_cfg.cfg.outdir if "outdir" in pred_cfg.cfg else "./results"
     os.makedirs(outdir, exist_ok=True)
 
+    output_format = pred_cfg.cfg.get("output_format", "native")
+
     preds = None
     output_paths = []
     for label_file, vid_file in zip(labels_files, vid_files):
@@ -264,25 +280,45 @@ def run(cfg: DictConfig) -> dict:
         else:
             save_file_name = vid_file
 
-        if isinstance(dataset, CellTrackingDataset):
-            preds = track_ctc(model, trainer, dataloader)
-            outpath = os.path.join(
-                outdir,
-                f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.tif",
-            )
-            tifffile.imwrite(outpath, preds.astype(np.uint16))
-        else:
-            preds = track_sleap(model, trainer, dataloader, outdir, overrides_dict)
-            outpath = os.path.join(
-                outdir,
-                f"{Path(save_file_name).stem}.dreem_inference.{get_timestamp()}.slp",
-            )
-            preds.save(outpath)
+        timestamp = get_timestamp()
+        stem = Path(save_file_name).stem
 
-        outpath = os.path.abspath(outpath)
-        output_paths.append(outpath)
+        if isinstance(dataset, CellTrackingDataset):
+            preds, all_frames = track_ctc(model, trainer, dataloader)
+            if output_format in ("native", "both"):
+                outpath = os.path.join(
+                    outdir,
+                    f"{stem}.dreem_inference.{timestamp}.tif",
+                )
+                tifffile.imwrite(outpath, preds.astype(np.uint16))
+                outpath = os.path.abspath(outpath)
+                output_paths.append(outpath)
+                print(f"Saved: {outpath}")
+        else:
+            preds, all_frames = track_sleap(
+                model, trainer, dataloader, outdir, overrides_dict
+            )
+            if output_format in ("native", "both"):
+                outpath = os.path.join(
+                    outdir,
+                    f"{stem}.dreem_inference.{timestamp}.slp",
+                )
+                preds.save(outpath)
+                outpath = os.path.abspath(outpath)
+                output_paths.append(outpath)
+                print(f"Saved: {outpath}")
+
+        if output_format in ("csv", "both"):
+            csv_path = os.path.join(
+                outdir,
+                f"{stem}.dreem_inference.{timestamp}.csv",
+            )
+            export_trajectories(all_frames, save_path=csv_path)
+            csv_path = os.path.abspath(csv_path)
+            output_paths.append(csv_path)
+            print(f"Saved: {csv_path}")
+
         summary = _summarize_preds(preds)
-        print(f"Saved: {outpath}")
         print(
             f"  Frames: {summary['num_frames']}, "
             f"Tracks: {summary['num_tracks']}, "
@@ -303,6 +339,7 @@ def run_tracking(
     crop_size: int = 25,
     output_dir: str = "./results",
     device: str = "auto",
+    output_format: str = "both",
     ctc_paths: dict[str, str] | None = None,
     **tracker_overrides,
 ) -> dict:
@@ -322,6 +359,8 @@ def run_tracking(
         crop_size: Bounding box crop size in pixels.
         output_dir: Where to save results and intermediate files.
         device: Accelerator ("auto", "gpu", "cpu", "mps").
+        output_format: Output format: "native" (format-specific only), "csv"
+            (CSV only), or "both" (default for programmatic use).
         ctc_paths: Pre-built CTC directory paths dict (with keys "raw_dir",
             "dataset_dir", and optionally "mask_dir"). If provided,
             ``setup_ctc_dirs()`` is skipped and these paths are used directly.
@@ -354,6 +393,7 @@ def run_tracking(
     with OmegaConf.read_write(cfg):
         cfg.ckpt_path = checkpoint
         cfg.outdir = output_dir
+        cfg.output_format = output_format
         cfg.dataset.test_dataset.dir.path = paths["dataset_dir"]
         cfg.dataset.test_dataset.dir.labels_suffix = ".tif"
         cfg.dataset.test_dataset.dir.vid_suffix = ".tif"

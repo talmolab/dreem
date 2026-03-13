@@ -103,6 +103,7 @@ dreem track INPUT_DIR --checkpoint PATH --output DIR --crop-size SIZE [OPTIONS]
 | `--back-node`, `-bn` | - | Back nodes for orientation (can repeat) |
 | `--slp-file`, `-slp` | - | Specific SLEAP label files (can repeat) |
 | `--video-file`, `-vid` | - | Specific video files (can repeat) |
+| `--output-format`, `-of` | `native` | Output format: `native` (`.tif`/`.slp`), `csv`, or `both` |
 | `--save-meta`, `-sm` | - | Save frame metadata |
 | `--device` | `auto` | Accelerator: `auto`, `gpu`, `cpu`, `mps` |
 | `--gpu/--no-gpu`, `-g` | - | **Deprecated.** Use `--device` instead |
@@ -160,7 +161,8 @@ dreem eval ./data/test \
 
 ### Output
 
-- `.slp` files with predicted tracks
+- `.slp` or `.tif` files with predicted tracks (native format)
+- `.csv` trajectory file (if `--output-format csv` or `both`; columns: `frame`, `detection_idx`, `track_id`, `confidence`, `centroid_x`, `centroid_y`)
 - `motmetrics.csv` with evaluation metrics
 - `.h5` file with detailed results
 
