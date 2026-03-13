@@ -8,6 +8,7 @@ import torch
 from omegaconf import OmegaConf
 from pytorch_lightning import Trainer
 
+from dreem.datasets import CellTrackingDataset
 from dreem.inference import Tracker, metrics
 from dreem.inference.post_processing import (
     ConfidenceFlagging,
@@ -963,3 +964,259 @@ def test_output_format_config_propagation():
 
     cfg_default = OmegaConf.create({"other": "value"})
     assert cfg_default.get("output_format", "native") == "native"
+
+
+def test_export_trajectories_bbox_fallback():
+    """Test that export_trajectories falls back to bbox when centroid is missing."""
+    inst = Instance(
+        gt_track_id=0,
+        pred_track_id=0,
+        bbox=torch.tensor([[10.0, 20.0, 30.0, 40.0]]),
+    )
+    # Clear auto-populated centroid to force bbox fallback
+    inst.centroid = {}
+
+    frames = [Frame(video_id=0, frame_id=0, instances=[inst])]
+    df = export_trajectories(frames)
+
+    assert len(df) == 1
+    # bbox is [y1, x1, y2, x2] = [10, 20, 30, 40]
+    # cx = (x2 + x1) / 2 = (40 + 20) / 2 = 30
+    # cy = (y2 + y1) / 2 = (30 + 10) / 2 = 20
+    assert df.iloc[0]["centroid_x"] == 30.0
+    assert df.iloc[0]["centroid_y"] == 20.0
+
+
+def test_export_trajectories_uses_centroid():
+    """Test that export_trajectories uses centroid when available."""
+    import numpy as np
+
+    inst = Instance(
+        gt_track_id=0,
+        pred_track_id=1,
+        bbox=torch.tensor([[10.0, 20.0, 30.0, 40.0]]),
+    )
+    # Override centroid with specific values
+    inst.centroid = {"centroid": np.array([99.0, 88.0])}
+
+    frames = [Frame(video_id=0, frame_id=5, instances=[inst])]
+    df = export_trajectories(frames)
+
+    assert len(df) == 1
+    assert df.iloc[0]["centroid_x"] == 99.0
+    assert df.iloc[0]["centroid_y"] == 88.0
+    assert df.iloc[0]["frame"] == 5
+    assert df.iloc[0]["track_id"] == 1
+
+
+def test_setup_tracking_output_format(tmp_path):
+    """Test that setup_tracking stores output_format in eval mode."""
+    model = GTRRunner()
+
+    # Build a minimal Config-like object for eval mode
+    inference_cfg = OmegaConf.create(
+        {
+            "ckpt_path": None,
+            "output_format": "csv",
+            "outdir": str(tmp_path),
+            "tracker": {
+                "overlap_thresh": 0.01,
+                "decay_time": None,
+                "iou": "mult",
+                "max_center_dist": None,
+            },
+            "dataset": {
+                "test_dataset": {
+                    "dir": {
+                        "path": None,
+                        "labels_suffix": ".slp",
+                        "vid_suffix": ".mp4",
+                    },
+                    "clip_length": 32,
+                    "anchors": "centroid",
+                }
+            },
+        }
+    )
+    cfg = Config(inference_cfg)
+
+    model.setup_tracking(cfg, mode="eval")
+
+    assert model.test_results["output_format"] == "csv"
+    assert model.test_results["save_path"] == str(tmp_path)
+
+
+def test_on_test_end_csv_output(tmp_path):
+    """Test that on_test_end writes CSV when output_format is 'csv'."""
+    num_frames = 3
+    num_detected = 2
+
+    # Build predicted frames
+    frames_pred = []
+    for i in range(num_frames):
+        instances = [
+            Instance(
+                gt_track_id=k,
+                pred_track_id=k,
+                bbox=torch.randn((1, 4)).abs(),
+            )
+            for k in range(num_detected)
+        ]
+        frames_pred.append(
+            Frame(
+                video_id=0,
+                frame_id=i,
+                vid_file="test_video.mp4",
+                instances=instances,
+            )
+        )
+
+    model = GTRRunner()
+    model.test_results["preds"] = frames_pred
+    model.test_results["save_path"] = str(tmp_path)
+    model.test_results["save_frame_meta"] = False
+    model.test_results["output_format"] = "csv"
+    model.metrics["test"] = []  # skip metrics computation
+
+    # Mock the trainer and test_dataloaders so on_test_end can run
+    from unittest.mock import MagicMock
+
+    mock_trainer = MagicMock()
+    model._trainer = mock_trainer
+
+    # Bypass the metrics.evaluate call since we have no metrics
+    from unittest.mock import patch
+
+    with patch("dreem.inference.metrics.evaluate", return_value={}):
+        model.on_test_end()
+
+    # Verify CSV was written
+    csv_files = list(tmp_path.glob("*.csv"))
+    assert any("dreem_inference" in f.name and f.suffix == ".csv" for f in csv_files)
+
+    # Verify no native format files were written
+    assert not list(tmp_path.glob("*.slp"))
+    assert not list(tmp_path.glob("*.tif"))
+
+    # Verify CSV content
+    csv_file = [f for f in csv_files if "dreem_inference" in f.name][0]
+    df = pd.read_csv(csv_file)
+    assert len(df) == num_frames * num_detected
+    assert list(df.columns) == [
+        "frame",
+        "detection_idx",
+        "track_id",
+        "confidence",
+        "centroid_x",
+        "centroid_y",
+    ]
+
+    # Verify preds were cleared
+    assert model.test_results["preds"] == []
+
+
+def test_on_test_end_native_output(tmp_path):
+    """Test that on_test_end skips CSV when output_format is 'native'."""
+    num_frames = 2
+    num_detected = 2
+
+    frames_pred = []
+    for i in range(num_frames):
+        instances = [
+            Instance(
+                gt_track_id=k,
+                pred_track_id=k,
+                bbox=torch.randn((1, 4)).abs(),
+            )
+            for k in range(num_detected)
+        ]
+        frames_pred.append(
+            Frame(
+                video_id=0,
+                frame_id=i,
+                vid_file="test_video.mp4",
+                instances=instances,
+            )
+        )
+
+    model = GTRRunner()
+    model.test_results["preds"] = frames_pred
+    model.test_results["save_path"] = str(tmp_path)
+    model.test_results["save_frame_meta"] = False
+    model.test_results["output_format"] = "native"
+    model.metrics["test"] = []
+
+    from unittest.mock import MagicMock, patch
+
+    mock_trainer = MagicMock()
+    # Mock dataset as CTC so it takes the simpler mask branch
+    mock_dataset = MagicMock(spec=CellTrackingDataset)
+    mock_trainer.test_dataloaders.dataset = mock_dataset
+    model._trainer = mock_trainer
+
+    # Give instances masks so the CTC branch can process them
+    for frame in frames_pred:
+        for inst in frame.instances:
+            inst._mask = torch.zeros((1, 32, 32), dtype=torch.uint8)
+
+    with patch("dreem.inference.metrics.evaluate", return_value={}):
+        model.on_test_end()
+
+    # Verify native .tif was written but no CSV
+    tif_files = list(tmp_path.glob("*.tif"))
+    csv_files = [f for f in tmp_path.glob("*.csv") if "dreem_inference" in f.name]
+    assert len(tif_files) > 0, "Expected .tif file for CTC native output"
+    assert len(csv_files) == 0, "Should not write CSV with output_format='native'"
+    assert model.test_results["preds"] == []
+
+
+def test_track_with_csv_output(tmp_path, inference_config):
+    """Test end-to-end tracking with output_format='both' produces CSV."""
+    ckpt_path = tmp_path / "model.ckpt"
+    get_ckpt(ckpt_path)
+
+    out_dir = tmp_path / "preds"
+    out_dir.mkdir()
+
+    inference_cfg = OmegaConf.load(inference_config)
+
+    cfg = Config(inference_cfg)
+    cfg.set_hparams(
+        {"ckpt_path": ckpt_path, "outdir": out_dir, "output_format": "both"}
+    )
+
+    run(cfg.cfg)
+
+    # Should have both .slp and .csv files
+    slp_files = list(out_dir.glob("*.slp"))
+    csv_files = list(out_dir.glob("*.csv"))
+    assert len(slp_files) > 0
+    assert len(csv_files) > 0
+
+    # Verify CSV has correct structure
+    df = pd.read_csv(csv_files[0])
+    assert "frame" in df.columns
+    assert "track_id" in df.columns
+    assert "centroid_x" in df.columns
+
+
+def test_track_csv_only(tmp_path, inference_config):
+    """Test tracking with output_format='csv' produces only CSV."""
+    ckpt_path = tmp_path / "model.ckpt"
+    get_ckpt(ckpt_path)
+
+    out_dir = tmp_path / "preds"
+    out_dir.mkdir()
+
+    inference_cfg = OmegaConf.load(inference_config)
+
+    cfg = Config(inference_cfg)
+    cfg.set_hparams({"ckpt_path": ckpt_path, "outdir": out_dir, "output_format": "csv"})
+
+    run(cfg.cfg)
+
+    # Should have CSV but no .slp files
+    slp_files = list(out_dir.glob("*.slp"))
+    csv_files = list(out_dir.glob("*.csv"))
+    assert len(slp_files) == 0
+    assert len(csv_files) > 0
