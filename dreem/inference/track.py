@@ -341,6 +341,8 @@ def run_tracking(
     device: str = "auto",
     output_format: str = "both",
     ctc_paths: dict[str, str] | None = None,
+    render: str | Path | None = None,
+    render_kwargs: dict | None = None,
     **tracker_overrides,
 ) -> dict:
     """Run tracking with minimal configuration.
@@ -364,13 +366,18 @@ def run_tracking(
         ctc_paths: Pre-built CTC directory paths dict (with keys "raw_dir",
             "dataset_dir", and optionally "mask_dir"). If provided,
             ``setup_ctc_dirs()`` is skipped and these paths are used directly.
+        render: Path for rendered video output. If provided,
+            ``render_ctc_video()`` is called after tracking completes.
+        render_kwargs: Additional keyword arguments passed to
+            ``render_ctc_video()`` (e.g., palette, fps, mask_alpha).
         **tracker_overrides: Extra tracker config overrides
             (e.g., window_size=16, overlap_thresh=0.05).
 
     Returns:
         Dict with "preds" (numpy array of tracked masks), "output_paths"
-        (list of absolute path strings), and "summary" (dict with num_frames,
-        num_tracks, track_ids).
+        (list of absolute path strings), "summary" (dict with num_frames,
+        num_tracks, track_ids), and optionally "render_path" (Path to
+        rendered video).
     """
     from omegaconf import OmegaConf
 
@@ -410,4 +417,24 @@ def run_tracking(
             for key, value in tracker_overrides.items():
                 OmegaConf.update(cfg, f"tracker.{key}", value)
 
-    return run(cfg)
+    result = run(cfg)
+
+    # Render video if requested
+    if render is not None and result.get("preds") is not None:
+        if isinstance(result["preds"], np.ndarray):
+            from dreem.io.visualize import render_ctc_video
+
+            kwargs = render_kwargs or {}
+            # Try to pass raw frames if available
+            if "raw_frames" not in kwargs:
+                if isinstance(frames, (str, Path, np.ndarray)):
+                    kwargs["raw_frames"] = frames
+
+            render_path = render_ctc_video(
+                masks=result["preds"],
+                save_path=render,
+                **kwargs,
+            )
+            result["render_path"] = render_path
+
+    return result

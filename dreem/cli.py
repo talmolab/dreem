@@ -339,6 +339,14 @@ def _create_inference_command(mode: str):
         quiet: Annotated[
             bool, typer.Option("--quiet", "-q", help="Suppress progress output")
         ] = False,
+        render_path: Annotated[
+            Path | None,
+            typer.Option(
+                "--render",
+                "-R",
+                help="Render tracked masks to video at this path",
+            ),
+        ] = None,
         verbose: Annotated[
             bool, typer.Option("--verbose", help="Enable verbose logging")
         ] = False,
@@ -438,7 +446,31 @@ def _create_inference_command(mode: str):
         if mode == "track":
             from dreem.inference.track import run as run_tracking
 
-            run_tracking(cfg)
+            result = run_tracking(cfg)
+
+            # Auto-render if --render flag is set and output is CTC masks
+            if render_path is not None and result.get("preds") is not None:
+                import numpy as np
+
+                preds = result["preds"]
+                if isinstance(preds, np.ndarray):
+                    from dreem.io.visualize import render_ctc_video
+
+                    if not quiet:
+                        console.print(f"[cyan]Rendering video: {render_path}[/cyan]")
+                    render_ctc_video(
+                        masks=preds,
+                        save_path=render_path,
+                        show_progress=not quiet,
+                    )
+                    if not quiet:
+                        console.print(f"[green]Rendered: {render_path}[/green]")
+                else:
+                    if not quiet:
+                        console.print(
+                            "[yellow]--render is only supported for CTC "
+                            "mask outputs[/yellow]"
+                        )
 
         else:
             from dreem.inference.eval import run as run_eval
@@ -660,6 +692,82 @@ def train(
 
     run_training(cfg)
     console.print("[green]Training complete.[/green]")
+
+
+@app.command()
+def render(
+    masks: Annotated[
+        Path, typer.Argument(help="Tracked mask TIFF stack (uint16, values=track IDs)")
+    ],
+    output: Annotated[
+        Path, typer.Option("--output", "-o", help="Output video file path")
+    ],
+    raw_frames: Annotated[
+        Path | None,
+        typer.Option(
+            "--raw-frames",
+            "-r",
+            help="Raw video/TIFF frames for background (default: black)",
+        ),
+    ] = None,
+    mask_alpha: Annotated[
+        float, typer.Option("--mask-alpha", help="Mask overlay opacity (0-1)")
+    ] = 0.5,
+    palette_name: Annotated[
+        str, typer.Option("--palette", "-p", help="Color palette name")
+    ] = "distinct",
+    trail_length: Annotated[
+        int, typer.Option("--trail-length", help="Trail length in frames")
+    ] = 10,
+    show_ids: Annotated[
+        bool, typer.Option("--show-ids/--no-ids", help="Show track ID labels")
+    ] = True,
+    show_masks: Annotated[
+        bool, typer.Option("--show-masks/--no-masks", help="Show mask overlays")
+    ] = True,
+    show_trails: Annotated[
+        bool, typer.Option("--show-trails/--no-trails", help="Show trajectory trails")
+    ] = True,
+    show_centroids: Annotated[
+        bool,
+        typer.Option("--show-centroids/--no-centroids", help="Show centroid markers"),
+    ] = True,
+    fps: Annotated[float, typer.Option("--fps", help="Output video frame rate")] = 30.0,
+    scale: Annotated[
+        float, typer.Option("--scale", help="Scale factor for rendering")
+    ] = 1.0,
+    quiet: Annotated[
+        bool, typer.Option("--quiet", "-q", help="Suppress progress output")
+    ] = False,
+) -> None:
+    """Render a CTC mask tracking result as a video with colored overlays."""
+    if not masks.exists():
+        console.print(f"[red]Error: Mask file not found: {masks}[/red]")
+        raise typer.Exit(1)
+
+    from dreem.io.visualize import render_ctc_video
+
+    if not quiet:
+        console.print(f"[cyan]Rendering: {masks}[/cyan]")
+
+    result_path = render_ctc_video(
+        masks=masks,
+        save_path=output,
+        raw_frames=raw_frames,
+        mask_alpha=mask_alpha,
+        palette=palette_name,
+        trail_length=trail_length,
+        show_ids=show_ids,
+        show_masks=show_masks,
+        show_trails=show_trails,
+        show_centroids=show_centroids,
+        fps=fps,
+        scale=scale,
+        show_progress=not quiet,
+    )
+
+    if not quiet:
+        console.print(f"[green]Saved: {result_path}[/green]")
 
 
 @app.command()
