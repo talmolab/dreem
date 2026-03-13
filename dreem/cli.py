@@ -295,6 +295,14 @@ def _create_inference_command(mode: str):
             list[str] | None,
             typer.Option("--back-node", "-bn", help="Back nodes for orientation"),
         ] = None,
+        output_format: Annotated[
+            str,
+            typer.Option(
+                "--output-format",
+                "-of",
+                help="Output format: native (.tif/.slp), csv, or both",
+            ),
+        ] = "native",
         save_meta: Annotated[
             bool, typer.Option("--save-meta", "-sm", help="Save frame metadata")
         ] = False,
@@ -403,6 +411,7 @@ def _create_inference_command(mode: str):
             "tracker.front_nodes": list(front_nodes) if front_nodes else None,
             "tracker.back_nodes": list(back_nodes) if back_nodes else None,
             "save_frame_meta": save_meta,
+            "output_format": output_format,
             "trainer.accelerator": accelerator,
         }
 

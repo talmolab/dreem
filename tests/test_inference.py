@@ -3,6 +3,7 @@
 import os
 
 import numpy as np
+import pandas as pd
 import torch
 from omegaconf import OmegaConf
 from pytorch_lightning import Trainer
@@ -14,7 +15,7 @@ from dreem.inference.post_processing import (
     IOUWeighting,
     OrientationWeighting,
 )
-from dreem.inference.track import run
+from dreem.inference.track import export_trajectories, run
 from dreem.inference.track_queue import TrackQueue
 from dreem.io import Config, Frame, FrameFlagCode, Instance
 from dreem.models import GlobalTrackingTransformer, GTRRunner
@@ -884,3 +885,81 @@ def test_confidence_flagging_mixed_entropy():
     # Frame should be flagged because at least one row has high entropy
     assert frame.is_flagged
     assert frame.has_flag(FrameFlagCode.LOW_CONFIDENCE)
+
+
+def test_export_trajectories_columns_and_values():
+    """Test that export_trajectories produces correct columns and values."""
+    num_frames = 3
+    num_instances = 2
+    frames = []
+    for i in range(num_frames):
+        instances = []
+        for j in range(num_instances):
+            instances.append(
+                Instance(
+                    gt_track_id=j,
+                    pred_track_id=j,
+                    bbox=torch.tensor([[10.0, 20.0, 30.0, 40.0]]),
+                )
+            )
+        frames.append(Frame(video_id=0, frame_id=i, instances=instances))
+
+    df = export_trajectories(frames)
+
+    assert isinstance(df, pd.DataFrame)
+    expected_cols = [
+        "frame",
+        "detection_idx",
+        "track_id",
+        "confidence",
+        "centroid_x",
+        "centroid_y",
+    ]
+    assert list(df.columns) == expected_cols
+    assert len(df) == num_frames * num_instances
+    assert sorted(df["frame"].unique()) == list(range(num_frames))
+    assert sorted(df["track_id"].unique()) == list(range(num_instances))
+    # detection_idx should reset per frame
+    for _, group in df.groupby("frame"):
+        assert list(group["detection_idx"]) == list(range(num_instances))
+
+
+def test_export_trajectories_csv_write(tmp_path):
+    """Test that export_trajectories writes a valid CSV file."""
+    frames = [
+        Frame(
+            video_id=0,
+            frame_id=0,
+            instances=[
+                Instance(
+                    gt_track_id=0,
+                    pred_track_id=0,
+                    bbox=torch.tensor([[5.0, 10.0, 15.0, 20.0]]),
+                )
+            ],
+        )
+    ]
+    csv_path = str(tmp_path / "trajectories.csv")
+    df = export_trajectories(frames, save_path=csv_path)
+
+    assert os.path.exists(csv_path)
+    loaded = pd.read_csv(csv_path)
+    assert list(loaded.columns) == list(df.columns)
+    assert len(loaded) == 1
+
+
+def test_export_trajectories_empty_frames():
+    """Test export_trajectories with no instances."""
+    frames = [Frame(video_id=0, frame_id=0, instances=[])]
+    df = export_trajectories(frames)
+    assert len(df) == 0
+    assert "frame" in df.columns
+
+
+def test_output_format_config_propagation():
+    """Test that output_format key is read from config correctly."""
+    cfg = OmegaConf.create({"output_format": "csv", "other": "value"})
+    assert cfg.get("output_format", "native") == "csv"
+
+    cfg_default = OmegaConf.create({"other": "value"})
+    assert cfg_default.get("output_format", "native") == "native"
