@@ -439,6 +439,142 @@ def masks_to_sleap_labels(
     return labels
 
 
+def _extract_centroids_from_labels(
+    labels: sio.Labels,
+) -> dict[int, dict[int, tuple[float, float]]]:
+    """Extract centroid (x, y) for each tracked instance in each frame from Labels.
+
+    For each instance with a track assignment, computes the centroid as the mean
+    of all valid (non-NaN) keypoint coordinates.
+
+    Args:
+        labels: A sleap-io Labels object with tracked instances.
+
+    Returns:
+        Nested dict: ``centroids[frame_idx][track_id] = (cx, cy)`` where
+        cx, cy are in pixel coordinates and track_id is the integer index of the
+        track in ``labels.tracks``.
+    """
+    track_to_id = {track: i for i, track in enumerate(labels.tracks)}
+    centroids: dict[int, dict[int, tuple[float, float]]] = {}
+
+    for lf in labels.labeled_frames:
+        frame_centroids: dict[int, tuple[float, float]] = {}
+        for inst in lf.instances:
+            if inst.track is None:
+                continue
+            tid = track_to_id.get(inst.track)
+            if tid is None:
+                continue
+            pts = inst.numpy()  # (n_nodes, 2)
+            valid = ~np.isnan(pts).any(axis=1)
+            if not valid.any():
+                continue
+            mean_pt = pts[valid].mean(axis=0)
+            frame_centroids[tid] = (float(mean_pt[0]), float(mean_pt[1]))
+        centroids[lf.frame_idx] = frame_centroids
+
+    return centroids
+
+
+def render_slp_video(
+    labels: sio.Labels | str | Path,
+    save_path: str | Path,
+    *,
+    palette: str = "distinct",
+    marker_size: float = 4.0,
+    line_width: float = 2.0,
+    trail_length: int = 10,
+    trail_width: float = 1.5,
+    show_ids: bool = True,
+    show_trails: bool = True,
+    show_nodes: bool = True,
+    show_edges: bool = True,
+    id_font_size: float = 12.0,
+    fps: float | None = None,
+    scale: float = 1.0,
+    crf: int = 25,
+    show_progress: bool = True,
+) -> Path:
+    """Render a SLEAP labels file as a video with colored tracks.
+
+    Wraps sleap-io's ``render_video()`` with trajectory trails and ID labels
+    using the same callback factories as ``render_ctc_video()``.
+
+    Args:
+        labels: A sleap-io Labels object or path to a ``.slp`` file.
+        save_path: Output video file path (e.g., "output.mp4").
+        palette: Color palette name (passed to sleap-io's ``get_palette``).
+        marker_size: Size of keypoint markers in pixels.
+        line_width: Width of skeleton edge lines in pixels.
+        trail_length: Number of past frames to include in trajectory trails.
+        trail_width: Width of trail lines in pixels.
+        show_ids: Whether to draw track ID labels.
+        show_trails: Whether to draw trajectory trails.
+        show_nodes: Whether to draw keypoint markers.
+        show_edges: Whether to draw skeleton edges.
+        id_font_size: Font size for ID labels in pixels.
+        fps: Output video frame rate. If None, uses the source video's FPS.
+        scale: Scale factor for rendering (e.g., 2.0 for 2x).
+        crf: Constant Rate Factor for H.264 encoding (lower = higher quality).
+        show_progress: Whether to show a progress bar.
+
+    Returns:
+        Path to the output video file.
+    """
+    import sleap_io as sio
+    from sleap_io.rendering.colors import get_palette
+
+    save_path = Path(save_path)
+
+    # Load labels from path if needed
+    if isinstance(labels, (str, Path)):
+        labels = sio.load_slp(str(labels))
+
+    # Extract centroids for trail callback
+    centroids = _extract_centroids_from_labels(labels)
+    n_tracks = len(labels.tracks)
+
+    # Build color map: track index -> (r, g, b)
+    palette_colors = get_palette(palette, max(n_tracks, 1))
+    track_id_to_color: dict[int, tuple[int, int, int]] = {}
+    for i in range(n_tracks):
+        track_id_to_color[i] = palette_colors[i % len(palette_colors)]
+
+    # Build callbacks
+    trail_cb = None
+    if show_trails:
+        trail_cb = _make_trail_callback(
+            centroids, track_id_to_color, trail_length, trail_width
+        )
+
+    id_cb = None
+    if show_ids:
+        id_cb = _make_id_label_callback(track_id_to_color, id_font_size)
+
+    # Build render kwargs
+    render_kwargs: dict = dict(
+        save_path=save_path,
+        color_by="track",
+        palette=palette,
+        marker_size=marker_size,
+        line_width=line_width,
+        show_nodes=show_nodes,
+        show_edges=show_edges,
+        scale=scale,
+        crf=crf,
+        show_progress=show_progress,
+        post_render_callback=trail_cb,
+        per_instance_callback=id_cb,
+    )
+    if fps is not None:
+        render_kwargs["fps"] = fps
+
+    sio.render_video(labels, **render_kwargs)
+
+    return save_path
+
+
 def _make_trail_callback(
     centroids: dict[int, dict[int, tuple[float, float]]],
     colors: dict[int, tuple[int, int, int]],

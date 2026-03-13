@@ -1,14 +1,23 @@
-"""Tests for CTC mask visualization functions."""
+"""Tests for tracking visualization functions."""
 
+import tempfile
+
+import imageio
 import numpy as np
 import pytest
+import sleap_io as sio
 import tifffile
 
-from dreem.io.visualize import (
+# Skip all tests if skia-python is not installed
+skia = pytest.importorskip("skia", reason="skia-python not installed")
+
+from dreem.io.visualize import (  # noqa: E402
     _blend_mask_overlay,
+    _extract_centroids_from_labels,
     extract_centroids_from_masks,
     masks_to_sleap_labels,
     render_ctc_video,
+    render_slp_video,
 )
 
 
@@ -29,6 +38,56 @@ def _make_synthetic_masks(
             x1 = min(x0 + 10, width)
             masks[t, y0:y1, x0:x1] = tid
     return masks
+
+
+def _make_temp_video(n_frames: int, height: int, width: int) -> sio.Video:
+    """Create a temporary mp4 video file and return a sleap-io Video."""
+    tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
+    writer = imageio.get_writer(tmp.name, fps=10)
+    for _ in range(n_frames):
+        writer.append_data(np.zeros((height, width, 3), dtype=np.uint8))
+    writer.close()
+    return sio.Video(tmp.name)
+
+
+def _make_synthetic_labels(
+    n_frames: int = 5,
+    n_tracks: int = 3,
+    n_nodes: int = 2,
+    height: int = 64,
+    width: int = 64,
+) -> sio.Labels:
+    """Create synthetic Labels with known keypoint positions.
+
+    Each track has keypoints that move rightward over time.
+    """
+    skeleton = sio.Skeleton(nodes=[f"node_{i}" for i in range(n_nodes)])
+    if n_nodes >= 2:
+        skeleton.add_edge("node_0", "node_1")
+    tracks = [sio.Track(name=str(i)) for i in range(n_tracks)]
+    video = _make_temp_video(n_frames, height, width)
+    labeled_frames = []
+
+    for t in range(n_frames):
+        instances = []
+        for tid in range(n_tracks):
+            # Each track starts at different y, moves rightward
+            base_x = 10 + t * 3
+            base_y = (tid + 1) * 15
+            pts = np.array(
+                [[base_x + i * 5, base_y + i * 2] for i in range(n_nodes)],
+                dtype=np.float64,
+            )
+            inst = sio.Instance.from_numpy(pts, skeleton=skeleton, track=tracks[tid])
+            instances.append(inst)
+        lf = sio.LabeledFrame(video=video, frame_idx=t, instances=instances)
+        labeled_frames.append(lf)
+
+    return sio.Labels(
+        labeled_frames=labeled_frames,
+        skeletons=[skeleton],
+        tracks=tracks,
+    )
 
 
 class TestExtractCentroidsFromMasks:
@@ -74,6 +133,73 @@ class TestExtractCentroidsFromMasks:
         cx, cy = centroids[0][1]
         assert cx > 100  # x should be ~194.5 (right side)
         assert cy < 10  # y should be ~4.5 (top)
+
+
+class TestExtractCentroidsFromLabels:
+    """Tests for _extract_centroids_from_labels."""
+
+    def test_basic(self):
+        """Test basic centroid extraction from Labels."""
+        labels = _make_synthetic_labels(n_frames=3, n_tracks=2, n_nodes=2)
+        centroids = _extract_centroids_from_labels(labels)
+
+        assert len(centroids) == 3  # 3 frames
+        assert 0 in centroids[0]  # track index 0
+        assert 1 in centroids[0]  # track index 1
+
+    def test_centroid_values(self):
+        """Test that centroids are mean of keypoints."""
+        labels = _make_synthetic_labels(n_frames=1, n_tracks=1, n_nodes=2)
+        centroids = _extract_centroids_from_labels(labels)
+
+        # First track, frame 0: nodes at (10, 15) and (15, 17)
+        cx, cy = centroids[0][0]
+        assert cx == pytest.approx(12.5)  # mean of 10 and 15
+        assert cy == pytest.approx(16.0)  # mean of 15 and 17
+
+    def test_empty_labels(self):
+        """Test centroid extraction from empty Labels."""
+        labels = sio.Labels()
+        centroids = _extract_centroids_from_labels(labels)
+        assert centroids == {}
+
+    def test_instances_without_tracks_skipped(self):
+        """Test that untracked instances are excluded."""
+        skeleton = sio.Skeleton(nodes=["centroid"])
+        video = _make_temp_video(1, 32, 32)
+
+        # Create one tracked and one untracked instance
+        track = sio.Track(name="0")
+        tracked_inst = sio.Instance.from_numpy(
+            np.array([[10.0, 20.0]]), skeleton=skeleton, track=track
+        )
+        untracked_inst = sio.Instance.from_numpy(
+            np.array([[30.0, 40.0]]), skeleton=skeleton
+        )
+        lf = sio.LabeledFrame(
+            video=video, frame_idx=0, instances=[tracked_inst, untracked_inst]
+        )
+        labels = sio.Labels(labeled_frames=[lf], skeletons=[skeleton], tracks=[track])
+
+        centroids = _extract_centroids_from_labels(labels)
+        assert len(centroids[0]) == 1  # only tracked instance
+        assert 0 in centroids[0]
+
+    def test_nan_points_excluded(self):
+        """Test that NaN keypoints are excluded from centroid calculation."""
+        skeleton = sio.Skeleton(nodes=["head", "tail"])
+        track = sio.Track(name="0")
+        video = _make_temp_video(1, 64, 64)
+
+        pts = np.array([[10.0, 20.0], [np.nan, np.nan]])
+        inst = sio.Instance.from_numpy(pts, skeleton=skeleton, track=track)
+        lf = sio.LabeledFrame(video=video, frame_idx=0, instances=[inst])
+        labels = sio.Labels(labeled_frames=[lf], skeletons=[skeleton], tracks=[track])
+
+        centroids = _extract_centroids_from_labels(labels)
+        cx, cy = centroids[0][0]
+        assert cx == pytest.approx(10.0)
+        assert cy == pytest.approx(20.0)
 
 
 class TestMasksToSleapLabels:
@@ -221,10 +347,73 @@ class TestRenderCtcVideo:
             render_ctc_video(masks, out_path, show_progress=False)
 
 
+class TestRenderSlpVideo:
+    """Tests for render_slp_video."""
+
+    def test_basic_render(self, tmp_path):
+        """Test basic video rendering from Labels."""
+        labels = _make_synthetic_labels(n_frames=5, n_tracks=2, n_nodes=2)
+        out_path = tmp_path / "test_slp.mp4"
+        result = render_slp_video(labels, out_path, show_progress=False, fps=10.0)
+        assert result == out_path
+        assert out_path.exists()
+        assert out_path.stat().st_size > 0
+
+    def test_from_slp_file(self, tmp_path):
+        """Test rendering from a .slp file path."""
+        labels = _make_synthetic_labels(n_frames=3, n_tracks=2, n_nodes=2)
+        slp_path = tmp_path / "labels.slp"
+        labels.save(str(slp_path))
+
+        out_path = tmp_path / "from_slp.mp4"
+        result = render_slp_video(
+            str(slp_path), out_path, show_progress=False, fps=10.0
+        )
+        assert result.exists()
+
+    def test_disable_features(self, tmp_path):
+        """Test rendering with trails and IDs disabled."""
+        labels = _make_synthetic_labels(n_frames=3, n_tracks=2, n_nodes=2)
+        out_path = tmp_path / "minimal_slp.mp4"
+        result = render_slp_video(
+            labels,
+            out_path,
+            show_ids=False,
+            show_trails=False,
+            show_nodes=False,
+            show_edges=False,
+            show_progress=False,
+            fps=10.0,
+        )
+        assert result.exists()
+
+    def test_single_track(self, tmp_path):
+        """Test rendering with a single track."""
+        labels = _make_synthetic_labels(n_frames=3, n_tracks=1, n_nodes=2)
+        out_path = tmp_path / "single_track.mp4"
+        result = render_slp_video(labels, out_path, show_progress=False, fps=10.0)
+        assert result.exists()
+
+    def test_no_instances(self, tmp_path):
+        """Test rendering labels with no instances (empty frames)."""
+        skeleton = sio.Skeleton(nodes=["centroid"])
+        video = _make_temp_video(3, 32, 32)
+        labels = sio.Labels(
+            labeled_frames=[
+                sio.LabeledFrame(video=video, frame_idx=t, instances=[])
+                for t in range(3)
+            ],
+            skeletons=[skeleton],
+        )
+        out_path = tmp_path / "empty.mp4"
+        result = render_slp_video(labels, out_path, show_progress=False, fps=10.0)
+        assert result.exists()
+
+
 class TestRenderCLI:
     """Tests for the dreem render CLI command."""
 
-    def test_render_command(self, tmp_path):
+    def test_render_tiff_command(self, tmp_path):
         """Test render CLI with a valid TIFF file."""
         from typer.testing import CliRunner
 
@@ -243,6 +432,42 @@ class TestRenderCLI:
         )
         assert result.exit_code == 0, result.output
         assert out_path.exists()
+
+    def test_render_slp_command(self, tmp_path):
+        """Test render CLI with a valid .slp file."""
+        from typer.testing import CliRunner
+
+        from dreem.cli import app
+
+        labels = _make_synthetic_labels(n_frames=3, n_tracks=2, n_nodes=2)
+        slp_path = tmp_path / "labels.slp"
+        labels.save(str(slp_path))
+
+        out_path = tmp_path / "output_slp.mp4"
+        runner = CliRunner()
+        result = runner.invoke(
+            app,
+            ["render", str(slp_path), "--output", str(out_path), "--quiet"],
+        )
+        assert result.exit_code == 0, result.output
+        assert out_path.exists()
+
+    def test_render_unsupported_format(self, tmp_path):
+        """Test render CLI with an unsupported file format."""
+        from typer.testing import CliRunner
+
+        from dreem.cli import app
+
+        bad_file = tmp_path / "data.csv"
+        bad_file.write_text("a,b\n1,2\n")
+
+        out_path = tmp_path / "output.mp4"
+        runner = CliRunner()
+        result = runner.invoke(
+            app,
+            ["render", str(bad_file), "--output", str(out_path)],
+        )
+        assert result.exit_code != 0
 
     def test_render_missing_file(self, tmp_path):
         """Test render CLI with a nonexistent file."""
