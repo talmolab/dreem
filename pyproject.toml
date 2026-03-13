@@ -37,7 +37,8 @@ dependencies = [
     # Configuration
     "hydra-core",
     # Data I/O
-    "sleap-io[all]>=0.6.5,<0.7.0",
+    "sleap-io[all] @ git+https://github.com/talmolab/sleap-io@8d02e9d987775d719d70088841911e9b8af5bd96",
+    # "sleap-io[all]>=0.6.5,<0.7.0",  # pinned: switch back after next sleap-io release
     # "sleap-io[all] @ file:///${PROJECT_ROOT}/../sleap-io",  # dev: editable local install
     # Visualization
     "matplotlib",
