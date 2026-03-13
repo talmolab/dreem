@@ -3721,6 +3721,11 @@
 <td>Specific video files (can repeat)</td>
 </tr>
 <tr>
+<td><code>--output-format</code>, <code>-of</code></td>
+<td><code>native</code></td>
+<td>Output format: <code>native</code> (<code>.tif</code>/<code>.slp</code>), <code>csv</code>, or <code>both</code></td>
+</tr>
+<tr>
 <td><code>--save-meta</code>, <code>-sm</code></td>
 <td>-</td>
 <td>Save frame metadata</td>
@@ -3793,7 +3798,8 @@
 </code></pre></div>
 <h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>.slp</code> files with predicted tracks</li>
+<li><code>.slp</code> or <code>.tif</code> files with predicted tracks (native format)</li>
+<li><code>.csv</code> trajectory file (if <code>--output-format csv</code> or <code>both</code>; columns: <code>frame</code>, <code>detection_idx</code>, <code>track_id</code>, <code>confidence</code>, <code>centroid_x</code>, <code>centroid_y</code>)</li>
 <li><code>motmetrics.csv</code> with evaluation metrics</li>
 <li><code>.h5</code> file with detailed results</li>
 </ul>
