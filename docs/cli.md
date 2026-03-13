@@ -14,6 +14,7 @@ dreem --help
 | `dreem track` | Run tracking inference (no ground truth) |
 | `dreem eval` | Evaluate tracking against ground truth |
 | `dreem convert` | Convert external tracking formats to `.slp` files |
+| `dreem render` | Render CTC mask tracking results as video |
 
 ---
 
@@ -104,6 +105,7 @@ dreem track INPUT_DIR --checkpoint PATH --output DIR --crop-size SIZE [OPTIONS]
 | `--slp-file`, `-slp` | - | Specific SLEAP label files (can repeat) |
 | `--video-file`, `-vid` | - | Specific video files (can repeat) |
 | `--output-format`, `-of` | `native` | Output format: `native` (`.tif`/`.slp`), `csv`, or `both` |
+| `--render`, `-R` | - | Render tracked masks to video at this path (CTC only) |
 | `--save-meta`, `-sm` | - | Save frame metadata |
 | `--device` | `auto` | Accelerator: `auto`, `gpu`, `cpu`, `mps` |
 | `--gpu/--no-gpu`, `-g` | - | **Deprecated.** Use `--device` instead |
@@ -210,6 +212,71 @@ dreem convert trackmate \
 - `.mp4` or `.npy` video files (if `--to-mp4` or `--to-npy` is set)
 
 1-indexed frame numbers are automatically converted to 0-indexed.
+
+---
+
+## Render
+
+Render CTC-format tracked mask stacks as videos with colored overlays, centroid markers, trajectory trails, and ID labels.
+
+```bash
+dreem render MASKS --output PATH [OPTIONS]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `MASKS` | Yes | Tracked mask TIFF stack (uint16, pixel values = track IDs) |
+| `--output`, `-o` | Yes | Output video file path (e.g., `output.mp4`) |
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--raw-frames`, `-r` | - | Raw video/TIFF frames for background (default: black) |
+| `--mask-alpha` | `0.5` | Mask overlay opacity (0–1) |
+| `--palette`, `-p` | `distinct` | Color palette name |
+| `--trail-length` | `10` | Trail length in frames |
+| `--show-ids/--no-ids` | `show-ids` | Show track ID labels |
+| `--show-masks/--no-masks` | `show-masks` | Show mask overlays |
+| `--show-trails/--no-trails` | `show-trails` | Show trajectory trails |
+| `--show-centroids/--no-centroids` | `show-centroids` | Show centroid markers |
+| `--fps` | `30.0` | Output video frame rate |
+| `--scale` | `1.0` | Scale factor for rendering |
+| `--quiet`, `-q` | - | Suppress progress output |
+
+### Example
+
+```bash
+# Render with raw frames as background
+dreem render ./results/tracked.tif \
+    --output ./results/visualization.mp4 \
+    --raw-frames ./data/raw.tif \
+    --trail-length 15 \
+    --fps 15
+
+# Render on black background, no ID labels
+dreem render ./results/tracked.tif \
+    --output ./results/visualization.mp4 \
+    --no-ids
+```
+
+### Auto-render after tracking
+
+Use the `--render` flag on `dreem track` to automatically render after tracking:
+
+```bash
+dreem track ./data \
+    --checkpoint microscopy \
+    --output ./results \
+    --crop-size 128 \
+    --render ./results/video.mp4
+```
+
+### Output
+
+- `.mp4` video file with colored mask overlays and annotations
 
 ---
 
