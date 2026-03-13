@@ -261,6 +261,7 @@ dreem train --help
 dreem track --help
 dreem eval --help
 dreem convert --help
+dreem render --help
 ```
 
 ### Config Overrides

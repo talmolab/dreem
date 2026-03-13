@@ -339,6 +339,14 @@ def _create_inference_command(mode: str):
         quiet: Annotated[
             bool, typer.Option("--quiet", "-q", help="Suppress progress output")
         ] = False,
+        render_path: Annotated[
+            Path | None,
+            typer.Option(
+                "--render",
+                "-R",
+                help="Render tracked masks to video at this path",
+            ),
+        ] = None,
         verbose: Annotated[
             bool, typer.Option("--verbose", help="Enable verbose logging")
         ] = False,
@@ -438,7 +446,47 @@ def _create_inference_command(mode: str):
         if mode == "track":
             from dreem.inference.track import run as run_tracking
 
-            run_tracking(cfg)
+            result = run_tracking(cfg)
+
+            # Auto-render if --render flag is set
+            if render_path is not None and result.get("preds") is not None:
+                import numpy as np
+
+                preds = result["preds"]
+                if isinstance(preds, np.ndarray):
+                    from dreem.io.visualize import render_ctc_video
+
+                    if not quiet:
+                        console.print(f"[cyan]Rendering video: {render_path}[/cyan]")
+                    render_ctc_video(
+                        masks=preds,
+                        save_path=render_path,
+                        show_progress=not quiet,
+                    )
+                    if not quiet:
+                        console.print(f"[green]Rendered: {render_path}[/green]")
+                else:
+                    import sleap_io as sio
+
+                    if isinstance(preds, sio.Labels):
+                        from dreem.io.visualize import render_slp_video
+
+                        if not quiet:
+                            console.print(
+                                f"[cyan]Rendering video: {render_path}[/cyan]"
+                            )
+                        render_slp_video(
+                            labels=preds,
+                            save_path=render_path,
+                            show_progress=not quiet,
+                        )
+                        if not quiet:
+                            console.print(f"[green]Rendered: {render_path}[/green]")
+                    elif not quiet:
+                        console.print(
+                            "[yellow]--render is only supported for CTC mask "
+                            "or SLEAP labels outputs[/yellow]"
+                        )
 
         else:
             from dreem.inference.eval import run as run_eval
@@ -660,6 +708,130 @@ def train(
 
     run_training(cfg)
     console.print("[green]Training complete.[/green]")
+
+
+@app.command()
+def render(
+    input_path: Annotated[
+        Path,
+        typer.Argument(
+            help="Input file: tracked mask TIFF (.tif/.tiff) or SLEAP labels (.slp)"
+        ),
+    ],
+    output: Annotated[
+        Path, typer.Option("--output", "-o", help="Output video file path")
+    ],
+    raw_frames: Annotated[
+        Path | None,
+        typer.Option(
+            "--raw-frames",
+            "-r",
+            help="Raw video/TIFF frames for background (CTC only, default: black)",
+        ),
+    ] = None,
+    mask_alpha: Annotated[
+        float, typer.Option("--mask-alpha", help="Mask overlay opacity (CTC only, 0-1)")
+    ] = 0.5,
+    palette_name: Annotated[
+        str, typer.Option("--palette", "-p", help="Color palette name")
+    ] = "distinct",
+    trail_length: Annotated[
+        int, typer.Option("--trail-length", help="Trail length in frames")
+    ] = 10,
+    line_width: Annotated[
+        float, typer.Option("--line-width", help="Skeleton edge line width (SLP only)")
+    ] = 2.0,
+    show_ids: Annotated[
+        bool, typer.Option("--show-ids/--no-ids", help="Show track ID labels")
+    ] = True,
+    show_masks: Annotated[
+        bool,
+        typer.Option("--show-masks/--no-masks", help="Show mask overlays (CTC only)"),
+    ] = True,
+    show_trails: Annotated[
+        bool, typer.Option("--show-trails/--no-trails", help="Show trajectory trails")
+    ] = True,
+    show_centroids: Annotated[
+        bool,
+        typer.Option(
+            "--show-centroids/--no-centroids", help="Show centroid markers (CTC only)"
+        ),
+    ] = True,
+    show_nodes: Annotated[
+        bool,
+        typer.Option(
+            "--show-nodes/--no-nodes", help="Show keypoint markers (SLP only)"
+        ),
+    ] = True,
+    show_edges: Annotated[
+        bool,
+        typer.Option("--show-edges/--no-edges", help="Show skeleton edges (SLP only)"),
+    ] = True,
+    fps: Annotated[float, typer.Option("--fps", help="Output video frame rate")] = 30.0,
+    scale: Annotated[
+        float, typer.Option("--scale", help="Scale factor for rendering")
+    ] = 1.0,
+    quiet: Annotated[
+        bool, typer.Option("--quiet", "-q", help="Suppress progress output")
+    ] = False,
+) -> None:
+    """Render tracking results as a video with colored overlays.
+
+    Supports CTC mask TIFF stacks (.tif/.tiff) and SLEAP labels (.slp).
+    """
+    if not input_path.exists():
+        console.print(f"[red]Error: File not found: {input_path}[/red]")
+        raise typer.Exit(1)
+
+    suffix = input_path.suffix.lower()
+
+    if not quiet:
+        console.print(f"[cyan]Rendering: {input_path}[/cyan]")
+
+    if suffix in (".tif", ".tiff"):
+        from dreem.io.visualize import render_ctc_video
+
+        result_path = render_ctc_video(
+            masks=input_path,
+            save_path=output,
+            raw_frames=raw_frames,
+            mask_alpha=mask_alpha,
+            palette=palette_name,
+            trail_length=trail_length,
+            show_ids=show_ids,
+            show_masks=show_masks,
+            show_trails=show_trails,
+            show_centroids=show_centroids,
+            fps=fps,
+            scale=scale,
+            show_progress=not quiet,
+        )
+    elif suffix == ".slp":
+        from dreem.io.visualize import render_slp_video
+
+        result_path = render_slp_video(
+            labels=input_path,
+            save_path=output,
+            palette=palette_name,
+            line_width=line_width,
+            trail_length=trail_length,
+            show_ids=show_ids,
+            show_trails=show_trails,
+            show_nodes=show_nodes,
+            show_edges=show_edges,
+            fps=fps,
+            scale=scale,
+            show_progress=not quiet,
+        )
+    else:
+        console.print(
+            f"[red]Error: Unsupported file format '{suffix}'. "
+            f"Use .tif/.tiff (CTC masks) or .slp (SLEAP labels).[/red]"
+        )
+        raise typer.Exit(1)
+
+    if not quiet:
+        console.print(f"[green]Saved: {result_path}[/green]")
 
 
 @app.command()
