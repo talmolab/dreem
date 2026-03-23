@@ -415,7 +415,10 @@ class GTRRunner(LightningModule):
                     f"{vid_name}.dreem_inference.{timestamp}.tif",
                 )
                 pred_imgs = []
+                flagged_frame_indices = []
                 for frame in preds:
+                    if frame.has_flag(FrameFlagCode.LOW_CONFIDENCE):
+                        flagged_frame_indices.append(frame.frame_id.item())
                     frame_masks = []
                     for instance in frame.instances:
                         mask = instance.mask.cpu().numpy()
@@ -427,6 +430,15 @@ class GTRRunner(LightningModule):
                     pred_imgs.append(frame_mask)
                 pred_imgs = np.stack(pred_imgs)
                 tifffile.imwrite(outpath, pred_imgs.astype(np.uint16))
+                if flagged_frame_indices:
+                    flagged_path = os.path.join(
+                        self.test_results["save_path"],
+                        f"{vid_name}.dreem_inference.{timestamp}.flagged_frames.txt",
+                    )
+                    with open(flagged_path, "w") as f:
+                        for frame_idx in flagged_frame_indices:
+                            f.write(f"{frame_idx}\n")
+                    logger.info(f"Saved flagged frames to {flagged_path}")
             else:
                 outpath = os.path.join(
                     self.test_results["save_path"],
