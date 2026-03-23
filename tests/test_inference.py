@@ -915,6 +915,7 @@ def test_export_trajectories_columns_and_values():
         "confidence",
         "centroid_x",
         "centroid_y",
+        "flagged",
     ]
     assert list(df.columns) == expected_cols
     assert len(df) == num_frames * num_instances
@@ -1109,6 +1110,7 @@ def test_on_test_end_csv_output(tmp_path):
         "confidence",
         "centroid_x",
         "centroid_y",
+        "flagged",
     ]
 
     # Verify preds were cleared
@@ -1220,3 +1222,43 @@ def test_track_csv_only(tmp_path, inference_config):
     csv_files = list(out_dir.glob("*.csv"))
     assert len(slp_files) == 0
     assert len(csv_files) > 0
+
+
+def test_export_trajectories_flagged_column():
+    """Test that export_trajectories includes flagged column reflecting frame flags."""
+    frames = []
+    for i in range(3):
+        inst = Instance(
+            gt_track_id=0,
+            pred_track_id=0,
+            bbox=torch.tensor([[10.0, 20.0, 30.0, 40.0]]),
+        )
+        frame = Frame(video_id=0, frame_id=i, instances=[inst])
+        if i == 1:
+            frame.add_flag(FrameFlagCode.LOW_CONFIDENCE)
+        frames.append(frame)
+
+    df = export_trajectories(frames)
+
+    assert "flagged" in df.columns
+    assert not df[df["frame"] == 0].iloc[0]["flagged"]
+    assert df[df["frame"] == 1].iloc[0]["flagged"]
+    assert not df[df["frame"] == 2].iloc[0]["flagged"]
+
+
+def test_export_trajectories_flagged_csv_roundtrip(tmp_path):
+    """Test that flagged column survives CSV write/read."""
+    inst = Instance(
+        gt_track_id=0,
+        pred_track_id=0,
+        bbox=torch.tensor([[10.0, 20.0, 30.0, 40.0]]),
+    )
+    frame = Frame(video_id=0, frame_id=0, instances=[inst])
+    frame.add_flag(FrameFlagCode.LOW_CONFIDENCE)
+
+    csv_path = str(tmp_path / "flagged.csv")
+    export_trajectories([frame], save_path=csv_path)
+
+    loaded = pd.read_csv(csv_path)
+    assert "flagged" in loaded.columns
+    assert loaded.iloc[0]["flagged"]

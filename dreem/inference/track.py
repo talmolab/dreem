@@ -62,13 +62,14 @@ def export_trajectories(
 
     Returns:
         A DataFrame with columns: frame, detection_idx, track_id, confidence,
-        centroid_x, centroid_y.
+        centroid_x, centroid_y, flagged.
     """
     import pandas as pd
 
     rows: list[dict] = []
     for frame in frames_pred:
         frame_id = frame.frame_id.item()
+        flagged = frame.has_flag(FrameFlagCode.LOW_CONFIDENCE)
         for det_idx, instance in enumerate(frame.instances):
             centroid = instance.centroid.get("centroid")
             if centroid is not None:
@@ -85,6 +86,7 @@ def export_trajectories(
                     "confidence": instance.track_score,
                     "centroid_x": cx,
                     "centroid_y": cy,
+                    "flagged": flagged,
                 }
             )
     columns = [
@@ -94,6 +96,7 @@ def export_trajectories(
         "confidence",
         "centroid_x",
         "centroid_y",
+        "flagged",
     ]
     df = pd.DataFrame(rows, columns=columns)
     if save_path:
@@ -103,7 +106,7 @@ def export_trajectories(
 
 def track_ctc(
     model: GTRRunner, trainer: pl.Trainer, dataloader: torch.utils.data.DataLoader
-) -> tuple[np.ndarray, list[Frame]]:
+) -> tuple[np.ndarray, list[Frame], list[int]]:
     """Run tracking inference for Cell Tracking Challenge format.
 
     Args:
@@ -113,14 +116,17 @@ def track_ctc(
 
     Returns:
         Tuple of (stacked numpy array of predicted mask images, list of Frame
-        objects with predicted track ids).
+        objects with predicted track ids, list of flagged frame indices).
     """
     preds = trainer.predict(model, dataloader)
     pred_imgs = []
     all_frames: list[Frame] = []
+    flagged_frame_indices: list[int] = []
     for batch in preds:
         for frame in batch:
             all_frames.append(frame)
+            if frame.has_flag(FrameFlagCode.LOW_CONFIDENCE):
+                flagged_frame_indices.append(frame.frame_id.item())
             frame_masks = []
             for instance in frame.instances:
                 mask = instance.mask.cpu().numpy()
@@ -142,7 +148,7 @@ def track_ctc(
 
             pred_imgs.append(frame_mask)
     pred_imgs = np.stack(pred_imgs)
-    return pred_imgs, all_frames
+    return pred_imgs, all_frames, flagged_frame_indices
 
 
 def track_sleap(
@@ -284,7 +290,9 @@ def run(cfg: DictConfig) -> dict:
         stem = Path(save_file_name).stem
 
         if isinstance(dataset, CellTrackingDataset):
-            preds, all_frames = track_ctc(model, trainer, dataloader)
+            preds, all_frames, flagged_frame_indices = track_ctc(
+                model, trainer, dataloader
+            )
             if output_format in ("native", "both"):
                 outpath = os.path.join(
                     outdir,
@@ -294,6 +302,17 @@ def run(cfg: DictConfig) -> dict:
                 outpath = os.path.abspath(outpath)
                 output_paths.append(outpath)
                 print(f"Saved: {outpath}")
+            if flagged_frame_indices:
+                flagged_path = os.path.join(
+                    outdir,
+                    f"{stem}.dreem_inference.{timestamp}.flagged_frames.txt",
+                )
+                with open(flagged_path, "w") as f:
+                    for frame_idx in flagged_frame_indices:
+                        f.write(f"{frame_idx}\n")
+                flagged_path = os.path.abspath(flagged_path)
+                output_paths.append(flagged_path)
+                print(f"Saved: {flagged_path}")
         else:
             preds, all_frames = track_sleap(
                 model, trainer, dataloader, outdir, overrides_dict
