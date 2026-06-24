@@ -66,9 +66,11 @@ class Embedding(torch.nn.Module):
             mlp_cfg: A dictionary of mlp hyperparameters for projecting
                 embedding to correct space.
                     Example: {"hidden_dims": 256, "num_layers":3, "dropout": 0.3}
-            sigma: Gaussian width (in frames) for the RFF temporal embedding.
-                Replaces `temperature` as the tuning knob for fixed temporal
-                mode only; ignored elsewhere. The tanh clamp horizon is L=3σ.
+            sigma: Gaussian width for the fixed RFF embeddings, replacing
+                `temperature` as the tuning knob. For temporal it is in frames
+                (tanh clamp horizon L=3σ); for spatial it is in normalized
+                coordinate units (no tanh -- the whole [0,1] frame is in range).
+                Ignored for learned/off modes.
         """
         self._check_init_args(emb_type, mode)
 
@@ -90,8 +92,9 @@ class Embedding(torch.nn.Module):
 
         if self.emb_type == "pos" and mlp_cfg is not None and mlp_cfg["num_layers"] > 0:
             if self.mode == "fixed":
+                # RFF spatial embedding outputs `features` dims directly.
                 self.mlp = MLP(
-                    input_dim=n_points * self.features,
+                    input_dim=self.features,
                     output_dim=self.features,
                     **mlp_cfg,
                 )
@@ -123,6 +126,18 @@ class Embedding(torch.nn.Module):
 
         elif self.mode == "fixed":
             if self.emb_type == "pos":
+                if self.features % 2 != 0:
+                    raise ValueError(
+                        "RFF spatial embedding requires even `features`; "
+                        f"got {self.features}"
+                    )
+                # Bochner: <f(a),f(b)> ~ exp(-||a-b||^2 / 2σ^2) over the
+                # 4*n_points box coords when omega ~ N(0, 1/σ^2). Frozen at init.
+                self.register_buffer(
+                    "rff_box_omega",
+                    torch.randn(4 * self.n_points, self.features // 2)
+                    / float(self.sigma),
+                )
                 self._emb_func = self._sine_box_embedding
             elif self.emb_type == "temp":
                 if self.features % 2 != 0:
@@ -198,7 +213,21 @@ class Embedding(torch.nn.Module):
         return torch.div(tensor1, tensor2, rounding_mode="floor")
 
     def _sine_box_embedding(self, boxes: torch.Tensor) -> torch.Tensor:
-        """Compute sine positional embeddings for boxes using given parameters.
+        """RFF spatial embedding of normalized box coords (Gaussian kernel).
+
+        Replaces the DETR-style geometric sinusoidal ladder with Random Fourier
+        Features: frozen Gaussian frequencies `omega ~ N(0, 1/sigma^2)` give, by
+        Bochner's theorem, a dot-product kernel
+        `<f(a), f(b)> ~ exp(-||a - b||^2 / 2 sigma^2)` over the `4*n_points` box
+        coordinates. That kernel is translation-invariant in the coordinate
+        offset, monotone in distance, and injective for `sigma << 1` -- so the
+        embedding can both tell two boxes apart and read small-vs-large distance.
+
+        This is the spatial mirror of `_sine_temp_embedding`, with NO tanh warp:
+        the spatial working range is the whole [0,1] frame, which the temporal
+        path's `L = 3*sigma` horizon would saturate. `sigma` is in normalized
+        coordinate units; the sinusoidal `scale`/`normalize` (2*pi) rescale is
+        intentionally NOT applied (it would change the meaning of sigma).
 
         Args:
              boxes: the input boxes of shape N, n_anchors, 4 or B, N, n_anchors, 4
@@ -206,41 +235,24 @@ class Embedding(torch.nn.Module):
                     (Note currently `B=batch_size=1`).
 
         Returns:
-             torch.Tensor, the sine positional embeddings
-             (embedding[:, 4i] = sin(x)
-              embedding[:, 4i+1] = cos(x)
-              embedding[:, 4i+2] = sin(y)
-              embedding[:, 4i+3] = cos(y)
-              )
+             torch.Tensor of shape (N, self.features), the RFF positional embedding.
         """
-        if self.scale is not None and self.normalize is False:
-            raise ValueError("normalize should be True if scale is passed")
-
         if len(boxes.size()) == 3:
-            boxes = boxes.unsqueeze(0)
+            boxes = boxes.unsqueeze(0)  # (1, N, n_anchors, 4)
 
-        if self.normalize:
-            boxes = boxes * self.scale
+        n_t = boxes.shape[1]
+        coords = boxes.reshape(n_t, -1).float()  # (N, 4 * n_points); B=1
 
-        dim_t = torch.arange(self.features // 4, dtype=torch.float32)
-
-        dim_t = self.temperature ** (
-            2 * self._torch_int_div(dim_t, 2) / (self.features // 4)
+        omega = self.rff_box_omega.to(coords.device)  # (4*n_points, features//2)
+        ang = coords @ omega  # (N, features // 2)
+        n_freq = omega.shape[1]
+        pos_emb = torch.cat([torch.cos(ang), torch.sin(ang)], dim=-1) / math.sqrt(
+            n_freq
         )
-
-        # (b, n_t, n_anchors, 4, D//4)
-        pos_emb = boxes[:, :, :, :, None] / dim_t.to(boxes.device)
-
-        pos_emb = torch.stack(
-            (pos_emb[:, :, :, :, 0::2].sin(), pos_emb[:, :, :, :, 1::2].cos()), dim=4
-        )
-        pos_emb = pos_emb.flatten(2).squeeze(0)  # (N_t, n_anchors * D)
 
         pos_emb = self.mlp(pos_emb)
 
-        pos_emb = pos_emb.view(boxes.shape[1], self.features)
-
-        return pos_emb
+        return pos_emb.view(n_t, self.features)
 
     def _sine_temp_embedding(self, times: torch.Tensor) -> torch.Tensor:
         """RFF temporal embedding of signed integer offsets to the current frame.
