@@ -80,21 +80,44 @@ class Transformer(torch.nn.Module):
         self.return_embedding = return_embedding
         self.encoder_cfg = encoder_cfg
 
-        self.pos_emb = Embedding(emb_type="off", mode="off", features=self.d_model)
-        self.temp_emb = Embedding(emb_type="off", mode="off", features=self.d_model)
+        # Fusion mode for combining visual features with pos/temp embeddings.
+        #   "average" (default): emb = (pos + temp)/2, ADDED to the visual
+        #       features -- pos and temp are each d_model and superimposed.
+        #   "concatenate": visual (projected to d_visual) ⊕ pos (d_pos) ⊕ temp
+        #       (d_temp) are concatenated into one d_model vector, so each signal
+        #       keeps its own dimensions (lossless; the model learns the mixing
+        #       instead of being handed a fixed lossy average). No additive path.
+        em = self.embedding_meta or {}
+        self.embedding_agg_method = em.get("embedding_agg_method", "average")
+        if self.embedding_agg_method == "concatenate":
+            self.d_pos = em.get("pos_dim", self.d_model // 4)
+            self.d_temp = em.get("temp_dim", self.d_model // 4)
+            self.d_visual = self.d_model - self.d_pos - self.d_temp
+            if self.d_visual <= 0:
+                raise ValueError(
+                    f"pos_dim ({self.d_pos}) + temp_dim ({self.d_temp}) must be "
+                    f"< d_model ({self.d_model}) to leave room for visual features"
+                )
+            self.visual_proj = nn.Linear(self.d_model, self.d_visual)
+        else:
+            self.d_pos = self.d_temp = self.d_visual = self.d_model
+            self.visual_proj = None
+
+        self.pos_emb = Embedding(emb_type="off", mode="off", features=self.d_pos)
+        self.temp_emb = Embedding(emb_type="off", mode="off", features=self.d_temp)
 
         if self.embedding_meta:
             if "pos" in self.embedding_meta:
                 pos_emb_cfg = self.embedding_meta["pos"]
                 if pos_emb_cfg:
                     self.pos_emb = Embedding(
-                        emb_type="pos", features=self.d_model, **pos_emb_cfg
+                        emb_type="pos", features=self.d_pos, **pos_emb_cfg
                     )
             if "temp" in self.embedding_meta:
                 temp_emb_cfg = self.embedding_meta["temp"]
                 if temp_emb_cfg:
                     self.temp_emb = Embedding(
-                        emb_type="temp", features=self.d_model, **temp_emb_cfg
+                        emb_type="temp", features=self.d_temp, **temp_emb_cfg
                     )
 
         self.fourier_embeddings = FourierPositionalEmbeddings(
@@ -156,6 +179,33 @@ class Transformer(torch.nn.Module):
                     print(f"Failed Trying to initialize {p}")
                     raise (e)
 
+    def _concat_fuse(
+        self,
+        visual: torch.Tensor,
+        pos_emb: torch.Tensor,
+        temp_emb: torch.Tensor,
+        n: int,
+    ) -> torch.Tensor:
+        """Concatenate projected visual ⊕ pos ⊕ temp into one (n, 1, d_model) vector.
+
+        Each signal keeps its own slice of the feature dimension (visual ->
+        d_visual via `visual_proj`, pos -> d_pos, temp -> d_temp), so the model
+        learns how to combine them instead of receiving a fixed averaged sum.
+
+        Args:
+            visual: permuted visual features, shape (n, 1, d_model).
+            pos_emb: spatial embedding, shape (n, d_pos).
+            temp_emb: temporal embedding, shape (n, d_temp).
+            n: number of instances.
+
+        Returns:
+            Fused tensor of shape (n, 1, d_model).
+        """
+        visual = self.visual_proj(visual)  # (n, 1, d_visual)
+        pos = pos_emb.view(n, 1, self.d_pos)
+        temp = temp_emb.view(n, 1, self.d_temp)
+        return torch.cat([visual, pos, temp], dim=-1)  # (n, 1, d_model)
+
     def forward(
         self,
         ref_instances: list[Instance],
@@ -197,19 +247,25 @@ class Transformer(torch.nn.Module):
                 instance.add_embedding("pos", ref_pos_emb[i])
                 instance.add_embedding("temp", ref_temp_emb[i])
 
-        ref_emb = (ref_pos_emb + ref_temp_emb) / 2.0
-
-        ref_emb = ref_emb.view(1, total_instances, embed_dim)
-
-        ref_emb = ref_emb.permute(1, 0, 2)  # (total_instances, batch_size, embed_dim)
-
         batch_size, total_instances = ref_features.shape[:-1]
 
         ref_features = ref_features.permute(
             1, 0, 2
         )  # (total_instances, batch_size, embed_dim)
 
-        encoder_queries = ref_features
+        if self.embedding_agg_method == "concatenate":
+            # visual ⊕ pos ⊕ temp baked into the feature vector; no additive path.
+            encoder_queries = self._concat_fuse(
+                ref_features, ref_pos_emb, ref_temp_emb, total_instances
+            )
+            ref_emb = None
+        else:
+            ref_emb = (ref_pos_emb + ref_temp_emb) / 2.0
+            ref_emb = ref_emb.view(1, total_instances, embed_dim)
+            ref_emb = ref_emb.permute(
+                1, 0, 2
+            )  # (total_instances, batch_size, embed_dim)
+            encoder_queries = ref_features
 
         # apply fourier embeddings if using fourier rope, OR if using descriptor (compact) visual encoder
         if (
@@ -258,9 +314,14 @@ class Transformer(torch.nn.Module):
 
             query_pos_emb = self.pos_emb(query_boxes)
 
-            query_emb = (query_pos_emb + query_temp_emb) / 2.0
-            query_emb = query_emb.view(1, n_query, embed_dim)
-            query_emb = query_emb.permute(1, 0, 2)  # (n_query, batch_size, embed_dim)
+            if self.embedding_agg_method == "concatenate":
+                query_emb = None
+            else:
+                query_emb = (query_pos_emb + query_temp_emb) / 2.0
+                query_emb = query_emb.view(1, n_query, embed_dim)
+                query_emb = query_emb.permute(
+                    1, 0, 2
+                )  # (n_query, batch_size, embed_dim)
 
         else:
             query_instances = ref_instances
@@ -290,11 +351,22 @@ class Transformer(torch.nn.Module):
                 self.fourier_norm,
             )
 
+        if self.embedding_agg_method == "concatenate":
+            decoder_queries = self._concat_fuse(
+                query_features, query_pos_emb, query_temp_emb, n_query
+            )
+            decoder_ref_emb = None
+            decoder_query_emb = None
+        else:
+            decoder_queries = query_features
+            decoder_ref_emb = ref_emb
+            decoder_query_emb = query_emb
+
         decoder_features = self.decoder(
-            query_features,
+            decoder_queries,
             encoder_features,
-            ref_pos_emb=ref_emb,
-            query_pos_emb=query_emb,
+            ref_pos_emb=decoder_ref_emb,
+            query_pos_emb=decoder_query_emb,
         )  # (L, n_query, batch_size, embed_dim)
 
         decoder_features = decoder_features.transpose(
