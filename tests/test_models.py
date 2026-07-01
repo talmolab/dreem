@@ -12,6 +12,7 @@ from dreem.models import (
 )
 from dreem.models.attention_head import ATTWeightHead
 from dreem.models.mlp import MLP
+from dreem.models.visual_encoder import GeM
 from dreem.models.transformer import (
     TransformerDecoderLayer,
     TransformerEncoderLayer,
@@ -127,6 +128,39 @@ def test_encoder_torch():
     output = encoder(input_tensor)
 
     assert output.shape == (b, features)
+
+
+def test_encoder_pooling():
+    """Test configurable global pooling (GeM / avg / max) in the visual encoder."""
+    # GeM module: collapses spatial dims, and p=1 exactly recovers avg pooling.
+    fmap = torch.rand(2, 5, 7, 7)
+    assert GeM()(fmap).shape == (2, 5, 1, 1)
+    assert torch.allclose(
+        GeM(p=1.0)(fmap), torch.nn.AdaptiveAvgPool2d(1)(fmap), atol=1e-5
+    )
+
+    b, c, h, w = 2, 3, 64, 64
+    x = torch.rand(b, c, h, w)
+
+    # default pooling is GeM with a learnable exponent initialized to 3.
+    enc = VisualEncoder(model_name="resnet18", in_chans=c, d_model=128, backend="torch")
+    assert enc.pooling == "gem"
+    assert isinstance(enc.pool, GeM)
+    assert enc.pool.p.requires_grad
+    assert enc.pool.p.item() == pytest.approx(3.0)
+
+    # each pooling mode yields (b, d_model)
+    for pooling in ["gem", "avg", "max"]:
+        enc = VisualEncoder(
+            model_name="resnet18", in_chans=c, d_model=128, backend="torch", pooling=pooling
+        )
+        assert enc(x).shape == (b, 128)
+
+    # unknown pooling raises
+    with pytest.raises(ValueError):
+        VisualEncoder(
+            model_name="resnet18", in_chans=c, d_model=128, backend="torch", pooling="bogus"
+        )
 
 
 def test_embedding_validity():

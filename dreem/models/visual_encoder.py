@@ -16,6 +16,51 @@ import torchvision
 ENCODER_REGISTRY: Dict[str, Type[torch.nn.Module]] = {}
 
 
+class GeM(torch.nn.Module):
+    """Generalized Mean (GeM) pooling over the spatial dimensions.
+
+    Computes `(mean(x**p))**(1/p)` over `(H, W)`. `p = 1` recovers average
+    pooling and `p -> inf` recovers max pooling; intermediate `p` (default 3)
+    interpolates between them, emphasizing more salient activations
+    (Radenovic et al., 2018, https://arxiv.org/abs/1711.02512).
+    """
+
+    def __init__(self, p: float = 3.0, eps: float = 1e-6, learnable: bool = True):
+        """Initialize GeM pooling.
+
+        Args:
+            p: Initial value of the pooling exponent.
+            eps: Lower bound applied to activations before the power, for
+                numerical stability.
+            learnable: If True, `p` is a trainable parameter; otherwise it is a
+                fixed buffer.
+        """
+        super().__init__()
+        if learnable:
+            self.p = torch.nn.Parameter(torch.ones(1) * p)
+        else:
+            self.register_buffer("p", torch.ones(1) * p)
+        self.eps = eps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Pool a feature map.
+
+        Args:
+            x: Feature map of shape `(B, C, H, W)`.
+
+        Returns:
+            Pooled tensor of shape `(B, C, 1, 1)`.
+        """
+        return F.avg_pool2d(
+            x.clamp(min=self.eps).pow(self.p), (x.size(-2), x.size(-1))
+        ).pow(1.0 / self.p)
+
+    def extra_repr(self) -> str:
+        """String representation of the pooling parameters."""
+        p = self.p.data.item() if isinstance(self.p, torch.Tensor) else self.p
+        return f"p={p:.4f}, eps={self.eps}"
+
+
 class VisualEncoder(torch.nn.Module):
     """Class wrapping around a visual feature extractor backbone.
 
@@ -28,6 +73,7 @@ class VisualEncoder(torch.nn.Module):
         d_model: int = 512,
         in_chans: int = 3,
         backend: int = "timm",
+        pooling: str = "gem",
         **kwargs: Any | None,
     ):
         """Initialize Visual Encoder.
@@ -37,6 +83,9 @@ class VisualEncoder(torch.nn.Module):
             d_model (int): Output embedding dimension.
             in_chans: the number of input channels of the image.
             backend: Which model backend to use. One of {"timm", "torchvision"}
+            pooling: Global pooling applied to the backbone feature map. One of
+                {"gem", "avg", "max"}. Defaults to "gem" (learnable Generalized
+                Mean pooling); "avg" reproduces the previous behavior.
             kwargs: see `timm.create_model` and `torchvision.models.resnetX` for kwargs.
         """
         super().__init__()
@@ -44,20 +93,44 @@ class VisualEncoder(torch.nn.Module):
         self.model_name = model_name.lower()
         self.d_model = d_model
         self.backend = backend
+        self.pooling = pooling.lower()
         if in_chans == 1:
             self.in_chans = 3
         else:
             self.in_chans = in_chans
 
+        # Backbone emits an unpooled (B, C, H, W) feature map; pooling is applied
+        # explicitly below so it is consistent across backends and configurable.
         self.feature_extractor = self.select_feature_extractor(
             model_name=self.model_name,
             in_chans=self.in_chans,
             backend=self.backend,
             **kwargs,
         )
+        self.pool = self._build_pool(self.pooling)
 
         self.out_layer = torch.nn.Linear(
             self.encoder_dim(self.feature_extractor), self.d_model
+        )
+
+    @staticmethod
+    def _build_pool(pooling: str) -> torch.nn.Module:
+        """Build the global pooling module.
+
+        Args:
+            pooling: One of {"gem", "avg", "max"}.
+
+        Returns:
+            A module mapping `(B, C, H, W)` -> `(B, C, 1, 1)`.
+        """
+        if pooling == "gem":
+            return GeM(p=3.0, learnable=True)
+        if pooling == "avg":
+            return torch.nn.AdaptiveAvgPool2d(1)
+        if pooling == "max":
+            return torch.nn.AdaptiveMaxPool2d(1)
+        raise ValueError(
+            f"`pooling` must be one of ['gem', 'avg', 'max'], found '{pooling}'"
         )
 
     def select_feature_extractor(
@@ -75,10 +148,14 @@ class VisualEncoder(torch.nn.Module):
             a CNN encoder based on the config and backend selected.
         """
         if "timm" in backend.lower():
+            # global_pool="" -> return the unpooled (B, C, H, W) feature map;
+            # pooling is applied by self.pool in forward().
+            kwargs.pop("global_pool", None)
             feature_extractor = timm.create_model(
                 model_name=self.model_name,
                 in_chans=self.in_chans,
                 num_classes=0,
+                global_pool="",
                 **kwargs,
             )
         elif "torch" in backend.lower():
@@ -92,8 +169,10 @@ class VisualEncoder(torch.nn.Module):
                 raise ValueError(
                     f"Only `[resnet18, resnet50]` are available when backend is {backend}. Found {model_name}"
                 )
+            # Drop both the classifier (fc) and the built-in avgpool so the
+            # backbone returns the unpooled (B, C, H, W) feature map.
             feature_extractor = torch.nn.Sequential(
-                *list(feature_extractor.children())[:-1]
+                *list(feature_extractor.children())[:-2]
             )
             input_layer = feature_extractor[0]
             if in_chans != 3:
@@ -125,9 +204,10 @@ class VisualEncoder(torch.nn.Module):
             The embedding dimension size.
         """
         _ = model.eval()
-        dummy_output = model(torch.randn(1, self.in_chans, 224, 224)).squeeze()
+        with torch.no_grad():
+            dummy_output = self.pool(model(torch.randn(1, self.in_chans, 224, 224)))
         _ = model.train()  # to be safe
-        return dummy_output.shape[-1]
+        return dummy_output.reshape(1, -1).shape[-1]
 
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward pass of feature extractor to get feature vector.
@@ -150,9 +230,8 @@ class VisualEncoder(torch.nn.Module):
                     Hint: have you set the number of anchors in your dataset > 1? \n
                     If so, make sure to set `in_chans=3 * n_anchors`"""
             )
-        feats = self.feature_extractor(
-            img
-        )  # (B, out_dim, 1, 1) if using resnet18 backbone.
+        feats = self.feature_extractor(img)  # (B, out_dim, H, W)
+        feats = self.pool(feats)  # (B, out_dim, 1, 1)
 
         # Reshape feature vectors
         feats = feats.reshape([img.shape[0], -1])  # (B, out_dim)
