@@ -95,9 +95,46 @@ class BaseDataset(Dataset):
         Returns: None
         """
         stitched_segment = torch.cat(segments_to_stitch)
-        frame_idx_split = torch.split(stitched_segment, clip_length)
-        self.chunked_frame_idx.extend(frame_idx_split)
-        self.label_idx.extend(len(frame_idx_split) * [i])
+        if getattr(self, "gap_aug", False) and self.chunk:
+            chunks = self._gapped_chunks(stitched_segment, clip_length)
+        else:
+            chunks = list(torch.split(stitched_segment, clip_length))
+        self.chunked_frame_idx.extend(chunks)
+        self.label_idx.extend(len(chunks) * [i])
+
+    def _gapped_chunks(
+        self, seg: torch.Tensor, clip_length: int
+    ) -> list[torch.Tensor]:
+        """Gap-augmented chunks: each is `clip_length` frames evenly strided over
+        a random log-uniform span in [clip_length, gap_max_span].
+
+        This exposes training to a curriculum of temporal gaps (near-consecutive
+        -> large strides) so the temporal embedding learns across-gap association.
+        Frames are drawn from the labeled `seg`, so every selected frame is labeled.
+        """
+        max_span_cfg = int(getattr(self, "gap_max_span", 3000))
+        chunks: list[torch.Tensor] = []
+        pos, n = 0, len(seg)
+        while pos < n:
+            remaining = n - pos
+            if remaining < clip_length:
+                chunks.append(seg[pos:n])  # short consecutive tail
+                break
+            max_span = min(max_span_cfg, remaining)
+            if max_span <= clip_length:
+                span = clip_length
+            else:
+                span = int(
+                    np.exp(np.random.uniform(np.log(clip_length), np.log(max_span)))
+                )
+                span = max(clip_length, min(span, max_span))
+            window = seg[pos : pos + span]
+            sel = (torch.arange(clip_length) * span) // clip_length  # distinct, sorted
+            chunks.append(window[sel])
+            # advance by clip_length (not span) so chunk starts are dense and the
+            # whole clip is covered -- ~same chunk count / data use as standard.
+            pos += clip_length
+        return chunks
 
     def create_chunks_slp(self) -> None:
         """Get indexing for data.

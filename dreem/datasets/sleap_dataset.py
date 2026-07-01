@@ -8,6 +8,7 @@ from typing import Optional, Union
 
 import albumentations as A
 import imageio
+import os
 import numpy as np
 import sleap_io as sio
 import torch
@@ -45,6 +46,8 @@ class SleapDataset(BaseDataset):
         dilation_radius_px: Union[int, list[int]] = 0,
         max_detection_overlap: float = 0,
         max_tracks: int = inf,
+        gap_aug: bool = False,
+        gap_max_span: int = 3000,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -116,6 +119,8 @@ class SleapDataset(BaseDataset):
         self.seed = seed
         self.normalize_image = normalize_image
         self.max_batching_gap = max_batching_gap
+        self.gap_aug = gap_aug  # gap-augmented chunk sampling (re-id training)
+        self.gap_max_span = gap_max_span
         self.use_tight_bbox = use_tight_bbox
         self.dilation_radius_px = dilation_radius_px
         self.max_detection_overlap = (
@@ -169,7 +174,14 @@ class SleapDataset(BaseDataset):
             self.labels.append(labels)
             self.annotated_segments[slp_file] = annotated_segments
 
-        self.videos = [imageio.get_reader(vid_file) for vid_file in self.vid_files]
+        # Lazy, per-process video readers. Opening readers here and sharing them
+        # across DataLoader workers is NOT multiprocessing-safe: the underlying
+        # file/ffmpeg handles aren't picklable (spawn) and aren't safe to share
+        # across forked processes. Open lazily and reset the cache when the PID
+        # changes (i.e. inside a worker), so each process gets its own readers.
+        # This is what makes num_workers > 0 usable.
+        self.videos = [None] * len(self.vid_files)
+        self._videos_pid = None
         # preprocessors
         self.remove_excess_detections = RemoveExcessDetections(max_tracks)
         self.non_max_suppression = NonMaxSuppression(max_detection_overlap)
@@ -215,7 +227,7 @@ class SleapDataset(BaseDataset):
             crop_size = self.crop_size[0]
             dilation_radius_px = self.dilation_radius_px[0]
 
-        vid_reader = self.videos[label_idx]
+        vid_reader = self._get_video_reader(label_idx)
 
         skeleton = sleap_labels_obj.skeletons[-1]
 
@@ -518,7 +530,33 @@ class SleapDataset(BaseDataset):
 
         return frames
 
+    def _get_video_reader(self, idx: int):
+        """Return the imageio reader for video `idx`, opened lazily per process.
+
+        Readers are (re)opened in whichever process first uses them. If the PID
+        changes (e.g. a forked DataLoader worker), the cache is reset so each
+        worker opens its own handles -- keeping the dataset multiprocessing-safe.
+        """
+        pid = os.getpid()
+        if self._videos_pid != pid:
+            self.videos = [None] * len(self.vid_files)
+            self._videos_pid = pid
+        if self.videos[idx] is None:
+            self.videos[idx] = imageio.get_reader(self.vid_files[idx])
+        return self.videos[idx]
+
+    def __getstate__(self):
+        """Drop open readers when pickling (e.g. spawn workers); reopened lazily."""
+        state = self.__dict__.copy()
+        state["videos"] = [None] * len(self.vid_files)
+        state["_videos_pid"] = None
+        return state
+
     def __del__(self):
         """Handle file closing before garbage collection."""
-        for reader in self.videos:
-            reader.close()
+        for reader in getattr(self, "videos", []):
+            if reader is not None:
+                try:
+                    reader.close()
+                except Exception:
+                    pass

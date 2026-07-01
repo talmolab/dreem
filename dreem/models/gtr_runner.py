@@ -448,8 +448,13 @@ class GTRRunner(LightningModule):
                 suggestions = []
                 logger.info(f"Saving inference results to {outpath}")
                 tracks = {}
+                # `video` was previously set only when a frame with frame_id==0 was
+                # present; if that batch gets dropped (failed frame load -> "empty
+                # batch" removal), `video` stayed unbound and to_slp() below raised
+                # UnboundLocalError. Set it from the first available frame instead.
+                video = None
                 for frame in preds:
-                    if frame.frame_id.item() == 0:
+                    if video is None:
                         video = (
                             sio.Video(frame.video)
                             if isinstance(frame.video, str)
@@ -463,7 +468,34 @@ class GTRRunner(LightningModule):
                     lf, tracks = frame.to_slp(tracks, video=video)
                     pred_slp.append(lf)
                 pred_slp = sio.Labels(pred_slp, suggestions=suggestions)
-                pred_slp.save(outpath)
+                # DREEM creates a fresh sio.Skeleton per instance, so a long clip
+                # ends up with thousands of identical-but-distinct skeletons.
+                # sleap_io serializes every distinct skeleton into the metadata,
+                # which is stored as a single HDF5 attribute (~64KB limit) -- that
+                # overflows ("object header message is too large") and leaves a
+                # corrupt .slp. Collapse to one shared skeleton per unique node set.
+                shared_skel = {}
+                for lf in pred_slp:
+                    for inst in lf.instances:
+                        sig = tuple(n.name for n in inst.skeleton.nodes)
+                        inst.skeleton = shared_skel.setdefault(sig, inst.skeleton)
+                pred_slp.skeletons = list(shared_skel.values())
+                # Atomic save: write to a temp path and move into place only on
+                # success, so a failed save never leaves a half-written/corrupt file.
+                tmp = outpath + ".saving.slp"
+                try:
+                    pred_slp.save(tmp)
+                    os.replace(tmp, outpath)
+                except Exception as e:
+                    if os.path.exists(tmp):
+                        try:
+                            os.remove(tmp)
+                        except OSError:
+                            pass
+                    logger.warning(
+                        f"Could not save predicted .slp to {outpath} ({e}). "
+                        "Metrics were already saved; continuing eval."
+                    )
 
         if output_format in ("csv", "both"):
             from dreem.inference.track import export_trajectories

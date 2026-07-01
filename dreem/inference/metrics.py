@@ -1,5 +1,6 @@
 """Helper functions for calculating mot metrics."""
 
+import collections
 import logging
 from typing import TYPE_CHECKING
 
@@ -164,6 +165,12 @@ def compute_motmetrics(df):
     """
     summary_dreem = {}
     acc_dreem = mm.MOTAccumulator(auto_id=True)
+    # motmetrics reads `last_occurrence[o]` mid-`update()` (mot.py:262) before it
+    # writes it (mot.py:313); an object that drops out and reappears KeyErrors.
+    # Since `max_switch_time` defaults to inf the value only feeds an always-true
+    # comparison, so seeding a default is identical to the intended logic but
+    # crash-proof on dense, many-object data.
+    acc_dreem.last_occurrence = collections.defaultdict(lambda: 0)
     frame_switch_map = {}
     track_name_mapping = {}
     curr_track = 0

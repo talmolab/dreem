@@ -463,9 +463,19 @@ class Config:
                 "`mode` must be one of ['train', 'val','test'], not '{mode}'"
             )
         if dataloader_params.get("num_workers", 0) > 0:
-            # prevent too many open files error
             pin_memory = True
-            torch.multiprocessing.set_sharing_strategy("file_system")
+            # Tensor sharing strategy across workers. "file_system" (the upstream
+            # default) creates one mmap'd shm file per tensor, which can exhaust
+            # `vm.max_map_count` (RuntimeError: unable to mmap ... Cannot allocate
+            # memory) on boxes where that sysctl is low/read-only. "file_descriptor"
+            # passes fds instead -- far fewer mmaps -- and is preferable when the
+            # open-file limit (`ulimit -n`) is high. Override via env var.
+            strategy = os.environ.get("DREEM_MP_SHARING_STRATEGY", "file_system")
+            available = torch.multiprocessing.get_all_sharing_strategies()
+            if strategy not in available:
+                # e.g. "file_descriptor" is unavailable on macOS; fall back
+                strategy = "file_system"
+            torch.multiprocessing.set_sharing_strategy(strategy)
         else:
             pin_memory = False
 
