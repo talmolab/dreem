@@ -68,6 +68,8 @@ The `tracker` section controls tracking behavior and post-processing.
 ### Advanced Parameters
 
 * `decay_time` (`float` | `None`): Weight for temporal decay in post-processing. Set to `null` to disable.
+* `aggregation` (`str`): How per-instance association scores are pooled into a per-track score. `"recency_mean"` (default) scores each query/reference instance pair one-to-one on the raw association and pools them with a recency-weighted mean. `"softmax_sum"` restores the original behavior (a per-reference-frame softmax followed by an unweighted sum over each track's instances), whose scores depend on how much of the lookback window each track occupies -- a track that was missing for part of the window is scored on a different scale than one present throughout.
+* `recency_tau` (`float` | `None`): Time constant, in frames, of the exponential recency weight `exp(-delta / recency_tau)` used by `aggregation: "recency_mean"`. `null` (default) weights every reference instance in the window equally.
 
 ## Dataloader Configuration
 
@@ -160,6 +162,12 @@ tracker:
   
   # float: Trajectory overlap threshold for assignment (default: 0.01)
   overlap_thresh: <float>
+
+  # str: Per-track score pooling: "recency_mean" (default) or "softmax_sum" (legacy)
+  aggregation: <str>
+
+  # float | null: Recency weight time constant in frames for "recency_mean" (optional)
+  recency_tau: <float | null>
 
 trainer:
   # str: Device to use: "gpu", "cuda", or "cpu"

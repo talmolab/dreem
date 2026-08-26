@@ -5,6 +5,8 @@ tracker:
   decay_time: null
   iou: "mult"
   max_center_dist: null
+  aggregation: "recency_mean"  # or "softmax_sum" for the legacy pooling
+  recency_tau: null  # frames; null = weight all reference instances equally
 
 dataset:
   test_dataset:
