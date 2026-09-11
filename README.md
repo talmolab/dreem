@@ -5,7 +5,7 @@
 [![Documentation](https://img.shields.io/badge/Documentation-dreem.sleap.ai-lightgrey)](https://dreem.sleap.ai)
 [![code](https://img.shields.io/github/stars/talmolab/dreem)](https://github.com/talmolab/dreem)
 <!-- [![Release](https://img.shields.io/github/v/release/talmolab/dreem?label=Latest)](https://github.com/talmolab/dreem/releases/)
-[![PyPI](https://img.shields.io/pypi/v/dreem-track?label=PyPI)](https://pypi.org/project/dreem-track)
+[![PyPI](https://img.shields.io/pypi/v/dreem-track?label=PyPI)](https://pypi.org/project/dreem-track) -->
 
 **DREEM** is an open-source framework for multiple object tracking in biological data. Train your own models, run inference on new data, and evaluate your results. DREEM supports a variety of detection types, including keypoints, bounding boxes, and segmentation masks.
 
@@ -73,7 +73,7 @@ Results are saved as `.slp` files that can be opened directly in [SLEAP](https:/
 <!-- TODO: Add GIF showing visualization in SLEAP -->
 <!-- ![SLEAP Visualization](docs/assets/sleap-visualization.gif) -->
 
-For a more detailed walkthrough, check out the [Quickstart Guide](https://dreem.sleap.ai/quickstart/) or try the [Colab notebook](https://colab.research.google.com/github/talmolab/dreem/blob/docs/examples/quickstart.ipynb).
+For a more detailed walkthrough, check out the [Quickstart Guide](https://dreem.sleap.ai/quickstart/) or try the [Colab notebook](https://colab.research.google.com/github/talmolab/dreem/blob/main/examples/quickstart.ipynb).
 
 ## Usage
 
@@ -128,9 +128,11 @@ We provide several example notebooks to help you get started:
 
 - **[Quickstart Notebook](examples/quickstart.ipynb)** - Fly tracking demo with pretrained model
 - **[End-to-End Demo](examples/dreem-demo.ipynb)** - Train, run inference, and evaluate
-- **[Microscopy Demo](examples/microscopy-demo-simple.ipynb)** - Track cells in microscopy data
+- **[Microscopy Demo](examples/microscopy-demo.ipynb)** - Track cells in microscopy data
+- **[Extract Metrics](examples/extract_metrics.ipynb)** - Pull tracking metrics out of results
+- **[Tune Confidence Threshold](examples/tune_confidence_threshold.ipynb)** - Pick a confidence cutoff for your data
 
-All notebooks are available on [Google Colab](https://colab.research.google.com/github/talmolab/dreem/tree/docs/examples).
+All notebooks are available on [Google Colab](https://colab.research.google.com/github/talmolab/dreem/tree/main/examples).
 
 ## Contributing
 
