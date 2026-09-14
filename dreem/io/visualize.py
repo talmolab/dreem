@@ -385,7 +385,7 @@ def masks_to_sleap_labels(
         A sleap-io Labels object with masks, instances, and tracks.
     """
     import sleap_io as sio
-    from sleap_io.model.mask import SegmentationMask
+    from sleap_io.model.mask import SegmentationMask, UserSegmentationMask
 
     if centroids is None:
         centroids = extract_centroids_from_masks(masks)
@@ -393,27 +393,27 @@ def masks_to_sleap_labels(
     skeleton = sio.Skeleton(nodes=["centroid"])
     tracks: dict[int, sio.Track] = {}
     labeled_frames: list[sio.LabeledFrame] = []
-    all_masks: list[SegmentationMask] = []
 
     for t in range(masks.shape[0]):
         frame_mask = masks[t]
         frame_centroids = centroids.get(t, {})
         instances: list[sio.Instance] = []
+        frame_masks: list[SegmentationMask] = []
 
         for tid, (cx, cy) in frame_centroids.items():
             if tid not in tracks:
                 tracks[tid] = sio.Track(name=str(tid))
             track = tracks[tid]
 
-            # Create binary mask for this track
+            # Create binary mask for this track. Three sleap-io 0.9.x changes here:
+            # `SegmentationMask` is abstract (instantiate a User/Predicted subclass),
+            # and it no longer carries `video` / `frame_idx` -- it is owned by the
+            # `LabeledFrame`, which supplies both. `UserSegmentationMask` matches the
+            # `sio.Instance` (not `PredictedInstance`) this function pairs it with.
             binary_mask = (frame_mask == tid).astype(np.uint8)
-            seg_mask = SegmentationMask.from_numpy(
-                binary_mask,
-                video=video,
-                frame_idx=t,
-                track=track,
+            frame_masks.append(
+                UserSegmentationMask.from_numpy(binary_mask, track=track)
             )
-            all_masks.append(seg_mask)
 
             # Create instance at centroid
             instance = sio.Instance.from_numpy(
@@ -427,14 +427,15 @@ def masks_to_sleap_labels(
             video=video if video is not None else sio.Video(""),
             frame_idx=t,
             instances=instances,
+            masks=frame_masks,
         )
         labeled_frames.append(lf)
 
+    # `Labels` has no `masks` field in sleap-io 0.9.x -- they hang off each frame.
     labels = sio.Labels(
         labeled_frames=labeled_frames,
         skeletons=[skeleton],
         tracks=list(tracks.values()),
-        masks=all_masks,
     )
     return labels
 

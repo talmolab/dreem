@@ -229,8 +229,9 @@ class TestMasksToSleapLabels:
         masks = _make_synthetic_masks(n_frames=2, n_tracks=2)
         labels = masks_to_sleap_labels(masks)
 
-        # Should have 2 tracks * 2 frames = 4 masks
-        assert len(labels.masks) == 4
+        # Should have 2 tracks * 2 frames = 4 masks. As of sleap-io 0.9.x masks hang
+        # off each `LabeledFrame` rather than off `Labels`, so count across frames.
+        assert sum(len(lf.masks) for lf in labels) == 4
 
     def test_precomputed_centroids(self):
         """Test that precomputed centroids are used correctly."""

@@ -13,9 +13,10 @@ import torch
 from numpy.typing import ArrayLike
 from PIL import Image
 from sleap_io import LabeledFrame, Labels
+# `read_hdf5_attrs` / `read_hdf5_dataset` live in `sleap_io.io.utils` as of
+# sleap-io 0.9.x. `io.slp` re-imports them, so the old import path still resolves,
+# but it resolves only incidentally -- import them from their real home.
 from sleap_io.io.slp import (
-    read_hdf5_attrs,
-    read_hdf5_dataset,
     read_instances,
     read_metadata,
     read_points,
@@ -24,6 +25,7 @@ from sleap_io.io.slp import (
     read_tracks,
     read_videos,
 )
+from sleap_io.io.utils import read_hdf5_attrs, read_hdf5_dataset
 from torchvision.transforms import functional as tvf
 
 from dreem.inference.boxes import Boxes

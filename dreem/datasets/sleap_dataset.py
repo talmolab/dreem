@@ -20,6 +20,67 @@ from dreem.io import Frame, Instance
 logger = logging.getLogger("dreem.datasets")
 
 
+def resolve_identity_carrier(labels: sio.Labels) -> str:
+    """Return which sleap-io field carries the association label for `labels`.
+
+    sleap-io (>=0.9.0) separates three things `Track` used to be overloaded for:
+
+    - `Track`    -- a trajectory contiguous in time *within one video*
+    - `Identity` -- one physical animal, recognizable across videos and sessions
+    - `Category` -- a class several distinct animals can share
+
+    For association training the label we want is the *widest* one available: an
+    `Identity` is the same animal everywhere, so it pairs detections across videos
+    that no `Track` could ever pair. So the carrier is `"identity"` when the file
+    carries any, and `"track"` otherwise.
+
+    The carrier is resolved once per file and applied uniformly, rather than
+    per-instance. Choosing per instance would mix two *independent* index spaces --
+    `identities.index(...)` and `tracks.index(...)` both start at 0 -- so identity 0
+    and track 0 would silently become the same `gt_track_id`, i.e. two different
+    animals asserted to be one. Uniform-per-file makes that unrepresentable.
+
+    Args:
+        labels: The labels file to inspect.
+
+    Returns:
+        Either `"identity"` or `"track"`.
+    """
+    for lf in labels:
+        for inst in lf.instances:
+            if getattr(inst, "identity", None) is not None:
+                return "identity"
+    return "track"
+
+
+def identity_index(instance, labels: sio.Labels, carrier: str) -> int:
+    """Return the association label index for `instance` under `carrier`.
+
+    Args:
+        instance: The sleap-io instance to label.
+        labels: The labels file it came from (supplies the index registry).
+        carrier: `"identity"` or `"track"`, from `resolve_identity_carrier`.
+
+    Returns:
+        The index of the instance's carrier value in the corresponding registry,
+        or `-1` if the instance carries no value for it.
+
+    Notes:
+        `-1` means "unlabeled", and every unlabeled detection in a frame gets the
+        same `-1`. Downstream that reads as *one* identity, so several unlabeled
+        animals in one frame are asserted to be the same animal. That predates this
+        change; `SleapDataset` now counts and warns rather than leaving it silent.
+    """
+    if carrier == "identity":
+        identity = getattr(instance, "identity", None)
+        if identity is None:
+            return -1
+        return labels.identities.index(identity)
+    if instance.track is None:
+        return -1
+    return labels.tracks.index(instance.track)
+
+
 class SleapDataset(BaseDataset):
     """Dataset for loading animal behavior data from sleap."""
 
@@ -164,10 +225,32 @@ class SleapDataset(BaseDataset):
         # load_slp is a wrapper around sio.load_slp for frame gap checks
         self.labels = []
         self.annotated_segments = {}
+        # Which sleap-io field supplies gt_track_id, per labels file. Parallel to
+        # `self.labels`; see `resolve_identity_carrier`.
+        self.identity_carriers = []
         for slp_file in self.slp_files:
             labels, annotated_segments = data_utils.load_slp(slp_file)
             self.labels.append(labels)
             self.annotated_segments[slp_file] = annotated_segments
+            carrier = resolve_identity_carrier(labels)
+            self.identity_carriers.append(carrier)
+            n_missing = sum(
+                identity_index(inst, labels, carrier) < 0
+                for lf in labels
+                for inst in lf.instances
+            )
+            logger.info(
+                f"{Path(slp_file).name}: associating on sio.{carrier.capitalize()} "
+                f"({len(labels.identities if carrier == 'identity' else labels.tracks)} "
+                f"distinct)."
+            )
+            if n_missing:
+                logger.warning(
+                    f"{Path(slp_file).name}: {n_missing} instance(s) carry no "
+                    f"sio.{carrier.capitalize()} and share gt_track_id=-1, so they "
+                    f"will train as ONE animal. Label them, or drop them, if that "
+                    f"is not what you mean."
+                )
 
         self.videos = [imageio.get_reader(vid_file) for vid_file in self.vid_files]
         # preprocessors
@@ -199,6 +282,7 @@ class SleapDataset(BaseDataset):
 
         """
         sleap_labels_obj = self.labels[label_idx]
+        carrier = self.identity_carriers[label_idx]
         video_name = self.video_files[label_idx]
 
         # get the correct crop size based on the video
@@ -274,8 +358,8 @@ class SleapDataset(BaseDataset):
             dict_instances = {}
             no_track_instances = []
             for instance in gt_instances:
-                if instance.track is not None:
-                    gt_track_id = sleap_labels_obj.tracks.index(instance.track)
+                gt_track_id = identity_index(instance, sleap_labels_obj, carrier)
+                if gt_track_id >= 0:
                     if gt_track_id not in dict_instances:
                         dict_instances[gt_track_id] = instance
                     else:
@@ -301,11 +385,9 @@ class SleapDataset(BaseDataset):
                     n_instances_dropped += 1
                     continue
 
-                if instance.track is not None:
-                    gt_track_id = sleap_labels_obj.tracks.index(instance.track)
-                else:
-                    gt_track_id = -1
-                gt_track_ids.append(gt_track_id)
+                gt_track_ids.append(
+                    identity_index(instance, sleap_labels_obj, carrier)
+                )
 
                 poses.append(
                     dict(
