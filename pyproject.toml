@@ -37,8 +37,10 @@ dependencies = [
     # Configuration
     "hydra-core",
     # Data I/O
-    "sleap-io[all] @ git+https://github.com/talmolab/sleap-io@8d02e9d987775d719d70088841911e9b8af5bd96",
-    # "sleap-io[all]>=0.6.5,<0.7.0",  # pinned: switch back after next sleap-io release
+    # 0.9.2 is the floor for `sio.Identity` / `sio.Category` (sleap-io #535): the
+    # global animal identity that `Track` was previously overloaded to carry. The
+    # previous pin was a git SHA at 0.6.5, which predates them entirely.
+    "sleap-io[all]>=0.9.2,<0.10.0",
     # "sleap-io[all] @ file:///${PROJECT_ROOT}/../sleap-io",  # dev: editable local install
     # Visualization
     "matplotlib",
