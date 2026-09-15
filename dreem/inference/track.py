@@ -186,14 +186,20 @@ def track_sleap(
     pred_slp = []
     tracks = {}
     all_frames: list[Frame] = []
+    video = None
     for batch in tqdm(preds, desc="Saving .slp and frame metadata"):
         for frame in batch:
             all_frames.append(frame)
-            if frame.frame_id.item() == 0:
+            if video is None:
+                # Resolve the video once from the first frame actually seen. Do NOT
+                # key this on frame_id == 0: a split/clip that doesn't start at frame
+                # 0 (e.g. a second-half test .slp) would otherwise leave `video`
+                # unbound and crash the .slp export. Also fall back to `frame.video`
+                # itself, not the sio.Video class.
                 video = (
                     sio.Video(frame.video)
                     if isinstance(frame.video, str)
-                    else sio.Video
+                    else frame.video
                 )
             if frame.has_flag(FrameFlagCode.LOW_CONFIDENCE):
                 suggestion = SuggestionFrame(

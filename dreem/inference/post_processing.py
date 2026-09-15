@@ -87,16 +87,29 @@ class DistanceWeighting(ProcessingStep):
         - traj_score: updated with distance-based penalties
     """
 
-    def __init__(self, max_center_dist: float, penalty_multiplier: float = 1.0):
+    def __init__(
+        self,
+        max_center_dist: float,
+        penalty_multiplier: float = 1.0,
+        hard: bool = False,
+    ):
         """Initialize DistanceWeighting step.
 
         Args:
             max_center_dist: The euclidean distance threshold between bboxes in pixels.
             penalty_multiplier: The multiplier for the penalty.
+            hard: If True, apply a HARD feasibility gate instead of the soft
+                penalty: any candidate track farther than ``max_center_dist`` from
+                the query (at the track's most-recent position) is made infeasible
+                for Hungarian matching (its score is set to a large finite
+                sentinel), so it is effectively removed as a candidate. A query
+                gated from every track then spawns a new track via the downstream
+                score threshold.
         """
         super().__init__(name="distance_weighting")
         self.max_center_dist = max_center_dist
         self.penalty_multiplier = penalty_multiplier
+        self.hard = hard
 
     def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Apply distance weighting to trajectory score.
@@ -132,6 +145,18 @@ class DistanceWeighting(ProcessingStep):
         dist = dist.squeeze(-1) / diag_length  # n_k x n_nonk
         while dist.dim() < 2:
             dist = dist.unsqueeze(0)
+
+        if self.hard:
+            # Hard gate: candidates beyond the threshold are removed (made
+            # infeasible) rather than penalized. Use a large FINITE sentinel so
+            # scipy's linear_sum_assignment never sees inf -- a query gated from
+            # every track still yields a (rejected) assignment that falls below
+            # the downstream score threshold and spawns a new track.
+            gated = dist > max_center_dist_normalized  # (n_query, n_traj)
+            sentinel = torch.full_like(traj, -1e9)
+            traj = torch.where(gated, sentinel, traj)
+            state["traj_score"] = traj
+            return state
         asso_scale = torch.abs(traj).mean(dim=1)
         penalty = torch.where(
             dist > max_center_dist_normalized, dist - max_center_dist_normalized, 0

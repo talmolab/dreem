@@ -95,6 +95,7 @@ class Tracker:
         decay_time: float | None = None,
         iou: str | None = None,
         max_center_dist: float | None = None,
+        max_center_dist_hard: bool = False,
         distance_penalty_multiplier: float = 1.0,
         angle_diff_penalty_multiplier: float = 1.0,
         max_gap: int = inf,
@@ -121,6 +122,10 @@ class Tracker:
             iou: Either [None, '', "mult" or "max"]
                  Whether to use multiplicative or max iou reweighting.
             max_center_dist: distance threshold for filtering trajectory score matrix.
+            max_center_dist_hard: if True, `max_center_dist` is applied as a HARD
+                feasibility gate (candidates beyond the threshold are removed from
+                the matrix before Hungarian matching) instead of the default soft
+                penalty. Requires `max_center_dist > 0`.
             distance_penalty_multiplier: multiplier for the distance penalty.
             angle_diff_penalty_multiplier: multiplier for the angle difference penalty.
             max_gap: the max number of frames a trajectory can be missing before termination.
@@ -176,7 +181,9 @@ class Tracker:
             self.max_angle_diff, angle_diff_penalty_multiplier
         )
         self.distance_weighting = DistanceWeighting(
-            self.max_center_dist, distance_penalty_multiplier
+            self.max_center_dist,
+            distance_penalty_multiplier,
+            hard=max_center_dist_hard,
         )
         self.iou_weighting = IOUWeighting(iou)
         self.confidence_flagging = ConfidenceFlagging(confidence_threshold)
