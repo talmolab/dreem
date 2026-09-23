@@ -461,6 +461,23 @@ class SleapNNVisualEncoder(torch.nn.Module):
             + f"  ({sum(p.numel() for p in self.encoder.parameters()):,} frozen params)"
         )
 
+    def _apply(self, fn, *args, **kwargs):
+        """Keep the wrapped LightningModule's device bookkeeping in sync.
+
+        `EmbeddingLightningModule.forward` does `img.to(self.device)`, and
+        Lightning only updates `self.device` when `.to()` is called on that
+        module itself. Moving a PARENT -- this wrapper, or Lightning moving the
+        whole GTRRunner to the GPU -- goes through `nn.Module._apply` on the
+        children, which relocates the weights but leaves `_device` reading cpu.
+        The inner forward then moves the input back to CPU while its own weights
+        are on CUDA, and the first conv raises a device mismatch.
+        """
+        out = super()._apply(fn, *args, **kwargs)
+        param = next(self.encoder.parameters(), None)
+        if param is not None:
+            self.encoder._device = param.device
+        return out
+
     def train(self, mode: bool = True):
         """Keep the frozen encoder in eval mode whatever the parent does.
 
@@ -495,6 +512,10 @@ class SleapNNVisualEncoder(torch.nn.Module):
 
         gray = gray * 255.0                       # back to the training scale
         x = gray.unsqueeze(1)                     # (B, 1, C, H, W) as forward() wants
+
+        param = next(self.encoder.parameters(), None)
+        if param is not None and x.device != param.device:
+            x = x.to(param.device)
 
         with torch.no_grad():
             feats = self.encoder(x)

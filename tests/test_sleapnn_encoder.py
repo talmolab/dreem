@@ -125,3 +125,22 @@ def test_missing_paths_raise_clearly():
     with pytest.raises(ValueError, match="checkpoint"):
         create_visual_encoder(d_model=128, encoder_type="sleapnn",
                               encoder_type_args={})
+
+
+def test_device_bookkeeping_follows_a_parent_move(encoder):
+    """Moving a PARENT must update the inner LightningModule's `self.device`.
+
+    Lightning updates `_device` only on a direct `.to()`. `nn.Module._apply`
+    relocates a child's weights without it, so the inner forward would then do
+    `img.to(self.device)` back to the stale device and the first conv raises
+    "Input type (torch.FloatTensor) and weight type (torch.cuda.FloatTensor)".
+    Simulated here without a GPU by planting a stale device and moving the
+    parent.
+    """
+    encoder.encoder._device = torch.device("cuda", 0)   # stale on purpose
+    encoder.to("cpu")
+    param = next(encoder.encoder.parameters())
+    assert encoder.encoder._device == param.device, (
+        "inner module's device did not follow the parent move"
+    )
+    assert encoder(torch.rand(2, 3, 128, 128)).shape == (2, 128)
