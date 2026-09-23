@@ -106,6 +106,10 @@ class SleapDataset(BaseDataset):
         dilation_radius_px: Union[int, list[int]] = 0,
         max_detection_overlap: float = 0,
         max_tracks: int = inf,
+        burst_aug: bool = False,
+        n_bursts: int = 4,
+        burst_max_span: int = 900,
+        feature_cache: str | None = None,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -149,8 +153,46 @@ class SleapDataset(BaseDataset):
             dilation_radius_px: radius of the keypoints dilation in pixels. 0 means no mask applied
             max_detection_overlap: the iom threshold for non-maximum suppression of detections
             max_tracks: the maximum number of tracks that can be created while tracking. Remove any detections that exceed this number.
+            burst_aug: sample each chunk as `n_bursts` runs of consecutive frames
+                spread over a log-uniform span, instead of one contiguous run.
+                Puts short-range and long-range pairs in the SAME window so the
+                association loss must tell the two regimes apart. See
+                `BaseDataset._burst_chunks`.
+            n_bursts: number of consecutive-frame bursts per chunk (burst_aug only).
+            burst_max_span: largest frame span a chunk may cover (burst_aug only).
+                Keep it within one clip (900 frames here) so every gap is honest.
+            feature_cache: path to a .npz written by `precompute_features.py`. When
+                set, each instance gets its precomputed embedding attached and its
+                crop left empty, so `GlobalTrackingTransformer.extract_features`
+                skips the visual encoder entirely (it only computes for instances
+                without features). Only valid with a FROZEN encoder -- cached
+                vectors cannot follow a moving one -- and it disables crop
+                augmentation, since a cached feature cannot vary per epoch.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
+        # These must be set BEFORE super().__init__(): it calls create_chunks(),
+        # which reads them through getattr on self.
+        self.burst_aug = burst_aug
+        self.n_bursts = n_bursts
+        self.burst_max_span = burst_max_span
+
+        # Frozen-encoder feature cache. Keys are (labels-file stem, frame index,
+        # gt track id) -- all three derived through this same loader when the
+        # cache was written, so they line up by construction.
+        self.feature_cache = feature_cache
+        self._features = None
+        if feature_cache is not None:
+            import numpy as _np
+
+            _z = _np.load(feature_cache, allow_pickle=False)
+            _keys, _vecs = _z["keys"], _z["features"]
+            self._features = {
+                (str(k[0]), int(k[1]), int(k[2])): v for k, v in zip(_keys, _vecs)
+            }
+            logger.info(
+                f"feature cache: {len(self._features):,} vectors from {feature_cache}"
+            )
+
         super().__init__(
             slp_files,
             video_files,
@@ -173,6 +215,17 @@ class SleapDataset(BaseDataset):
         self.clip_length = clip_length
         self.mode = mode.lower()
         self.handle_missing = handle_missing.lower()
+        if self._features is not None and self.augmentations is not None:
+            # A cached feature is one fixed vector per instance; it cannot follow
+            # a crop that is re-augmented every epoch. Silently skipping the
+            # augmentations would train on a different distribution than the
+            # config describes, so refuse instead.
+            raise ValueError(
+                "feature_cache cannot be combined with crop augmentations: a "
+                "cached feature is computed once and cannot vary per epoch. Set "
+                "dataset.<split>.augmentations to null, or drop feature_cache."
+            )
+
         self.n_chunks = n_chunks
         self.seed = seed
         self.normalize_image = normalize_image
@@ -268,6 +321,12 @@ class SleapDataset(BaseDataset):
         """
         return self.label_idx[idx], self.chunked_frame_idx[idx]
 
+    def _cache_stem(self, label_idx: int) -> str:
+        """Labels-file stem used as the feature cache's first key component."""
+        from pathlib import Path as _P
+
+        return _P(str(self.label_files[label_idx])).stem
+
     def get_instances(
         self, label_idx: list[int], frame_idx: torch.Tensor
     ) -> list[Frame]:
@@ -322,24 +381,36 @@ class SleapDataset(BaseDataset):
             if frame_ind != lf.frame_idx:
                 logger.warning(f"Frame index mismatch: {frame_ind} != {lf.frame_idx}")
 
-            try:
-                img = vid_reader.get_data(int(frame_ind))
-            except IndexError as e:
-                logger.warning(
-                    f"Could not read frame {frame_ind} from {video_name} due to {e}"
-                )
-                continue
+            if self._features is not None:
+                # Cached features mean no crop is ever needed, so skip the decode.
+                # This is the expensive half under burst sampling: the frames in a
+                # chunk are scattered, so every one is a random seek into the mp4.
+                # Frame size still has to come from somewhere -- take it from the
+                # video's metadata rather than a decoded array.
+                img = None
+                _shape = self.labels[label_idx].video.shape
+                h, w = int(_shape[1]), int(_shape[2])
+                c = int(_shape[3]) if len(_shape) > 3 else 1
+            else:
+                try:
+                    img = vid_reader.get_data(int(frame_ind))
+                except IndexError as e:
+                    logger.warning(
+                        f"Could not read frame {frame_ind} from {video_name} due to {e}"
+                    )
+                    continue
 
-            if len(img.shape) == 2:
+            if img is not None and len(img.shape) == 2:
                 img = img.expand_dims(-1)
-            h, w, c = img.shape
+            if img is not None:
+                h, w, c = img.shape
 
-            if c == 1:
+            if img is not None and c == 1:
                 img = np.concatenate(
                     [img, img, img], axis=-1
                 )  # convert to grayscale to rgb
 
-            if np.issubdtype(img.dtype, np.integer):  # convert int to float
+            if img is not None and np.issubdtype(img.dtype, np.integer):
                 img = img.astype(np.float32)
                 if self.normalize_image:
                     img = img / 255
@@ -459,7 +530,8 @@ class SleapDataset(BaseDataset):
                     for pose, aug_pose in zip(shown_poses, aug_poses)
                 ]
 
-            img = tvf.to_tensor(img)
+            if img is not None:
+                img = tvf.to_tensor(img)
 
             for j in range(len(gt_track_ids)):
                 pose = shown_poses[j]
@@ -516,7 +588,11 @@ class SleapDataset(BaseDataset):
                                 padding=self.padding,
                             )
 
-                    if bbox.isnan().all():
+                    if img is None:
+                        # cached features: bbox/centroid are still needed by the
+                        # positional embedding, the pixels are not
+                        crop = torch.empty(0)
+                    elif bbox.isnan().all():
                         crop = torch.zeros(
                             c,
                             crop_size + 2 * self.padding,
@@ -537,17 +613,20 @@ class SleapDataset(BaseDataset):
 
                     crops.append(crop)
                     # get max h,w for padding for tight bboxes
-                    c, h, w = crop.shape
-                    if h > max_crop_h:
-                        max_crop_h = h
-                    if w > max_crop_w:
-                        max_crop_w = w
+                    if crop.ndim == 3:  # empty when features come from the cache
+                        c, h, w = crop.shape
+                        if h > max_crop_h:
+                            max_crop_h = h
+                        if w > max_crop_w:
+                            max_crop_w = w
 
                     centroids[anchor] = centroid
                     boxes.append(bbox)
 
-                if len(crops) > 0:
+                if len(crops) > 0 and img is not None:
                     crops = torch.concat(crops, dim=0)
+                elif img is None:
+                    crops = torch.empty(0)
 
                 if len(boxes) > 0:
                     boxes = torch.stack(boxes, dim=0)
@@ -566,6 +645,18 @@ class SleapDataset(BaseDataset):
                     point_scores=point_scores[j],
                     instance_score=instance_score[j],
                 )
+
+                if self._features is not None:
+                    key = (self._cache_stem(label_idx), frame_ind,
+                           int(gt_track_ids[j]))
+                    vec = self._features.get(key)
+                    if vec is None:
+                        raise KeyError(
+                            f"feature cache has no entry for {key}. Rebuild it with "
+                            "precompute_features.py against this exact dataset -- a "
+                            "stale cache would silently train on the wrong crops."
+                        )
+                    instance.features = torch.as_tensor(vec)
 
                 instances.append(instance)
 
@@ -593,7 +684,9 @@ class SleapDataset(BaseDataset):
                 video_id=label_idx,
                 frame_id=frame_ind,
                 vid_file=video_name,
-                img_shape=img.shape,
+                # (C, H, W); from metadata when the decode was skipped
+                img_shape=(img.shape if img is not None
+                           else torch.Size([c, h, w])),
                 instances=instances,
             )
             frames.append(frame)

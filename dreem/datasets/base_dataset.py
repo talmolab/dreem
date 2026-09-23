@@ -95,9 +95,90 @@ class BaseDataset(Dataset):
         Returns: None
         """
         stitched_segment = torch.cat(segments_to_stitch)
-        frame_idx_split = torch.split(stitched_segment, clip_length)
+        if getattr(self, "burst_aug", False) and self.chunk:
+            frame_idx_split = self._burst_chunks(stitched_segment, clip_length)
+        else:
+            frame_idx_split = list(torch.split(stitched_segment, clip_length))
         self.chunked_frame_idx.extend(frame_idx_split)
         self.label_idx.extend(len(frame_idx_split) * [i])
+
+    def _burst_chunks(
+        self, seg: torch.Tensor, clip_length: int
+    ) -> list[torch.Tensor]:
+        """Chunks made of several short bursts of CONSECUTIVE frames, far apart.
+
+        Why not evenly-strided chunks (the `gap_aug` design): a chunk strided over
+        a 900-frame span at clip_length 32 has a uniform stride of 28, so its
+        *smallest* pairwise gap is 28. It contains no short-range pairs at all.
+        Mixing such chunks with contiguous ones teaches the two regimes in
+        separate windows, and the model is never made to tell them apart.
+
+        A burst chunk holds both in ONE window. With clip_length 32 and 4 bursts
+        of 8, its pairwise gaps are 1-7 within a burst (position is nearly
+        decisive) and up to `burst_max_span` across bursts (appearance must
+        carry it). The association loss scores every pair in the window
+        (`AssoLoss` flattens all instances across all frames), so a single
+        forward pass supervises both regimes and the contrast between them.
+
+        It is also the shape of a real re-ID event -- animal visible, gone,
+        visible again -- so natural occlusions become a special case of the
+        training distribution rather than a scarce resource to sample around.
+
+        ⚠ Needs a temporal embedding that can express the gaps. `mode: learned`
+        clamps into a lookup indexed by window position, so every across-burst
+        gap collapses onto one row and this degenerates into noise; use
+        `mode: fixed` (RFF). A single `sigma` resolves about one decade, so
+        sigma ~ burst_len/3 separates within-burst gaps and floors across-burst
+        ones -- enough for "near vs far", not enough to grade the far end.
+
+        Frames are drawn from the labeled `seg`, so every selected frame is
+        labeled, and `pos` advances by `clip_length` (not by the span) so chunk
+        starts stay dense and the clip is covered about as often as with plain
+        contiguous chunking.
+        """
+        n_bursts = max(1, int(getattr(self, "n_bursts", 4)))
+        max_span_cfg = int(getattr(self, "burst_max_span", 900))
+
+        # burst lengths as even as possible; the remainder goes to the first ones
+        base, rem = divmod(clip_length, n_bursts)
+        if base == 0:  # more bursts than frames: degenerate to 1 frame each
+            base, rem, n_bursts = 1, 0, clip_length
+        lens = [base + (1 if k < rem else 0) for k in range(n_bursts)]
+
+        chunks: list[torch.Tensor] = []
+        pos, n = 0, len(seg)
+        while pos < n:
+            remaining = n - pos
+            if remaining < clip_length:
+                chunks.append(seg[pos:n])  # short consecutive tail
+                break
+            max_span = min(max_span_cfg, remaining)
+            if max_span <= clip_length:
+                chunks.append(seg[pos : pos + clip_length])  # no room to spread
+                pos += clip_length
+                continue
+
+            span = int(np.exp(np.random.uniform(np.log(clip_length), np.log(max_span))))
+            span = max(clip_length, min(span, max_span))
+
+            # Place the bursts without overlap: draw sorted cut points in the
+            # free space, then push each burst past the ones before it. This
+            # guarantees start_{k+1} - start_k >= lens[k] and the last burst
+            # still ends inside the span.
+            free = span - clip_length
+            cuts = np.sort(np.random.randint(0, free + 1, size=n_bursts))
+            offsets, run = [], 0
+            for k in range(n_bursts):
+                offsets.append(int(cuts[k]) + run)
+                run += lens[k]
+
+            sel = torch.cat(
+                [torch.arange(o, o + L) for o, L in zip(offsets, lens)]
+            )
+            window = seg[pos : pos + span]
+            chunks.append(window[sel])
+            pos += clip_length
+        return chunks
 
     def create_chunks_slp(self) -> None:
         """Get indexing for data.
