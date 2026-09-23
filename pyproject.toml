@@ -60,6 +60,18 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
+# Frozen sleap-nn embedding model as DREEM's visual encoder
+# (`model.encoder_cfg.encoder_type: sleapnn`). Optional because sleap-nn is a
+# large dependency and only this one encoder needs it. It requires
+# sleap-io>=0.9.2, which is why this extra depends on the sleap-io bump above.
+# Pinned to a SHA, not >=0.3.3: the released 0.3.3 has no
+# `EmbeddingLightningModule` -- the embedding/re-ID stack only landed on main
+# afterwards. A version floor would install a wheel that imports but lacks the
+# class, failing at model-construction time instead of at install time.
+sleapnn = [
+    "sleap-nn @ git+https://github.com/talmolab/sleap-nn@6f41201b",
+    # "sleap-nn @ file:///${PROJECT_ROOT}/../sleap-nn",  # dev: editable local install
+]
 gpu = ["torch", "torchvision>=0.20.0"]  # Alias for latest CUDA version (torch-cuda130)
 torch = ["torch", "torchvision>=0.20.0"]
 torch-cpu = ["torch", "torchvision>=0.20.0"]

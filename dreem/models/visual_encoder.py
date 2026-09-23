@@ -1,5 +1,6 @@
 """Module for different visual feature extractors."""
 
+import logging
 from typing import Any, Dict, Type
 
 import numpy as np
@@ -12,6 +13,8 @@ import torchvision
 
 # todo: do we want to make timm a dependency?
 # todo: add named tensor support
+
+logger = logging.getLogger("dreem.models")
 
 ENCODER_REGISTRY: Dict[str, Type[torch.nn.Module]] = {}
 
@@ -333,6 +336,175 @@ class DINOVisualEncoder(torch.nn.Module):
         return out
 
 
+class SleapNNVisualEncoder(torch.nn.Module):
+    """A **frozen** sleap-nn embedding model used as DREEM's visual encoder.
+
+    DREEM's own encoder is trained end-to-end through the association loss, which
+    never asks it to make an animal's crops similar across clips -- its positives
+    span at most one chunk. A sleap-nn embedding model is trained with SupCon
+    directly on identity, across sessions, so its features stay meaningful minutes
+    or days later. This class swaps one for the other.
+
+    Frozen means frozen
+    -------------------
+    Three separate things, all of which are required and none of which is implied
+    by the others:
+
+    1. ``requires_grad_(False)`` on every parameter, so no gradient is stored;
+    2. the forward runs inside ``torch.no_grad()``, so no graph is built at all
+       (this is what actually saves the memory -- (1) alone does not);
+    3. ``train()`` is overridden to keep the submodule in eval mode. Lightning
+       calls ``model.train()` at the start of every epoch, and without this the
+       encoder's norm layers would drift even with `requires_grad=False`.
+
+    The weights are still registered submodules, so they travel inside DREEM's
+    checkpoint and inference needs no second file. That costs ~90 MB per
+    checkpoint for a convnext_tiny backbone.
+
+    Input conversion
+    ----------------
+    DREEM hands crops as ``(B, C, H, W)`` in ``[0, 1]`` (``SleapDataset`` divides
+    by 255 when ``normalize_image``). sleap-nn's embedding model was trained on
+    single-channel crops at ``[0, 255]`` and wants ``(B, 1, C, H, W)``. So:
+
+    * RGB is collapsed with the ITU-R 601 luma weights -- the same weights
+      ``make_sparse_crops.py`` used to build the crops the encoder trained on, so
+      a colour DREEM crop lands where a grayscale training crop would have;
+    * values are rescaled to ``[0, 255]``. ``EmbeddingLightningModule`` hardcodes
+      ``self.standardize = True`` and standardizes per crop, so this is
+      mathematically a no-op today -- it is done anyway so the input is right
+      rather than accidentally right.
+
+    ⚠ **Crop geometry is NOT checked here** and is the thing most likely to
+    silently degrade this. sleap-nn's k-fold trained on crops cut with
+    ``crop_centering: auto``; DREEM anchors on ``anchors``/``handle_missing``.
+    Keep DREEM's ``crop_size`` equal to the encoder's and its anchor equivalent to
+    the encoder's centering, or the frozen features are being asked about a
+    different picture than they were trained on.
+
+    Args:
+        d_model: DREEM's model dimension. Must equal the encoder's embedding_dim
+            unless ``project`` is set.
+        checkpoint: path to the sleap-nn ``best.ckpt``.
+        config: path to the run's ``training_config.yaml`` (the checkpoint does
+            not carry the constructor arguments).
+        project: add a trainable ``Linear(embed_dim, d_model)`` on top. The
+            encoder stays frozen; only this layer learns. Required when the
+            dimensions differ.
+    """
+
+    def __init__(
+        self,
+        d_model: int = 512,
+        checkpoint: str | None = None,
+        config: str | None = None,
+        project: bool = False,
+        **kwargs,
+    ):
+        """Initialize the frozen sleap-nn visual encoder."""
+        super().__init__()
+        if checkpoint is None or config is None:
+            raise ValueError(
+                "SleapNNVisualEncoder needs both `checkpoint` (best.ckpt) and "
+                "`config` (training_config.yaml) in encoder_type_args."
+            )
+        # Imported lazily: sleap-nn is an optional extra (`pip install dreem[sleapnn]`)
+        # and requires sleap-io >= 0.9.2, so it must not be imported by every run.
+        try:
+            from omegaconf import OmegaConf
+            from sleap_nn.training.lightning_modules import EmbeddingLightningModule
+        except ImportError as e:  # pragma: no cover - depends on optional extra
+            # Report the original error: a sleap-nn that imports but lacks
+            # EmbeddingLightningModule (any release <= 0.3.3) looks identical to
+            # a missing install unless the cause is shown.
+            raise ImportError(
+                "encoder_type 'sleapnn' could not load sleap-nn's embedding "
+                f"model ({e}). Install the extra with `uv sync --extra sleapnn`; "
+                "note a released sleap-nn is NOT enough -- the embedding stack "
+                "landed on main after 0.3.3."
+            ) from e
+
+        mc = OmegaConf.load(config).model_config
+        backbone_type = [k for k, v in mc.backbone_config.items() if v is not None][0]
+        self.encoder = EmbeddingLightningModule.load_from_checkpoint(
+            checkpoint,
+            map_location="cpu",
+            model_type="embedding",
+            backbone_type=backbone_type,
+            backbone_config=mc.backbone_config,
+            head_configs=mc.head_configs,
+        )
+
+        # head_configs.embedding.embedding.embedding_dim -- the head name is
+        # nested inside its own group, matching sleap-nn's other heads.
+        embed_dim = int(mc.head_configs.embedding.embedding.embedding_dim)
+        self.d_model = d_model
+        self.embed_dim = embed_dim
+
+        self.encoder.requires_grad_(False)
+        self.encoder.eval()
+
+        if project:
+            self.project = torch.nn.Linear(embed_dim, d_model)
+        elif embed_dim != d_model:
+            raise ValueError(
+                f"sleap-nn embedding_dim ({embed_dim}) != d_model ({d_model}). "
+                "Set encoder_type_args.project=true to learn a projection, or "
+                "set model.d_model to match the encoder."
+            )
+        else:
+            self.project = None
+
+        logger.info(
+            f"SleapNNVisualEncoder: frozen {backbone_type} -> {embed_dim}d"
+            + (f" -> Linear -> {d_model}d" if self.project is not None else "")
+            + f"  ({sum(p.numel() for p in self.encoder.parameters()):,} frozen params)"
+        )
+
+    def train(self, mode: bool = True):
+        """Keep the frozen encoder in eval mode whatever the parent does.
+
+        Lightning calls `model.train()` every epoch. Without this override the
+        encoder's normalization layers would keep updating their running
+        statistics, so a "frozen" encoder would quietly drift.
+        """
+        super().train(mode)
+        self.encoder.eval()
+        return self
+
+    def forward(self, img: torch.Tensor) -> torch.Tensor:
+        """Crops -> normalized embeddings.
+
+        Args:
+            img: `(B, C, H, W)` crops in `[0, 1]`, C in {1, 3}.
+
+        Returns:
+            `(B, d_model)` embeddings, L2-normalized (matching `VisualEncoder`).
+        """
+        if img.ndim != 4:
+            raise ValueError(f"expected (B, C, H, W) crops, got {tuple(img.shape)}")
+
+        if img.shape[1] == 3:
+            # ITU-R 601 luma, matching make_sparse_crops.py's PIL "L" conversion.
+            w = torch.tensor([0.299, 0.587, 0.114], device=img.device, dtype=img.dtype)
+            gray = (img * w[None, :, None, None]).sum(dim=1, keepdim=True)
+        elif img.shape[1] == 1:
+            gray = img
+        else:
+            raise ValueError(f"expected 1 or 3 channels, got {img.shape[1]}")
+
+        gray = gray * 255.0                       # back to the training scale
+        x = gray.unsqueeze(1)                     # (B, 1, C, H, W) as forward() wants
+
+        with torch.no_grad():
+            feats = self.encoder(x)
+
+        if self.project is not None:
+            feats = self.project(feats)
+            feats = F.normalize(feats)
+        return feats
+
+
 def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
     """Register a new encoder type."""
     if not issubclass(encoder_class, torch.nn.Module):
@@ -346,6 +518,7 @@ def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
     register_encoder("descriptor", DescriptorVisualEncoder)
     # register any custom encoders here
     register_encoder("dino", DINOVisualEncoder)
+    register_encoder("sleapnn", SleapNNVisualEncoder)
 
     # compatibility with configs that don't specify encoder_type; default to resnet
     if not encoder_cfg or "encoder_type" not in encoder_cfg:
