@@ -360,10 +360,22 @@ class Tracker:
             (instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu())
             for instance in query_frame.instances
         ]
-        nonquery_poses = [
+        # Every instance in the window, in the same flat order the association
+        # matrix uses. `nonquery_poses` is derived from this by `nonquery_inds`
+        # below rather than by filtering on frame_id.
+        #
+        # Filtering on `frame_id != query_frame.frame_id` drops EVERY frame
+        # carrying the query's id, while `nonquery_inds` excludes only the one
+        # frame at the query's POSITION in the window. When the collated window
+        # holds more than one frame with that id, the former is shorter, and
+        # `last_inds` -- which ranges over n_nonquery -- indexes past its end:
+        #     IndexError: list index out of range
+        # ...at `last_poses.append(nonquery_poses[ind])`. Deriving both from one
+        # positional ordering makes the lengths agree by construction, which is
+        # what the comment on that loop already assumed.
+        window_poses = [
             (instance.pose, instance.pred_track_id.item(), instance.crop.clone().cpu())
             for nonquery_frame in frames
-            if nonquery_frame.frame_id != query_frame.frame_id.item()
             for instance in nonquery_frame.instances
         ]
         enable_crop_saving = self.enable_crop_saving or is_pose_centroid_only(
@@ -434,6 +446,7 @@ class Tracker:
         ]
 
         nonquery_inds = [i for i in range(total_instances) if i not in query_inds]
+        nonquery_poses = [window_poses[i] for i in nonquery_inds]
 
         # instead should we do model(nonquery_instances, query_instances)?
         asso_nonquery = asso_output[:, nonquery_inds]  # (n_query, n_nonquery)
