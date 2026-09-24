@@ -448,13 +448,25 @@ class GTRRunner(LightningModule):
                 suggestions = []
                 logger.info(f"Saving inference results to {outpath}")
                 tracks = {}
+                # Bind `video` once, from the first prediction.
+                #
+                # This was previously done only inside `if frame.frame_id.item()
+                # == 0`, which assumes every clip's predictions begin at frame 0.
+                # That is false for any clip whose labels start later -- 3 of the
+                # 19 exp237 test clips begin at frames 14, 131 and 500 -- and the
+                # name then stays unbound until `frame.to_slp(..., video=video)`
+                # raises UnboundLocalError, after inference has already run.
+                #
+                # The old else-branch was also wrong: `else sio.Video` yields the
+                # CLASS, not an instance, so a non-str `frame.video` produced a
+                # type where a Video was expected.
+                first_video = preds[0].video
+                video = (
+                    sio.Video(first_video)
+                    if isinstance(first_video, str)
+                    else first_video
+                )
                 for frame in preds:
-                    if frame.frame_id.item() == 0:
-                        video = (
-                            sio.Video(frame.video)
-                            if isinstance(frame.video, str)
-                            else sio.Video
-                        )
                     if frame.has_flag(FrameFlagCode.LOW_CONFIDENCE):
                         suggestion = SuggestionFrame(
                             video=video, frame_idx=frame.frame_id.item()
