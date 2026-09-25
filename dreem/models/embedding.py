@@ -354,7 +354,18 @@ class Embedding(torch.nn.Module):
         # spatial path via get_boxes, but NOT for raw integer times -- so
         # `times * emb_num` pushed every index > 0 past the clamp ceiling,
         # collapsing all non-oldest frames onto the last row.
-        idx = times.reshape(-1).long().clamp(min=0, max=self.emb_num - 1)
+        # `get_times` emits SIGNED offsets to the query frame: 0 for the query,
+        # negative for the past (and positive for the future when the query sits
+        # mid-window). A plain `clamp(min=0)` therefore mapped every past
+        # instance -- the entire window -- onto row 0, making this embedding a
+        # constant and silently removing all temporal information. Verified: a
+        # 32-frame window of offsets [-31..0] produced ONE unique row.
+        #
+        # Index by |offset| instead, so row k is "k frames from the query" and
+        # anything older than the table saturates at the last row. Magnitude
+        # rather than sign also matches the fixed/RFF path, whose kernel
+        # K = exp(-g(t)^2 / 2*sigma^2) is even in t.
+        idx = times.reshape(-1).abs().long().clamp(max=self.emb_num - 1)
         temp_emb = temp_lookup.weight[idx.to(temp_lookup.weight.device)]
 
         return temp_emb.view(N, self.features)
