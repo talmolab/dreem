@@ -1,6 +1,7 @@
 """Module containing different position and temporal embeddings."""
 
 import logging
+import os
 import math
 
 import torch
@@ -365,7 +366,16 @@ class Embedding(torch.nn.Module):
         # anything older than the table saturates at the last row. Magnitude
         # rather than sign also matches the fixed/RFF path, whose kernel
         # K = exp(-g(t)^2 / 2*sigma^2) is even in t.
-        idx = times.reshape(-1).abs().long().clamp(max=self.emb_num - 1)
+        if os.environ.get("DREEM_LEGACY_TEMP_CLAMP"):
+            # Reproduce the pre-fix indexing for checkpoints TRAINED with it.
+            # Those runs only ever indexed row 0, so rows 1..emb_num-1 never
+            # received a gradient and still hold their random init. Evaluating
+            # such a checkpoint with the corrected indexing feeds the model
+            # untrained vectors -- worse than the constant it learned around.
+            # Set this to score a legacy checkpoint; never for new training.
+            idx = times.reshape(-1).long().clamp(min=0, max=self.emb_num - 1)
+        else:
+            idx = times.reshape(-1).abs().long().clamp(max=self.emb_num - 1)
         temp_emb = temp_lookup.weight[idx.to(temp_lookup.weight.device)]
 
         return temp_emb.view(N, self.features)
