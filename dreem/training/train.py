@@ -33,6 +33,17 @@ def run(cfg: DictConfig) -> None:
 
     model = train_cfg.get_gtr_runner()
 
+    # Cached features bypass the visual encoder, so a trainable encoder would
+    # get no gradient and train as if frozen, with no error anywhere.
+    if getattr(model.model.visual_encoder, "trainable", False):
+        for ds in (train_dataset, val_dataset):
+            if getattr(ds, "feature_cache", None) is not None:
+                raise ValueError(
+                    "feature_cache cannot be used with a trainable visual "
+                    "encoder: cached features skip the encoder, so it would "
+                    "never be updated. Drop dataset.<split>.feature_cache."
+                )
+
     run_logger = train_cfg.get_logger()
     if run_logger is not None and isinstance(run_logger, pl.loggers.wandb.WandbLogger):
         data_paths = train_cfg.data_paths

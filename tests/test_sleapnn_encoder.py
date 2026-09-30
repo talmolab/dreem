@@ -1,11 +1,13 @@
-"""Tests for the frozen sleap-nn visual encoder (`encoder_type: sleapnn`).
+"""Tests for the sleap-nn visual encoder (`encoder_type: sleapnn`).
 
-These assert the three properties that make "frozen" true, because each fails
-independently and two of them fail *silently*:
+For the default frozen mode, these assert the three properties that make
+"frozen" true, because each fails independently and two of them fail *silently*:
 
   * no parameter accumulates a gradient;
   * the encoder stays in eval mode even after Lightning calls `.train()`;
   * the weights are bit-identical after a backward pass.
+
+The `trainable_encoder` tests at the end check the fine-tuning mode.
 
 Skipped unless sleap-nn is installed and a checkpoint is available. Point
 `DREEM_SLEAPNN_CKPT` / `DREEM_SLEAPNN_CFG` at a run directory's `best.ckpt` and
@@ -144,3 +146,55 @@ def test_device_bookkeeping_follows_a_parent_move(encoder):
         "inner module's device did not follow the parent move"
     )
     assert encoder(torch.rand(2, 3, 128, 128)).shape == (2, 128)
+
+
+@pytest.fixture(scope="module")
+def trainable_encoder():
+    """The same encoder with `trainable=true`."""
+    return create_visual_encoder(
+        d_model=128,
+        encoder_type="sleapnn",
+        encoder_type_args={"checkpoint": CKPT, "config": CFG, "trainable": True},
+    )
+
+
+def test_trainable_encoder_receives_gradients(trainable_encoder):
+    """With trainable=true every embedder weight is trainable and gets a grad.
+
+    The train-only SupCon `projection` head is not part of the forward, so it
+    must be frozen rather than sit in the optimizer with no gradient.
+    """
+    trainable_encoder.zero_grad()
+    out = trainable_encoder(torch.rand(2, 3, 128, 128))
+    assert out.requires_grad
+    out.sum().backward()
+
+    embedder = dict(trainable_encoder.encoder.model.named_parameters())
+    assert embedder and all(p.requires_grad for p in embedder.values())
+    missing = [n for n, p in embedder.items() if p.grad is None]
+    assert not missing, f"embedder weights with no gradient: {missing}"
+
+    others = [
+        n for n, p in trainable_encoder.encoder.named_parameters()
+        if p.requires_grad and not n.startswith("model.")
+    ]
+    assert not others, f"trainable weights outside the embedder: {others}"
+
+
+def test_trainable_encoder_follows_train_eval(trainable_encoder):
+    """A trainable encoder must follow the parent's mode, unlike a frozen one."""
+    trainable_encoder.train()
+    assert trainable_encoder.encoder.training
+    trainable_encoder.eval()
+    assert not trainable_encoder.encoder.training
+
+
+def test_trainable_weights_move_after_a_step(trainable_encoder):
+    """End-to-end: one optimizer step changes the encoder's weights."""
+    before = {k: v.detach().clone() for k, v in trainable_encoder.encoder.state_dict().items()}
+    opt = torch.optim.SGD(trainable_encoder.parameters(), lr=1.0)
+    opt.zero_grad()
+    trainable_encoder(torch.rand(4, 3, 128, 128)).sum().backward()
+    opt.step()
+    after = trainable_encoder.encoder.state_dict()
+    assert any(not torch.equal(after[k], v) for k, v in before.items())

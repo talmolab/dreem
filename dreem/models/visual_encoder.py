@@ -337,7 +337,10 @@ class DINOVisualEncoder(torch.nn.Module):
 
 
 class SleapNNVisualEncoder(torch.nn.Module):
-    """A **frozen** sleap-nn embedding model used as DREEM's visual encoder.
+    """A sleap-nn embedding model used as DREEM's visual encoder.
+
+    Frozen by default; ``trainable=True`` fine-tunes it through DREEM's
+    association loss instead (see below).
 
     DREEM's own encoder is trained end-to-end through the association loss, which
     never asks it to make an animal's crops similar across clips -- its positives
@@ -360,6 +363,17 @@ class SleapNNVisualEncoder(torch.nn.Module):
     The weights are still registered submodules, so they travel inside DREEM's
     checkpoint and inference needs no second file. That costs ~90 MB per
     checkpoint for a convnext_tiny backbone.
+
+    Trainable
+    ---------
+    ``trainable=True`` undoes all three for the embedder (``encoder.model``):
+    its parameters require grad, the forward builds a graph, and the encoder
+    follows the parent's train/eval mode. sleap-nn's train-only SupCon
+    ``projection`` head is not used by the forward and stays frozen. Its
+    learning rate can be set apart from the rest of DREEM with
+    ``optimizer.encoder_lr`` (see `GTRRunner.configure_optimizers`). A feature
+    cache is refused in this mode (`dreem.training.train.run`): cached vectors
+    bypass the encoder, so it would silently receive no gradient.
 
     Input conversion
     ----------------
@@ -388,9 +402,9 @@ class SleapNNVisualEncoder(torch.nn.Module):
         checkpoint: path to the sleap-nn ``best.ckpt``.
         config: path to the run's ``training_config.yaml`` (the checkpoint does
             not carry the constructor arguments).
-        project: add a trainable ``Linear(embed_dim, d_model)`` on top. The
-            encoder stays frozen; only this layer learns. Required when the
-            dimensions differ.
+        project: add a trainable ``Linear(embed_dim, d_model)`` on top.
+            Required when the dimensions differ.
+        trainable: fine-tune the encoder instead of freezing it.
     """
 
     def __init__(
@@ -399,9 +413,10 @@ class SleapNNVisualEncoder(torch.nn.Module):
         checkpoint: str | None = None,
         config: str | None = None,
         project: bool = False,
+        trainable: bool = False,
         **kwargs,
     ):
-        """Initialize the frozen sleap-nn visual encoder."""
+        """Initialize the sleap-nn visual encoder."""
         super().__init__()
         if checkpoint is None or config is None:
             raise ValueError(
@@ -441,8 +456,17 @@ class SleapNNVisualEncoder(torch.nn.Module):
         self.d_model = d_model
         self.embed_dim = embed_dim
 
-        self.encoder.requires_grad_(False)
-        self.encoder.eval()
+        self.trainable = bool(trainable)
+        if self.trainable:
+            # Only `encoder.model` (backbone + EmbeddingHead) runs in forward.
+            # Unfreeze it explicitly, overriding a sleap-nn `freeze_backbone`,
+            # and freeze the train-only SupCon `projection` head, which never
+            # receives a gradient here.
+            self.encoder.requires_grad_(False)
+            self.encoder.model.requires_grad_(True)
+        else:
+            self.encoder.requires_grad_(False)
+            self.encoder.eval()
 
         if project:
             self.project = torch.nn.Linear(embed_dim, d_model)
@@ -455,10 +479,11 @@ class SleapNNVisualEncoder(torch.nn.Module):
         else:
             self.project = None
 
+        state = "trainable" if self.trainable else "frozen"
         logger.info(
-            f"SleapNNVisualEncoder: frozen {backbone_type} -> {embed_dim}d"
+            f"SleapNNVisualEncoder: {state} {backbone_type} -> {embed_dim}d"
             + (f" -> Linear -> {d_model}d" if self.project is not None else "")
-            + f"  ({sum(p.numel() for p in self.encoder.parameters()):,} frozen params)"
+            + f"  ({sum(p.numel() for p in self.encoder.parameters()):,} {state} params)"
         )
 
     def _apply(self, fn, *args, **kwargs):
@@ -479,14 +504,15 @@ class SleapNNVisualEncoder(torch.nn.Module):
         return out
 
     def train(self, mode: bool = True):
-        """Keep the frozen encoder in eval mode whatever the parent does.
+        """Keep a frozen encoder in eval mode whatever the parent does.
 
         Lightning calls `model.train()` every epoch. Without this override the
         encoder's normalization layers would keep updating their running
         statistics, so a "frozen" encoder would quietly drift.
         """
         super().train(mode)
-        self.encoder.eval()
+        if not self.trainable:
+            self.encoder.eval()
         return self
 
     def forward(self, img: torch.Tensor) -> torch.Tensor:
@@ -517,8 +543,11 @@ class SleapNNVisualEncoder(torch.nn.Module):
         if param is not None and x.device != param.device:
             x = x.to(param.device)
 
-        with torch.no_grad():
+        if self.trainable:
             feats = self.encoder(x)
+        else:
+            with torch.no_grad():
+                feats = self.encoder(x)
 
         if self.project is not None:
             feats = self.project(feats)

@@ -227,7 +227,25 @@ class GTRRunner(LightningModule):
         if self.optimizer_cfg is None:
             optimizer = torch.optim.Adam(self.parameters(), lr=1e-4, betas=(0.9, 0.999))
         else:
-            optimizer = init_optimizer(self.parameters(), self.optimizer_cfg)
+            optimizer_cfg = dict(self.optimizer_cfg)
+            # `encoder_lr` gives the visual encoder its own learning rate (e.g. a
+            # lower one when fine-tuning a pretrained encoder); everything else
+            # keeps `lr`. It is not an optimizer argument, so it is removed here.
+            encoder_lr = optimizer_cfg.pop("encoder_lr", None)
+            if encoder_lr is None:
+                params = self.parameters()
+            else:
+                encoder_params = list(self.model.visual_encoder.parameters())
+                encoder_ids = {id(p) for p in encoder_params}
+                params = [
+                    {
+                        "params": [
+                            p for p in self.parameters() if id(p) not in encoder_ids
+                        ]
+                    },
+                    {"params": encoder_params, "lr": float(encoder_lr)},
+                ]
+            optimizer = init_optimizer(params, optimizer_cfg)
 
         if self.scheduler_cfg is None:
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(

@@ -15,6 +15,26 @@ from dreem.training.train import run
 # TODO: use temp dir and cleanup after tests (https://docs.pytest.org/en/7.1.x/how-to/tmp_path.html)
 
 
+def test_encoder_lr_param_group():
+    """`optimizer.encoder_lr` puts the visual encoder in its own param group."""
+    optim_cfg = {"name": "Adam", "lr": 1e-4, "encoder_lr": 1e-5}
+    gtr_runner = GTRRunner(optimizer_cfg=optim_cfg)
+    optimizer = gtr_runner.configure_optimizers()["optimizer"]
+
+    rest, encoder = optimizer.param_groups
+    assert rest["lr"] == 1e-4
+    assert encoder["lr"] == 1e-5
+
+    encoder_ids = {id(p) for p in gtr_runner.model.visual_encoder.parameters()}
+    assert {id(p) for p in encoder["params"]} == encoder_ids
+    assert not encoder_ids & {id(p) for p in rest["params"]}
+    n_all = sum(1 for _ in gtr_runner.parameters())
+    assert len(rest["params"]) + len(encoder["params"]) == n_all
+
+    # the config dict itself is left intact for checkpoint hyperparameters
+    assert gtr_runner.optimizer_cfg["encoder_lr"] == 1e-5
+
+
 def test_asso_loss():
     """Test asso loss."""
     num_frames = 5
