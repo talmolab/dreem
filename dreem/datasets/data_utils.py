@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import sleap_io as sio
 import torch
+from albumentations.augmentations.dropout.transforms import BaseDropout
 from numpy.typing import ArrayLike
 from PIL import Image
 from sleap_io import LabeledFrame, Labels
@@ -794,6 +795,86 @@ def build_augmentations(augmentations: dict) -> A.Compose:
     )
 
     return augs
+
+
+def _is_spatial(transform: A.BasicTransform) -> bool:
+    """Check whether an augmentation moves pixels (and keypoints) around the frame.
+
+    Args:
+        transform: an Albumentations transform.
+
+    Returns:
+        True for spatial transforms (rotations, flips, affine warps, crops), False
+        for pixel-level and dropout transforms, which leave positions unchanged.
+    """
+    return isinstance(transform, A.DualTransform) and not isinstance(
+        transform, BaseDropout
+    )
+
+
+class ClipAugmentation:
+    """Augment the frames of a clip with one draw of spatial parameters.
+
+    Spatial transforms move every instance in the frame, so drawing them
+    independently per frame makes the same instance jump between consecutive
+    frames of a clip, e.g. a random 45 degree rotation on one frame and none on
+    the next. The positional embedding would then learn from trajectories that
+    never occur at inference. Here spatial transforms are drawn once, on the first
+    frame of the clip, and replayed on the rest. Pixel-level and dropout
+    transforms leave positions alone and are still drawn per frame.
+
+    Pixel-level transforms run before spatial ones, each group in config order.
+    """
+
+    def __init__(self, augmentations: A.Compose):
+        """Split an augmentation pipeline into per-frame and per-clip parts.
+
+        Args:
+            augmentations: the Compose returned by `build_augmentations`.
+        """
+        keypoint_params = A.KeypointParams(format="xy", remove_invisible=False)
+        per_frame = [t for t in augmentations if not _is_spatial(t)]
+        spatial = [t for t in augmentations if _is_spatial(t)]
+
+        self.per_frame = (
+            A.Compose(per_frame, p=1.0, keypoint_params=keypoint_params)
+            if per_frame
+            else None
+        )
+        self.spatial = (
+            A.ReplayCompose(spatial, p=1.0, keypoint_params=keypoint_params)
+            if spatial
+            else None
+        )
+
+    def __call__(
+        self,
+        image: np.ndarray,
+        keypoints: ArrayLike,
+        replay: dict | None = None,
+    ) -> tuple[dict, dict | None]:
+        """Augment one frame of a clip.
+
+        Args:
+            image: the (h, w, c) frame.
+            keypoints: (n, 2) array of xy keypoints in the frame.
+            replay: the spatial parameters drawn on an earlier frame of the same
+                clip, or None on the clip's first frame.
+
+        Returns:
+            A tuple of the augmented {"image", "keypoints"} dict and the spatial
+            parameters to pass as `replay` for the clip's next frame.
+        """
+        augmented = {"image": image, "keypoints": keypoints}
+        if self.per_frame is not None:
+            augmented = self.per_frame(**augmented)
+        if self.spatial is not None:
+            if replay is None:
+                augmented = self.spatial(**augmented)
+                replay = augmented["replay"]
+            else:
+                augmented = A.ReplayCompose.replay(replay, **augmented)
+        return augmented, replay
 
 
 def get_max_padding(height: int, width: int) -> tuple:
