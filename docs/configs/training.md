@@ -141,6 +141,8 @@ augmentations:
     p: 0.3
 ```
 
+For `SleapDataset`, spatial augmentations (e.g. `Rotate`, `Affine`, flips, crops) are drawn once per clip and applied identically to every frame in it, so each instance keeps a coherent trajectory. In the example above, the whole clip is either rotated by one random angle or not rotated at all. Pixel-level augmentations (e.g. `MotionBlur`, `RandomBrightnessContrast`) and dropout augmentations (e.g. `CoarseDropout`) are drawn per frame, and run before the spatial ones.
+
 > **Note**: Augmentations are typically only used for training datasets, not validation or test.
 
 ## Dataloader Configuration

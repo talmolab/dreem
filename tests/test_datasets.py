@@ -1,5 +1,6 @@
 """Test dataset logic."""
 
+import numpy as np
 import pytest
 import torch
 from torch.utils.data import DataLoader
@@ -712,6 +713,62 @@ def test_augmentations(two_flies, ten_icy_particles):
     b = augs_instances[0].get_crops()
 
     assert not torch.all(a.eq(b))
+
+
+def test_spatial_augmentations_consistent_across_clip(two_flies):
+    """Spatial augmentations must use one set of parameters for a whole clip.
+
+    Drawing a rotation per frame makes the same fly jump between consecutive
+    frames of a training clip, which never happens at inference.
+
+    Args:
+        two_flies: flies fixture used for testing
+    """
+    ds_args = dict(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
+        anchors="centroid",
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+    )
+    raw_clip = next(iter(SleapDataset(**ds_args)))
+    aug_clip = next(
+        iter(
+            SleapDataset(
+                **ds_args,
+                augmentations={
+                    "Rotate": {"limit": (20, 45), "p": 1.0},
+                    "GaussianBlur": {"blur_limit": (3, 7), "p": 1.0},
+                },
+            )
+        )
+    )
+
+    def fly_to_fly(frame):
+        """Vector from track 0's centroid to track 1's (instance order is shuffled)."""
+        centroids = {
+            instance.gt_track_id.item(): np.asarray(instance.centroid["centroid"])
+            for instance in frame.instances
+        }
+        if not {0, 1} <= centroids.keys():
+            return None
+        return centroids[1] - centroids[0]
+
+    # The rotation angle is recovered from the vector between the two flies, which
+    # does not depend on the center of rotation.
+    angles = []
+    for raw_frame, aug_frame in zip(raw_clip, aug_clip):
+        raw_vec, aug_vec = fly_to_fly(raw_frame), fly_to_fly(aug_frame)
+        if raw_vec is None or aug_vec is None:
+            continue
+        cross = raw_vec[0] * aug_vec[1] - raw_vec[1] * aug_vec[0]
+        angles.append(np.arctan2(cross, np.dot(raw_vec, aug_vec)))
+
+    assert len(angles) >= 2
+    assert np.ptp(angles) < 1e-3, f"rotation varies within a clip: {angles}"
+    assert abs(angles[0]) > np.deg2rad(15)
 
 
 # if __name__ == "__main__":
