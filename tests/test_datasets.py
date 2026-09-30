@@ -771,6 +771,72 @@ def test_spatial_augmentations_consistent_across_clip(two_flies):
     assert abs(angles[0]) > np.deg2rad(15)
 
 
+def test_sleap_dataset_video_readers_are_per_process(two_flies):
+    """A process that inherits a dataset opens its own readers and leaves the parent's.
+
+    Args:
+        two_flies: flies fixture used for testing
+    """
+    ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+    )
+    assert ds.videos == [None]  # nothing is opened until a frame is read
+
+    ds[0]
+    parent_reader = ds.videos[0]
+    assert parent_reader is not None
+
+    ds._videos_pid = -1  # as a forked DataLoader worker sees the parent's state
+    ds[0]
+    assert ds.videos[0] is not parent_reader
+    assert not parent_reader.closed  # closing it would kill the parent's ffmpeg
+    parent_reader.get_data(0)
+
+
+def test_sleap_dataset_multiworker_crops_match(two_flies):
+    """Crops loaded by DataLoader workers match those loaded in the main process.
+
+    Args:
+        two_flies: flies fixture used for testing
+    """
+    ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+    )
+
+    def crops_by_instance(num_workers):
+        """Map (frame id, track id) to crop; instance order is shuffled per frame."""
+        loader = DataLoader(
+            ds, batch_size=1, collate_fn=ds.no_batching_fn, num_workers=num_workers
+        )
+        return {
+            (frame.frame_id.item(), instance.gt_track_id.item()): instance.crop
+            for batch in loader
+            for frame in batch[0]
+            for instance in frame.instances
+        }
+
+    single_process = crops_by_instance(num_workers=0)
+    workers = crops_by_instance(num_workers=2)
+
+    assert single_process.keys() == workers.keys()
+    mismatched = [
+        key
+        for key in single_process
+        if not torch.equal(single_process[key], workers[key])
+    ]
+    assert not mismatched, f"crops differ for (frame, track) {mismatched}"
+
+
 # if __name__ == "__main__":
 #     from tests.fixtures.datasets import cell_tracking
 #     cell_tracking_args = cell_tracking(("/root/vast/mustafa/dreem-experiments/src/dreem/tests/data/microscopy/cell_tracking"))

@@ -1,6 +1,7 @@
 """Module containing logic for loading sleap datasets."""
 
 import logging
+import os
 import random
 from math import inf
 from pathlib import Path
@@ -179,7 +180,16 @@ class SleapDataset(BaseDataset):
             self.labels.append(labels)
             self.annotated_segments[slp_file] = annotated_segments
 
-        self.videos = [imageio.get_reader(vid_file) for vid_file in self.vid_files]
+        for vid_file in self.vid_files:
+            if not Path(vid_file).exists():
+                raise FileNotFoundError(f"Video file not found: {vid_file}")
+        # Video readers are opened lazily, once per process (see
+        # `_get_video_reader`). An imageio reader wraps an ffmpeg subprocess, so a
+        # reader opened here and inherited by forked DataLoader workers would have
+        # every worker reading the same pipe, handing crops to the wrong frames.
+        self.videos = [None] * len(self.vid_files)
+        self._videos_pid = os.getpid()
+        self._inherited_videos = []
         # preprocessors
         self.remove_excess_detections = RemoveExcessDetections(max_tracks)
         self.non_max_suppression = NonMaxSuppression(max_detection_overlap)
@@ -225,7 +235,7 @@ class SleapDataset(BaseDataset):
             crop_size = self.crop_size[0]
             dilation_radius_px = self.dilation_radius_px[0]
 
-        vid_reader = self.videos[label_idx]
+        vid_reader = self._get_video_reader(label_idx)
 
         skeleton = sleap_labels_obj.skeletons[-1]
 
@@ -531,7 +541,46 @@ class SleapDataset(BaseDataset):
 
         return frames
 
+    def _get_video_reader(self, label_idx: int) -> "imageio.core.Format.Reader":
+        """Get the video reader for a labels file, opened by this process.
+
+        A forked DataLoader worker inherits the parent's readers, which share the
+        parent's ffmpeg subprocesses. On the first call in a new process those are
+        set aside, unused, and the worker opens its own. They are kept referenced
+        rather than closed: closing one would terminate the ffmpeg process the
+        parent is still reading from.
+
+        Args:
+            label_idx: index of the labels file (and its video).
+
+        Returns:
+            An imageio reader for the video, owned by the calling process.
+        """
+        pid = os.getpid()
+        if self._videos_pid != pid:
+            self._inherited_videos.extend(r for r in self.videos if r is not None)
+            self.videos = [None] * len(self.vid_files)
+            self._videos_pid = pid
+        if self.videos[label_idx] is None:
+            self.videos[label_idx] = imageio.get_reader(self.vid_files[label_idx])
+        return self.videos[label_idx]
+
+    def __getstate__(self) -> dict:
+        """Drop open video readers when pickled, e.g. for spawned workers.
+
+        Returns:
+            The dataset's state, with readers to be reopened on first use.
+        """
+        state = self.__dict__.copy()
+        state["videos"] = [None] * len(self.vid_files)
+        state["_videos_pid"] = None
+        state["_inherited_videos"] = []
+        return state
+
     def __del__(self):
-        """Handle file closing before garbage collection."""
-        for reader in self.videos:
-            reader.close()
+        """Close the video readers this process opened before garbage collection."""
+        if getattr(self, "_videos_pid", None) != os.getpid():
+            return  # inherited readers belong to the parent process
+        for reader in getattr(self, "videos", []):
+            if reader is not None:
+                reader.close()

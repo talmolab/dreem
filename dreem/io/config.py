@@ -77,6 +77,103 @@ _TRAINING_ONLY_CONFIG_SECTIONS = frozenset(
 )
 
 
+def _videos_referenced_by(label_file: Path, videos: list[Path]) -> list[Path]:
+    """Find the candidate videos that a SLEAP labels file points to.
+
+    Args:
+        label_file: path to a .slp labels file.
+        videos: candidate video paths.
+
+    Returns:
+        The candidates whose file name matches a video referenced in the .slp
+        (the stored path itself is often stale, so only the name is compared).
+    """
+    import sleap_io as sio
+
+    try:
+        labels = sio.load_slp(str(label_file), open_videos=False)
+    except Exception:
+        return []
+    names = {
+        Path(video.filename).name
+        for video in labels.videos
+        if isinstance(video.filename, str)
+    }
+    return [video for video in videos if video.name in names]
+
+
+def _pair_labels_with_videos(
+    label_files: list[str], video_files: list[str]
+) -> tuple[list[str], list[str]]:
+    """Pair each SLEAP labels file with its video.
+
+    Directory listings come back in filesystem order, so the labels and videos
+    found by two separate globs can't be paired by position. A video pairs with a
+    labels file when the labels file's name, minus its extension, is the video's
+    stem or extends it after a dot: `x.mp4` pairs with `x.slp`,
+    `x.predictions.slp` and `x.mp4.predictions.slp`, but not `x_noisy.slp`. The
+    longest matching stem wins, then a video in the labels file's own directory.
+    A labels file that no video name matches falls back to the video it
+    references internally.
+
+    Args:
+        label_files: paths to .slp labels files.
+        video_files: candidate video paths. Videos without labels are ignored.
+
+    Returns:
+        The labels files, sorted, and the video paired with each.
+
+    Raises:
+        ValueError: if a labels file matches no video, or several equally well.
+    """
+    videos = [Path(video) for video in dict.fromkeys(map(str, video_files))]
+    paired_labels, paired_videos, problems = [], [], []
+
+    for label_file in sorted(dict.fromkeys(map(str, label_files))):
+        label = Path(label_file)
+        base = label.name[: -len(label.suffix)] if label.suffix else label.name
+
+        by_name = [
+            video
+            for video in videos
+            if base == video.stem or base.startswith(video.stem + ".")
+        ]
+        if by_name:
+            ranked = [
+                ((len(video.stem), video.parent == label.parent), video)
+                for video in by_name
+            ]
+        else:
+            ranked = [
+                ((0, video.parent == label.parent), video)
+                for video in _videos_referenced_by(label, videos)
+            ]
+
+        if not ranked:
+            problems.append(f"no video found for {label_file}")
+            continue
+        best_rank = max(rank for rank, _ in ranked)
+        best = [video for rank, video in ranked if rank == best_rank]
+        if len(best) > 1:
+            problems.append(
+                f"{label_file} matches several videos: {[str(v) for v in best]}"
+            )
+            continue
+
+        paired_labels.append(label_file)
+        paired_videos.append(str(best[0]))
+
+    if problems:
+        raise ValueError(
+            "Could not pair every labels file with its video:\n  "
+            + "\n  ".join(problems)
+            + "\nRename the files so each video's name starts its labels file's "
+            "name, or list both `slp_files` and `video_files` explicitly (paired "
+            "by position)."
+        )
+    return paired_labels, paired_videos
+
+
 class Config:
     """Class handling loading components based on config params."""
 
@@ -288,7 +385,10 @@ class Config:
             data_cfg: Config for the dataset containing "dir" key.
 
         Returns:
-            lists of labels file paths and video file paths respectively
+            lists of labels file paths and video file paths respectively, paired
+            by position. Files found in `dir` are paired by name (see
+            `_pair_labels_with_videos`); explicit `slp_files` and `video_files`
+            lists are kept in the order given.
         """
         # hack to get around the fact that for test mode, get_data_paths is called before get_dataset.
         # also, for train/val mode, data_cfg has had the dir key popped through self.get() called in get_dataset()
@@ -305,9 +405,8 @@ class Config:
         if not isinstance(list_dir_path, list):
             list_dir_path = [list_dir_path]
 
+        label_files, vid_files = [], []
         if self.labels_suffix == ".slp":
-            label_files = []
-            vid_files = []
             for dir_path in list_dir_path:
                 logger.debug(f"Searching `{dir_path}` directory")
                 labels_path = f"{dir_path}/*{self.labels_suffix}"
@@ -323,15 +422,30 @@ class Config:
         logger.debug(f"Found {len(label_files)} labels and {len(vid_files)} videos")
 
         # backdoor to set label files directly in the configs (i.e. bypass dir.path)
-        if data_cfg.get("slp_files", None):
+        slp_files = list(data_cfg.get("slp_files", None) or [])
+        individual_video_files = list(data_cfg.get("video_files", None) or [])
+        if slp_files and individual_video_files:
+            # both lists given: the user has paired them, by position
+            if len(slp_files) != len(individual_video_files):
+                raise ValueError(
+                    f"`slp_files` has {len(slp_files)} entries but `video_files` "
+                    f"has {len(individual_video_files)}; they are paired by "
+                    "position, so they must be the same length."
+                )
+            logger.debug("Using the user provided labels and video files")
+            return slp_files, individual_video_files
+        if slp_files:
             logger.debug("Overriding label files with user provided list")
-            slp_files = data_cfg.get("slp_files")
-            if len(slp_files) > 0:
-                label_files = slp_files
-        if data_cfg.get("video_files", None):
-            individual_video_files = data_cfg.get("video_files")
-            if len(individual_video_files) > 0:
-                vid_files = individual_video_files
+            label_files = slp_files
+            if self.vid_suffix:
+                # also look for each labels file's video next to it
+                for label_dir in {str(Path(f).parent) for f in slp_files}:
+                    vid_files.extend(glob.glob(f"{label_dir}/*{self.vid_suffix}"))
+        if individual_video_files:
+            vid_files = individual_video_files
+
+        if slp_files or self.labels_suffix == ".slp":
+            label_files, vid_files = _pair_labels_with_videos(label_files, vid_files)
         return label_files, vid_files
 
     def get_dataset(
