@@ -12,7 +12,12 @@ from dreem.datasets import (
     SleapDataset,
     TrackingDataset,
 )
-from dreem.datasets.data_utils import NodeDropout, get_max_padding
+from dreem.datasets.data_utils import (
+    NodeDropout,
+    crop_bbox,
+    get_bbox,
+    get_max_padding,
+)
 
 
 def _prepare_duplicate_instances(dataset, scenario):
@@ -713,6 +718,39 @@ def test_augmentations(two_flies, ten_icy_particles):
     b = augs_instances[0].get_crops()
 
     assert not torch.all(a.eq(b))
+
+
+@pytest.mark.parametrize(
+    "center",
+    [
+        (500.0, 400.0),  # interior
+        (10.0, 20.0),  # near the left and top edges
+        (-5.0, 3.0),  # anchor just outside the frame
+        (1020.0, 700.0),  # near the right edge of a 1024-wide frame
+    ],
+)
+def test_get_bbox_is_centered(center):
+    """The box is centered on the anchor even when it extends past the frame.
+
+    Args:
+        center: (x, y) anchor position in pixels
+    """
+    y1, x1, y2, x2 = get_bbox(center, 128).tolist()
+
+    assert (x2 - x1, y2 - y1) == (128, 128)
+    assert ((x1 + x2) / 2, (y1 + y2) / 2) == center
+
+
+def test_crop_near_edge_is_centered():
+    """A crop of an instance near the top-left corner is centered on it, zero-padded."""
+    img = torch.zeros(1, 100, 100)
+    img[0, 20, 10] = 1.0  # instance at x=10, y=20
+
+    crop = crop_bbox(img, get_bbox((10.0, 20.0), 32))
+
+    assert crop.shape == (1, 32, 32)
+    assert crop[0, 16, 16] == 1.0
+    assert (crop[0, :, :6] == 0).all()  # columns left of the frame are padding
 
 
 def test_spatial_augmentations_consistent_across_clip(two_flies):
