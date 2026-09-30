@@ -3539,6 +3539,7 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">blur_limit</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">7</span><span class="p p-Indicator">]</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">p</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.3</span>
 </code></pre></div></p>
+<p>For <code>SleapDataset</code>, spatial augmentations (e.g. <code>Rotate</code>, <code>Affine</code>, flips, crops) are drawn once per clip and applied identically to every frame in it, so each instance keeps a coherent trajectory. In the example above, the whole clip is either rotated by one random angle or not rotated at all. Pixel-level augmentations (e.g. <code>MotionBlur</code>, <code>RandomBrightnessContrast</code>) and dropout augmentations (e.g. <code>CoarseDropout</code>) are drawn per frame, and run before the spatial ones.</p>
 <blockquote>
 <p><strong>Note</strong>: Augmentations are typically only used for training datasets, not validation or test.</p>
 </blockquote>
