@@ -106,12 +106,16 @@ Use the `dir` section to automatically discover videos and labels:
 * `labels_suffix` (`str`): File extension for label files (e.g., `.slp`, `.csv`, `.xml`).
 * `vid_suffix` (`str`): File extension for video files (e.g., `.mp4`, `.avi`, `.tif`, `.tiff`).
 
+Each labels file is paired with the video whose name starts its own: `x.mp4` pairs with `x.slp`, `x.predictions.slp` or `x.mp4.predictions.slp`, but not with `x_noisy.slp`. If no video name matches, the labels file is paired with the video it references internally. A labels file with no video, or with several equally good matches, is an error. Videos without labels are ignored.
+
 ### File-based Input
 
 Alternatively, specify files explicitly:
 
 * `slp_files` (`list[str]`): List of paths to SLEAP label files (`.slp`).
 * `video_files` (`list[str]`): List of paths to video files.
+
+When both lists are given they are paired by position and must be the same length. When only `slp_files` is given, each labels file is paired with its video by name as above, looking in `dir.path` and next to the labels file.
 
 ### Dataset Parameters
 
