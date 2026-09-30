@@ -78,6 +78,9 @@ class SleapDataset(BaseDataset):
                         'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0, 'p': 0.2},
                         'RandomContrast': {'limit': 0.2, 'p': 0.6}
                     }
+                Spatial augmentations (e.g. rotations, flips, affine warps) are
+                drawn once per clip and applied to every frame in it, so instances
+                keep coherent trajectories; pixel-level ones are drawn per frame.
             n_chunks: Number of chunks to subsample from.
                 Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
             seed: set a seed for reproducibility
@@ -101,6 +104,13 @@ class SleapDataset(BaseDataset):
             augmentations,
             n_chunks,
             seed,
+        )
+
+        # spatial augmentations are drawn once per clip, not once per frame
+        self.clip_augmentations = (
+            data_utils.ClipAugmentation(self.augmentations)
+            if self.augmentations is not None
+            else None
         )
 
         self.slp_files = slp_files
@@ -221,6 +231,7 @@ class SleapDataset(BaseDataset):
 
         frames = []
         max_crop_h, max_crop_w = 0, 0
+        aug_replay = None  # spatial augmentation params shared by the whole clip
         for i, frame_ind in enumerate(frame_idx):
             (
                 instances,
@@ -354,7 +365,9 @@ class SleapDataset(BaseDataset):
                 else:
                     keypoints = []
 
-                augmented = self.augmentations(image=img, keypoints=keypoints)
+                augmented, aug_replay = self.clip_augmentations(
+                    image=img, keypoints=keypoints, replay=aug_replay
+                )
 
                 img, aug_poses = augmented["image"], augmented["keypoints"]
 
