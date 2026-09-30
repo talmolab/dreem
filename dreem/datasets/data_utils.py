@@ -343,6 +343,11 @@ def nms(ioms: torch.Tensor, threshold: float) -> list[int]:
 def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:
     """Get a square bbox around a centroid coordinates.
 
+    The box is always centered on `center`, even when it extends past the edge of
+    the frame; `crop_bbox` zero-pads the part outside. Clamping it into the frame
+    instead would shift the crop off the instance and move the box center, which
+    the positional embedding and tracker read as the instance's position.
+
     Args:
         center: centroid coordinates in (x,y)
         size: size of the bounding box
@@ -354,10 +359,10 @@ def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:
         size = (size, size)
     cx, cy = center[0], center[1]
 
-    y1 = max(0, -size[-1] // 2 + cy)
-    x1 = max(0, -size[0] // 2 + cx)
-    y2 = size[-1] // 2 + cy if y1 != 0 else size[1]
-    x2 = size[0] // 2 + cx if x1 != 0 else size[0]
+    y1 = -size[-1] // 2 + cy
+    x1 = -size[0] // 2 + cx
+    y2 = size[-1] // 2 + cy
+    x2 = size[0] // 2 + cx
     bbox = torch.Tensor([y1, x1, y2, x2])
 
     return bbox
