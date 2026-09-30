@@ -1,5 +1,10 @@
 """Tests for `config.py`."""
 
+import glob
+import shutil
+from pathlib import Path
+
+import pytest
 import torch
 from omegaconf import OmegaConf, open_dict
 
@@ -121,6 +126,124 @@ def test_getters(base_config, sleap_data_dir):
         },
     )
     assert len(label_paths) == len(data_path) == 5
+    for label_path, video_path in zip(label_paths, data_path):
+        assert Path(label_path).stem == Path(video_path).stem
+
+
+def _touch(directory, *names):
+    """Create empty files in `directory`."""
+    for name in names:
+        (directory / name).touch()
+
+
+def _dir_cfg(path):
+    """Dataset config that discovers .slp labels and .mp4 videos in `path`."""
+    return {"dir": {"path": str(path), "labels_suffix": ".slp", "vid_suffix": ".mp4"}}
+
+
+def test_get_data_paths_pairs_by_name(base_config, tmp_path, monkeypatch):
+    """Labels and videos found in a directory are paired by name, not listing order.
+
+    Args:
+        base_config: the initial config params
+        tmp_path: directory for the fake labels and videos
+        monkeypatch: used to scramble the directory listing order
+    """
+    _touch(
+        tmp_path,
+        "a.slp",
+        "b.predictions.proofread.slp",
+        "c.mp4.predictions.slp",
+        "c_noisy.slp",
+        "a.mp4",
+        "b.mp4",
+        "c.mp4",
+        "c_noisy.mp4",
+        "unlabeled.mp4",
+    )
+    # Filesystems list directories in arbitrary order; make it adversarial.
+    real_glob = glob.glob
+    monkeypatch.setattr(
+        glob, "glob", lambda pattern: sorted(real_glob(pattern), reverse=True)
+    )
+
+    cfg = Config(OmegaConf.load(base_config))
+    labels, videos = cfg.get_data_paths("test", _dir_cfg(tmp_path))
+
+    assert {Path(lab).name: Path(vid).name for lab, vid in zip(labels, videos)} == {
+        "a.slp": "a.mp4",
+        "b.predictions.proofread.slp": "b.mp4",
+        "c.mp4.predictions.slp": "c.mp4",
+        "c_noisy.slp": "c_noisy.mp4",
+    }
+
+
+def test_get_data_paths_uses_video_named_in_labels(
+    base_config, tmp_path, sleap_data_dir
+):
+    """A labels file whose name matches no video pairs with the video it references.
+
+    Args:
+        base_config: the initial config params
+        tmp_path: directory for the labels and fake videos
+        sleap_data_dir: directory holding two_flies.slp, which references two_flies.mp4
+    """
+    shutil.copy(sleap_data_dir / "two_flies.slp", tmp_path / "session_labels.slp")
+    _touch(tmp_path, "two_flies.mp4", "other.mp4")
+
+    cfg = Config(OmegaConf.load(base_config))
+    labels, videos = cfg.get_data_paths("test", _dir_cfg(tmp_path))
+
+    assert [Path(v).name for v in videos] == ["two_flies.mp4"]
+
+
+def test_get_data_paths_rejects_unpaired_labels(base_config, tmp_path):
+    """A labels file with no video is an error, not a silent mispairing.
+
+    Args:
+        base_config: the initial config params
+        tmp_path: directory for the fake labels and videos
+    """
+    _touch(tmp_path, "a.slp", "orphan.slp", "a.mp4")
+
+    cfg = Config(OmegaConf.load(base_config))
+    with pytest.raises(ValueError, match="no video found for .*orphan.slp"):
+        cfg.get_data_paths("test", _dir_cfg(tmp_path))
+
+
+def test_get_data_paths_explicit_files(base_config, tmp_path):
+    """Explicit `slp_files` / `video_files` lists.
+
+    Args:
+        base_config: the initial config params
+        tmp_path: directory for the fake labels and videos
+    """
+    _touch(tmp_path, "a.slp", "b.slp", "a.mp4", "b.mp4")
+    a_slp, b_slp = str(tmp_path / "a.slp"), str(tmp_path / "b.slp")
+    a_mp4, b_mp4 = str(tmp_path / "a.mp4"), str(tmp_path / "b.mp4")
+    cfg = Config(OmegaConf.load(base_config))
+
+    # both lists: the user's pairing is kept, even when the names differ
+    labels, videos = cfg.get_data_paths(
+        "test", {**_dir_cfg(tmp_path), "slp_files": [a_slp], "video_files": [b_mp4]}
+    )
+    assert (labels, videos) == ([a_slp], [b_mp4])
+
+    with pytest.raises(ValueError, match="same length"):
+        cfg.get_data_paths(
+            "test",
+            {
+                **_dir_cfg(tmp_path),
+                "slp_files": [a_slp],
+                "video_files": [a_mp4, b_mp4],
+            },
+        )
+
+    # only labels: each is paired with its own video
+    labels, videos = cfg.get_data_paths(
+        "test", {**_dir_cfg(tmp_path), "slp_files": [b_slp]}
+    )
+    assert (labels, videos) == ([b_slp], [b_mp4])
 
 
 def test_missing(base_config):
