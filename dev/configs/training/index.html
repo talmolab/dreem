@@ -3509,12 +3509,14 @@
 <li><code>labels_suffix</code> (<code>str</code>): File extension for label files (e.g., <code>.slp</code>, <code>.csv</code>, <code>.xml</code>).</li>
 <li><code>vid_suffix</code> (<code>str</code>): File extension for video files (e.g., <code>.mp4</code>, <code>.avi</code>, <code>.tif</code>, <code>.tiff</code>).</li>
 </ul>
+<p>Each labels file is paired with the video whose name starts its own: <code>x.mp4</code> pairs with <code>x.slp</code>, <code>x.predictions.slp</code> or <code>x.mp4.predictions.slp</code>, but not with <code>x_noisy.slp</code>. If no video name matches, the labels file is paired with the video it references internally. A labels file with no video, or with several equally good matches, is an error. Videos without labels are ignored.</p>
 <h3 id="file-based-input">File-based Input<a class="headerlink" href="#file-based-input" title="Permanent link">&para;</a></h3>
 <p>Alternatively, specify files explicitly:</p>
 <ul>
 <li><code>slp_files</code> (<code>list[str]</code>): List of paths to SLEAP label files (<code>.slp</code>).</li>
 <li><code>video_files</code> (<code>list[str]</code>): List of paths to video files.</li>
 </ul>
+<p>When both lists are given they are paired by position and must be the same length. When only <code>slp_files</code> is given, each labels file is paired with its video by name as above, looking in <code>dir.path</code> and next to the labels file.</p>
 <h3 id="dataset-parameters">Dataset Parameters<a class="headerlink" href="#dataset-parameters" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>crop_size</code> (<code>int</code>): Size (in pixels) of the square bounding box around each instance. Should match approximate size of tracked objects.</li>
