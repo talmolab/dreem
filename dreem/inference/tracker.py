@@ -23,6 +23,65 @@ from dreem.models import GlobalTrackingTransformer, model_utils
 
 logger = logging.getLogger("dreem.inference")
 
+AGGREGATION_MODES = ("recency_mean", "softmax_sum")
+
+
+def aggregate_traj_score(
+    raw_asso: torch.Tensor,
+    softmax_asso: torch.Tensor,
+    id_inds: torch.Tensor,
+    deltas: torch.Tensor,
+    mode: str = "recency_mean",
+    tau: float = inf,
+) -> torch.Tensor:
+    """Pool per-instance association scores into a per-track score.
+
+    Args:
+        raw_asso: (n_query, n_nonquery) raw (pre-softmax) association scores between
+            each query instance and each reference instance in the window.
+        softmax_asso: (n_query, n_nonquery) association scores after the
+            per-reference-frame softmax (`model_utils.softmax_asso`).
+        id_inds: (n_nonquery, n_traj) one-hot mapping of reference instances to tracks.
+        deltas: (n_nonquery,) number of frames between the query frame and the frame
+            each reference instance was detected in.
+        mode: `"recency_mean"` or `"softmax_sum"`; see the note below.
+        tau: time constant (in frames) of the exponential recency weight used by
+            `"recency_mean"`. `inf` weights every reference instance equally.
+
+    Returns:
+        The (n_query, n_traj) trajectory score matrix.
+
+    Notes:
+        `"softmax_sum"` (the original DREEM pooling) normalizes *within each
+        reference frame* and then sums over each track's instances, so a track's
+        score scales with how many frames of the window it appears in. That makes
+        the scores of tracks with different window occupancies incomparable -- an
+        instance that disappeared for a few frames is scored against a skewed
+        lookback -- and the per-frame softmax additionally entangles tracks through
+        frame co-occupancy (a track's share depends on which other tracks happen to
+        be detected in the same frame).
+
+        `"recency_mean"` scores each query <-> reference instance pair one-to-one on
+        the raw association and pools them with a (recency-weighted) mean, so frames
+        a track is absent from neither inflate nor deflate its score::
+
+            score(T) = sum_i w(delta_i) * raw(q, i) / sum_i w(delta_i)
+
+        over the instances `i` of track `T`, with `w(delta) = exp(-delta / tau)`.
+        Competition between tracks still happens downstream, in the existing
+        `log_softmax(traj_score / temperature)` ("scaled") stage.
+    """
+    if mode == "softmax_sum":
+        # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj
+        return torch.mm(softmax_asso, id_inds)
+    if mode != "recency_mean":
+        raise ValueError(f"`mode` must be one of {AGGREGATION_MODES}, got {mode!r}")
+    # Named `rec_w` rather than `w`: `w` is the image width in the caller.
+    rec_w = torch.ones_like(deltas) if tau == inf else torch.exp(-deltas / tau)
+    num = torch.mm(raw_asso * rec_w[None, :], id_inds)  # (n_query, n_traj)
+    den = torch.mm(rec_w[None, :], id_inds).clamp_min(1e-8)  # (1, n_traj)
+    return num / den
+
 
 class Tracker:
     """Tracker class used for assignment based on sliding inference from GTR."""
@@ -47,6 +106,8 @@ class Tracker:
         front_nodes: list[str] | None = None,
         back_nodes: list[str] | None = None,
         enable_crop_saving: bool = False,
+        aggregation: str = "recency_mean",
+        recency_tau: float | None = None,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -72,6 +133,16 @@ class Tracker:
             front_nodes: list of skeleton node names to be used to determine the orientation of the object. If None, computes using all available nodes.
             back_nodes: list of skeleton node names to be used to determine the orientation of the object. If None, computes using all available nodes.
             enable_crop_saving: Whether to save crops to frame metadata.
+            aggregation: how per-instance association scores are pooled into a
+                per-track score. `"recency_mean"` (default) scores each query <->
+                reference instance pair one-to-one on the raw association and pools
+                them with a recency-weighted mean. `"softmax_sum"` restores the
+                original behavior (per-reference-frame softmax, then an unweighted
+                sum over each track's instances), whose scores depend on how much of
+                the window each track occupies. See `aggregate_traj_score`.
+            recency_tau: time constant, in frames, of the exponential recency weight
+                `exp(-delta / recency_tau)` applied by `"recency_mean"`. `None`
+                (default) weights every reference instance in the window equally.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
@@ -90,6 +161,14 @@ class Tracker:
         self.front_nodes = front_nodes
         self.back_nodes = back_nodes
         self.enable_crop_saving = enable_crop_saving
+        if aggregation not in AGGREGATION_MODES:
+            raise ValueError(
+                f"`aggregation` must be one of {AGGREGATION_MODES}, got {aggregation!r}"
+            )
+        if recency_tau is not None and recency_tau <= 0:
+            raise ValueError(f"`recency_tau` must be > 0, got {recency_tau}")
+        self.aggregation = aggregation
+        self.recency_tau = inf if recency_tau is None else float(recency_tau)
         self.max_angle_diff = (
             deg2rad(max_angle_diff) if max_angle_diff is not None else inf
         )
@@ -131,9 +210,9 @@ class Tracker:
             f"max_center_dist={self.max_center_dist}, "
             f"verbose={self.verbose}, "
             f"queue={self.track_queue}, "
-            f"temperature={self.temperature}"
-            f"queue={self.track_queue}, "
-            f"temperature={self.temperature}"
+            f"temperature={self.temperature}, "
+            f"aggregation={self.aggregation}, "
+            f"recency_tau={self.recency_tau}"
         )
 
     def track(
@@ -381,8 +460,26 @@ class Tracker:
 
         ################################################################################
 
-        # (n_query x n_nonquery) x (n_nonquery x n_traj) --> n_query x n_traj
-        traj_score = torch.mm(asso_nonquery, id_inds.cpu())  # (n_query, n_traj)
+        # Aggregation stage: pool per-instance association into a per-track score.
+        # `recency_mean` (the default) removes the window-occupancy bias of the
+        # original per-reference-frame softmax + sum; see `aggregate_traj_score`.
+        query_fid = query_frame.frame_id.item()
+        deltas = torch.cat(
+            [
+                torch.full((x.num_detected,), float(query_fid - x.frame_id.item()))
+                for batch_idx, x in enumerate(frames)
+                if batch_idx != query_ind
+            ]
+        )  # (n_nonquery,), aligned with nonquery_inds / instance_ids
+
+        traj_score = aggregate_traj_score(
+            raw_asso=asso_matrix[-1].matrix.cpu()[:, nonquery_inds],
+            softmax_asso=asso_nonquery,
+            id_inds=id_inds.cpu(),
+            deltas=deltas,
+            mode=self.aggregation,
+            tau=self.recency_tau,
+        )  # (n_query, n_traj)
         traj_score_df = pd.DataFrame(
             traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
         )

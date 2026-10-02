@@ -4,6 +4,7 @@ import os
 
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 from omegaconf import OmegaConf
 from pytorch_lightning import Trainer
@@ -18,6 +19,7 @@ from dreem.inference.post_processing import (
 )
 from dreem.inference.track import export_trajectories, run
 from dreem.inference.track_queue import TrackQueue
+from dreem.inference.tracker import aggregate_traj_score
 from dreem.io import Config, Frame, FrameFlagCode, Instance
 from dreem.models import GlobalTrackingTransformer, GTRRunner
 
@@ -101,10 +103,12 @@ def test_track_queue():
     assert len(tq) == 0
 
 
-def test_tracker():
+@pytest.mark.parametrize("aggregation", ["recency_mean", "softmax_sum"])
+def test_tracker(aggregation):
     """Test tracker module.
 
-    Tests that tracker works with/without post processing
+    Tests that tracker works with/without post processing, under both
+    aggregation modes.
     """
     feats = 512
     num_frames = 5
@@ -147,6 +151,7 @@ def test_tracker():
         "decay_time": None,
         "iou": None,
         "max_center_dist": None,
+        "aggregation": aggregation,
     }
 
     tracker = Tracker(**tracking_cfg)
@@ -161,6 +166,95 @@ def test_tracker():
     # assert asso_equals
 
     assert len(frames_pred[test_frame].get_pred_track_ids()) == num_detected
+
+
+def test_aggregate_traj_score_recency_mean_is_window_occupancy_invariant():
+    """Recency-mean pooling must not reward a track for occupying more of the window.
+
+    Three reference instances, one per reference frame, so the per-reference-frame
+    softmax saturates every one of them at 1.0 regardless of how well it actually
+    matches. Track 1 appears twice and track 0 once, so `softmax_sum` picks track 1
+    even though the raw association prefers track 0 by 5x -- the window-occupancy
+    bias this pooling mode has. `recency_mean` scores each pair one-to-one and picks
+    track 0.
+    """
+    raw_asso = torch.tensor([[5.0, 1.0, 1.0]])  # (n_query=1, n_nonquery=3)
+    softmax_asso = torch.ones(1, 3)  # lone detection per frame -> softmax == 1.0
+    id_inds = torch.tensor(  # (n_nonquery, n_traj): track 0 once, track 1 twice
+        [[1.0, 0.0], [0.0, 1.0], [0.0, 1.0]]
+    )
+    deltas = torch.tensor([1.0, 2.0, 3.0])
+
+    legacy = aggregate_traj_score(
+        raw_asso, softmax_asso, id_inds, deltas, mode="softmax_sum"
+    )
+    assert torch.allclose(legacy, torch.tensor([[1.0, 2.0]]))
+    assert legacy.argmax().item() == 1  # picks the more-present track
+
+    fixed = aggregate_traj_score(
+        raw_asso, softmax_asso, id_inds, deltas, mode="recency_mean"
+    )
+    assert torch.allclose(fixed, torch.tensor([[5.0, 1.0]]))
+    assert fixed.argmax().item() == 0  # picks the better-matching track
+
+
+def test_aggregate_traj_score_recency_weighting():
+    """Finite tau down-weights stale instances; tau=inf is a plain mean."""
+    raw_asso = torch.tensor([[1.0, 0.0]])  # recent instance matches, stale one doesn't
+    softmax_asso = torch.ones(1, 2)
+    id_inds = torch.ones(2, 1)  # both instances belong to the same track
+    deltas = torch.tensor([1.0, 5.0])
+
+    plain = aggregate_traj_score(
+        raw_asso, softmax_asso, id_inds, deltas, tau=float("inf")
+    )
+    assert torch.allclose(plain, torch.tensor([[0.5]]))
+
+    tau = 2.0
+    weights = torch.exp(-deltas / tau)
+    expected = (weights[0] * 1.0 + weights[1] * 0.0) / weights.sum()
+    decayed = aggregate_traj_score(raw_asso, softmax_asso, id_inds, deltas, tau=tau)
+    assert torch.allclose(decayed, expected.view(1, 1))
+    assert decayed.item() > plain.item()  # the recent, matching instance dominates
+
+
+def test_aggregate_traj_score_softmax_sum_matches_legacy_matmul():
+    """`softmax_sum` reproduces the original `asso_nonquery @ id_inds` pooling."""
+    torch.manual_seed(0)
+    raw_asso = torch.rand(3, 6)
+    softmax_asso = torch.rand(3, 6)
+    id_inds = torch.eye(2).repeat_interleave(3, dim=0)  # (6, 2)
+    deltas = torch.arange(6, dtype=torch.float32)
+
+    result = aggregate_traj_score(
+        raw_asso, softmax_asso, id_inds, deltas, mode="softmax_sum"
+    )
+    assert torch.allclose(result, torch.mm(softmax_asso, id_inds))
+
+
+def test_aggregate_traj_score_rejects_unknown_mode():
+    """An unrecognized aggregation mode is an error, not a silent fallback."""
+    with pytest.raises(ValueError, match="mode"):
+        aggregate_traj_score(
+            torch.zeros(1, 1),
+            torch.zeros(1, 1),
+            torch.ones(1, 1),
+            torch.zeros(1),
+            mode="not_a_mode",
+        )
+
+
+def test_tracker_aggregation_config():
+    """The aggregation mode and recency tau are validated first-class options."""
+    assert Tracker().aggregation == "recency_mean"
+    assert Tracker().recency_tau == float("inf")
+    assert Tracker(recency_tau=5).recency_tau == 5.0
+    assert Tracker(aggregation="softmax_sum").aggregation == "softmax_sum"
+
+    with pytest.raises(ValueError, match="aggregation"):
+        Tracker(aggregation="softmax_mean")
+    with pytest.raises(ValueError, match="recency_tau"):
+        Tracker(recency_tau=0)
 
 
 # @pytest.mark.parametrize("set_default_device", ["cpu"], indirect=True)
