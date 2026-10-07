@@ -67,6 +67,35 @@ def test_grayscale_conversion_matches_luma(encoder):
     torch.testing.assert_close(encoder(rgb), encoder(g), rtol=1e-5, atol=1e-5)
 
 
+def test_channel_selects_one_channel_of_an_rgb_crop():
+    """`channel=k` feeds channel k alone, not a luma mix.
+
+    An encoder trained on sleap-io's `grayscale=True` frames saw channel 0 (red)
+    only; giving it luma would ask it about an image it never trained on.
+    """
+    red = create_visual_encoder(
+        d_model=128,
+        encoder_type="sleapnn",
+        encoder_type_args={"checkpoint": CKPT, "config": CFG, "channel": 0},
+    )
+    rgb = torch.rand(2, 3, 128, 128)
+    torch.testing.assert_close(red(rgb), red(rgb[:, :1]), rtol=1e-5, atol=1e-5)
+    # ...and it really is a different input from luma for a colour crop.
+    luma = (rgb * torch.tensor([0.299, 0.587, 0.114])[None, :, None, None]).sum(
+        1, keepdim=True
+    )
+    assert not torch.allclose(red(rgb), red(luma), atol=1e-3)
+
+
+def test_channel_out_of_range_is_rejected():
+    with pytest.raises(ValueError, match="channel"):
+        create_visual_encoder(
+            d_model=128,
+            encoder_type="sleapnn",
+            encoder_type_args={"checkpoint": CKPT, "config": CFG, "channel": 3},
+        )
+
+
 def test_no_gradients_reach_the_encoder(encoder):
     """Fails if requires_grad_(False) or the no_grad forward regressed."""
     out = encoder(torch.rand(2, 3, 128, 128))

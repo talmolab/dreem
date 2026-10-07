@@ -383,7 +383,10 @@ class SleapNNVisualEncoder(torch.nn.Module):
 
     * RGB is collapsed with the ITU-R 601 luma weights -- the same weights
       ``make_sparse_crops.py`` used to build the crops the encoder trained on, so
-      a colour DREEM crop lands where a grayscale training crop would have;
+      a colour DREEM crop lands where a grayscale training crop would have. An
+      encoder trained on ONE channel instead (e.g. via sleap-io's
+      ``grayscale=True`` video mode, which keeps channel 0, red) needs
+      ``channel=0`` so DREEM's RGB crop is reduced the same way;
     * values are rescaled to ``[0, 255]``. ``EmbeddingLightningModule`` hardcodes
       ``self.standardize = True`` and standardizes per crop, so this is
       mathematically a no-op today -- it is done anyway so the input is right
@@ -405,6 +408,10 @@ class SleapNNVisualEncoder(torch.nn.Module):
         project: add a trainable ``Linear(embed_dim, d_model)`` on top.
             Required when the dimensions differ.
         trainable: fine-tune the encoder instead of freezing it.
+        channel: how a 3-channel crop is reduced to the single channel the
+            encoder takes. ``None`` (default): ITU-R 601 luma. ``0``/``1``/``2``:
+            keep only that channel -- match whatever produced the encoder's
+            training crops.
     """
 
     def __init__(
@@ -414,6 +421,7 @@ class SleapNNVisualEncoder(torch.nn.Module):
         config: str | None = None,
         project: bool = False,
         trainable: bool = False,
+        channel: int | None = None,
         **kwargs,
     ):
         """Initialize the sleap-nn visual encoder."""
@@ -455,6 +463,9 @@ class SleapNNVisualEncoder(torch.nn.Module):
         embed_dim = int(mc.head_configs.embedding.embedding.embedding_dim)
         self.d_model = d_model
         self.embed_dim = embed_dim
+        if channel is not None and int(channel) not in (0, 1, 2):
+            raise ValueError(f"channel must be None, 0, 1 or 2, got {channel!r}")
+        self.channel = None if channel is None else int(channel)
 
         self.trainable = bool(trainable)
         if self.trainable:
@@ -527,7 +538,9 @@ class SleapNNVisualEncoder(torch.nn.Module):
         if img.ndim != 4:
             raise ValueError(f"expected (B, C, H, W) crops, got {tuple(img.shape)}")
 
-        if img.shape[1] == 3:
+        if img.shape[1] == 3 and self.channel is not None:
+            gray = img[:, self.channel : self.channel + 1]
+        elif img.shape[1] == 3:
             # ITU-R 601 luma, matching make_sparse_crops.py's PIL "L" conversion.
             w = torch.tensor([0.299, 0.587, 0.114], device=img.device, dtype=img.dtype)
             gray = (img * w[None, :, None, None]).sum(dim=1, keepdim=True)
