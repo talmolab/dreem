@@ -32,6 +32,30 @@ def get_boxes(instances: list["Instance"]) -> torch.Tensor:
     return boxes
 
 
+def denormalize_boxes(boxes: torch.Tensor, h: int, w: int) -> torch.Tensor:
+    """Invert `get_boxes`: normalized boxes back to pixels, as a NEW tensor.
+
+    Boxes are `(y1, x1, y2, x2)`, so the y columns (0, 2) scale by the image
+    HEIGHT and the x columns (1, 3) by the WIDTH -- exactly undoing `get_boxes`.
+    The tracker used to multiply them the other way round, which is invisible on
+    a square frame but on 2048x1536 moves a stationary animal ~512 px from its
+    own previous position, so a hard `max_center_dist` gate rejected nearly
+    every true match.
+
+    Args:
+        boxes: `(..., 4)` normalized boxes from `get_boxes`.
+        h: image height in pixels.
+        w: image width in pixels.
+
+    Returns:
+        The boxes in pixels; the input is not modified.
+    """
+    out = boxes.clone()
+    out[..., [0, 2]] *= h
+    out[..., [1, 3]] *= w
+    return out
+
+
 def get_times(
     ref_instances: list["Instance"],
     query_instances: list["Instance"] | None = None,

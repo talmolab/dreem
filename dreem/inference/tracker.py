@@ -548,9 +548,8 @@ class Tracker:
             last_poses.append(nonquery_poses[ind])
 
         if self.max_center_dist is not None and self.max_center_dist > 0:
-            last_boxes_px = last_boxes.cpu()
-            last_boxes_px[:, :, [0, 2]] *= w
-            last_boxes_px[:, :, [1, 3]] *= h
+            # (y1, x1, y2, x2): y by height, x by width -- see denormalize_boxes.
+            last_boxes_px = model_utils.denormalize_boxes(last_boxes.cpu(), h, w)
             state = self.distance_weighting.run(
                 {
                     "traj_score": traj_score,
