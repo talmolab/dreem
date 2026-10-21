@@ -83,6 +83,18 @@ class GlobalTrackingTransformer(torch.nn.Module):
             encoder_cfg=encoder_cfg,
         )
 
+    @property
+    def legacy_embeddings(self) -> bool:
+        """Whether the transformer uses pre-fix box normalization and embeddings.
+
+        See `Transformer.legacy_embeddings`.
+        """
+        return self.transformer.legacy_embeddings
+
+    @legacy_embeddings.setter
+    def legacy_embeddings(self, enabled: bool) -> None:
+        self.transformer.legacy_embeddings = enabled
+
     def forward(
         self,
         ref_instances: list["Instance"],

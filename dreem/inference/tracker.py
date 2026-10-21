@@ -185,10 +185,15 @@ class Tracker:
                         f"Initializing track on clip ind {batch_idx} frame {frame_to_track.frame_id.item()}"
                     )
 
+                    # keep gt ids and give instances without one new ids that
+                    # start past the largest gt id so they can't collide with it
                     curr_track_id = 0
                     for i, instance in enumerate(frames[batch_idx].instances):
                         instance.pred_track_id = instance.gt_track_id
-                        curr_track_id = max(curr_track_id, instance.pred_track_id)
+                        if instance.pred_track_id != -1:
+                            curr_track_id = max(
+                                curr_track_id, instance.pred_track_id.item() + 1
+                            )
 
                     for i, instance in enumerate(frames[batch_idx].instances):
                         if instance.pred_track_id == -1:
@@ -432,8 +437,8 @@ class Tracker:
 
         if self.max_center_dist is not None and self.max_center_dist > 0:
             last_boxes_px = last_boxes.cpu()
-            last_boxes_px[:, :, [0, 2]] *= w
-            last_boxes_px[:, :, [1, 3]] *= h
+            last_boxes_px[:, :, [0, 2]] *= h
+            last_boxes_px[:, :, [1, 3]] *= w
             state = self.distance_weighting.run(
                 {
                     "traj_score": traj_score,

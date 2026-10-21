@@ -30,7 +30,7 @@ The `model` section configures the transformer architecture and visual encoder.
 
 * `mode` (`str`): Embedding type. Options: `"fixed"` (sinusoidal), `"learned"`, or `null` (no embedding).
 * `n_points` (`int`): Number of points to embed (1 for centroid, 3+ for bbox coordinates).
-* `normalize` (`bool`): Whether to normalize positions (only for fixed embeddings, default: `true`).
+* `normalize` (`bool`): Whether to multiply the box coordinates, already normalized to `[0, 1]` by the image height (y) and width (x), by `scale` before the sinusoid (only for fixed embeddings, default: `true`).
 * `temperature` (`float`): Temperature constant for sinusoidal position embedding (only for fixed, default: 10000).
 * `scale` (`float` | `null`): Factor to scale positions after normalizing (only for fixed, optional).
 * `emb_num` (`int`): Number of embeddings in lookup table (only for learned).
@@ -46,7 +46,9 @@ The `model` section configures the transformer architecture and visual encoder.
 
 * `mode` (`str`): Embedding type. Options: `"fixed"`, `"learned"`, or `null` (no embedding).
 * `temperature` (`float`): Temperature constant for sinusoidal embedding (only for fixed, default: 10000).
-* `emb_num` (`int`): Number of embeddings in lookup table (only for learned).
+* `emb_num` (`int`): Number of embeddings in lookup table (only for learned). Each frame of the window gets its own row; frames at index `emb_num - 1` or later share the last row, so set it to at least the clip length to give every frame its own embedding.
+
+Checkpoints saved before the box normalization and embedding fixes (which normalized y by the image width and x by the height, collapsed the learned temporal embedding, and made the fixed positional embedding constant with `normalize: true`) load in a legacy mode that reproduces that behavior, so they track as they were trained. Retrain to get the fixed embeddings.
 
 ### Visual Encoder Configuration (`encoder_cfg`)
 

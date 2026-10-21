@@ -97,6 +97,8 @@ class Transformer(torch.nn.Module):
                         emb_type="temp", features=self.d_model, **temp_emb_cfg
                     )
 
+        self._legacy_embeddings = False
+
         self.fourier_embeddings = FourierPositionalEmbeddings(
             n_components=8, d_model=d_model
         )
@@ -146,6 +148,23 @@ class Transformer(torch.nn.Module):
 
         self._reset_parameters()
 
+    @property
+    def legacy_embeddings(self) -> bool:
+        """Whether box normalization and embeddings use the pre-fix behavior.
+
+        Old checkpoints were trained with y normalized by the image width (and x by
+        the height), a collapsed learned temporal embedding, and a constant fixed
+        positional embedding when `normalize=True`. Enabling this reproduces that
+        behavior so those checkpoints run as they were trained.
+        """
+        return self._legacy_embeddings
+
+    @legacy_embeddings.setter
+    def legacy_embeddings(self, enabled: bool) -> None:
+        self._legacy_embeddings = enabled
+        self.pos_emb.legacy = enabled
+        self.temp_emb.legacy = enabled
+
     def _reset_parameters(self):
         """Initialize model weights from xavier distribution."""
         for p in self.parameters():
@@ -182,7 +201,9 @@ class Transformer(torch.nn.Module):
         total_instances = len(ref_instances)
         embed_dim = self.d_model
         # print(f'T: {window_length}; N: {total_instances}; N_t: {instances_per_frame} n_reid: {reid_features.shape}')
-        ref_boxes = get_boxes(ref_instances)  # total_instances, 4
+        ref_boxes = get_boxes(
+            ref_instances, legacy_axes=self.legacy_embeddings
+        )  # total_instances, 4
         ref_boxes = torch.nan_to_num(ref_boxes, -1.0)
         ref_times, query_times = get_times(ref_instances, query_instances)
 
@@ -252,7 +273,7 @@ class Transformer(torch.nn.Module):
                 1, 0, 2
             )  # (n_query, batch_size, embed_dim)
 
-            query_boxes = get_boxes(query_instances)
+            query_boxes = get_boxes(query_instances, legacy_axes=self.legacy_embeddings)
             query_boxes = torch.nan_to_num(query_boxes, -1.0)
             query_temp_emb = self.temp_emb(query_times)
 

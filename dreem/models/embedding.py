@@ -41,6 +41,7 @@ class Embedding(torch.nn.Module):
         normalize: bool = False,
         scale: float | None = None,
         mlp_cfg: dict | None = None,
+        legacy: bool = False,
     ):
         """Initialize embeddings.
 
@@ -65,6 +66,11 @@ class Embedding(torch.nn.Module):
             mlp_cfg: A dictionary of mlp hyperparameters for projecting
                 embedding to correct space.
                     Example: {"hidden_dims": 256, "num_layers":3, "dropout": 0.3}
+            legacy: If True, reproduce the pre-fix behavior of the learned temporal
+                embedding (every frame after the first collapsed onto one row) and
+                of the fixed positional embedding with `normalize=True` (constant
+                output). Only used to run checkpoints trained with that behavior;
+                set automatically when such a checkpoint is loaded.
         """
         self._check_init_args(emb_type, mode)
 
@@ -79,6 +85,7 @@ class Embedding(torch.nn.Module):
         self.normalize = normalize
         self.scale = scale
         self.n_points = n_points
+        self.legacy = legacy
 
         if self.normalize and self.scale is None:
             self.scale = 2 * math.pi
@@ -204,7 +211,13 @@ class Embedding(torch.nn.Module):
             boxes = boxes.unsqueeze(0)
 
         if self.normalize:
-            boxes = boxes / (boxes[:, :, -1:] + 1e-6) * self.scale
+            if self.legacy:
+                # pre-fix behavior: divides by the anchor dim, so every coordinate
+                # becomes ~`scale` and the embedding is constant
+                boxes = boxes / (boxes[:, :, -1:] + 1e-6) * self.scale
+            else:
+                # boxes are already normalized to [0, 1] by the image size
+                boxes = boxes * self.scale
 
         dim_t = torch.arange(self.features // 4, dtype=torch.float32)
 
@@ -328,11 +341,21 @@ class Embedding(torch.nn.Module):
             (e.g. `torch.tensor([0, 0, ..., 0, 1, 1, ..., 1, 2, 2, ..., 2,..., B, B, ...B])`).
 
         Returns:
-            torch.Tensor, the learned temporal embeddings.
+            torch.Tensor, the learned temporal embeddings. Frame indices at or past
+            `emb_num - 1` share the last row of the lookup table.
         """
         temp_lookup = self.lookup
         N = times.shape[0]
 
+        if not self.legacy:
+            # times are integer window indices, so index the table directly
+            idx = times.reshape(-1).long().clamp(min=0, max=self.emb_num - 1)
+            return temp_lookup.weight[idx.to(temp_lookup.weight.device)].view(
+                N, self.features
+            )
+
+        # pre-fix behavior: `_compute_weights` expects inputs in [0, 1], so integer
+        # times >= 1 all clamp onto the last row
         left_ind, right_ind, left_weight, right_weight = self._compute_weights(times)
 
         left_emb = temp_lookup.weight[
