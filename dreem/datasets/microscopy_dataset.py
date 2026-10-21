@@ -1,8 +1,5 @@
 """Module containing microscopy dataset."""
 
-import random
-
-import albumentations as A
 import numpy as np
 import torch
 from PIL import Image
@@ -47,6 +44,9 @@ class MicroscopyDataset(BaseDataset):
                         'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0},
                         'RandomContrast': {'limit': 0.2}
                     }
+                Spatial augmentations (e.g. rotations, flips, affine warps) are
+                drawn once per clip and applied to every frame in it, so instances
+                keep coherent trajectories; pixel-level ones are drawn per frame.
             n_chunks: Number of chunks to subsample from.
                 Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
             seed: set a seed for reproducibility
@@ -80,6 +80,13 @@ class MicroscopyDataset(BaseDataset):
             self.augmentations = data_utils.build_augmentations(augmentations)
         else:
             self.augmentations = None
+
+        # spatial augmentations are drawn once per clip, not once per frame
+        self.clip_augmentations = (
+            data_utils.ClipAugmentation(self.augmentations)
+            if self.augmentations is not None
+            else None
+        )
 
         if source.lower() == "trackmate":
             parser = data_utils.parse_trackmate
@@ -139,6 +146,7 @@ class MicroscopyDataset(BaseDataset):
         video = self.videos[label_idx]
 
         frames = []
+        aug_replay = None  # spatial augmentation params shared by the whole clip
         for frame_id in frame_idx:
             instances, gt_track_ids, centroids = [], [], []
 
@@ -159,14 +167,8 @@ class MicroscopyDataset(BaseDataset):
 
             # albumentations wants (spatial, channels), ensure correct dims
             if self.augmentations is not None:
-                for transform in self.augmentations:
-                    # for occlusion simulation, can remove if we don't want
-                    if isinstance(transform, A.CoarseDropout):
-                        transform.fill_value = random.randint(0, 255)
-
-                augmented = self.augmentations(
-                    image=img,
-                    keypoints=np.vstack(centroids),
+                augmented, aug_replay = self.clip_augmentations(
+                    image=img, keypoints=np.vstack(centroids), replay=aug_replay
                 )
                 img, centroids = augmented["image"], augmented["keypoints"]
 

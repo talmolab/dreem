@@ -1,6 +1,7 @@
 """Module containing helper functions for datasets."""
 
 import math
+import random
 from typing import Dict
 from xml.etree import cElementTree as et
 
@@ -852,25 +853,22 @@ class ClipAugmentation:
             else None
         )
 
-    def __call__(
-        self,
-        image: np.ndarray,
-        keypoints: ArrayLike,
-        replay: dict | None = None,
-    ) -> tuple[dict, dict | None]:
+    def __call__(self, replay: dict | None = None, **data) -> tuple[dict, dict | None]:
         """Augment one frame of a clip.
 
         Args:
-            image: the (h, w, c) frame.
-            keypoints: (n, 2) array of xy keypoints in the frame.
             replay: the spatial parameters drawn on an earlier frame of the same
                 clip, or None on the clip's first frame.
+            **data: albumentations targets for this frame, e.g. `image` (h, w, c),
+                `keypoints` ((n, 2) xy array) and/or a label `mask` (h, w).
 
         Returns:
-            A tuple of the augmented {"image", "keypoints"} dict and the spatial
-            parameters to pass as `replay` for the clip's next frame.
+            A tuple of the augmented targets and the spatial parameters to pass as
+            `replay` for the clip's next frame.
         """
-        augmented = {"image": image, "keypoints": keypoints}
+        if replay is None:
+            self._reseed()
+        augmented = data
         if self.per_frame is not None:
             augmented = self.per_frame(**augmented)
         if self.spatial is not None:
@@ -880,6 +878,23 @@ class ClipAugmentation:
             else:
                 augmented = A.ReplayCompose.replay(replay, **augmented)
         return augmented, replay
+
+    def _reseed(self) -> None:
+        """Reseed the transforms at the start of a clip from numpy's global RNG.
+
+        Albumentations creates its RNG once, at construction time, so forked
+        DataLoader workers would otherwise each inherit an identical copy and
+        repeat the same augmentations across workers and epochs. Numpy's global
+        RNG is reseeded by torch per worker and epoch (and by
+        `BaseDataset(seed=...)`). One generator is shared by all transforms:
+        `set_random_seed` would give each transform an identical stream and
+        correlate their draws (e.g. flip vs. rotation angle).
+        """
+        seed = int(np.random.randint(2**31 - 1))
+        random_generator, py_random = np.random.default_rng(seed), random.Random(seed)
+        for compose in (self.per_frame, self.spatial):
+            if compose is not None:
+                compose.set_random_state(random_generator, py_random)
 
 
 def get_max_padding(height: int, width: int) -> tuple:

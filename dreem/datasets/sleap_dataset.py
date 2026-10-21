@@ -2,12 +2,10 @@
 
 import logging
 import os
-import random
 from math import inf
 from pathlib import Path
 from typing import Optional, Union
 
-import albumentations as A
 import imageio
 import numpy as np
 import sleap_io as sio
@@ -365,10 +363,6 @@ class SleapDataset(BaseDataset):
                     instance_score.append(1.0)
             # augmentations
             if self.augmentations is not None:
-                for transform in self.augmentations:
-                    if isinstance(transform, A.CoarseDropout):
-                        transform.fill_value = random.randint(0, 255)
-
                 if shown_poses:
                     keypoints = np.vstack([list(s.values()) for s in shown_poses])
 
@@ -395,10 +389,10 @@ class SleapDataset(BaseDataset):
                     for aug_pose_arr, pose_dict in zip(aug_poses, shown_poses)
                 ]
 
-                _ = [
-                    pose.update(aug_pose)
-                    for pose, aug_pose in zip(shown_poses, aug_poses)
-                ]
+                for pose, shown_pose, aug_pose in zip(poses, shown_poses, aug_poses):
+                    shown_pose.update(aug_pose)
+                    # keep the full pose (incl. missing nodes) in augmented coords too
+                    pose.update({k: np.array(v) for k, v in aug_pose.items()})
 
             img = tvf.to_tensor(img)
 
