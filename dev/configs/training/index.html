@@ -3530,6 +3530,7 @@
 <li><code>padding</code> (<code>int</code>): Amount of padding added to each side of the bounding box (default: 0).</li>
 <li><code>mode</code> (<code>str</code>): Dataset mode. Options: <code>"train"</code> or <code>"val"</code> (determines usage).</li>
 <li><code>handle_missing</code> (<code>str</code>): How to handle missing anchor nodes. Options: <code>"drop"</code>, <code>"ignore"</code>, or <code>"centroid"</code> (only for SleapDataset).</li>
+<li><code>normalize_image</code> (<code>bool</code>): Whether to scale images to <code>[0, 1]</code> (default: <code>true</code>). For CTC data, 16-bit frames are min-max scaled to 8 bits first. CTC crops were in <code>[0, 255]</code> before this option existed, so set it to <code>false</code> only to fine-tune a checkpoint trained that way. The value is recorded in the checkpoint so inference uses the same scale.</li>
 </ul>
 <h3 id="augmentations">Augmentations<a class="headerlink" href="#augmentations" title="Permanent link">&para;</a></h3>
 <p>The <code>augmentations</code> subsection contains parameters for <a href="https://albumentations.ai">Albumentations</a>. Keys must match augmentation class names exactly. Additional augmentations include <code>NodeDropout</code> and <code>InstanceDropout</code>.</p>
