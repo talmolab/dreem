@@ -34,6 +34,7 @@ class CellTrackingDataset(BaseDataset):
         use_tight_bbox: bool = False,
         ctc_track_meta: list[str] | None = None,
         apply_mask_to_crop: bool = False,
+        normalize_image: bool = True,
         **kwargs,
     ):
         """Initialize CellTrackingDataset.
@@ -74,6 +75,10 @@ class CellTrackingDataset(BaseDataset):
             ctc_track_meta: filepaths of man_track.txt files in a list of lists
                 (each list corresponds to a dataset)
             apply_mask_to_crop: whether to apply the mask to the crop
+            normalize_image: whether to scale images to [0, 1] (uint16 frames are
+                min-max scaled to 8 bits first). If False, crops are in [0, 255], as
+                they were before images were normalized; only use this to run or
+                fine-tune checkpoints trained that way.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility)
         """
         super().__init__(
@@ -105,6 +110,7 @@ class CellTrackingDataset(BaseDataset):
         self.use_tight_bbox = use_tight_bbox
         self.skeleton = sio.Skeleton(nodes=["centroid"])
         self.apply_mask_to_crop = apply_mask_to_crop
+        self.normalize_image = normalize_image
         if not isinstance(self.data_dirs, list):
             self.data_dirs = [self.data_dirs]
 
@@ -263,6 +269,8 @@ class CellTrackingDataset(BaseDataset):
                     bboxes.append(bbox)
                     masks.append(mask)
 
+            if self.normalize_image:
+                img = data_utils.scale_to_unit_range(img)
             img = torch.Tensor(img).unsqueeze(0)
 
             for j in range(len(gt_track_ids)):

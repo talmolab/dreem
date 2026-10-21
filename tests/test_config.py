@@ -385,3 +385,61 @@ def test_resolve_accelerator():
         warnings.simplefilter("always")
         assert _resolve_accelerator("mps", True) == "mps"
         assert any(issubclass(x.category, UserWarning) for x in w)
+
+
+def _test_dataset_config(path, labels_suffix, vid_suffix, **test_dataset):
+    return Config(
+        OmegaConf.create(
+            {
+                "dataset": {
+                    "test_dataset": {
+                        "dir": {
+                            "path": str(path),
+                            "labels_suffix": labels_suffix,
+                            "vid_suffix": vid_suffix,
+                        },
+                        "crop_size": 32,
+                        **test_dataset,
+                    }
+                }
+            }
+        )
+    )
+
+
+def test_ctc_normalize_image_follows_checkpoint(cell_tracking_data_dir):
+    """Test that CTC datasets use the checkpoint's image scale unless configured."""
+    old_ckpt = "/data/models/old-ctc-model.ckpt"
+    released_ckpt = (
+        "/home/user/.cache/huggingface/hub/models--talmolab--dreem-microscopy-pretrained"
+        "/snapshots/abc123/pretrained-microscopy.ckpt"
+    )
+
+    cfg = _test_dataset_config(cell_tracking_data_dir, ".tif", ".tif")
+    assert cfg.resolve_ctc_normalize_image(True, old_ckpt) is True
+    assert cfg.resolve_ctc_normalize_image(None, released_ckpt) is True
+    assert cfg.resolve_ctc_normalize_image(None, old_ckpt) is False
+
+    assert not cfg.get_dataset(mode="test", normalize_image=False).normalize_image
+    assert cfg.get_dataset(mode="test").normalize_image
+
+    # an explicit config value wins over the checkpoint
+    explicit = _test_dataset_config(
+        cell_tracking_data_dir, ".tif", ".tif", normalize_image=True
+    )
+    assert explicit.resolve_ctc_normalize_image(None, old_ckpt) is None
+    assert explicit.get_dataset(mode="test", normalize_image=False).normalize_image
+
+
+def test_sleap_normalize_image_ignores_checkpoint(two_flies):
+    """Test that the checkpoint-based image scale never applies to SLEAP data."""
+    slp_file, video_file = two_flies
+    cfg = _test_dataset_config(
+        slp_file.parent, ".slp", ".mp4", normalize_image=None, anchors="centroid"
+    )
+    assert cfg.resolve_ctc_normalize_image(None, "/data/models/old.ckpt") is None
+
+    dataset = cfg.get_dataset(
+        mode="test", label_files=[str(slp_file)], vid_files=[str(video_file)]
+    )
+    assert dataset.normalize_image

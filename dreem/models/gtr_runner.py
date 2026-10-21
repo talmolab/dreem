@@ -53,6 +53,9 @@ class GTRRunner(LightningModule):
     # checkpoint key recording whether the model uses the pre-fix box normalization
     # and embeddings; checkpoints saved before the fix don't have it
     LEGACY_EMBEDDINGS_KEY = "dreem_legacy_embeddings"
+    # checkpoint key recording whether the training images were scaled to [0, 1];
+    # checkpoints saved before CTC/microscopy images were normalized don't have it
+    NORMALIZE_IMAGE_KEY = "dreem_normalize_image"
 
     def __init__(
         self,
@@ -99,20 +102,26 @@ class GTRRunner(LightningModule):
             "save_path": test_save_path,
             "save_frame_meta": save_frame_meta,
         }
+        # whether the training images were scaled to [0, 1]; None for checkpoints
+        # that predate recording it
+        self.normalize_image = True
 
     def on_save_checkpoint(self, checkpoint: dict) -> None:
-        """Record which embedding behavior the model was trained with.
+        """Record which embedding behavior and image scale the model was trained with.
 
         Args:
             checkpoint: The checkpoint dictionary being saved.
         """
         checkpoint[self.LEGACY_EMBEDDINGS_KEY] = self.model.legacy_embeddings
+        checkpoint[self.NORMALIZE_IMAGE_KEY] = self.normalize_image
 
     def on_load_checkpoint(self, checkpoint: dict) -> None:
-        """Restore the embedding behavior the checkpoint was trained with.
+        """Restore the embedding behavior and image scale the checkpoint was trained with.
 
         Checkpoints saved before the box normalization and embedding fixes don't
         record it, so they run in legacy mode to reproduce how they were trained.
+        Checkpoints saved before image normalization was recorded get
+        `normalize_image = None` (unknown); see `resolve_normalize_image`.
 
         Args:
             checkpoint: The checkpoint dictionary being loaded.
@@ -124,6 +133,7 @@ class GTRRunner(LightningModule):
                 "running its embeddings in legacy mode to match how it was trained."
             )
         self.model.legacy_embeddings = legacy
+        self.normalize_image = checkpoint.get(self.NORMALIZE_IMAGE_KEY)
 
     def forward(
         self,

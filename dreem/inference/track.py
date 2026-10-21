@@ -265,6 +265,9 @@ def run(cfg: DictConfig) -> dict:
     labels_files, vid_files = pred_cfg.get_data_paths(
         "test", pred_cfg.cfg.dataset.test_dataset
     )
+    normalize_image = pred_cfg.resolve_ctc_normalize_image(
+        model.normalize_image, checkpoint
+    )
     trainer = pred_cfg.get_trainer(mode="inference")
     outdir = pred_cfg.cfg.outdir if "outdir" in pred_cfg.cfg else "./results"
     os.makedirs(outdir, exist_ok=True)
@@ -279,6 +282,7 @@ def run(cfg: DictConfig) -> dict:
             vid_files=[vid_file],
             mode="test",
             overrides=overrides_dict,
+            normalize_image=normalize_image,
         )
         dataloader = pred_cfg.get_dataloader(dataset, mode="test")
         if isinstance(vid_file, list):
@@ -362,6 +366,7 @@ def run_tracking(
     ctc_paths: dict[str, str] | None = None,
     render: str | Path | None = None,
     render_kwargs: dict | None = None,
+    normalize_image: bool | None = None,
     **tracker_overrides,
 ) -> dict:
     """Run tracking with minimal configuration.
@@ -389,6 +394,11 @@ def run_tracking(
             ``render_ctc_video()`` is called after tracking completes.
         render_kwargs: Additional keyword arguments passed to
             ``render_ctc_video()`` (e.g., palette, fps, mask_alpha).
+        normalize_image: Whether to scale frames to [0, 1] before cropping. If
+            None (default), it follows the checkpoint: checkpoints record the scale
+            they were trained on, released models use [0, 1], and older checkpoints
+            get [0, 255] crops as before. Set True for an older checkpoint trained on
+            [0, 1] images (e.g. SLEAP videos).
         **tracker_overrides: Extra tracker config overrides
             (e.g., window_size=16, overlap_thresh=0.05).
 
@@ -424,6 +434,8 @@ def run_tracking(
         cfg.dataset.test_dataset.dir.labels_suffix = ".tif"
         cfg.dataset.test_dataset.dir.vid_suffix = ".tif"
         cfg.dataset.test_dataset.crop_size = crop_size
+        if normalize_image is not None:
+            cfg.dataset.test_dataset.normalize_image = normalize_image
 
         # Map device to Lightning accelerator
         if device == "auto":

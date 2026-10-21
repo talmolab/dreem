@@ -147,6 +147,28 @@ def pad_bbox(bbox: ArrayLike, padding: int = 16) -> torch.Tensor:
     return torch.Tensor([y1, x1, y2, x2])
 
 
+def scale_to_unit_range(img: np.ndarray) -> np.ndarray:
+    """Scale an integer image to float32 values in [0, 1].
+
+    uint8 images are divided by 255, matching how SLEAP video frames are
+    normalized. Other integer images (e.g. uint16 microscopy) are min-max scaled
+    per image. Float images are returned unchanged.
+
+    Args:
+        img: Image as a numpy array.
+
+    Returns:
+        The image with values in [0, 1] (float images as given).
+    """
+    if img.dtype == np.uint8:
+        return img.astype(np.float32) / 255.0
+    if np.issubdtype(img.dtype, np.integer):
+        img = img.astype(np.float32)
+        lo, hi = img.min(), img.max()
+        return (img - lo) / (hi - lo) if hi > lo else np.zeros_like(img)
+    return img
+
+
 def crop_bbox(img: torch.Tensor, bbox: ArrayLike) -> torch.Tensor:
     """Crop an image to a bounding box.
 

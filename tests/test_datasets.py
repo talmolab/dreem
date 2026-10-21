@@ -19,6 +19,7 @@ from dreem.datasets.data_utils import (
     crop_bbox,
     get_bbox,
     get_max_padding,
+    scale_to_unit_range,
 )
 
 
@@ -467,6 +468,77 @@ def test_cell_tracking_dataset(cell_tracking):
     assert len(instances) == clip_length
     assert len(gt_track_ids_2) == instances[0].num_detected
     assert gt_track_ids_1.all() == gt_track_ids_2.all()
+
+
+def test_scale_to_unit_range():
+    """Test scaling integer images to [0, 1]."""
+    img8 = np.array([[0, 51], [102, 255]], dtype=np.uint8)
+    assert np.allclose(scale_to_unit_range(img8), img8 / 255.0)
+
+    img16 = np.array([[100, 200], [300, 500]], dtype=np.uint16)
+    scaled16 = scale_to_unit_range(img16)
+    assert scaled16.dtype == np.float32
+    assert np.allclose(scaled16, (img16 - 100) / 400.0)
+
+    # a constant frame has no range to scale
+    assert not scale_to_unit_range(np.full((2, 2), 7, dtype=np.uint16)).any()
+
+    img_float = np.array([[0.5, 2.0]], dtype=np.float32)
+    assert scale_to_unit_range(img_float) is img_float
+
+
+def _all_crops(frames):
+    # instance order within a frame isn't fixed, so sort by gt track id
+    return torch.cat(
+        [
+            instance.crop
+            for frame in frames
+            for instance in sorted(
+                frame.instances, key=lambda instance: instance.gt_track_id.item()
+            )
+        ]
+    )
+
+
+def test_cell_tracking_dataset_normalize_image(cell_tracking):
+    """Test that CTC crops are in [0, 1] unless `normalize_image=False`."""
+    raw_img_list, gt_list, ctc_track_meta, data_dir = cell_tracking
+    kwargs = dict(
+        raw_img_list=raw_img_list,
+        gt_list=gt_list,
+        data_dirs=data_dir,
+        crop_size=32,
+        chunk=True,
+        clip_length=4,
+        ctc_track_meta=ctc_track_meta,
+    )
+
+    crops = _all_crops(CellTrackingDataset(**kwargs)[0])
+    legacy_crops = _all_crops(CellTrackingDataset(normalize_image=False, **kwargs)[0])
+
+    assert 0 <= crops.min() and crops.max() <= 1
+    assert legacy_crops.max() > 1
+    assert torch.allclose(crops, legacy_crops / 255)
+
+
+def test_microscopy_dataset_normalize_image(ten_icy_particles):
+    """Test that microscopy crops are in [0, 1] unless `normalize_image=False`."""
+    kwargs = dict(
+        videos=[ten_icy_particles[0]],
+        tracks=[ten_icy_particles[1]],
+        source="icy",
+        crop_size=32,
+        chunk=True,
+        clip_length=4,
+    )
+
+    crops = _all_crops(MicroscopyDataset(**kwargs)[0])
+    raw_crops = _all_crops(MicroscopyDataset(normalize_image=False, **kwargs)[0])
+
+    assert 0 <= crops.min() and crops.max() <= 1
+    assert raw_crops.max() > 1
+    # the test video is 8-bit
+    assert torch.allclose(crops, raw_crops / 255)
 
 
 def test_cell_tracking_dataset_no_chunk(cell_tracking):
