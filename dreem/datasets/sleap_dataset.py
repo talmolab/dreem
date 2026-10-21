@@ -1,12 +1,10 @@
 """Module containing logic for loading sleap datasets."""
 
 import logging
-import random
 from math import inf
 from pathlib import Path
 from typing import Optional, Union
 
-import albumentations as A
 import imageio
 import numpy as np
 import sleap_io as sio
@@ -72,7 +70,9 @@ class SleapDataset(BaseDataset):
                             if "ignore" then we use a mask instead of a crop and nan centroids/bboxes.
                             if "centroid" then we default to the pose centroid as the node to crop around.
             augmentations: An optional dict mapping augmentations to parameters. The keys
-                should map directly to augmentation classes in albumentations. Example:
+                should map directly to augmentation classes in albumentations. The
+                same randomly sampled augmentation is applied to every frame of a
+                clip. Example:
                     augmentations = {
                         'Rotate': {'limit': [-90, 90], 'p': 0.5},
                         'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0, 'p': 0.2},
@@ -221,6 +221,8 @@ class SleapDataset(BaseDataset):
 
         frames = []
         max_crop_h, max_crop_w = 0, 0
+        # augmentation params sampled on the first frame, replayed on the rest
+        aug_replay = None
         for i, frame_ind in enumerate(frame_idx):
             (
                 instances,
@@ -344,17 +346,15 @@ class SleapDataset(BaseDataset):
                     instance_score.append(1.0)
             # augmentations
             if self.augmentations is not None:
-                for transform in self.augmentations:
-                    if isinstance(transform, A.CoarseDropout):
-                        transform.fill_value = random.randint(0, 255)
-
                 if shown_poses:
                     keypoints = np.vstack([list(s.values()) for s in shown_poses])
 
                 else:
                     keypoints = []
 
-                augmented = self.augmentations(image=img, keypoints=keypoints)
+                augmented, aug_replay = data_utils.augment_clip_frame(
+                    self.augmentations, aug_replay, image=img, keypoints=keypoints
+                )
 
                 img, aug_poses = augmented["image"], augmented["keypoints"]
 
@@ -372,10 +372,10 @@ class SleapDataset(BaseDataset):
                     for aug_pose_arr, pose_dict in zip(aug_poses, shown_poses)
                 ]
 
-                _ = [
-                    pose.update(aug_pose)
-                    for pose, aug_pose in zip(shown_poses, aug_poses)
-                ]
+                for pose, shown_pose, aug_pose in zip(poses, shown_poses, aug_poses):
+                    shown_pose.update(aug_pose)
+                    # keep the full pose (incl. missing nodes) in augmented coords too
+                    pose.update({k: np.array(v) for k, v in aug_pose.items()})
 
             img = tvf.to_tensor(img)
 

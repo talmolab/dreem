@@ -1,6 +1,7 @@
 """Module containing helper functions for datasets."""
 
 import math
+import random
 from typing import Dict
 from xml.etree import cElementTree as et
 
@@ -771,7 +772,7 @@ class LazyTiffStack:
         self.file.close()
 
 
-def build_augmentations(augmentations: dict) -> A.Compose:
+def build_augmentations(augmentations: dict) -> A.ReplayCompose:
     """Get augmentations for dataset.
 
     Args:
@@ -779,7 +780,10 @@ def build_augmentations(augmentations: dict) -> A.Compose:
                        and their parameters
 
     Returns:
-        An Albumentations composition of different augmentations.
+        An Albumentations composition of different augmentations. A
+        `ReplayCompose` is used so that the parameters sampled for the first
+        frame of a clip can be replayed on the remaining frames (see
+        `augment_clip_frame`).
     """
     aug_list = []
     for aug_name, aug_args in augmentations.items():
@@ -787,13 +791,53 @@ def build_augmentations(augmentations: dict) -> A.Compose:
         aug = aug_class(**aug_args)
         aug_list.append(aug)
 
-    augs = A.Compose(
+    augs = A.ReplayCompose(
         aug_list,
         p=1.0,
         keypoint_params=A.KeypointParams(format="xy", remove_invisible=False),
     )
 
     return augs
+
+
+def augment_clip_frame(
+    augmentations: A.ReplayCompose, replay: dict | None, **data
+) -> tuple[dict, dict]:
+    """Augment one frame of a clip so that every frame gets the same transform.
+
+    Tracking clips must be augmented consistently: sampling a new rotation/flip/
+    scale for each frame would make objects jump around between frames and
+    corrupt the motion cues the model learns from. The first frame of a clip
+    (`replay=None`) samples new random parameters; pass the returned replay
+    dict back in for every subsequent frame of the same clip to apply exactly
+    the same transform.
+
+    Args:
+        augmentations: the pipeline returned by `build_augmentations`.
+        replay: `None` for the first frame of a clip, otherwise the replay dict
+            returned by the previous call for this clip.
+        **data: albumentations targets for this frame (e.g. `image`,
+            `keypoints`, `mask`).
+
+    Returns:
+        A tuple of the augmented targets and the replay dict to use for the
+        next frame of the clip.
+    """
+    if replay is None:
+        # Seed albumentations from numpy's global RNG at the start of every
+        # clip. Albumentations creates its RNG once at construction time, so
+        # forked DataLoader workers would otherwise share an identical copy and
+        # repeat the same augmentations across workers and epochs. Numpy's
+        # global RNG is reseeded by torch per worker and epoch (and by
+        # `BaseDataset(seed=...)`).
+        # Note: `set_random_state` shares one generator across all transforms;
+        # `set_random_seed` would give each transform an identical stream and
+        # correlate their draws (e.g. flip vs. rotation angle).
+        seed = int(np.random.randint(2**31 - 1))
+        augmentations.set_random_state(np.random.default_rng(seed), random.Random(seed))
+        augmented = augmentations(**data)
+        return augmented, augmented["replay"]
+    return A.ReplayCompose.replay(replay, **data), replay
 
 
 def get_max_padding(height: int, width: int) -> tuple:

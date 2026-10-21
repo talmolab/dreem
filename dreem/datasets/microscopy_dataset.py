@@ -1,8 +1,5 @@
 """Module containing microscopy dataset."""
 
-import random
-
-import albumentations as A
 import numpy as np
 import torch
 from PIL import Image
@@ -41,7 +38,9 @@ class MicroscopyDataset(BaseDataset):
             mode: `train` or `val`. Determines whether this dataset is used for
                 training or validation. Currently doesn't affect dataset logic
             augmentations: An optional dict mapping augmentations to parameters. The keys
-                should map directly to augmentation classes in albumentations. Example:
+                should map directly to augmentation classes in albumentations. The
+                same randomly sampled augmentation is applied to every frame of a
+                clip. Example:
                     augs = {
                         'Rotate': {'limit': [-90, 90]},
                         'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0},
@@ -139,6 +138,8 @@ class MicroscopyDataset(BaseDataset):
         video = self.videos[label_idx]
 
         frames = []
+        # augmentation params sampled on the first frame, replayed on the rest
+        aug_replay = None
         for frame_id in frame_idx:
             instances, gt_track_ids, centroids = [], [], []
 
@@ -159,12 +160,9 @@ class MicroscopyDataset(BaseDataset):
 
             # albumentations wants (spatial, channels), ensure correct dims
             if self.augmentations is not None:
-                for transform in self.augmentations:
-                    # for occlusion simulation, can remove if we don't want
-                    if isinstance(transform, A.CoarseDropout):
-                        transform.fill_value = random.randint(0, 255)
-
-                augmented = self.augmentations(
+                augmented, aug_replay = data_utils.augment_clip_frame(
+                    self.augmentations,
+                    aug_replay,
                     image=img,
                     keypoints=np.vstack(centroids),
                 )

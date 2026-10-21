@@ -1,10 +1,8 @@
 """Module containing cell tracking challenge dataset."""
 
-import random
 from pathlib import Path
 from typing import Optional
 
-import albumentations as A
 import numpy as np
 import pandas as pd
 import sleap_io as sio
@@ -57,7 +55,9 @@ class CellTrackingDataset(BaseDataset):
                 training or validation. Currently doesn't affect dataset logic
             augmentations: An optional dict mapping augmentations to parameters.
                 The keys
-                should map directly to augmentation classes in albumentations. Example:
+                should map directly to augmentation classes in albumentations. The
+                same randomly sampled augmentation is applied to every frame of a
+                clip. Example:
                     augs = {
                         'Rotate': {'limit': [-90, 90]},
                         'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0},
@@ -193,9 +193,10 @@ class CellTrackingDataset(BaseDataset):
 
         frames = []
         max_crop_h, max_crop_w = 0, 0
+        # augmentation params sampled on the first frame, replayed on the rest
+        aug_replay = None
         for i in frame_idx:
-            instances, gt_track_ids, centroids, dict_centroids, bboxes, masks = (
-                [],
+            instances, gt_track_ids, dict_centroids, bboxes, masks = (
                 [],
                 [],
                 {},
@@ -215,6 +216,17 @@ class CellTrackingDataset(BaseDataset):
                 img = ((img - img.min()) * (1 / (img.max() - img.min()) * 255)).astype(
                     np.uint8
                 )
+
+            # augment the image and label mask together *before* extracting
+            # instances so that centroids, bboxes, crops and masks are all in the
+            # augmented frame (albumentations keeps geometric transforms in sync
+            # between image and mask)
+            if self.augmentations is not None:
+                augmented, aug_replay = data_utils.augment_clip_frame(
+                    self.augmentations, aug_replay, image=img, mask=gt_sec
+                )
+                img, gt_sec = augmented["image"], augmented["mask"]
+
             # if df_track_meta is None:
             unique_instances = np.unique(gt_sec)
             # else:
@@ -240,29 +252,9 @@ class CellTrackingDataset(BaseDataset):
                     mask = torch.as_tensor(mask)
 
                     gt_track_ids.append(int(instance))
-                    centroids.append([x, y])
                     dict_centroids[int(instance)] = [x, y]
                     bboxes.append(bbox)
                     masks.append(mask)
-
-            # albumentations wants (spatial, channels), ensure correct dims
-            if self.augmentations is not None:
-                for transform in self.augmentations:
-                    # for occlusion simulation, can remove if we don't want
-                    if isinstance(transform, A.CoarseDropout):
-                        transform.fill_value = random.randint(0, 255)
-
-                augmented = self.augmentations(
-                    image=img,
-                    mask=gt_sec,  # albumentations ensures geometric transformations are synced between image and mask
-                    keypoints=np.vstack(centroids),
-                )
-                img, aug_mask, centroids = (
-                    augmented["image"],
-                    augmented["mask"],
-                    augmented["keypoints"],
-                )
-                aug_mask = torch.Tensor(aug_mask).unsqueeze(0)
 
             img = torch.Tensor(img).unsqueeze(0)
 
@@ -274,14 +266,8 @@ class CellTrackingDataset(BaseDataset):
                 pose = {"centroid": dict_centroids[gt_track_ids[j]]}  # more formatting
                 crop_raw = data_utils.crop_bbox(img, bboxes[j])
                 if self.apply_mask_to_crop:
-                    if self.augmentations is not None:
-                        cropped_mask = data_utils.crop_bbox(aug_mask, bboxes[j])
-                        # filter for the instance of interest
-                        cropped_mask[cropped_mask != gt_track_ids[j]] = 0
-                    else:
-                        # masks[j] is already filtered for the instance of interest
-                        cropped_mask = data_utils.crop_bbox(masks[j], bboxes[j])
-
+                    # masks[j] is already filtered for the instance of interest
+                    cropped_mask = data_utils.crop_bbox(masks[j], bboxes[j])
                     cropped_mask[cropped_mask != 0] = 1
                     # apply mask to crop
                     crop = crop_raw * cropped_mask

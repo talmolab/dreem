@@ -130,6 +130,8 @@ Alternatively, specify files explicitly:
 
 The `augmentations` subsection contains parameters for [Albumentations](https://albumentations.ai). Keys must match augmentation class names exactly. Additional augmentations include `NodeDropout` and `InstanceDropout`.
 
+Albumentations transforms are sampled once per clip: every frame in a training clip receives the same transform (e.g. the same rotation angle and flip), so object motion across frames is preserved. A new transform is sampled for each clip. `NodeDropout` and `InstanceDropout` are still applied independently per instance/frame.
+
 **Example**:
 ```YAML
 augmentations:
