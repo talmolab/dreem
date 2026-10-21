@@ -1,5 +1,6 @@
 """Test dataset logic."""
 
+import numpy as np
 import pytest
 import torch
 from torch.utils.data import DataLoader
@@ -11,7 +12,15 @@ from dreem.datasets import (
     SleapDataset,
     TrackingDataset,
 )
-from dreem.datasets.data_utils import NodeDropout, get_max_padding
+from dreem.datasets.data_utils import (
+    ClipAugmentation,
+    NodeDropout,
+    build_augmentations,
+    crop_bbox,
+    get_bbox,
+    get_max_padding,
+    scale_to_unit_range,
+)
 
 
 def _prepare_duplicate_instances(dataset, scenario):
@@ -461,6 +470,77 @@ def test_cell_tracking_dataset(cell_tracking):
     assert gt_track_ids_1.all() == gt_track_ids_2.all()
 
 
+def test_scale_to_unit_range():
+    """Test scaling integer images to [0, 1]."""
+    img8 = np.array([[0, 51], [102, 255]], dtype=np.uint8)
+    assert np.allclose(scale_to_unit_range(img8), img8 / 255.0)
+
+    img16 = np.array([[100, 200], [300, 500]], dtype=np.uint16)
+    scaled16 = scale_to_unit_range(img16)
+    assert scaled16.dtype == np.float32
+    assert np.allclose(scaled16, (img16 - 100) / 400.0)
+
+    # a constant frame has no range to scale
+    assert not scale_to_unit_range(np.full((2, 2), 7, dtype=np.uint16)).any()
+
+    img_float = np.array([[0.5, 2.0]], dtype=np.float32)
+    assert scale_to_unit_range(img_float) is img_float
+
+
+def _all_crops(frames):
+    # instance order within a frame isn't fixed, so sort by gt track id
+    return torch.cat(
+        [
+            instance.crop
+            for frame in frames
+            for instance in sorted(
+                frame.instances, key=lambda instance: instance.gt_track_id.item()
+            )
+        ]
+    )
+
+
+def test_cell_tracking_dataset_normalize_image(cell_tracking):
+    """Test that CTC crops are in [0, 1] unless `normalize_image=False`."""
+    raw_img_list, gt_list, ctc_track_meta, data_dir = cell_tracking
+    kwargs = dict(
+        raw_img_list=raw_img_list,
+        gt_list=gt_list,
+        data_dirs=data_dir,
+        crop_size=32,
+        chunk=True,
+        clip_length=4,
+        ctc_track_meta=ctc_track_meta,
+    )
+
+    crops = _all_crops(CellTrackingDataset(**kwargs)[0])
+    legacy_crops = _all_crops(CellTrackingDataset(normalize_image=False, **kwargs)[0])
+
+    assert 0 <= crops.min() and crops.max() <= 1
+    assert legacy_crops.max() > 1
+    assert torch.allclose(crops, legacy_crops / 255)
+
+
+def test_microscopy_dataset_normalize_image(ten_icy_particles):
+    """Test that microscopy crops are in [0, 1] unless `normalize_image=False`."""
+    kwargs = dict(
+        videos=[ten_icy_particles[0]],
+        tracks=[ten_icy_particles[1]],
+        source="icy",
+        crop_size=32,
+        chunk=True,
+        clip_length=4,
+    )
+
+    crops = _all_crops(MicroscopyDataset(**kwargs)[0])
+    raw_crops = _all_crops(MicroscopyDataset(normalize_image=False, **kwargs)[0])
+
+    assert 0 <= crops.min() and crops.max() <= 1
+    assert raw_crops.max() > 1
+    # the test video is 8-bit
+    assert torch.allclose(crops, raw_crops / 255)
+
+
 def test_cell_tracking_dataset_no_chunk(cell_tracking):
     """Test CellTrackingDataset with chunk=False doesn't crash.
 
@@ -712,6 +792,411 @@ def test_augmentations(two_flies, ten_icy_particles):
     b = augs_instances[0].get_crops()
 
     assert not torch.all(a.eq(b))
+
+
+@pytest.mark.parametrize(
+    "center",
+    [
+        (500.0, 400.0),  # interior
+        (10.0, 20.0),  # near the left and top edges
+        (-5.0, 3.0),  # anchor just outside the frame
+        (1020.0, 700.0),  # near the right edge of a 1024-wide frame
+    ],
+)
+def test_get_bbox_is_centered(center):
+    """The box is centered on the anchor even when it extends past the frame.
+
+    Args:
+        center: (x, y) anchor position in pixels
+    """
+    y1, x1, y2, x2 = get_bbox(center, 128).tolist()
+
+    assert (x2 - x1, y2 - y1) == (128, 128)
+    assert ((x1 + x2) / 2, (y1 + y2) / 2) == center
+
+
+def test_crop_near_edge_is_centered():
+    """A crop of an instance near the top-left corner is centered on it, zero-padded."""
+    img = torch.zeros(1, 100, 100)
+    img[0, 20, 10] = 1.0  # instance at x=10, y=20
+
+    crop = crop_bbox(img, get_bbox((10.0, 20.0), 32))
+
+    assert crop.shape == (1, 32, 32)
+    assert crop[0, 16, 16] == 1.0
+    assert (crop[0, :, :6] == 0).all()  # columns left of the frame are padding
+
+
+def test_spatial_augmentations_consistent_across_clip(two_flies):
+    """Spatial augmentations must use one set of parameters for a whole clip.
+
+    Drawing a rotation per frame makes the same fly jump between consecutive
+    frames of a training clip, which never happens at inference.
+
+    Args:
+        two_flies: flies fixture used for testing
+    """
+    ds_args = dict(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
+        anchors="centroid",
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+    )
+    raw_clip = next(iter(SleapDataset(**ds_args)))
+    aug_clip = next(
+        iter(
+            SleapDataset(
+                **ds_args,
+                augmentations={
+                    "Rotate": {"limit": (20, 45), "p": 1.0},
+                    "GaussianBlur": {"blur_limit": (3, 7), "p": 1.0},
+                },
+            )
+        )
+    )
+
+    def fly_to_fly(frame):
+        """Vector from track 0's centroid to track 1's (instance order is shuffled)."""
+        centroids = {
+            instance.gt_track_id.item(): np.asarray(instance.centroid["centroid"])
+            for instance in frame.instances
+        }
+        if not {0, 1} <= centroids.keys():
+            return None
+        return centroids[1] - centroids[0]
+
+    # The rotation angle is recovered from the vector between the two flies, which
+    # does not depend on the center of rotation.
+    angles = []
+    for raw_frame, aug_frame in zip(raw_clip, aug_clip):
+        raw_vec, aug_vec = fly_to_fly(raw_frame), fly_to_fly(aug_frame)
+        if raw_vec is None or aug_vec is None:
+            continue
+        cross = raw_vec[0] * aug_vec[1] - raw_vec[1] * aug_vec[0]
+        angles.append(np.arctan2(cross, np.dot(raw_vec, aug_vec)))
+
+    assert len(angles) >= 2
+    assert np.ptp(angles) < 1e-3, f"rotation varies within a clip: {angles}"
+    assert abs(angles[0]) > np.deg2rad(15)
+
+
+def test_sleap_dataset_video_readers_are_per_process(two_flies):
+    """A process that inherits a dataset opens its own readers and leaves the parent's.
+
+    Args:
+        two_flies: flies fixture used for testing
+    """
+    ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+    )
+    assert ds.videos == [None]  # nothing is opened until a frame is read
+
+    ds[0]
+    parent_reader = ds.videos[0]
+    assert parent_reader is not None
+
+    ds._videos_pid = -1  # as a forked DataLoader worker sees the parent's state
+    ds[0]
+    assert ds.videos[0] is not parent_reader
+    assert not parent_reader.closed  # closing it would kill the parent's ffmpeg
+    parent_reader.get_data(0)
+
+
+def test_sleap_dataset_multiworker_crops_match(two_flies):
+    """Crops loaded by DataLoader workers match those loaded in the main process.
+
+    Args:
+        two_flies: flies fixture used for testing
+    """
+    ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+    )
+
+    def crops_by_instance(num_workers):
+        """Map (frame id, track id) to crop; instance order is shuffled per frame."""
+        loader = DataLoader(
+            ds, batch_size=1, collate_fn=ds.no_batching_fn, num_workers=num_workers
+        )
+        return {
+            (frame.frame_id.item(), instance.gt_track_id.item()): instance.crop
+            for batch in loader
+            for frame in batch[0]
+            for instance in frame.instances
+        }
+
+    single_process = crops_by_instance(num_workers=0)
+    workers = crops_by_instance(num_workers=2)
+
+    assert single_process.keys() == workers.keys()
+    mismatched = [
+        key
+        for key in single_process
+        if not torch.equal(single_process[key], workers[key])
+    ]
+    assert not mismatched, f"crops differ for (frame, track) {mismatched}"
+
+
+def _fit_rigid(src, dst):
+    """Fit `dst ~= src @ M.T + t` and return (rotation angle in degrees, flipped).
+
+    Args:
+        src: (n, 2) array of points before augmentation.
+        dst: (n, 2) array of the same points after augmentation.
+
+    Returns:
+        The rotation angle of the fitted linear map (after undoing any flip) and
+        whether it contains a reflection.
+    """
+    X = np.hstack([src, np.ones((len(src), 1))])
+    sol, *_ = np.linalg.lstsq(X, dst, rcond=None)
+    M = sol[:2].T
+    flipped = np.linalg.det(M) < 0
+    if flipped:
+        M = M @ np.diag([-1, 1])
+    return np.degrees(np.arctan2(M[1, 0], M[0, 0])), flipped
+
+
+def _bbox_centers(frame):
+    """Map gt track id -> bbox center (x, y) for every instance in a frame."""
+    out = {}
+    for inst in frame.instances:
+        ymin, xmin, ymax, xmax = inst.bbox.reshape(-1, 4)[0].tolist()
+        out[int(inst.gt_track_id)] = np.array([(xmin + xmax) / 2, (ymin + ymax) / 2])
+    return out
+
+
+def _clip_transforms(raw_frames, aug_frames, get_points):
+    """Fit the raw -> augmented point transform for each frame of a clip."""
+    transforms = []
+    for raw_frame, aug_frame in zip(raw_frames, aug_frames):
+        raw, aug = get_points(raw_frame), get_points(aug_frame)
+        keys = [
+            k
+            for k in raw
+            if k in aug and np.isfinite(raw[k]).all() and np.isfinite(aug[k]).all()
+        ]
+        assert len(keys) >= 3
+        transforms.append(
+            _fit_rigid(
+                np.array([raw[k] for k in keys]), np.array([aug[k] for k in keys])
+            )
+        )
+    return transforms
+
+
+def _assert_same_transform(transforms, atol):
+    angles = np.array([angle for angle, _ in transforms])
+    flips = {flipped for _, flipped in transforms}
+    assert len(flips) == 1, f"flip differs between frames of a clip: {transforms}"
+    assert np.ptp(angles) <= atol, f"rotation differs between frames: {angles}"
+
+
+def test_augmentations_consistent_within_clip_sleap(two_flies):
+    """Every frame of a SLEAP clip must receive the same geometric augmentation.
+
+    Args:
+        two_flies: flies fixture used for testing
+    """
+    nodes = ["head", "thorax", "abdomen", "wingL", "wingR", "eyeL", "eyeR"]
+
+    def make_ds(augmentations):
+        return SleapDataset(
+            slp_files=[two_flies[0]],
+            video_files=[two_flies[1]],
+            data_dirs=["./data/sleap"],
+            crop_size=64,
+            chunk=True,
+            clip_length=8,
+            anchors=nodes,
+            augmentations=augmentations,
+            seed=0,
+        )
+
+    def anchor_points(frame):
+        return {
+            (int(inst.gt_track_id), node): np.asarray(xy, dtype=float)
+            for inst in frame.instances
+            for node, xy in inst.centroid.items()
+        }
+
+    raw_ds = make_ds(None)
+    aug_ds = make_ds({"Rotate": {"limit": 45, "p": 1.0}, "HorizontalFlip": {"p": 0.5}})
+
+    for clip_idx in range(3):
+        raw_frames, aug_frames = raw_ds[clip_idx], aug_ds[clip_idx]
+        transforms = _clip_transforms(raw_frames, aug_frames, anchor_points)
+        _assert_same_transform(transforms, atol=1e-3)
+
+        # Instance.pose must be in the same (augmented) coordinates as the anchors
+        for frame in aug_frames:
+            for inst in frame.instances:
+                for node, xy in inst.centroid.items():
+                    np.testing.assert_allclose(inst.pose[node], xy, atol=1e-4)
+
+
+def test_augmentations_consistent_within_clip_microscopy(ten_icy_particles):
+    """Every frame of a microscopy clip must receive the same augmentation.
+
+    Args:
+        ten_icy_particles: icy fixture used for testing
+    """
+
+    def make_ds(augmentations):
+        return MicroscopyDataset(
+            videos=[ten_icy_particles[0]],
+            tracks=[ten_icy_particles[1]],
+            source="icy",
+            crop_size=16,
+            chunk=True,
+            clip_length=8,
+            augmentations=augmentations,
+            seed=0,
+        )
+
+    raw_ds = make_ds(None)
+    aug_ds = make_ds({"Rotate": {"limit": 45, "p": 1.0}, "HorizontalFlip": {"p": 0.5}})
+
+    for clip_idx in range(2):
+        transforms = _clip_transforms(raw_ds[clip_idx], aug_ds[clip_idx], _bbox_centers)
+        # bboxes are built from integer-rounded centroids, so allow a little slack
+        _assert_same_transform(transforms, atol=2.0)
+
+
+def test_augmentations_cell_tracking(cell_tracking):
+    """CTC centroids/bboxes/masks must follow the augmented image, per clip.
+
+    Args:
+        cell_tracking: HL60 nuclei fixture used for testing
+    """
+    raw_img_list, gt_list, ctc_track_meta, data_dir = cell_tracking
+
+    def make_ds(augmentations):
+        return CellTrackingDataset(
+            raw_img_list=raw_img_list,
+            gt_list=gt_list,
+            data_dirs=data_dir,
+            crop_size=32,
+            chunk=True,
+            clip_length=8,
+            ctc_track_meta=ctc_track_meta,
+            apply_mask_to_crop=True,
+            augmentations=augmentations,
+            seed=0,
+        )
+
+    def centroids(frame):
+        return {
+            int(inst.gt_track_id): np.asarray(inst.centroid["centroid"], dtype=float)
+            for inst in frame.instances
+        }
+
+    raw_frames = make_ds(None)[0]
+
+    # deterministic flip: centroids, bboxes and masks must all be flipped
+    flipped_frames = make_ds({"HorizontalFlip": {"p": 1.0}})[0]
+    for raw_frame, aug_frame in zip(raw_frames, flipped_frames):
+        width = aug_frame.img_shape[-1]
+        raw_c, aug_c = centroids(raw_frame), centroids(aug_frame)
+        assert raw_c.keys() == aug_c.keys()
+        for track_id, (x, y) in raw_c.items():
+            np.testing.assert_allclose(aug_c[track_id], [width - 1 - x, y], atol=1e-3)
+        for inst in aug_frame.instances:
+            ys, xs = torch.nonzero(inst.mask, as_tuple=True)
+            np.testing.assert_allclose(
+                [xs.float().mean(), ys.float().mean()],
+                inst.centroid["centroid"],
+                atol=1e-3,
+            )
+
+    # random rotation: same (non-trivial) rotation for every frame of the clip
+    rotated_frames = make_ds({"Rotate": {"limit": (30, 60), "p": 1.0}})[0]
+    transforms = _clip_transforms(raw_frames, rotated_frames, centroids)
+    _assert_same_transform(transforms, atol=3.0)
+    assert all(25 <= abs(angle) <= 65 for angle, _ in transforms)
+
+
+def test_clip_augmentation_randomness():
+    """Sampled params must be independent across transforms and follow np.random."""
+    clip_augmentations = ClipAugmentation(
+        build_augmentations(
+            {"Rotate": {"limit": 45, "p": 1.0}, "HorizontalFlip": {"p": 0.5}}
+        )
+    )
+    img = np.zeros((16, 16, 3), dtype=np.uint8)
+
+    def sample():
+        _, replay = clip_augmentations(image=img, keypoints=[])
+        rotate, flip = replay["transforms"]
+        matrix = np.array(rotate["params"]["matrix"])
+        return np.degrees(np.arctan2(matrix[1, 0], matrix[0, 0])), flip["applied"]
+
+    # reproducible from numpy's global seed (which torch reseeds per worker)
+    np.random.seed(123)
+    first = [sample() for _ in range(5)]
+    np.random.seed(123)
+    assert [sample() for _ in range(5)] == first
+
+    # the draws of different transforms must not be correlated
+    samples = np.array([sample() for _ in range(500)], dtype=float)
+    assert abs(np.corrcoef(samples[:, 0], samples[:, 1])[0, 1]) < 0.2
+
+
+def test_augmentations_differ_across_workers_and_epochs(cell_tracking):
+    """Forked DataLoader workers must not replay identical augmentations.
+
+    Args:
+        cell_tracking: HL60 nuclei fixture used for testing
+    """
+    raw_img_list, gt_list, ctc_track_meta, data_dir = cell_tracking
+    kwargs = dict(
+        raw_img_list=raw_img_list,
+        gt_list=gt_list,
+        data_dirs=data_dir,
+        crop_size=32,
+        chunk=True,
+        clip_length=2,
+        ctc_track_meta=ctc_track_meta,
+    )
+    raw_ds = CellTrackingDataset(**kwargs)
+    aug_ds = CellTrackingDataset(
+        **kwargs, augmentations={"Rotate": {"limit": 45, "p": 1.0}}
+    )
+    loader = DataLoader(
+        aug_ds, batch_size=1, num_workers=2, collate_fn=aug_ds.no_batching_fn
+    )
+
+    def centroids(frame):
+        return {
+            int(inst.gt_track_id): np.asarray(inst.centroid["centroid"], dtype=float)
+            for inst in frame.instances
+        }
+
+    def first_frame_angles():
+        angles = []
+        for clip_idx, batch in enumerate(loader):
+            ((angle, _),) = _clip_transforms(
+                raw_ds[clip_idx][:1], batch[0][:1], centroids
+            )
+            angles.append(angle)
+        return np.array(angles)
+
+    epoch_0, epoch_1 = first_frame_angles(), first_frame_angles()
+    # with 2 workers, clips 0 and 1 are the first clips of different workers
+    assert abs(epoch_0[0] - epoch_0[1]) > 1
+    assert np.abs(epoch_0 - epoch_1).max() > 1
 
 
 # if __name__ == "__main__":

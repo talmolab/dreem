@@ -9,22 +9,26 @@ if TYPE_CHECKING:
     from dreem.io import Instance
 
 
-def get_boxes(instances: list["Instance"]) -> torch.Tensor:
+def get_boxes(instances: list["Instance"], legacy_axes: bool = False) -> torch.Tensor:
     """Extract the bounding boxes from the input list of instances.
 
     Args:
         instances: List of Instance objects.
+        legacy_axes: If True, reproduce the pre-fix normalization that divided y by
+            the image width and x by the image height. Only used to run checkpoints
+            that were trained with that behavior.
 
     Returns:
-        An (n_instances, n_points, 4) float tensor containing the bounding boxes
-        normalized by the height and width of the image
+        An (n_instances, n_points, 4) float tensor containing the `[y1, x1, y2, x2]`
+        bounding boxes with y normalized by the image height and x by the width.
     """
     boxes = []
     for i, instance in enumerate(instances):
         _, h, w = instance.frame.img_shape
         bbox = instance.bbox.clone()
-        bbox[:, :, [0, 2]] /= h
-        bbox[:, :, [1, 3]] /= w
+        y_scale, x_scale = (w, h) if legacy_axes else (h, w)
+        bbox[:, :, [0, 2]] /= y_scale
+        bbox[:, :, [1, 3]] /= x_scale
         boxes.append(bbox)
 
     boxes = torch.cat(boxes, dim=0)  # N, n_anchors, 4
@@ -35,6 +39,7 @@ def get_boxes(instances: list["Instance"]) -> torch.Tensor:
 def get_times(
     ref_instances: list["Instance"],
     query_instances: list["Instance"] | None = None,
+    legacy: bool = False,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Extract each instance's signed time offset to the current frame.
 
@@ -50,10 +55,13 @@ def get_times(
         query_instances: Set of query instances to look up using decoder.
             When provided, the (max) query frame id is the reference "current"
             frame. When None, the most recent ref frame id is used.
+        legacy: If True, reproduce the pre-fix encoding instead: each frame's rank
+            in the window, oldest frame = 0. Only used to run checkpoints that were
+            trained with that behavior.
 
     Returns:
         Tuple (ref_t, query_t) of signed integer frame offsets to the current
-        frame.
+        frame (or, with `legacy`, window ranks).
     """
     ref_inds = torch.tensor(
         [instance.frame.frame_id.item() for instance in ref_instances],
@@ -69,6 +77,13 @@ def get_times(
     else:
         query_inds = torch.tensor([], device=ref_inds.device, dtype=ref_inds.dtype)
         reference = ref_inds.max()  # default: most recent frame is "current"
+
+    if legacy:
+        frame_ids = torch.concat([ref_inds, query_inds]).unique()  # sorted
+        return (
+            torch.searchsorted(frame_ids, ref_inds),
+            torch.searchsorted(frame_ids, query_inds),
+        )
 
     ref_t = ref_inds - reference
     query_t = query_inds - reference

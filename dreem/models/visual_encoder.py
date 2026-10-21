@@ -73,7 +73,7 @@ class VisualEncoder(torch.nn.Module):
         d_model: int = 512,
         in_chans: int = 3,
         backend: int = "timm",
-        pooling: str = "gem",
+        pooling: str = "avg",
         **kwargs: Any | None,
     ):
         """Initialize Visual Encoder.
@@ -84,8 +84,10 @@ class VisualEncoder(torch.nn.Module):
             in_chans: the number of input channels of the image.
             backend: Which model backend to use. One of {"timm", "torchvision"}
             pooling: Global pooling applied to the backbone feature map. One of
-                {"gem", "avg", "max"}. Defaults to "gem" (learnable Generalized
-                Mean pooling); "avg" reproduces the previous behavior.
+                {"gem", "avg", "max"}. "gem" is learnable Generalized Mean
+                pooling (the default in `train.yaml` for new models). Defaults to
+                "avg", the pooling of checkpoints that predate this option, which
+                don't record it in their config.
             kwargs: see `timm.create_model` and `torchvision.models.resnetX` for kwargs.
         """
         super().__init__()

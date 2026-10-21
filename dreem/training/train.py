@@ -32,6 +32,8 @@ def run(cfg: DictConfig) -> None:
     dataset = TrackingDataset(train_dl=train_dataloader, val_dl=val_dataloader)
 
     model = train_cfg.get_gtr_runner()
+    # recorded in checkpoints so inference feeds the model images on the same scale
+    model.normalize_image = getattr(train_dataset, "normalize_image", True)
 
     run_logger = train_cfg.get_logger()
     if run_logger is not None and isinstance(run_logger, pl.loggers.wandb.WandbLogger):

@@ -9,10 +9,38 @@ from dreem.io.pretrained import (
     _is_hf_repo_id,
     _parse_hf_url,
     is_pretrained_shortname,
+    is_released_checkpoint,
     list_pretrained_models,
     resolve_checkpoint,
     resolve_config,
+    resolve_normalize_image,
 )
+
+RELEASED_CKPT = (
+    "/home/user/.cache/huggingface/hub/models--talmolab--dreem-microscopy-pretrained"
+    "/snapshots/abc123/pretrained-microscopy.ckpt"
+)
+LOCAL_CKPT = "/data/models/my-ctc-model.ckpt"
+
+
+def test_is_released_checkpoint():
+    """Test that released checkpoints are recognized by their cache path."""
+    assert is_released_checkpoint(RELEASED_CKPT)
+    assert is_released_checkpoint(
+        RELEASED_CKPT.replace("dreem-microscopy-pretrained", "dreem-animals-pretrained")
+    )
+    assert not is_released_checkpoint(LOCAL_CKPT)
+
+
+def test_resolve_normalize_image():
+    """Test choosing the CTC image scale for a checkpoint."""
+    # a recorded scale always wins
+    assert resolve_normalize_image(True, LOCAL_CKPT) is True
+    assert resolve_normalize_image(False, RELEASED_CKPT) is False
+    # unrecorded: released models were trained on [0, 1] SLEAP videos, older
+    # checkpoints are assumed to be trained on [0, 255] CTC crops
+    assert resolve_normalize_image(None, RELEASED_CKPT) is True
+    assert resolve_normalize_image(None, LOCAL_CKPT) is False
 
 
 def test_registry_has_animals():
