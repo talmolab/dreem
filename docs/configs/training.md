@@ -131,6 +131,7 @@ When both lists are given they are paired by position and must be the same lengt
 * `padding` (`int`): Amount of padding added to each side of the bounding box (default: 0).
 * `mode` (`str`): Dataset mode. Options: `"train"` or `"val"` (determines usage).
 * `handle_missing` (`str`): How to handle missing anchor nodes. Options: `"drop"`, `"ignore"`, or `"centroid"` (only for SleapDataset).
+* `normalize_image` (`bool`): Whether to scale images to `[0, 1]` (default: `true`). For CTC data, 16-bit frames are min-max scaled to 8 bits first. CTC crops were in `[0, 255]` before this option existed, so set it to `false` only to fine-tune a checkpoint trained that way. The value is recorded in the checkpoint so inference uses the same scale.
 
 ### Augmentations
 

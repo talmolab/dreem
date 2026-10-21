@@ -448,12 +448,38 @@ class Config:
             label_files, vid_files = _pair_labels_with_videos(label_files, vid_files)
         return label_files, vid_files
 
+    def resolve_ctc_normalize_image(
+        self, recorded: bool | None, checkpoint: str, mode: str = "test"
+    ) -> bool | None:
+        """Choose the image scale for CTC data from the checkpoint being used.
+
+        Args:
+            recorded: Whether the checkpoint was trained on images scaled to [0, 1],
+                or None if it doesn't record it.
+            checkpoint: The resolved local checkpoint path.
+            mode: Which dataset config to check.
+
+        Returns:
+            Whether to scale CTC images to [0, 1] for this checkpoint (see
+            `dreem.io.pretrained.resolve_normalize_image`), or None if the data
+            isn't CTC or the dataset config sets `normalize_image` itself.
+        """
+        from dreem.io.pretrained import resolve_normalize_image
+
+        dataset_params = self.get(f"{mode}_dataset", {}, self.get("dataset", {}))
+        if dataset_params.get("dir", {}).get("labels_suffix") not in (".tif", ".tiff"):
+            return None
+        if dataset_params.get("normalize_image") is not None:
+            return None
+        return resolve_normalize_image(recorded, checkpoint)
+
     def get_dataset(
         self,
         mode: str,
         label_files: list[str] | None = None,
         vid_files: list[str | list[str]] = None,
         overrides: dict | None = None,
+        normalize_image: bool | None = None,
     ) -> SleapDataset | CellTrackingDataset:
         """Getter for datasets.
 
@@ -463,6 +489,10 @@ class Config:
             label_files: path to label_files for override
             vid_files: path to vid_files for override
             overrides: overrides to apply to the dataset config
+            normalize_image: Image scale for CTC datasets whose config doesn't set
+                `normalize_image`, e.g. from `resolve_ctc_normalize_image`. Defaults
+                to scaling images to [0, 1].
+
         Returns:
             Either a `SleapDataset` or `CellTrackingDataset` with params indicated by cfg
         """
@@ -507,6 +537,10 @@ class Config:
             dataset_params["video_files"] = vid_files
             dataset_params["data_dirs"] = self.data_dirs
             self.data_paths = (mode, vid_files)
+            # `normalize_image: null` (auto) only applies to CTC data; SLEAP keeps
+            # its own default
+            if dataset_params.get("normalize_image", True) is None:
+                dataset_params.pop("normalize_image")
             if overrides:
                 dataset_params.update(overrides)
             return SleapDataset(**dataset_params)
@@ -526,6 +560,10 @@ class Config:
             dataset_params["gt_list"] = label_files
             dataset_params["raw_img_list"] = vid_files
             dataset_params["ctc_track_meta"] = ctc_track_meta
+            if dataset_params.get("normalize_image") is None:
+                dataset_params["normalize_image"] = (
+                    True if normalize_image is None else normalize_image
+                )
             if overrides:
                 dataset_params.update(overrides)
             return CellTrackingDataset(**dataset_params)

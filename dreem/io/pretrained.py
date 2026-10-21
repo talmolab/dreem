@@ -219,6 +219,52 @@ def resolve_checkpoint(checkpoint: str) -> str:
     return checkpoint
 
 
+def is_released_checkpoint(checkpoint: str) -> bool:
+    """Whether a resolved checkpoint path is a file from a released DREEM model repo.
+
+    Released checkpoints are downloaded into the HuggingFace cache, whose paths
+    contain ``models--<org>--<repo>``.
+
+    Args:
+        checkpoint: A local checkpoint path, e.g. from `resolve_checkpoint`.
+
+    Returns:
+        True if the path is inside the cache of one of `PRETRAINED_MODELS`.
+    """
+    checkpoint = str(checkpoint)
+    return any(
+        f"models--{model_info['repo_id'].replace('/', '--')}" in checkpoint
+        for model_info in PRETRAINED_MODELS.values()
+    )
+
+
+def resolve_normalize_image(recorded: bool | None, checkpoint: str) -> bool:
+    """Choose the CTC/microscopy image scale to feed a checkpoint.
+
+    Checkpoints record whether they were trained on images scaled to [0, 1]. Ones
+    saved before that was recorded are assumed to have been trained on the
+    unscaled [0, 255] CTC crops of the time, except the released models, which
+    were trained on [0, 1] SLEAP video frames.
+
+    Args:
+        recorded: The value recorded in the checkpoint, or None if it has none.
+        checkpoint: The resolved local checkpoint path.
+
+    Returns:
+        Whether to scale CTC/microscopy images to [0, 1] for this checkpoint.
+    """
+    if recorded is not None:
+        return recorded
+    if is_released_checkpoint(checkpoint):
+        return True
+    logger.info(
+        "Checkpoint doesn't record its training image scale; feeding CTC crops in "
+        "[0, 255] as before. Set `dataset.test_dataset.normalize_image: true` if it "
+        "was trained on [0, 1] images (e.g. SLEAP videos)."
+    )
+    return False
+
+
 def resolve_config(checkpoint: str) -> str | None:
     """Resolve the config YAML path for a pretrained model.
 

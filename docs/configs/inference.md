@@ -43,6 +43,7 @@ When both lists are given they are paired by position and must be the same lengt
 * `dilation_radius_px` (`int`): Size of mask around keypoint (pixels) to mask out background.
 * `max_detection_overlap` (`float`): IOU threshold above which detections are considered duplicates.
 * `detection_iou_threshold` (`bool`): Whether to use IOU threshold for detection filtering.
+* `normalize_image` (`bool` | `null`): Whether to scale CTC images to `[0, 1]` before cropping. If unset (default), it follows the checkpoint: checkpoints record the scale they were trained on, the released `animals` and `microscopy` models use `[0, 1]`, and checkpoints saved before the scale was recorded get `[0, 255]` crops, as CTC inference used before. Set `true` for such an older checkpoint if it was trained on `[0, 1]` images (e.g. SLEAP videos).
 
 ## Tracker Configuration
 

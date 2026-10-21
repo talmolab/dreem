@@ -198,3 +198,36 @@ def test_checkpoint_legacy_embeddings(tmp_path):
     resaved = {}
     GTRRunner.load_from_checkpoint(old_ckpt_path).on_save_checkpoint(resaved)
     assert resaved[GTRRunner.LEGACY_EMBEDDINGS_KEY] is True
+
+
+def test_checkpoint_normalize_image():
+    """Test that checkpoints record the image scale they were trained on."""
+    model = GTRRunner(
+        model_cfg={
+            "encoder_cfg": {
+                "model_name": "resnet18",
+                "pretrained": False,
+                "in_chans": 3,
+            },
+            "d_model": 64,
+            "nhead": 1,
+            "num_encoder_layers": 1,
+            "num_decoder_layers": 1,
+        }
+    )
+
+    saved = {}
+    model.on_save_checkpoint(saved)
+    assert saved[GTRRunner.NORMALIZE_IMAGE_KEY] is True
+
+    # e.g. fine-tuned on [0, 255] CTC crops
+    model.normalize_image = False
+    model.on_save_checkpoint(saved)
+    assert saved[GTRRunner.NORMALIZE_IMAGE_KEY] is False
+
+    model.on_load_checkpoint(saved)
+    assert model.normalize_image is False
+
+    # checkpoints from before the scale was recorded leave it unknown
+    model.on_load_checkpoint({})
+    assert model.normalize_image is None

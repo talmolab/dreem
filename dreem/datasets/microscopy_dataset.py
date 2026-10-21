@@ -24,6 +24,7 @@ class MicroscopyDataset(BaseDataset):
         augmentations: dict | None = None,
         n_chunks: int | float = 1.0,
         seed: int | None = None,
+        normalize_image: bool = True,
     ):
         """Initialize MicroscopyDataset.
 
@@ -50,6 +51,11 @@ class MicroscopyDataset(BaseDataset):
             n_chunks: Number of chunks to subsample from.
                 Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
             seed: set a seed for reproducibility
+            normalize_image: whether to scale images to [0, 1] (uint8 frames are
+                divided by 255; other integer frames are min-max scaled). If False,
+                crops keep the raw pixel values, as they did before images were
+                normalized; only use this to run or fine-tune checkpoints trained
+                that way.
         """
         super().__init__(
             tracks,
@@ -73,6 +79,7 @@ class MicroscopyDataset(BaseDataset):
         self.mode = mode.lower()
         self.n_chunks = n_chunks
         self.seed = seed
+        self.normalize_image = normalize_image
 
         # if self.seed is not None:
         #     np.random.seed(self.seed)
@@ -172,6 +179,8 @@ class MicroscopyDataset(BaseDataset):
                 )
                 img, centroids = augmented["image"], augmented["keypoints"]
 
+            if self.normalize_image:
+                img = data_utils.scale_to_unit_range(img)
             img = torch.Tensor(img)
 
             # torch wants (channels, spatial) - ensure correct dims
