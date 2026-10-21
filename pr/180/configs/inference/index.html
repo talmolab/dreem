@@ -3337,12 +3337,14 @@
 <li><code>labels_suffix</code> (<code>str</code>): File extension for label files (e.g., <code>.slp</code>, <code>.csv</code>, <code>.xml</code>).</li>
 <li><code>vid_suffix</code> (<code>str</code>): File extension for video files (e.g., <code>.mp4</code>, <code>.avi</code>, <code>.tif</code>, <code>.tiff</code>).</li>
 </ul>
+<p>Each labels file is paired with the video whose name starts its own: <code>x.mp4</code> pairs with <code>x.slp</code>, <code>x.predictions.slp</code> or <code>x.mp4.predictions.slp</code>, but not with <code>x_noisy.slp</code>. If no video name matches, the labels file is paired with the video it references internally. A labels file with no video, or with several equally good matches, is an error. Videos without labels are ignored.</p>
 <h3 id="file-based-input">File-based Input<a class="headerlink" href="#file-based-input" title="Permanent link">&para;</a></h3>
 <p>Alternatively, specify files explicitly:</p>
 <ul>
 <li><code>slp_files</code> (<code>list[str]</code>): List of paths to SLEAP label files (<code>.slp</code>).</li>
 <li><code>video_files</code> (<code>list[str]</code>): List of paths to video files.</li>
 </ul>
+<p>When both lists are given they are paired by position and must be the same length. When only <code>slp_files</code> is given, each labels file is paired with its video by name as above, looking in <code>dir.path</code> and next to the labels file.</p>
 <h3 id="dataset-parameters">Dataset Parameters<a class="headerlink" href="#dataset-parameters" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>crop_size</code> (<code>int</code>): Size (in pixels) of the square bounding box around each instance. Should match the approximate size of your tracked objects.</li>
@@ -3356,6 +3358,7 @@
 <li><code>dilation_radius_px</code> (<code>int</code>): Size of mask around keypoint (pixels) to mask out background.</li>
 <li><code>max_detection_overlap</code> (<code>float</code>): IOU threshold above which detections are considered duplicates.</li>
 <li><code>detection_iou_threshold</code> (<code>bool</code>): Whether to use IOU threshold for detection filtering.</li>
+<li><code>normalize_image</code> (<code>bool</code> | <code>null</code>): Whether to scale CTC images to <code>[0, 1]</code> before cropping. If unset (default), it follows the checkpoint: checkpoints record the scale they were trained on, the released <code>animals</code> and <code>microscopy</code> models use <code>[0, 1]</code>, and checkpoints saved before the scale was recorded get <code>[0, 255]</code> crops, as CTC inference used before. Set <code>true</code> for such an older checkpoint if it was trained on <code>[0, 1]</code> images (e.g. SLEAP videos).</li>
 </ul>
 <h2 id="tracker-configuration">Tracker Configuration<a class="headerlink" href="#tracker-configuration" title="Permanent link">&para;</a></h2>
 <p>The <code>tracker</code> section controls tracking behavior and post-processing.</p>
