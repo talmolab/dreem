@@ -3433,15 +3433,20 @@
 <li><code>decoder_self_attn</code> (<code>bool</code>): Whether to use self attention in the decoder (default: <code>true</code>).</li>
 </ul>
 <h3 id="embedding-configuration-embedding_meta">Embedding Configuration (<code>embedding_meta</code>)<a class="headerlink" href="#embedding-configuration-embedding_meta" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>embedding_agg_method</code> (<code>str</code>): How the positional and temporal embeddings are combined with the visual features. <code>"average"</code> (default) averages the positional and temporal embeddings and adds them to the visual features. <code>"concatenate"</code> projects the visual features to the remaining dimensions and concatenates visual ⊕ positional ⊕ temporal into one <code>d_model</code> vector, so each signal keeps its own dimensions.</li>
+<li><code>pos_dim</code> / <code>temp_dim</code> (<code>int</code>): Dimensions of the positional and temporal embeddings when <code>embedding_agg_method: concatenate</code> (default: <code>d_model // 4</code> each; the visual features take the rest).</li>
+</ul>
 <h4 id="positional-embedding-pos">Positional Embedding (<code>pos</code>)<a class="headerlink" href="#positional-embedding-pos" title="Permanent link">&para;</a></h4>
 <ul>
-<li><code>mode</code> (<code>str</code>): Embedding type. Options: <code>"fixed"</code> (sinusoidal), <code>"learned"</code>, or <code>null</code> (no embedding).</li>
+<li><code>mode</code> (<code>str</code>): Embedding type. Options: <code>"fixed"</code> (sinusoidal), <code>"learned"</code>, <code>"rff"</code> (random Fourier features), or <code>null</code> (no embedding).</li>
 <li><code>n_points</code> (<code>int</code>): Number of points to embed (1 for centroid, 3+ for bbox coordinates).</li>
-<li><code>normalize</code> (<code>bool</code>): Whether to normalize positions (only for fixed embeddings, default: <code>true</code>).</li>
+<li><code>normalize</code> (<code>bool</code>): Whether to multiply the box coordinates, already normalized to <code>[0, 1]</code> by the image height (y) and width (x), by <code>scale</code> before the sinusoid (only for fixed embeddings, default: <code>true</code>).</li>
 <li><code>temperature</code> (<code>float</code>): Temperature constant for sinusoidal position embedding (only for fixed, default: 10000).</li>
 <li><code>scale</code> (<code>float</code> | <code>null</code>): Factor to scale positions after normalizing (only for fixed, optional).</li>
 <li><code>emb_num</code> (<code>int</code>): Number of embeddings in lookup table (only for learned).</li>
 <li><code>over_boxes</code> (<code>bool</code>): Whether to compute embedding for bbox coordinates (<code>y1x1y2x2</code>) or centroid+size (<code>yxwh</code>) (only for learned, default: <code>true</code>).</li>
+<li><code>sigma</code> (<code>float</code>): Width of the Gaussian kernel over the normalized box coordinates, in <code>[0, 1]</code> image units (only for rff). Smaller values separate nearby boxes more sharply.</li>
 </ul>
 <p><strong>MLP Configuration</strong> (<code>mlp_cfg</code>): Required when <code>n_points &gt; 1</code>, optional otherwise.</p>
 <ul>
@@ -3450,17 +3455,21 @@
 <li><code>dropout</code> (<code>float</code>): Dropout probability for each hidden layer.</li>
 </ul>
 <h4 id="temporal-embedding-temp">Temporal Embedding (<code>temp</code>)<a class="headerlink" href="#temporal-embedding-temp" title="Permanent link">&para;</a></h4>
+<p>Frame times are signed offsets to the current frame: the frame being tracked is 0 and earlier frames are negative, keeping real gaps between frames.</p>
 <ul>
-<li><code>mode</code> (<code>str</code>): Embedding type. Options: <code>"fixed"</code>, <code>"learned"</code>, or <code>null</code> (no embedding).</li>
+<li><code>mode</code> (<code>str</code>): Embedding type. Options: <code>"fixed"</code> (sinusoidal), <code>"learned"</code>, <code>"rff"</code> (random Fourier features), or <code>null</code> (no embedding).</li>
 <li><code>temperature</code> (<code>float</code>): Temperature constant for sinusoidal embedding (only for fixed, default: 10000).</li>
-<li><code>emb_num</code> (<code>int</code>): Number of embeddings in lookup table (only for learned).</li>
+<li><code>emb_num</code> (<code>int</code>): Number of embeddings in lookup table (only for learned). The current frame gets the last row and each earlier frame the row before it; frames <code>emb_num - 1</code> or more frames back share the first row, so set it to at least the clip length to give every frame its own embedding.</li>
+<li><code>sigma</code> (<code>float</code>): Width of the Gaussian kernel over time offsets, in frames (only for rff, default: 20). Offsets beyond about <code>3 * sigma</code> frames are treated as equally far.</li>
 </ul>
+<p>Checkpoints saved before the box normalization and embedding fixes (which normalized y by the image width and x by the height, collapsed the learned temporal embedding, made the fixed positional embedding constant with <code>normalize: true</code>, and encoded frame times as ranks in the window) load in a legacy mode that reproduces that behavior, so they track as they were trained. Retrain to get the fixed embeddings.</p>
 <h3 id="visual-encoder-configuration-encoder_cfg">Visual Encoder Configuration (<code>encoder_cfg</code>)<a class="headerlink" href="#visual-encoder-configuration-encoder_cfg" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>model_name</code> (<code>str</code>): Name of visual encoder backbone. For <code>timm</code> backend, any model in <code>timm.list_models()</code> is available. For <code>torchvision</code>, only ResNet models are available.</li>
 <li><code>backend</code> (<code>str</code>): Backend library. Options: <code>"timm"</code> or <code>"torchvision"</code> (default: <code>"timm"</code>).</li>
 <li><code>in_chans</code> (<code>int</code>): Number of input channels (default: 3, use more for multi-anchor crops).</li>
 <li><code>pretrained</code> (<code>bool</code>): Whether to use pretrained weights or initialize randomly (default: <code>false</code>).</li>
+<li><code>pooling</code> (<code>str</code>): Global pooling of the backbone feature map. Options: <code>"gem"</code> (learnable Generalized Mean pooling), <code>"avg"</code>, or <code>"max"</code>. The default training config uses <code>"gem"</code>; when the key is omitted, <code>"avg"</code> is used, which is what checkpoints saved before this option was added were trained with.</li>
 </ul>
 <blockquote>
 <p><strong>Note</strong>: For advanced users, see <a href="https://timm.fast.ai/create_model"><code>timm.create_model</code></a> or <a href="https://pytorch.org/vision/stable/models/resnet.html"><code>torchvision.models.resnet</code></a> for additional parameters.</p>
@@ -3509,12 +3518,14 @@
 <li><code>labels_suffix</code> (<code>str</code>): File extension for label files (e.g., <code>.slp</code>, <code>.csv</code>, <code>.xml</code>).</li>
 <li><code>vid_suffix</code> (<code>str</code>): File extension for video files (e.g., <code>.mp4</code>, <code>.avi</code>, <code>.tif</code>, <code>.tiff</code>).</li>
 </ul>
+<p>Each labels file is paired with the video whose name starts its own: <code>x.mp4</code> pairs with <code>x.slp</code>, <code>x.predictions.slp</code> or <code>x.mp4.predictions.slp</code>, but not with <code>x_noisy.slp</code>. If no video name matches, the labels file is paired with the video it references internally. A labels file with no video, or with several equally good matches, is an error. Videos without labels are ignored.</p>
 <h3 id="file-based-input">File-based Input<a class="headerlink" href="#file-based-input" title="Permanent link">&para;</a></h3>
 <p>Alternatively, specify files explicitly:</p>
 <ul>
 <li><code>slp_files</code> (<code>list[str]</code>): List of paths to SLEAP label files (<code>.slp</code>).</li>
 <li><code>video_files</code> (<code>list[str]</code>): List of paths to video files.</li>
 </ul>
+<p>When both lists are given they are paired by position and must be the same length. When only <code>slp_files</code> is given, each labels file is paired with its video by name as above, looking in <code>dir.path</code> and next to the labels file.</p>
 <h3 id="dataset-parameters">Dataset Parameters<a class="headerlink" href="#dataset-parameters" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>crop_size</code> (<code>int</code>): Size (in pixels) of the square bounding box around each instance. Should match approximate size of tracked objects.</li>
@@ -3527,6 +3538,7 @@
 <li><code>padding</code> (<code>int</code>): Amount of padding added to each side of the bounding box (default: 0).</li>
 <li><code>mode</code> (<code>str</code>): Dataset mode. Options: <code>"train"</code> or <code>"val"</code> (determines usage).</li>
 <li><code>handle_missing</code> (<code>str</code>): How to handle missing anchor nodes. Options: <code>"drop"</code>, <code>"ignore"</code>, or <code>"centroid"</code> (only for SleapDataset).</li>
+<li><code>normalize_image</code> (<code>bool</code>): Whether to scale images to <code>[0, 1]</code> (default: <code>true</code>). For CTC data, 16-bit frames are min-max scaled to 8 bits first. CTC crops were in <code>[0, 255]</code> before this option existed, so set it to <code>false</code> only to fine-tune a checkpoint trained that way. The value is recorded in the checkpoint so inference uses the same scale.</li>
 </ul>
 <h3 id="augmentations">Augmentations<a class="headerlink" href="#augmentations" title="Permanent link">&para;</a></h3>
 <p>The <code>augmentations</code> subsection contains parameters for <a href="https://albumentations.ai">Albumentations</a>. Keys must match augmentation class names exactly. Additional augmentations include <code>NodeDropout</code> and <code>InstanceDropout</code>.</p>
@@ -3539,6 +3551,7 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">blur_limit</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">7</span><span class="p p-Indicator">]</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">p</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.3</span>
 </code></pre></div></p>
+<p>For all datasets (<code>SleapDataset</code>, <code>MicroscopyDataset</code>, <code>CellTrackingDataset</code>), spatial augmentations (e.g. <code>Rotate</code>, <code>Affine</code>, flips, crops) are drawn once per clip and applied identically to every frame in it, so each instance keeps a coherent trajectory. In the example above, the whole clip is either rotated by one random angle or not rotated at all. Pixel-level augmentations (e.g. <code>MotionBlur</code>, <code>RandomBrightnessContrast</code>) and dropout augmentations (e.g. <code>CoarseDropout</code>) are drawn per frame, and run before the spatial ones.</p>
 <blockquote>
 <p><strong>Note</strong>: Augmentations are typically only used for training datasets, not validation or test.</p>
 </blockquote>
