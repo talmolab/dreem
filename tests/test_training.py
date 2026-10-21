@@ -5,6 +5,7 @@ import os
 import pytest
 import torch
 from omegaconf import OmegaConf
+from pytorch_lightning import Trainer
 
 from dreem.io import Config, Frame, Instance
 from dreem.models import GTRRunner
@@ -143,3 +144,90 @@ def test_config_gtr_runner(tmp_path, base_config, params_config, two_flies):
     cfg.set_hparams(hparams)
     with torch.autograd.set_detect_anomaly(True):
         run(cfg.cfg)
+
+
+def test_checkpoint_legacy_embeddings(tmp_path):
+    """Test that checkpoints record the embedding behavior they were trained with.
+
+    Checkpoints saved before the embedding fixes don't record it and must load in
+    legacy mode so they run as they were trained.
+    """
+
+    class EmptyDataset(torch.utils.data.Dataset):
+        def __len__(self):
+            return 0
+
+        def __getitem__(self, idx):
+            return None
+
+    model_cfg = {
+        "encoder_cfg": {"model_name": "resnet18", "pretrained": False, "in_chans": 3},
+        "d_model": 64,
+        "nhead": 1,
+        "num_encoder_layers": 1,
+        "num_decoder_layers": 1,
+        "embedding_meta": {
+            "pos": {"mode": "learned", "emb_num": 16},
+            "temp": {"mode": "learned", "emb_num": 16},
+        },
+    }
+    model = GTRRunner(model_cfg=model_cfg)
+    assert not model.model.legacy_embeddings
+
+    ckpt_path = tmp_path / "model.ckpt"
+    trainer = Trainer(
+        max_steps=1, accelerator="cpu", logger=False, enable_checkpointing=False
+    )
+    trainer.fit(model, torch.utils.data.DataLoader(EmptyDataset()))
+    trainer.save_checkpoint(ckpt_path)
+
+    checkpoint = torch.load(ckpt_path, weights_only=False)
+    assert checkpoint[GTRRunner.LEGACY_EMBEDDINGS_KEY] is False
+    assert not GTRRunner.load_from_checkpoint(ckpt_path).model.legacy_embeddings
+
+    # a checkpoint from before the fix has no record of it
+    del checkpoint[GTRRunner.LEGACY_EMBEDDINGS_KEY]
+    old_ckpt_path = tmp_path / "old_model.ckpt"
+    torch.save(checkpoint, old_ckpt_path)
+    old_model = GTRRunner.load_from_checkpoint(old_ckpt_path).model
+    assert old_model.legacy_embeddings
+    assert old_model.transformer.pos_emb.legacy
+    assert old_model.transformer.temp_emb.legacy
+
+    # and keeps it when saved again, e.g. after fine-tuning
+    resaved = {}
+    GTRRunner.load_from_checkpoint(old_ckpt_path).on_save_checkpoint(resaved)
+    assert resaved[GTRRunner.LEGACY_EMBEDDINGS_KEY] is True
+
+
+def test_checkpoint_normalize_image():
+    """Test that checkpoints record the image scale they were trained on."""
+    model = GTRRunner(
+        model_cfg={
+            "encoder_cfg": {
+                "model_name": "resnet18",
+                "pretrained": False,
+                "in_chans": 3,
+            },
+            "d_model": 64,
+            "nhead": 1,
+            "num_encoder_layers": 1,
+            "num_decoder_layers": 1,
+        }
+    )
+
+    saved = {}
+    model.on_save_checkpoint(saved)
+    assert saved[GTRRunner.NORMALIZE_IMAGE_KEY] is True
+
+    # e.g. fine-tuned on [0, 255] CTC crops
+    model.normalize_image = False
+    model.on_save_checkpoint(saved)
+    assert saved[GTRRunner.NORMALIZE_IMAGE_KEY] is False
+
+    model.on_load_checkpoint(saved)
+    assert model.normalize_image is False
+
+    # checkpoints from before the scale was recorded leave it unknown
+    model.on_load_checkpoint({})
+    assert model.normalize_image is None

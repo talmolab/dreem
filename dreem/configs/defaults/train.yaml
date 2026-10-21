@@ -19,6 +19,7 @@ model:
     backend: timm
     in_chans: 3
     model_name: resnet18
+    pooling: gem  # global pooling: gem (learnable Generalized Mean), avg, or max
     pretrained: false
   nhead: 1
   norm: false

@@ -26,6 +26,7 @@ class Embedding(torch.nn.Module):
     EMB_MODES = {
         "fixed": {"temperature", "scale", "normalize"},
         "learned": {"emb_num"},
+        "rff": {"sigma"},
         "off": {},
     }  # dict of valid args:keyword params
 
@@ -41,6 +42,8 @@ class Embedding(torch.nn.Module):
         normalize: bool = False,
         scale: float | None = None,
         mlp_cfg: dict | None = None,
+        sigma: float = 20.0,
+        legacy: bool = False,
     ):
         """Initialize embeddings.
 
@@ -48,7 +51,8 @@ class Embedding(torch.nn.Module):
             emb_type: The type of embedding to compute.
                 Must be one of `{"temp", "pos", "off"}`
             mode: The mode or function used to map positions to vector embeddings.
-                  Must be one of `{"fixed", "learned", "off"}`
+                  Must be one of `{"fixed", "learned", "rff", "off"}`. `fixed` is
+                  sinusoidal, `rff` uses random Fourier features (see `sigma`).
             features: The embedding dimensions. Must match the dimension of the
                       input vectors for the transformer model.
             n_points: the number of points that will be embedded.
@@ -65,6 +69,15 @@ class Embedding(torch.nn.Module):
             mlp_cfg: A dictionary of mlp hyperparameters for projecting
                 embedding to correct space.
                     Example: {"hidden_dims": 256, "num_layers":3, "dropout": 0.3}
+            sigma: Gaussian width of the random Fourier feature kernel (Only used
+                in rff embeddings). For temporal embeddings it is in frames (tanh
+                clamp horizon L=3σ); for positional embeddings it is in normalized
+                coordinate units (no tanh -- the whole [0,1] frame is in range).
+            legacy: If True, reproduce the pre-fix behavior of the learned temporal
+                embedding (every frame after the first collapsed onto one row) and
+                of the fixed positional embedding with `normalize=True` (constant
+                output). Only used to run checkpoints trained with that behavior;
+                set automatically when such a checkpoint is loaded.
         """
         self._check_init_args(emb_type, mode)
 
@@ -79,6 +92,8 @@ class Embedding(torch.nn.Module):
         self.normalize = normalize
         self.scale = scale
         self.n_points = n_points
+        self.sigma = sigma
+        self.legacy = legacy
 
         if self.normalize and self.scale is None:
             self.scale = 2 * math.pi
@@ -87,6 +102,13 @@ class Embedding(torch.nn.Module):
             if self.mode == "fixed":
                 self.mlp = MLP(
                     input_dim=n_points * self.features,
+                    output_dim=self.features,
+                    **mlp_cfg,
+                )
+            elif self.mode == "rff":
+                # RFF spatial embedding outputs `features` dims directly.
+                self.mlp = MLP(
+                    input_dim=self.features,
                     output_dim=self.features,
                     **mlp_cfg,
                 )
@@ -122,13 +144,38 @@ class Embedding(torch.nn.Module):
             elif self.emb_type == "temp":
                 self._emb_func = self._sine_temp_embedding
 
+        elif self.mode == "rff":
+            if self.emb_type in ("pos", "temp") and self.features % 2 != 0:
+                raise ValueError(
+                    f"RFF embedding requires even `features`; got {self.features}"
+                )
+            if self.emb_type == "pos":
+                # Bochner: <f(a),f(b)> ~ exp(-||a-b||^2 / 2σ^2) over the
+                # 4*n_points box coords when omega ~ N(0, 1/σ^2). Frozen at init
+                # and saved with the checkpoint.
+                self.register_buffer(
+                    "rff_box_omega",
+                    torch.randn(4 * self.n_points, self.features // 2)
+                    / float(self.sigma),
+                )
+                self._emb_func = self._rff_box_embedding
+            elif self.emb_type == "temp":
+                # Bochner: <f(x),f(y)> ~ exp(-(x-y)^2 / 2σ^2) for the cos/sin
+                # pair below when omega ~ N(0, 1/σ^2). Frozen at init and saved
+                # with the checkpoint.
+                self.register_buffer(
+                    "rff_omega",
+                    torch.randn(self.features // 2) / float(self.sigma),
+                )
+                self._emb_func = self._rff_temp_embedding
+
     def _check_init_args(self, emb_type: str, mode: str):
         """Check whether the correct arguments were passed to initialization.
 
         Args:
             emb_type: The type of embedding to compute. Must be one of `{"temp", "pos", ""}`
             mode: The mode or function used to map positions to vector embeddings.
-                Must be one of `{"fixed", "learned"}`
+                Must be one of `{"fixed", "learned", "rff", "off"}`
 
         Raises:
             ValueError:
@@ -204,7 +251,13 @@ class Embedding(torch.nn.Module):
             boxes = boxes.unsqueeze(0)
 
         if self.normalize:
-            boxes = boxes / (boxes[:, :, -1:] + 1e-6) * self.scale
+            if self.legacy:
+                # pre-fix behavior: divides by the anchor dim, so every coordinate
+                # becomes ~`scale` and the embedding is constant
+                boxes = boxes / (boxes[:, :, -1:] + 1e-6) * self.scale
+            else:
+                # boxes are already normalized to [0, 1] by the image size
+                boxes = boxes * self.scale
 
         dim_t = torch.arange(self.features // 4, dtype=torch.float32)
 
@@ -230,33 +283,91 @@ class Embedding(torch.nn.Module):
         """Compute fixed sine temporal embeddings.
 
         Args:
-            times: the input times of shape (N,) or (N,1) where N = (sum(instances_per_frame))
-            which is the frame index of the instance relative
-            to the batch size
-            (e.g. `torch.tensor([0, 0, ..., 0, 1, 1, ..., 1, 2, 2, ..., 2,..., B, B, ...B])`).
+            times: the input times of shape (N,) or (N,1) where N = (sum(instances_per_frame)):
+                each instance's signed frame offset to the current frame from
+                `get_times` (past < 0, current = 0), or, for legacy checkpoints,
+                its frame's rank in the window.
 
         Returns:
             an n_instances x D embedding representing the temporal embedding.
         """
-        T = times.int().max().item() + 1
         d = self.features
         n = self.temperature
 
-        positions = torch.arange(0, T).unsqueeze(1)
-        temp_lookup = torch.zeros(T, d, device=times.device)
-
+        positions = times.reshape(-1, 1).float()
         denominators = torch.pow(
-            n, 2 * torch.arange(0, d // 2) / d
+            n, 2 * torch.arange(0, d // 2, device=times.device) / d
         )  # 10000^(2i/d_model), i is the index of embedding
-        temp_lookup[:, 0::2] = torch.sin(
+
+        temp_emb = torch.zeros(positions.shape[0], d, device=times.device)
+        temp_emb[:, 0::2] = torch.sin(
             positions / denominators
         )  # sin(pos/10000^(2i/d_model))
-        temp_lookup[:, 1::2] = torch.cos(
+        temp_emb[:, 1::2] = torch.cos(
             positions / denominators
         )  # cos(pos/10000^(2i/d_model))
 
-        temp_emb = temp_lookup[times.int()]
-        return temp_emb  # .view(len(times), self.features)
+        return temp_emb
+
+    def _rff_box_embedding(self, boxes: torch.Tensor) -> torch.Tensor:
+        """RFF spatial embedding of normalized box coords (Gaussian kernel).
+
+        Random Fourier Features: frozen Gaussian frequencies
+        `omega ~ N(0, 1/sigma^2)` give, by Bochner's theorem, a dot-product kernel
+        `<f(a), f(b)> ~ exp(-||a - b||^2 / 2 sigma^2)` over the `4*n_points` box
+        coordinates. That kernel is translation-invariant in the coordinate
+        offset, monotone in distance, and injective for `sigma << 1` -- so the
+        embedding can both tell two boxes apart and read small-vs-large distance.
+
+        This is the spatial mirror of `_rff_temp_embedding`, with NO tanh warp:
+        the spatial working range is the whole [0,1] frame, which the temporal
+        path's `L = 3*sigma` horizon would saturate. `sigma` is in normalized
+        coordinate units; the sinusoidal `scale`/`normalize` (2*pi) rescale is
+        intentionally NOT applied (it would change the meaning of sigma).
+
+        Args:
+             boxes: the input boxes of shape N, n_anchors, 4 or B, N, n_anchors, 4
+                    where the last dimension is the bbox coords in [y1, x1, y2, x2].
+                    (Note currently `B=batch_size=1`).
+
+        Returns:
+             torch.Tensor of shape (N, self.features), the RFF positional embedding.
+        """
+        if len(boxes.size()) == 3:
+            boxes = boxes.unsqueeze(0)  # (1, N, n_anchors, 4)
+
+        n_t = boxes.shape[1]
+        coords = boxes.reshape(n_t, -1).float()  # (N, 4 * n_points); B=1
+
+        omega = self.rff_box_omega.to(coords.device)  # (4*n_points, features//2)
+        ang = coords @ omega  # (N, features // 2)
+        n_freq = omega.shape[1]
+        pos_emb = torch.cat([torch.cos(ang), torch.sin(ang)], dim=-1) / math.sqrt(
+            n_freq
+        )
+
+        pos_emb = self.mlp(pos_emb)
+
+        return pos_emb.view(n_t, self.features)
+
+    def _rff_temp_embedding(self, times: torch.Tensor) -> torch.Tensor:
+        """RFF temporal embedding of signed integer offsets to the current frame.
+
+        Args:
+            times: signed integer offsets from `get_times`, shape (N,) or (N,1).
+                Past < 0, current = 0, future > 0.
+
+        Returns:
+            An N x `self.features` tensor.
+        """
+        t = times.reshape(-1).float()
+        # Tanh-warp keeps far offsets at a flat similarity tail (not oscillating).
+        L = 3.0 * self.sigma
+        g = L * torch.tanh(t / L)
+        omega = self.rff_omega.to(g.device)
+        ang = g.unsqueeze(-1) * omega.unsqueeze(0)
+        n_freq = omega.shape[0]
+        return torch.cat([torch.cos(ang), torch.sin(ang)], dim=-1) / math.sqrt(n_freq)
 
     def _learned_pos_embedding(self, boxes: torch.Tensor) -> torch.Tensor:
         """Compute learned positional embeddings for boxes using given parameters.
@@ -322,17 +433,30 @@ class Embedding(torch.nn.Module):
         """Compute learned temporal embeddings for times using given parameters.
 
         Args:
-            times: the input times of shape (N,) or (N,1) where N = (sum(instances_per_frame))
-            which is the frame index of the instance relative
-            to the batch size
-            (e.g. `torch.tensor([0, 0, ..., 0, 1, 1, ..., 1, 2, 2, ..., 2,..., B, B, ...B])`).
+            times: the input times of shape (N,) or (N,1) where N = (sum(instances_per_frame)):
+                each instance's signed frame offset to the current frame from
+                `get_times` (past < 0, current = 0), or, for legacy checkpoints,
+                its frame's rank in the window.
 
         Returns:
-            torch.Tensor, the learned temporal embeddings.
+            torch.Tensor, the learned temporal embeddings. The current frame uses
+            the last row of the lookup table and each frame further in the past
+            the row before; offsets at or past `-(emb_num - 1)` share the first row.
         """
         temp_lookup = self.lookup
         N = times.shape[0]
 
+        if not self.legacy:
+            # anchor the current frame (offset 0) at the last row and count back
+            idx = (times.reshape(-1).long() + self.emb_num - 1).clamp(
+                min=0, max=self.emb_num - 1
+            )
+            return temp_lookup.weight[idx.to(temp_lookup.weight.device)].view(
+                N, self.features
+            )
+
+        # pre-fix behavior: `_compute_weights` expects inputs in [0, 1], so integer
+        # times >= 1 all clamp onto the last row
         left_ind, right_ind, left_weight, right_weight = self._compute_weights(times)
 
         left_emb = temp_lookup.weight[

@@ -257,6 +257,62 @@ def test_tracker_aggregation_config():
         Tracker(recency_tau=0)
 
 
+def _small_tracking_transformer():
+    return GlobalTrackingTransformer(
+        encoder_cfg={"model_name": "resnet18", "pretrained": False, "in_chans": 3},
+        d_model=64,
+        nhead=1,
+        num_encoder_layers=1,
+        num_decoder_layers=1,
+    )
+
+
+def test_tracker_first_frame_ids_dont_collide():
+    """Test that instances without a gt id get ids past the largest gt id."""
+    instances = [
+        Instance(
+            gt_track_id=gt_id,
+            pred_track_id=-1,
+            bbox=torch.tensor([[10.0 * i, 10.0 * i, 10.0 * i + 5, 10.0 * i + 5]]),
+            crop=torch.rand(size=(1, 1, 64, 64)),
+        )
+        for i, gt_id in enumerate([3, -1, -1])
+    ]
+    frames = [
+        Frame(video_id=0, frame_id=0, img_shape=(1, 128, 128), instances=instances)
+    ]
+
+    tracker = Tracker(overlap_thresh=0.01, decay_time=None, iou=None)
+    frames_pred = tracker(_small_tracking_transformer(), frames)
+
+    assert frames_pred[0].get_pred_track_ids().tolist() == [3, 4, 5]
+
+
+def test_tracker_center_dist_on_non_square_frames():
+    """Test that the distance penalty sees pixel boxes on non-square frames.
+
+    A cell that doesn't move must not be penalized by `max_center_dist`.
+    """
+    frames = []
+    for i in range(2):
+        instance = Instance(
+            gt_track_id=0,
+            pred_track_id=-1,
+            bbox=torch.tensor([[10.0, 300.0, 20.0, 310.0]]),
+            crop=torch.rand(size=(1, 1, 64, 64)),
+        )
+        frames.append(
+            Frame(video_id=0, frame_id=i, img_shape=(1, 100, 400), instances=[instance])
+        )
+
+    tracker = Tracker(overlap_thresh=0.01, decay_time=None, iou=None, max_center_dist=5)
+    frames_pred = tracker(_small_tracking_transformer(), frames)
+
+    traj_score = frames_pred[1].get_traj_score("traj_score").to_numpy()
+    center_dist_score = frames_pred[1].get_traj_score("max_center_dist").to_numpy()
+    assert np.allclose(center_dist_score, traj_score)
+
+
 # @pytest.mark.parametrize("set_default_device", ["cpu"], indirect=True)
 def test_weight_iou():  # set_default_device
     """Test postprocessing methods.
