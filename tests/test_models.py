@@ -12,6 +12,7 @@ from dreem.models import (
 )
 from dreem.models.attention_head import ATTWeightHead
 from dreem.models.mlp import MLP
+from dreem.models.model_utils import get_boxes
 from dreem.models.transformer import (
     TransformerDecoderLayer,
     TransformerEncoderLayer,
@@ -239,6 +240,91 @@ def test_embedding_basic():
     assert not off_fixed_emb_times.any()
     assert not off_emb_boxes.any()
     assert not off_emb_times.any()
+
+
+def test_get_boxes_normalizes_each_axis():
+    """Test that y is normalized by the image height and x by the width."""
+    frame = Frame(video_id=0, frame_id=0, img_shape=(1, 100, 200))
+    instance = Instance(bbox=torch.tensor([[10.0, 20.0, 30.0, 40.0]]))
+    frame.instances = [instance]
+
+    boxes = get_boxes([instance])
+    assert torch.allclose(boxes, torch.tensor([[[0.1, 0.1, 0.3, 0.2]]]))
+
+    # checkpoints trained before the fix divided y by the width and x by the height
+    legacy_boxes = get_boxes([instance], legacy_axes=True)
+    assert torch.allclose(legacy_boxes, torch.tensor([[[0.05, 0.2, 0.15, 0.4]]]))
+
+
+def test_learned_temporal_embedding_rows():
+    """Test that each frame index gets its own row of the learned lookup table."""
+    d_model = 32
+    emb_num = 16
+    times = torch.arange(8)
+
+    temp_emb = Embedding(
+        emb_type="temp", mode="learned", features=d_model, emb_num=emb_num
+    )
+    emb = temp_emb(times)
+    assert torch.equal(emb, temp_emb.lookup.weight[:8])
+    assert len(torch.unique(emb, dim=0)) == len(times)
+
+    # indices past the table share its last row
+    assert torch.equal(
+        temp_emb(torch.tensor([emb_num + 4]))[0], temp_emb.lookup.weight[-1]
+    )
+
+    # legacy mode collapses every frame after the first onto the last row
+    temp_emb.legacy = True
+    legacy_emb = temp_emb(times)
+    assert torch.allclose(legacy_emb[0], temp_emb.lookup.weight[0])
+    assert torch.allclose(
+        legacy_emb[1:], temp_emb.lookup.weight[-1].expand(len(times) - 1, -1)
+    )
+
+
+def test_fixed_pos_embedding_normalize():
+    """Test that the fixed embedding with `normalize=True` depends on position."""
+    d_model = 32
+    boxes = torch.tensor([[[0.1, 0.1, 0.2, 0.2]], [[0.6, 0.7, 0.8, 0.9]]])
+
+    pos_emb = Embedding(emb_type="pos", mode="fixed", features=d_model, normalize=True)
+    emb = pos_emb(boxes)
+    assert not torch.allclose(emb[0], emb[1])
+
+    unnormalized = Embedding(emb_type="pos", mode="fixed", features=d_model)
+    assert torch.allclose(emb, unnormalized(boxes * 2 * torch.pi))
+
+    # legacy mode divides by the anchor dim, giving the same embedding everywhere
+    pos_emb.legacy = True
+    legacy_emb = pos_emb(boxes)
+    assert torch.allclose(legacy_emb[0], legacy_emb[1], atol=1e-3)
+
+
+def test_legacy_embeddings_propagate():
+    """Test that the legacy switch reaches both embeddings of the transformer."""
+    embedding_meta = {
+        "pos": {"mode": "learned", "emb_num": 16},
+        "temp": {"mode": "learned", "emb_num": 16},
+    }
+    model = GlobalTrackingTransformer(
+        encoder_cfg={"model_name": "resnet18", "pretrained": False, "in_chans": 3},
+        d_model=64,
+        nhead=1,
+        num_encoder_layers=1,
+        num_decoder_layers=1,
+        embedding_meta=embedding_meta,
+    )
+    transformer = model.transformer
+
+    assert not model.legacy_embeddings
+    assert not transformer.pos_emb.legacy
+    assert not transformer.temp_emb.legacy
+
+    model.legacy_embeddings = True
+    assert transformer.legacy_embeddings
+    assert transformer.pos_emb.legacy
+    assert transformer.temp_emb.legacy
 
 
 def test_embedding_kwargs():

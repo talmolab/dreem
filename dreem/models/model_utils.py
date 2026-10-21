@@ -9,22 +9,26 @@ if TYPE_CHECKING:
     from dreem.io import Instance
 
 
-def get_boxes(instances: list["Instance"]) -> torch.Tensor:
+def get_boxes(instances: list["Instance"], legacy_axes: bool = False) -> torch.Tensor:
     """Extract the bounding boxes from the input list of instances.
 
     Args:
         instances: List of Instance objects.
+        legacy_axes: If True, reproduce the pre-fix normalization that divided y by
+            the image width and x by the image height. Only used to run checkpoints
+            that were trained with that behavior.
 
     Returns:
-        An (n_instances, n_points, 4) float tensor containing the bounding boxes
-        normalized by the height and width of the image
+        An (n_instances, n_points, 4) float tensor containing the `[y1, x1, y2, x2]`
+        bounding boxes with y normalized by the image height and x by the width.
     """
     boxes = []
     for i, instance in enumerate(instances):
         _, h, w = instance.frame.img_shape
         bbox = instance.bbox.clone()
-        bbox[:, :, [0, 2]] /= w
-        bbox[:, :, [1, 3]] /= h
+        y_scale, x_scale = (w, h) if legacy_axes else (h, w)
+        bbox[:, :, [0, 2]] /= y_scale
+        bbox[:, :, [1, 3]] /= x_scale
         boxes.append(bbox)
 
     boxes = torch.cat(boxes, dim=0)  # N, n_anchors, 4
