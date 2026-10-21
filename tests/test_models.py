@@ -12,11 +12,12 @@ from dreem.models import (
 )
 from dreem.models.attention_head import ATTWeightHead
 from dreem.models.mlp import MLP
-from dreem.models.model_utils import get_boxes
+from dreem.models.model_utils import get_boxes, get_times
 from dreem.models.transformer import (
     TransformerDecoderLayer,
     TransformerEncoderLayer,
 )
+from dreem.models.visual_encoder import GeM
 
 
 # todo: add named tensor tests
@@ -128,6 +129,54 @@ def test_encoder_torch():
     output = encoder(input_tensor)
 
     assert output.shape == (b, features)
+
+
+def test_encoder_pooling():
+    """Test configurable global pooling (GeM / avg / max) in the visual encoder."""
+    # GeM module: collapses spatial dims, and p=1 exactly recovers avg pooling.
+    fmap = torch.rand(2, 5, 7, 7)
+    assert GeM()(fmap).shape == (2, 5, 1, 1)
+    assert torch.allclose(
+        GeM(p=1.0)(fmap), torch.nn.AdaptiveAvgPool2d(1)(fmap), atol=1e-5
+    )
+
+    b, c, h, w = 2, 3, 64, 64
+    x = torch.rand(b, c, h, w)
+
+    # default pooling is avg, matching checkpoints that predate the option (their
+    # config has no `pooling` key and their weights have no GeM exponent)
+    enc = VisualEncoder(model_name="resnet18", in_chans=c, d_model=128, backend="torch")
+    assert enc.pooling == "avg"
+    assert not any(key.startswith("pool.") for key in enc.state_dict())
+
+    # GeM has a learnable exponent initialized to 3.
+    enc = VisualEncoder(
+        model_name="resnet18", in_chans=c, d_model=128, backend="torch", pooling="gem"
+    )
+    assert isinstance(enc.pool, GeM)
+    assert enc.pool.p.requires_grad
+    assert enc.pool.p.item() == pytest.approx(3.0)
+
+    # each pooling mode yields (b, d_model)
+    for pooling in ["gem", "avg", "max"]:
+        enc = VisualEncoder(
+            model_name="resnet18",
+            in_chans=c,
+            d_model=128,
+            backend="torch",
+            pooling=pooling,
+        )
+        assert enc(x).shape == (b, 128)
+
+    # unknown pooling raises
+    with pytest.raises(ValueError):
+        VisualEncoder(
+            model_name="resnet18",
+            in_chans=c,
+            d_model=128,
+            backend="torch",
+            pooling="bogus",
+        )
 
 
 def test_embedding_validity():
@@ -257,30 +306,144 @@ def test_get_boxes_normalizes_each_axis():
 
 
 def test_learned_temporal_embedding_rows():
-    """Test that each frame index gets its own row of the learned lookup table."""
+    """Test that each frame offset gets its own row of the learned lookup table."""
     d_model = 32
     emb_num = 16
-    times = torch.arange(8)
+    offsets = torch.arange(-7, 1)  # signed offsets to the current frame
 
     temp_emb = Embedding(
         emb_type="temp", mode="learned", features=d_model, emb_num=emb_num
     )
-    emb = temp_emb(times)
-    assert torch.equal(emb, temp_emb.lookup.weight[:8])
-    assert len(torch.unique(emb, dim=0)) == len(times)
+    emb = temp_emb(offsets)
+    # the current frame is the last row, earlier frames count back from it
+    assert torch.equal(emb, temp_emb.lookup.weight[-8:])
+    assert len(torch.unique(emb, dim=0)) == len(offsets)
 
-    # indices past the table share its last row
+    # offsets older than the table share its first row
     assert torch.equal(
-        temp_emb(torch.tensor([emb_num + 4]))[0], temp_emb.lookup.weight[-1]
+        temp_emb(torch.tensor([-(emb_num + 4)]))[0], temp_emb.lookup.weight[0]
     )
 
-    # legacy mode collapses every frame after the first onto the last row
+    # legacy mode (window ranks) collapses every frame after the first onto the
+    # last row
+    times = torch.arange(8)
     temp_emb.legacy = True
     legacy_emb = temp_emb(times)
-    assert torch.allclose(legacy_emb[0], temp_emb.lookup.weight[0])
+    # legacy computes e.g. 97 * row - 96 * row for the clamped frames, so allow
+    # the float cancellation error that grows with the frame index
+    assert torch.allclose(legacy_emb[0], temp_emb.lookup.weight[0], atol=1e-4)
     assert torch.allclose(
-        legacy_emb[1:], temp_emb.lookup.weight[-1].expand(len(times) - 1, -1)
+        legacy_emb[1:],
+        temp_emb.lookup.weight[-1].expand(len(times) - 1, -1),
+        atol=1e-4,
     )
+
+
+def test_get_times_signed_offsets():
+    """Test that times are signed offsets to the current frame, or legacy ranks."""
+    frames = [Frame(video_id=0, frame_id=i, img_shape=(1, 8, 8)) for i in (20, 21, 24)]
+    instances = []
+    for frame in frames:
+        frame.instances = [Instance(bbox=torch.rand(1, 4)) for _ in range(2)]
+        instances.extend(frame.instances)
+    ref, query = instances[:4], instances[4:]
+
+    ref_t, query_t = get_times(ref, query)
+    assert ref_t.tolist() == [-4, -4, -3, -3]  # real frame gaps are kept
+    assert query_t.tolist() == [0, 0]
+
+    # without queries, the most recent ref frame is the current one
+    ref_t, query_t = get_times(instances)
+    assert ref_t.tolist() == [-4, -4, -3, -3, 0, 0]
+    assert len(query_t) == 0
+
+    # checkpoints trained before signed offsets used each frame's window rank
+    ref_t, query_t = get_times(ref, query, legacy=True)
+    assert ref_t.tolist() == [0, 0, 1, 1]
+    assert query_t.tolist() == [2, 2]
+
+
+def test_fixed_temporal_embedding_signed_offsets():
+    """Test the sinusoidal temporal embedding on signed and legacy times."""
+    d_model = 32
+    temp_emb = Embedding(emb_type="temp", mode="fixed", features=d_model)
+
+    emb = temp_emb(torch.arange(-3, 1))
+    assert emb.shape == (4, d_model)
+    assert len(torch.unique(emb, dim=0)) == 4
+    # offset 0 (the current frame) is sin(0)=0, cos(0)=1
+    assert torch.allclose(emb[-1, 0::2], torch.zeros(d_model // 2))
+    assert torch.allclose(emb[-1, 1::2], torch.ones(d_model // 2))
+
+
+@pytest.mark.parametrize("emb_type", ["pos", "temp"])
+def test_rff_embedding(emb_type):
+    """Test that the random Fourier features approximate a Gaussian kernel.
+
+    Args:
+        emb_type: which embedding to test
+    """
+    torch.manual_seed(0)
+    d_model = 4096  # enough random frequencies for a tight kernel estimate
+    sigma = 0.2 if emb_type == "pos" else 4.0
+    emb = Embedding(emb_type=emb_type, mode="rff", features=d_model, sigma=sigma)
+    omega = "rff_box_omega" if emb_type == "pos" else "rff_omega"
+    # the random frequencies are saved with the checkpoint
+    assert omega in emb.state_dict()
+
+    if emb_type == "pos":
+        x = torch.linspace(0.1, 0.5, 5)
+        inputs = torch.stack([x, x, x + 0.05, x + 0.05], dim=-1).unsqueeze(1)
+        # squared distance over the 4 box coordinates
+        sq_dist = 4 * (x - x[0]) ** 2
+    else:
+        inputs = -torch.arange(5)
+        # offsets are tanh-warped with horizon 3 * sigma before the kernel
+        horizon = 3 * sigma
+        warped = horizon * torch.tanh(inputs.float() / horizon)
+        sq_dist = (warped - warped[0]) ** 2
+    out = emb(inputs)
+    assert out.shape == (5, d_model)
+
+    expected = torch.exp(-sq_dist / (2 * sigma**2))
+    assert torch.allclose(out @ out[0], expected, atol=0.05)
+
+    with pytest.raises(ValueError):
+        Embedding(emb_type=emb_type, mode="rff", features=d_model + 1)
+
+
+def test_transformer_concat_fusion_rff():
+    """Test the transformer with concatenated visual/pos/temp RFF embeddings."""
+    feats = 64
+    num_frames = 3
+    num_detected = 4
+
+    frames = []
+    for i in range(num_frames):
+        instances = [
+            Instance(bbox=torch.rand(size=(1, 4)), features=torch.rand(size=(1, feats)))
+            for _ in range(num_detected)
+        ]
+        frames.append(
+            Frame(video_id=0, frame_id=i, img_shape=(1, 64, 64), instances=instances)
+        )
+    instances = [instance for frame in frames for instance in frame.instances]
+
+    embedding_meta = {
+        "embedding_agg_method": "concatenate",
+        "pos": {"mode": "rff", "sigma": 0.2},
+        "temp": {"mode": "rff", "sigma": 4.0},
+    }
+    transformer = Transformer(
+        d_model=feats,
+        num_encoder_layers=1,
+        num_decoder_layers=1,
+        embedding_meta=embedding_meta,
+    )
+    assert (transformer.d_visual, transformer.d_pos, transformer.d_temp) == (32, 16, 16)
+
+    asso_preds = transformer(instances[:-num_detected], instances[-num_detected:])
+    assert asso_preds[0].matrix.size() == (num_detected, num_detected * 2)
 
 
 def test_fixed_pos_embedding_normalize():

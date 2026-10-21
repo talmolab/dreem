@@ -26,15 +26,19 @@ The `model` section configures the transformer architecture and visual encoder.
 
 ### Embedding Configuration (`embedding_meta`)
 
+* `embedding_agg_method` (`str`): How the positional and temporal embeddings are combined with the visual features. `"average"` (default) averages the positional and temporal embeddings and adds them to the visual features. `"concatenate"` projects the visual features to the remaining dimensions and concatenates visual ⊕ positional ⊕ temporal into one `d_model` vector, so each signal keeps its own dimensions.
+* `pos_dim` / `temp_dim` (`int`): Dimensions of the positional and temporal embeddings when `embedding_agg_method: concatenate` (default: `d_model // 4` each; the visual features take the rest).
+
 #### Positional Embedding (`pos`)
 
-* `mode` (`str`): Embedding type. Options: `"fixed"` (sinusoidal), `"learned"`, or `null` (no embedding).
+* `mode` (`str`): Embedding type. Options: `"fixed"` (sinusoidal), `"learned"`, `"rff"` (random Fourier features), or `null` (no embedding).
 * `n_points` (`int`): Number of points to embed (1 for centroid, 3+ for bbox coordinates).
 * `normalize` (`bool`): Whether to multiply the box coordinates, already normalized to `[0, 1]` by the image height (y) and width (x), by `scale` before the sinusoid (only for fixed embeddings, default: `true`).
 * `temperature` (`float`): Temperature constant for sinusoidal position embedding (only for fixed, default: 10000).
 * `scale` (`float` | `null`): Factor to scale positions after normalizing (only for fixed, optional).
 * `emb_num` (`int`): Number of embeddings in lookup table (only for learned).
 * `over_boxes` (`bool`): Whether to compute embedding for bbox coordinates (`y1x1y2x2`) or centroid+size (`yxwh`) (only for learned, default: `true`).
+* `sigma` (`float`): Width of the Gaussian kernel over the normalized box coordinates, in `[0, 1]` image units (only for rff). Smaller values separate nearby boxes more sharply.
 
 **MLP Configuration** (`mlp_cfg`): Required when `n_points > 1`, optional otherwise.
 
@@ -44,11 +48,14 @@ The `model` section configures the transformer architecture and visual encoder.
 
 #### Temporal Embedding (`temp`)
 
-* `mode` (`str`): Embedding type. Options: `"fixed"`, `"learned"`, or `null` (no embedding).
-* `temperature` (`float`): Temperature constant for sinusoidal embedding (only for fixed, default: 10000).
-* `emb_num` (`int`): Number of embeddings in lookup table (only for learned). Each frame of the window gets its own row; frames at index `emb_num - 1` or later share the last row, so set it to at least the clip length to give every frame its own embedding.
+Frame times are signed offsets to the current frame: the frame being tracked is 0 and earlier frames are negative, keeping real gaps between frames.
 
-Checkpoints saved before the box normalization and embedding fixes (which normalized y by the image width and x by the height, collapsed the learned temporal embedding, and made the fixed positional embedding constant with `normalize: true`) load in a legacy mode that reproduces that behavior, so they track as they were trained. Retrain to get the fixed embeddings.
+* `mode` (`str`): Embedding type. Options: `"fixed"` (sinusoidal), `"learned"`, `"rff"` (random Fourier features), or `null` (no embedding).
+* `temperature` (`float`): Temperature constant for sinusoidal embedding (only for fixed, default: 10000).
+* `emb_num` (`int`): Number of embeddings in lookup table (only for learned). The current frame gets the last row and each earlier frame the row before it; frames `emb_num - 1` or more frames back share the first row, so set it to at least the clip length to give every frame its own embedding.
+* `sigma` (`float`): Width of the Gaussian kernel over time offsets, in frames (only for rff, default: 20). Offsets beyond about `3 * sigma` frames are treated as equally far.
+
+Checkpoints saved before the box normalization and embedding fixes (which normalized y by the image width and x by the height, collapsed the learned temporal embedding, made the fixed positional embedding constant with `normalize: true`, and encoded frame times as ranks in the window) load in a legacy mode that reproduces that behavior, so they track as they were trained. Retrain to get the fixed embeddings.
 
 ### Visual Encoder Configuration (`encoder_cfg`)
 
@@ -56,6 +63,7 @@ Checkpoints saved before the box normalization and embedding fixes (which normal
 * `backend` (`str`): Backend library. Options: `"timm"` or `"torchvision"` (default: `"timm"`).
 * `in_chans` (`int`): Number of input channels (default: 3, use more for multi-anchor crops).
 * `pretrained` (`bool`): Whether to use pretrained weights or initialize randomly (default: `false`).
+* `pooling` (`str`): Global pooling of the backbone feature map. Options: `"gem"` (learnable Generalized Mean pooling), `"avg"`, or `"max"`. The default training config uses `"gem"`; when the key is omitted, `"avg"` is used, which is what checkpoints saved before this option was added were trained with.
 
 > **Note**: For advanced users, see [`timm.create_model`](https://timm.fast.ai/create_model) or [`torchvision.models.resnet`](https://pytorch.org/vision/stable/models/resnet.html) for additional parameters.
 

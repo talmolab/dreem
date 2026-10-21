@@ -39,15 +39,29 @@ def get_boxes(instances: list["Instance"], legacy_axes: bool = False) -> torch.T
 def get_times(
     ref_instances: list["Instance"],
     query_instances: list["Instance"] | None = None,
+    legacy: bool = False,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Extract the time indices of each instance relative to the window length.
+    """Extract each instance's signed time offset to the current frame.
+
+    The current (query) frame is the reference, encoded as 0. Every other
+    instance is encoded as its signed frame-distance to that reference: past
+    frames are negative, future frames positive. Real frame gaps are
+    preserved (no sorted-rank remapping), so a window of frames
+    [20, 21, 22, 23, 24] tracked at frame 24 yields offsets
+    [-4, -3, -2, -1, 0], and a non-contiguous window keeps its spacing.
 
     Args:
         ref_instances: Set of instances to query against
         query_instances: Set of query instances to look up using decoder.
+            When provided, the (max) query frame id is the reference "current"
+            frame. When None, the most recent ref frame id is used.
+        legacy: If True, reproduce the pre-fix encoding instead: each frame's rank
+            in the window, oldest frame = 0. Only used to run checkpoints that were
+            trained with that behavior.
 
     Returns:
-        Tuple of Corresponding frame indices eg [0, 0, 1, 1, ..., T, T] for ref and query instances.
+        Tuple (ref_t, query_t) of signed integer frame offsets to the current
+        frame (or, with `legacy`, window ranks).
     """
     ref_inds = torch.tensor(
         [instance.frame.frame_id.item() for instance in ref_instances],
@@ -59,20 +73,20 @@ def get_times(
             [instance.frame.frame_id.item() for instance in query_instances],
             device=ref_inds.device,
         )
+        reference = query_inds.max()  # current frame being tracked -> offset 0
     else:
-        query_inds = torch.tensor([], device=ref_inds.device)
+        query_inds = torch.tensor([], device=ref_inds.device, dtype=ref_inds.dtype)
+        reference = ref_inds.max()  # default: most recent frame is "current"
 
-    frame_inds = torch.concat([ref_inds, query_inds])
-    window_length = len(frame_inds.unique())
+    if legacy:
+        frame_ids = torch.concat([ref_inds, query_inds]).unique()  # sorted
+        return (
+            torch.searchsorted(frame_ids, ref_inds),
+            torch.searchsorted(frame_ids, query_inds),
+        )
 
-    frame_idx_mapping = {frame_inds.unique()[i].item(): i for i in range(window_length)}
-    ref_t = torch.tensor(
-        [frame_idx_mapping[ind.item()] for ind in ref_inds], device=ref_inds.device
-    )
-
-    query_t = torch.tensor(
-        [frame_idx_mapping[ind.item()] for ind in query_inds], device=ref_inds.device
-    )
+    ref_t = ref_inds - reference
+    query_t = query_inds - reference
 
     return ref_t, query_t
 
