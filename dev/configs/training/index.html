@@ -3433,15 +3433,20 @@
 <li><code>decoder_self_attn</code> (<code>bool</code>): Whether to use self attention in the decoder (default: <code>true</code>).</li>
 </ul>
 <h3 id="embedding-configuration-embedding_meta">Embedding Configuration (<code>embedding_meta</code>)<a class="headerlink" href="#embedding-configuration-embedding_meta" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>embedding_agg_method</code> (<code>str</code>): How the positional and temporal embeddings are combined with the visual features. <code>"average"</code> (default) averages the positional and temporal embeddings and adds them to the visual features. <code>"concatenate"</code> projects the visual features to the remaining dimensions and concatenates visual ⊕ positional ⊕ temporal into one <code>d_model</code> vector, so each signal keeps its own dimensions.</li>
+<li><code>pos_dim</code> / <code>temp_dim</code> (<code>int</code>): Dimensions of the positional and temporal embeddings when <code>embedding_agg_method: concatenate</code> (default: <code>d_model // 4</code> each; the visual features take the rest).</li>
+</ul>
 <h4 id="positional-embedding-pos">Positional Embedding (<code>pos</code>)<a class="headerlink" href="#positional-embedding-pos" title="Permanent link">&para;</a></h4>
 <ul>
-<li><code>mode</code> (<code>str</code>): Embedding type. Options: <code>"fixed"</code> (sinusoidal), <code>"learned"</code>, or <code>null</code> (no embedding).</li>
+<li><code>mode</code> (<code>str</code>): Embedding type. Options: <code>"fixed"</code> (sinusoidal), <code>"learned"</code>, <code>"rff"</code> (random Fourier features), or <code>null</code> (no embedding).</li>
 <li><code>n_points</code> (<code>int</code>): Number of points to embed (1 for centroid, 3+ for bbox coordinates).</li>
 <li><code>normalize</code> (<code>bool</code>): Whether to multiply the box coordinates, already normalized to <code>[0, 1]</code> by the image height (y) and width (x), by <code>scale</code> before the sinusoid (only for fixed embeddings, default: <code>true</code>).</li>
 <li><code>temperature</code> (<code>float</code>): Temperature constant for sinusoidal position embedding (only for fixed, default: 10000).</li>
 <li><code>scale</code> (<code>float</code> | <code>null</code>): Factor to scale positions after normalizing (only for fixed, optional).</li>
 <li><code>emb_num</code> (<code>int</code>): Number of embeddings in lookup table (only for learned).</li>
 <li><code>over_boxes</code> (<code>bool</code>): Whether to compute embedding for bbox coordinates (<code>y1x1y2x2</code>) or centroid+size (<code>yxwh</code>) (only for learned, default: <code>true</code>).</li>
+<li><code>sigma</code> (<code>float</code>): Width of the Gaussian kernel over the normalized box coordinates, in <code>[0, 1]</code> image units (only for rff). Smaller values separate nearby boxes more sharply.</li>
 </ul>
 <p><strong>MLP Configuration</strong> (<code>mlp_cfg</code>): Required when <code>n_points &gt; 1</code>, optional otherwise.</p>
 <ul>
@@ -3450,18 +3455,21 @@
 <li><code>dropout</code> (<code>float</code>): Dropout probability for each hidden layer.</li>
 </ul>
 <h4 id="temporal-embedding-temp">Temporal Embedding (<code>temp</code>)<a class="headerlink" href="#temporal-embedding-temp" title="Permanent link">&para;</a></h4>
+<p>Frame times are signed offsets to the current frame: the frame being tracked is 0 and earlier frames are negative, keeping real gaps between frames.</p>
 <ul>
-<li><code>mode</code> (<code>str</code>): Embedding type. Options: <code>"fixed"</code>, <code>"learned"</code>, or <code>null</code> (no embedding).</li>
+<li><code>mode</code> (<code>str</code>): Embedding type. Options: <code>"fixed"</code> (sinusoidal), <code>"learned"</code>, <code>"rff"</code> (random Fourier features), or <code>null</code> (no embedding).</li>
 <li><code>temperature</code> (<code>float</code>): Temperature constant for sinusoidal embedding (only for fixed, default: 10000).</li>
-<li><code>emb_num</code> (<code>int</code>): Number of embeddings in lookup table (only for learned). Each frame of the window gets its own row; frames at index <code>emb_num - 1</code> or later share the last row, so set it to at least the clip length to give every frame its own embedding.</li>
+<li><code>emb_num</code> (<code>int</code>): Number of embeddings in lookup table (only for learned). The current frame gets the last row and each earlier frame the row before it; frames <code>emb_num - 1</code> or more frames back share the first row, so set it to at least the clip length to give every frame its own embedding.</li>
+<li><code>sigma</code> (<code>float</code>): Width of the Gaussian kernel over time offsets, in frames (only for rff, default: 20). Offsets beyond about <code>3 * sigma</code> frames are treated as equally far.</li>
 </ul>
-<p>Checkpoints saved before the box normalization and embedding fixes (which normalized y by the image width and x by the height, collapsed the learned temporal embedding, and made the fixed positional embedding constant with <code>normalize: true</code>) load in a legacy mode that reproduces that behavior, so they track as they were trained. Retrain to get the fixed embeddings.</p>
+<p>Checkpoints saved before the box normalization and embedding fixes (which normalized y by the image width and x by the height, collapsed the learned temporal embedding, made the fixed positional embedding constant with <code>normalize: true</code>, and encoded frame times as ranks in the window) load in a legacy mode that reproduces that behavior, so they track as they were trained. Retrain to get the fixed embeddings.</p>
 <h3 id="visual-encoder-configuration-encoder_cfg">Visual Encoder Configuration (<code>encoder_cfg</code>)<a class="headerlink" href="#visual-encoder-configuration-encoder_cfg" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>model_name</code> (<code>str</code>): Name of visual encoder backbone. For <code>timm</code> backend, any model in <code>timm.list_models()</code> is available. For <code>torchvision</code>, only ResNet models are available.</li>
 <li><code>backend</code> (<code>str</code>): Backend library. Options: <code>"timm"</code> or <code>"torchvision"</code> (default: <code>"timm"</code>).</li>
 <li><code>in_chans</code> (<code>int</code>): Number of input channels (default: 3, use more for multi-anchor crops).</li>
 <li><code>pretrained</code> (<code>bool</code>): Whether to use pretrained weights or initialize randomly (default: <code>false</code>).</li>
+<li><code>pooling</code> (<code>str</code>): Global pooling of the backbone feature map. Options: <code>"gem"</code> (learnable Generalized Mean pooling), <code>"avg"</code>, or <code>"max"</code>. The default training config uses <code>"gem"</code>; when the key is omitted, <code>"avg"</code> is used, which is what checkpoints saved before this option was added were trained with.</li>
 </ul>
 <blockquote>
 <p><strong>Note</strong>: For advanced users, see <a href="https://timm.fast.ai/create_model"><code>timm.create_model</code></a> or <a href="https://pytorch.org/vision/stable/models/resnet.html"><code>torchvision.models.resnet</code></a> for additional parameters.</p>
