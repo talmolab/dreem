@@ -110,6 +110,29 @@ dreem eval ./data/test \
     --crop-size 70
 ```
 
+### Association Score Aggregation
+
+DREEM pools per-instance association scores into a per-track score before matching. By default this
+uses a **one-to-one, recency-weighted mean** over the lookback window
+(`tracker.aggregation: "recency_mean"`).
+
+Earlier versions took a softmax *within each reference frame* and then summed over each track's
+instances, which made a track's score depend on how much of the window it occupied -- an instance
+that disappeared for a few frames was scored against a skewed lookback, and the per-frame softmax
+entangled tracks through frame co-occupancy. On held-out cross-video animal data, switching to the
+one-to-one recency-weighted mean cut ID switches by 40-79% and improved HOTA/IDF1/AssA on most test
+sets.
+
+To restore the previous behavior, or to down-weight stale frames, set these in your inference config:
+
+```yaml
+tracker:
+  aggregation: "softmax_sum"  # legacy per-reference-frame softmax + sum
+  recency_tau: 5              # frames; null (default) weights the whole window equally
+```
+
+See the [Inference Configuration Reference](https://dreem.sleap.ai/configs/inference/) for details.
+
 For detailed usage instructions, see the [Usage Guide](https://dreem.sleap.ai/usage/).
 
 
