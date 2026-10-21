@@ -3437,7 +3437,7 @@
 <ul>
 <li><code>mode</code> (<code>str</code>): Embedding type. Options: <code>"fixed"</code> (sinusoidal), <code>"learned"</code>, or <code>null</code> (no embedding).</li>
 <li><code>n_points</code> (<code>int</code>): Number of points to embed (1 for centroid, 3+ for bbox coordinates).</li>
-<li><code>normalize</code> (<code>bool</code>): Whether to normalize positions (only for fixed embeddings, default: <code>true</code>).</li>
+<li><code>normalize</code> (<code>bool</code>): Whether to multiply the box coordinates, already normalized to <code>[0, 1]</code> by the image height (y) and width (x), by <code>scale</code> before the sinusoid (only for fixed embeddings, default: <code>true</code>).</li>
 <li><code>temperature</code> (<code>float</code>): Temperature constant for sinusoidal position embedding (only for fixed, default: 10000).</li>
 <li><code>scale</code> (<code>float</code> | <code>null</code>): Factor to scale positions after normalizing (only for fixed, optional).</li>
 <li><code>emb_num</code> (<code>int</code>): Number of embeddings in lookup table (only for learned).</li>
@@ -3453,8 +3453,9 @@
 <ul>
 <li><code>mode</code> (<code>str</code>): Embedding type. Options: <code>"fixed"</code>, <code>"learned"</code>, or <code>null</code> (no embedding).</li>
 <li><code>temperature</code> (<code>float</code>): Temperature constant for sinusoidal embedding (only for fixed, default: 10000).</li>
-<li><code>emb_num</code> (<code>int</code>): Number of embeddings in lookup table (only for learned).</li>
+<li><code>emb_num</code> (<code>int</code>): Number of embeddings in lookup table (only for learned). Each frame of the window gets its own row; frames at index <code>emb_num - 1</code> or later share the last row, so set it to at least the clip length to give every frame its own embedding.</li>
 </ul>
+<p>Checkpoints saved before the box normalization and embedding fixes (which normalized y by the image width and x by the height, collapsed the learned temporal embedding, and made the fixed positional embedding constant with <code>normalize: true</code>) load in a legacy mode that reproduces that behavior, so they track as they were trained. Retrain to get the fixed embeddings.</p>
 <h3 id="visual-encoder-configuration-encoder_cfg">Visual Encoder Configuration (<code>encoder_cfg</code>)<a class="headerlink" href="#visual-encoder-configuration-encoder_cfg" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>model_name</code> (<code>str</code>): Name of visual encoder backbone. For <code>timm</code> backend, any model in <code>timm.list_models()</code> is available. For <code>torchvision</code>, only ResNet models are available.</li>
