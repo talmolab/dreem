@@ -3386,6 +3386,8 @@
 <h3 id="advanced-parameters">Advanced Parameters<a class="headerlink" href="#advanced-parameters" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>decay_time</code> (<code>float</code> | <code>None</code>): Weight for temporal decay in post-processing. Set to <code>null</code> to disable.</li>
+<li><code>aggregation</code> (<code>str</code>): How per-instance association scores are pooled into a per-track score. <code>"recency_mean"</code> (default) scores each query/reference instance pair one-to-one on the raw association and pools them with a recency-weighted mean. <code>"softmax_sum"</code> restores the original behavior (a per-reference-frame softmax followed by an unweighted sum over each track's instances), whose scores depend on how much of the lookback window each track occupies -- a track that was missing for part of the window is scored on a different scale than one present throughout.</li>
+<li><code>recency_tau</code> (<code>float</code> | <code>None</code>): Time constant, in frames, of the exponential recency weight <code>exp(-delta / recency_tau)</code> used by <code>aggregation: "recency_mean"</code>. <code>null</code> (default) weights every reference instance in the window equally.</li>
 </ul>
 <h2 id="dataloader-configuration">Dataloader Configuration<a class="headerlink" href="#dataloader-configuration" title="Permanent link">&para;</a></h2>
 <ul>
@@ -3477,12 +3479,18 @@
 <a id="__codelineno-0-71" name="__codelineno-0-71" href="#__codelineno-0-71"></a><span class="w">  </span><span class="c1"># float: Trajectory overlap threshold for assignment (default: 0.01)</span>
 <a id="__codelineno-0-72" name="__codelineno-0-72" href="#__codelineno-0-72"></a><span class="w">  </span><span class="nt">overlap_thresh</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
 <a id="__codelineno-0-73" name="__codelineno-0-73" href="#__codelineno-0-73"></a>
-<a id="__codelineno-0-74" name="__codelineno-0-74" href="#__codelineno-0-74"></a><span class="nt">trainer</span><span class="p">:</span>
-<a id="__codelineno-0-75" name="__codelineno-0-75" href="#__codelineno-0-75"></a><span class="w">  </span><span class="c1"># str: Device to use: &quot;gpu&quot;, &quot;cuda&quot;, or &quot;cpu&quot;</span>
-<a id="__codelineno-0-76" name="__codelineno-0-76" href="#__codelineno-0-76"></a><span class="w">  </span><span class="nt">accelerator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;str&gt;</span>
-<a id="__codelineno-0-77" name="__codelineno-0-77" href="#__codelineno-0-77"></a>
-<a id="__codelineno-0-78" name="__codelineno-0-78" href="#__codelineno-0-78"></a><span class="w">  </span><span class="c1"># list[int]: List of device indices (e.g., [0] for first GPU)</span>
-<a id="__codelineno-0-79" name="__codelineno-0-79" href="#__codelineno-0-79"></a><span class="w">  </span><span class="nt">devices</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;list[int]&gt;</span>
+<a id="__codelineno-0-74" name="__codelineno-0-74" href="#__codelineno-0-74"></a><span class="w">  </span><span class="c1"># str: Per-track score pooling: &quot;recency_mean&quot; (default) or &quot;softmax_sum&quot; (legacy)</span>
+<a id="__codelineno-0-75" name="__codelineno-0-75" href="#__codelineno-0-75"></a><span class="w">  </span><span class="nt">aggregation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;str&gt;</span>
+<a id="__codelineno-0-76" name="__codelineno-0-76" href="#__codelineno-0-76"></a>
+<a id="__codelineno-0-77" name="__codelineno-0-77" href="#__codelineno-0-77"></a><span class="w">  </span><span class="c1"># float | null: Recency weight time constant in frames for &quot;recency_mean&quot; (optional)</span>
+<a id="__codelineno-0-78" name="__codelineno-0-78" href="#__codelineno-0-78"></a><span class="w">  </span><span class="nt">recency_tau</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float | null&gt;</span>
+<a id="__codelineno-0-79" name="__codelineno-0-79" href="#__codelineno-0-79"></a>
+<a id="__codelineno-0-80" name="__codelineno-0-80" href="#__codelineno-0-80"></a><span class="nt">trainer</span><span class="p">:</span>
+<a id="__codelineno-0-81" name="__codelineno-0-81" href="#__codelineno-0-81"></a><span class="w">  </span><span class="c1"># str: Device to use: &quot;gpu&quot;, &quot;cuda&quot;, or &quot;cpu&quot;</span>
+<a id="__codelineno-0-82" name="__codelineno-0-82" href="#__codelineno-0-82"></a><span class="w">  </span><span class="nt">accelerator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;str&gt;</span>
+<a id="__codelineno-0-83" name="__codelineno-0-83" href="#__codelineno-0-83"></a>
+<a id="__codelineno-0-84" name="__codelineno-0-84" href="#__codelineno-0-84"></a><span class="w">  </span><span class="c1"># list[int]: List of device indices (e.g., [0] for first GPU)</span>
+<a id="__codelineno-0-85" name="__codelineno-0-85" href="#__codelineno-0-85"></a><span class="w">  </span><span class="nt">devices</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;list[int]&gt;</span>
 </code></pre></div>
 <h2 id="cli-usage">CLI Usage<a class="headerlink" href="#cli-usage" title="Permanent link">&para;</a></h2>
 <p>Most parameters can be set via CLI flags. For example:</p>
