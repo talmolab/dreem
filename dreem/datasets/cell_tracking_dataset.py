@@ -55,14 +55,15 @@ class CellTrackingDataset(BaseDataset):
                 training or validation. Currently doesn't affect dataset logic
             augmentations: An optional dict mapping augmentations to parameters.
                 The keys
-                should map directly to augmentation classes in albumentations. The
-                same randomly sampled augmentation is applied to every frame of a
-                clip. Example:
+                should map directly to augmentation classes in albumentations. Example:
                     augs = {
                         'Rotate': {'limit': [-90, 90]},
                         'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0},
                         'RandomContrast': {'limit': 0.2}
                     }
+                Spatial augmentations (e.g. rotations, flips, affine warps) are
+                drawn once per clip and applied to every frame in it, so instances
+                keep coherent trajectories; pixel-level ones are drawn per frame.
             n_chunks: Number of chunks to subsample from.
                 Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
             seed: set a seed for reproducibility
@@ -129,6 +130,13 @@ class CellTrackingDataset(BaseDataset):
         else:
             self.augmentations = None
 
+        # spatial augmentations are drawn once per clip, not once per frame
+        self.clip_augmentations = (
+            data_utils.ClipAugmentation(self.augmentations)
+            if self.augmentations is not None
+            else None
+        )
+
         #
         if self.ctc_track_meta is not None:
             self.list_df_track_meta = [
@@ -193,8 +201,7 @@ class CellTrackingDataset(BaseDataset):
 
         frames = []
         max_crop_h, max_crop_w = 0, 0
-        # augmentation params sampled on the first frame, replayed on the rest
-        aug_replay = None
+        aug_replay = None  # spatial augmentation params shared by the whole clip
         for i in frame_idx:
             instances, gt_track_ids, dict_centroids, bboxes, masks = (
                 [],
@@ -222,8 +229,8 @@ class CellTrackingDataset(BaseDataset):
             # augmented frame (albumentations keeps geometric transforms in sync
             # between image and mask)
             if self.augmentations is not None:
-                augmented, aug_replay = data_utils.augment_clip_frame(
-                    self.augmentations, aug_replay, image=img, mask=gt_sec
+                augmented, aug_replay = self.clip_augmentations(
+                    image=img, mask=gt_sec, replay=aug_replay
                 )
                 img, gt_sec = augmented["image"], augmented["mask"]
 

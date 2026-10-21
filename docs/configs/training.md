@@ -106,12 +106,16 @@ Use the `dir` section to automatically discover videos and labels:
 * `labels_suffix` (`str`): File extension for label files (e.g., `.slp`, `.csv`, `.xml`).
 * `vid_suffix` (`str`): File extension for video files (e.g., `.mp4`, `.avi`, `.tif`, `.tiff`).
 
+Each labels file is paired with the video whose name starts its own: `x.mp4` pairs with `x.slp`, `x.predictions.slp` or `x.mp4.predictions.slp`, but not with `x_noisy.slp`. If no video name matches, the labels file is paired with the video it references internally. A labels file with no video, or with several equally good matches, is an error. Videos without labels are ignored.
+
 ### File-based Input
 
 Alternatively, specify files explicitly:
 
 * `slp_files` (`list[str]`): List of paths to SLEAP label files (`.slp`).
 * `video_files` (`list[str]`): List of paths to video files.
+
+When both lists are given they are paired by position and must be the same length. When only `slp_files` is given, each labels file is paired with its video by name as above, looking in `dir.path` and next to the labels file.
 
 ### Dataset Parameters
 
@@ -130,8 +134,6 @@ Alternatively, specify files explicitly:
 
 The `augmentations` subsection contains parameters for [Albumentations](https://albumentations.ai). Keys must match augmentation class names exactly. Additional augmentations include `NodeDropout` and `InstanceDropout`.
 
-Albumentations transforms are sampled once per clip: every frame in a training clip receives the same transform (e.g. the same rotation angle and flip), so object motion across frames is preserved. A new transform is sampled for each clip. `NodeDropout` and `InstanceDropout` are still applied independently per instance/frame.
-
 **Example**:
 ```YAML
 augmentations:
@@ -142,6 +144,8 @@ augmentations:
     blur_limit: [3, 7]
     p: 0.3
 ```
+
+For all datasets (`SleapDataset`, `MicroscopyDataset`, `CellTrackingDataset`), spatial augmentations (e.g. `Rotate`, `Affine`, flips, crops) are drawn once per clip and applied identically to every frame in it, so each instance keeps a coherent trajectory. In the example above, the whole clip is either rotated by one random angle or not rotated at all. Pixel-level augmentations (e.g. `MotionBlur`, `RandomBrightnessContrast`) and dropout augmentations (e.g. `CoarseDropout`) are drawn per frame, and run before the spatial ones.
 
 > **Note**: Augmentations are typically only used for training datasets, not validation or test.
 

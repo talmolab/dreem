@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import sleap_io as sio
 import torch
+from albumentations.augmentations.dropout.transforms import BaseDropout
 from numpy.typing import ArrayLike
 from PIL import Image
 from sleap_io import LabeledFrame, Labels
@@ -343,6 +344,11 @@ def nms(ioms: torch.Tensor, threshold: float) -> list[int]:
 def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:
     """Get a square bbox around a centroid coordinates.
 
+    The box is always centered on `center`, even when it extends past the edge of
+    the frame; `crop_bbox` zero-pads the part outside. Clamping it into the frame
+    instead would shift the crop off the instance and move the box center, which
+    the positional embedding and tracker read as the instance's position.
+
     Args:
         center: centroid coordinates in (x,y)
         size: size of the bounding box
@@ -354,10 +360,10 @@ def get_bbox(center: ArrayLike, size: int | tuple[int]) -> torch.Tensor:
         size = (size, size)
     cx, cy = center[0], center[1]
 
-    y1 = max(0, -size[-1] // 2 + cy)
-    x1 = max(0, -size[0] // 2 + cx)
-    y2 = size[-1] // 2 + cy if y1 != 0 else size[1]
-    x2 = size[0] // 2 + cx if x1 != 0 else size[0]
+    y1 = -size[-1] // 2 + cy
+    x1 = -size[0] // 2 + cx
+    y2 = size[-1] // 2 + cy
+    x2 = size[0] // 2 + cx
     bbox = torch.Tensor([y1, x1, y2, x2])
 
     return bbox
@@ -772,7 +778,7 @@ class LazyTiffStack:
         self.file.close()
 
 
-def build_augmentations(augmentations: dict) -> A.ReplayCompose:
+def build_augmentations(augmentations: dict) -> A.Compose:
     """Get augmentations for dataset.
 
     Args:
@@ -780,10 +786,7 @@ def build_augmentations(augmentations: dict) -> A.ReplayCompose:
                        and their parameters
 
     Returns:
-        An Albumentations composition of different augmentations. A
-        `ReplayCompose` is used so that the parameters sampled for the first
-        frame of a clip can be replayed on the remaining frames (see
-        `augment_clip_frame`).
+        An Albumentations composition of different augmentations.
     """
     aug_list = []
     for aug_name, aug_args in augmentations.items():
@@ -791,7 +794,7 @@ def build_augmentations(augmentations: dict) -> A.ReplayCompose:
         aug = aug_class(**aug_args)
         aug_list.append(aug)
 
-    augs = A.ReplayCompose(
+    augs = A.Compose(
         aug_list,
         p=1.0,
         keypoint_params=A.KeypointParams(format="xy", remove_invisible=False),
@@ -800,44 +803,98 @@ def build_augmentations(augmentations: dict) -> A.ReplayCompose:
     return augs
 
 
-def augment_clip_frame(
-    augmentations: A.ReplayCompose, replay: dict | None, **data
-) -> tuple[dict, dict]:
-    """Augment one frame of a clip so that every frame gets the same transform.
-
-    Tracking clips must be augmented consistently: sampling a new rotation/flip/
-    scale for each frame would make objects jump around between frames and
-    corrupt the motion cues the model learns from. The first frame of a clip
-    (`replay=None`) samples new random parameters; pass the returned replay
-    dict back in for every subsequent frame of the same clip to apply exactly
-    the same transform.
+def _is_spatial(transform: A.BasicTransform) -> bool:
+    """Check whether an augmentation moves pixels (and keypoints) around the frame.
 
     Args:
-        augmentations: the pipeline returned by `build_augmentations`.
-        replay: `None` for the first frame of a clip, otherwise the replay dict
-            returned by the previous call for this clip.
-        **data: albumentations targets for this frame (e.g. `image`,
-            `keypoints`, `mask`).
+        transform: an Albumentations transform.
 
     Returns:
-        A tuple of the augmented targets and the replay dict to use for the
-        next frame of the clip.
+        True for spatial transforms (rotations, flips, affine warps, crops), False
+        for pixel-level and dropout transforms, which leave positions unchanged.
     """
-    if replay is None:
-        # Seed albumentations from numpy's global RNG at the start of every
-        # clip. Albumentations creates its RNG once at construction time, so
-        # forked DataLoader workers would otherwise share an identical copy and
-        # repeat the same augmentations across workers and epochs. Numpy's
-        # global RNG is reseeded by torch per worker and epoch (and by
-        # `BaseDataset(seed=...)`).
-        # Note: `set_random_state` shares one generator across all transforms;
-        # `set_random_seed` would give each transform an identical stream and
-        # correlate their draws (e.g. flip vs. rotation angle).
+    return isinstance(transform, A.DualTransform) and not isinstance(
+        transform, BaseDropout
+    )
+
+
+class ClipAugmentation:
+    """Augment the frames of a clip with one draw of spatial parameters.
+
+    Spatial transforms move every instance in the frame, so drawing them
+    independently per frame makes the same instance jump between consecutive
+    frames of a clip, e.g. a random 45 degree rotation on one frame and none on
+    the next. The positional embedding would then learn from trajectories that
+    never occur at inference. Here spatial transforms are drawn once, on the first
+    frame of the clip, and replayed on the rest. Pixel-level and dropout
+    transforms leave positions alone and are still drawn per frame.
+
+    Pixel-level transforms run before spatial ones, each group in config order.
+    """
+
+    def __init__(self, augmentations: A.Compose):
+        """Split an augmentation pipeline into per-frame and per-clip parts.
+
+        Args:
+            augmentations: the Compose returned by `build_augmentations`.
+        """
+        keypoint_params = A.KeypointParams(format="xy", remove_invisible=False)
+        per_frame = [t for t in augmentations if not _is_spatial(t)]
+        spatial = [t for t in augmentations if _is_spatial(t)]
+
+        self.per_frame = (
+            A.Compose(per_frame, p=1.0, keypoint_params=keypoint_params)
+            if per_frame
+            else None
+        )
+        self.spatial = (
+            A.ReplayCompose(spatial, p=1.0, keypoint_params=keypoint_params)
+            if spatial
+            else None
+        )
+
+    def __call__(self, replay: dict | None = None, **data) -> tuple[dict, dict | None]:
+        """Augment one frame of a clip.
+
+        Args:
+            replay: the spatial parameters drawn on an earlier frame of the same
+                clip, or None on the clip's first frame.
+            **data: albumentations targets for this frame, e.g. `image` (h, w, c),
+                `keypoints` ((n, 2) xy array) and/or a label `mask` (h, w).
+
+        Returns:
+            A tuple of the augmented targets and the spatial parameters to pass as
+            `replay` for the clip's next frame.
+        """
+        if replay is None:
+            self._reseed()
+        augmented = data
+        if self.per_frame is not None:
+            augmented = self.per_frame(**augmented)
+        if self.spatial is not None:
+            if replay is None:
+                augmented = self.spatial(**augmented)
+                replay = augmented["replay"]
+            else:
+                augmented = A.ReplayCompose.replay(replay, **augmented)
+        return augmented, replay
+
+    def _reseed(self) -> None:
+        """Reseed the transforms at the start of a clip from numpy's global RNG.
+
+        Albumentations creates its RNG once, at construction time, so forked
+        DataLoader workers would otherwise each inherit an identical copy and
+        repeat the same augmentations across workers and epochs. Numpy's global
+        RNG is reseeded by torch per worker and epoch (and by
+        `BaseDataset(seed=...)`). One generator is shared by all transforms:
+        `set_random_seed` would give each transform an identical stream and
+        correlate their draws (e.g. flip vs. rotation angle).
+        """
         seed = int(np.random.randint(2**31 - 1))
-        augmentations.set_random_state(np.random.default_rng(seed), random.Random(seed))
-        augmented = augmentations(**data)
-        return augmented, augmented["replay"]
-    return A.ReplayCompose.replay(replay, **data), replay
+        random_generator, py_random = np.random.default_rng(seed), random.Random(seed)
+        for compose in (self.per_frame, self.spatial):
+            if compose is not None:
+                compose.set_random_state(random_generator, py_random)
 
 
 def get_max_padding(height: int, width: int) -> tuple:

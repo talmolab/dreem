@@ -38,14 +38,15 @@ class MicroscopyDataset(BaseDataset):
             mode: `train` or `val`. Determines whether this dataset is used for
                 training or validation. Currently doesn't affect dataset logic
             augmentations: An optional dict mapping augmentations to parameters. The keys
-                should map directly to augmentation classes in albumentations. The
-                same randomly sampled augmentation is applied to every frame of a
-                clip. Example:
+                should map directly to augmentation classes in albumentations. Example:
                     augs = {
                         'Rotate': {'limit': [-90, 90]},
                         'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0},
                         'RandomContrast': {'limit': 0.2}
                     }
+                Spatial augmentations (e.g. rotations, flips, affine warps) are
+                drawn once per clip and applied to every frame in it, so instances
+                keep coherent trajectories; pixel-level ones are drawn per frame.
             n_chunks: Number of chunks to subsample from.
                 Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
             seed: set a seed for reproducibility
@@ -79,6 +80,13 @@ class MicroscopyDataset(BaseDataset):
             self.augmentations = data_utils.build_augmentations(augmentations)
         else:
             self.augmentations = None
+
+        # spatial augmentations are drawn once per clip, not once per frame
+        self.clip_augmentations = (
+            data_utils.ClipAugmentation(self.augmentations)
+            if self.augmentations is not None
+            else None
+        )
 
         if source.lower() == "trackmate":
             parser = data_utils.parse_trackmate
@@ -138,8 +146,7 @@ class MicroscopyDataset(BaseDataset):
         video = self.videos[label_idx]
 
         frames = []
-        # augmentation params sampled on the first frame, replayed on the rest
-        aug_replay = None
+        aug_replay = None  # spatial augmentation params shared by the whole clip
         for frame_id in frame_idx:
             instances, gt_track_ids, centroids = [], [], []
 
@@ -160,11 +167,8 @@ class MicroscopyDataset(BaseDataset):
 
             # albumentations wants (spatial, channels), ensure correct dims
             if self.augmentations is not None:
-                augmented, aug_replay = data_utils.augment_clip_frame(
-                    self.augmentations,
-                    aug_replay,
-                    image=img,
-                    keypoints=np.vstack(centroids),
+                augmented, aug_replay = self.clip_augmentations(
+                    image=img, keypoints=np.vstack(centroids), replay=aug_replay
                 )
                 img, centroids = augmented["image"], augmented["keypoints"]
 

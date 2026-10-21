@@ -1,6 +1,7 @@
 """Module containing logic for loading sleap datasets."""
 
 import logging
+import os
 from math import inf
 from pathlib import Path
 from typing import Optional, Union
@@ -70,14 +71,15 @@ class SleapDataset(BaseDataset):
                             if "ignore" then we use a mask instead of a crop and nan centroids/bboxes.
                             if "centroid" then we default to the pose centroid as the node to crop around.
             augmentations: An optional dict mapping augmentations to parameters. The keys
-                should map directly to augmentation classes in albumentations. The
-                same randomly sampled augmentation is applied to every frame of a
-                clip. Example:
+                should map directly to augmentation classes in albumentations. Example:
                     augmentations = {
                         'Rotate': {'limit': [-90, 90], 'p': 0.5},
                         'GaussianBlur': {'blur_limit': (3, 7), 'sigma_limit': 0, 'p': 0.2},
                         'RandomContrast': {'limit': 0.2, 'p': 0.6}
                     }
+                Spatial augmentations (e.g. rotations, flips, affine warps) are
+                drawn once per clip and applied to every frame in it, so instances
+                keep coherent trajectories; pixel-level ones are drawn per frame.
             n_chunks: Number of chunks to subsample from.
                 Can either a fraction of the dataset (ie (0,1.0]) or number of chunks
             seed: set a seed for reproducibility
@@ -101,6 +103,13 @@ class SleapDataset(BaseDataset):
             augmentations,
             n_chunks,
             seed,
+        )
+
+        # spatial augmentations are drawn once per clip, not once per frame
+        self.clip_augmentations = (
+            data_utils.ClipAugmentation(self.augmentations)
+            if self.augmentations is not None
+            else None
         )
 
         self.slp_files = slp_files
@@ -169,7 +178,16 @@ class SleapDataset(BaseDataset):
             self.labels.append(labels)
             self.annotated_segments[slp_file] = annotated_segments
 
-        self.videos = [imageio.get_reader(vid_file) for vid_file in self.vid_files]
+        for vid_file in self.vid_files:
+            if not Path(vid_file).exists():
+                raise FileNotFoundError(f"Video file not found: {vid_file}")
+        # Video readers are opened lazily, once per process (see
+        # `_get_video_reader`). An imageio reader wraps an ffmpeg subprocess, so a
+        # reader opened here and inherited by forked DataLoader workers would have
+        # every worker reading the same pipe, handing crops to the wrong frames.
+        self.videos = [None] * len(self.vid_files)
+        self._videos_pid = os.getpid()
+        self._inherited_videos = []
         # preprocessors
         self.remove_excess_detections = RemoveExcessDetections(max_tracks)
         self.non_max_suppression = NonMaxSuppression(max_detection_overlap)
@@ -215,14 +233,13 @@ class SleapDataset(BaseDataset):
             crop_size = self.crop_size[0]
             dilation_radius_px = self.dilation_radius_px[0]
 
-        vid_reader = self.videos[label_idx]
+        vid_reader = self._get_video_reader(label_idx)
 
         skeleton = sleap_labels_obj.skeletons[-1]
 
         frames = []
         max_crop_h, max_crop_w = 0, 0
-        # augmentation params sampled on the first frame, replayed on the rest
-        aug_replay = None
+        aug_replay = None  # spatial augmentation params shared by the whole clip
         for i, frame_ind in enumerate(frame_idx):
             (
                 instances,
@@ -352,8 +369,8 @@ class SleapDataset(BaseDataset):
                 else:
                     keypoints = []
 
-                augmented, aug_replay = data_utils.augment_clip_frame(
-                    self.augmentations, aug_replay, image=img, keypoints=keypoints
+                augmented, aug_replay = self.clip_augmentations(
+                    image=img, keypoints=keypoints, replay=aug_replay
                 )
 
                 img, aug_poses = augmented["image"], augmented["keypoints"]
@@ -518,7 +535,46 @@ class SleapDataset(BaseDataset):
 
         return frames
 
+    def _get_video_reader(self, label_idx: int) -> "imageio.core.Format.Reader":
+        """Get the video reader for a labels file, opened by this process.
+
+        A forked DataLoader worker inherits the parent's readers, which share the
+        parent's ffmpeg subprocesses. On the first call in a new process those are
+        set aside, unused, and the worker opens its own. They are kept referenced
+        rather than closed: closing one would terminate the ffmpeg process the
+        parent is still reading from.
+
+        Args:
+            label_idx: index of the labels file (and its video).
+
+        Returns:
+            An imageio reader for the video, owned by the calling process.
+        """
+        pid = os.getpid()
+        if self._videos_pid != pid:
+            self._inherited_videos.extend(r for r in self.videos if r is not None)
+            self.videos = [None] * len(self.vid_files)
+            self._videos_pid = pid
+        if self.videos[label_idx] is None:
+            self.videos[label_idx] = imageio.get_reader(self.vid_files[label_idx])
+        return self.videos[label_idx]
+
+    def __getstate__(self) -> dict:
+        """Drop open video readers when pickled, e.g. for spawned workers.
+
+        Returns:
+            The dataset's state, with readers to be reopened on first use.
+        """
+        state = self.__dict__.copy()
+        state["videos"] = [None] * len(self.vid_files)
+        state["_videos_pid"] = None
+        state["_inherited_videos"] = []
+        return state
+
     def __del__(self):
-        """Handle file closing before garbage collection."""
-        for reader in self.videos:
-            reader.close()
+        """Close the video readers this process opened before garbage collection."""
+        if getattr(self, "_videos_pid", None) != os.getpid():
+            return  # inherited readers belong to the parent process
+        for reader in getattr(self, "videos", []):
+            if reader is not None:
+                reader.close()

@@ -13,9 +13,11 @@ from dreem.datasets import (
     TrackingDataset,
 )
 from dreem.datasets.data_utils import (
+    ClipAugmentation,
     NodeDropout,
-    augment_clip_frame,
     build_augmentations,
+    crop_bbox,
+    get_bbox,
     get_max_padding,
 )
 
@@ -720,6 +722,161 @@ def test_augmentations(two_flies, ten_icy_particles):
     assert not torch.all(a.eq(b))
 
 
+@pytest.mark.parametrize(
+    "center",
+    [
+        (500.0, 400.0),  # interior
+        (10.0, 20.0),  # near the left and top edges
+        (-5.0, 3.0),  # anchor just outside the frame
+        (1020.0, 700.0),  # near the right edge of a 1024-wide frame
+    ],
+)
+def test_get_bbox_is_centered(center):
+    """The box is centered on the anchor even when it extends past the frame.
+
+    Args:
+        center: (x, y) anchor position in pixels
+    """
+    y1, x1, y2, x2 = get_bbox(center, 128).tolist()
+
+    assert (x2 - x1, y2 - y1) == (128, 128)
+    assert ((x1 + x2) / 2, (y1 + y2) / 2) == center
+
+
+def test_crop_near_edge_is_centered():
+    """A crop of an instance near the top-left corner is centered on it, zero-padded."""
+    img = torch.zeros(1, 100, 100)
+    img[0, 20, 10] = 1.0  # instance at x=10, y=20
+
+    crop = crop_bbox(img, get_bbox((10.0, 20.0), 32))
+
+    assert crop.shape == (1, 32, 32)
+    assert crop[0, 16, 16] == 1.0
+    assert (crop[0, :, :6] == 0).all()  # columns left of the frame are padding
+
+
+def test_spatial_augmentations_consistent_across_clip(two_flies):
+    """Spatial augmentations must use one set of parameters for a whole clip.
+
+    Drawing a rotation per frame makes the same fly jump between consecutive
+    frames of a training clip, which never happens at inference.
+
+    Args:
+        two_flies: flies fixture used for testing
+    """
+    ds_args = dict(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
+        anchors="centroid",
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+    )
+    raw_clip = next(iter(SleapDataset(**ds_args)))
+    aug_clip = next(
+        iter(
+            SleapDataset(
+                **ds_args,
+                augmentations={
+                    "Rotate": {"limit": (20, 45), "p": 1.0},
+                    "GaussianBlur": {"blur_limit": (3, 7), "p": 1.0},
+                },
+            )
+        )
+    )
+
+    def fly_to_fly(frame):
+        """Vector from track 0's centroid to track 1's (instance order is shuffled)."""
+        centroids = {
+            instance.gt_track_id.item(): np.asarray(instance.centroid["centroid"])
+            for instance in frame.instances
+        }
+        if not {0, 1} <= centroids.keys():
+            return None
+        return centroids[1] - centroids[0]
+
+    # The rotation angle is recovered from the vector between the two flies, which
+    # does not depend on the center of rotation.
+    angles = []
+    for raw_frame, aug_frame in zip(raw_clip, aug_clip):
+        raw_vec, aug_vec = fly_to_fly(raw_frame), fly_to_fly(aug_frame)
+        if raw_vec is None or aug_vec is None:
+            continue
+        cross = raw_vec[0] * aug_vec[1] - raw_vec[1] * aug_vec[0]
+        angles.append(np.arctan2(cross, np.dot(raw_vec, aug_vec)))
+
+    assert len(angles) >= 2
+    assert np.ptp(angles) < 1e-3, f"rotation varies within a clip: {angles}"
+    assert abs(angles[0]) > np.deg2rad(15)
+
+
+def test_sleap_dataset_video_readers_are_per_process(two_flies):
+    """A process that inherits a dataset opens its own readers and leaves the parent's.
+
+    Args:
+        two_flies: flies fixture used for testing
+    """
+    ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+    )
+    assert ds.videos == [None]  # nothing is opened until a frame is read
+
+    ds[0]
+    parent_reader = ds.videos[0]
+    assert parent_reader is not None
+
+    ds._videos_pid = -1  # as a forked DataLoader worker sees the parent's state
+    ds[0]
+    assert ds.videos[0] is not parent_reader
+    assert not parent_reader.closed  # closing it would kill the parent's ffmpeg
+    parent_reader.get_data(0)
+
+
+def test_sleap_dataset_multiworker_crops_match(two_flies):
+    """Crops loaded by DataLoader workers match those loaded in the main process.
+
+    Args:
+        two_flies: flies fixture used for testing
+    """
+    ds = SleapDataset(
+        slp_files=[two_flies[0]],
+        video_files=[two_flies[1]],
+        data_dirs=["./data/sleap"],
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+    )
+
+    def crops_by_instance(num_workers):
+        """Map (frame id, track id) to crop; instance order is shuffled per frame."""
+        loader = DataLoader(
+            ds, batch_size=1, collate_fn=ds.no_batching_fn, num_workers=num_workers
+        )
+        return {
+            (frame.frame_id.item(), instance.gt_track_id.item()): instance.crop
+            for batch in loader
+            for frame in batch[0]
+            for instance in frame.instances
+        }
+
+    single_process = crops_by_instance(num_workers=0)
+    workers = crops_by_instance(num_workers=2)
+
+    assert single_process.keys() == workers.keys()
+    mismatched = [
+        key
+        for key in single_process
+        if not torch.equal(single_process[key], workers[key])
+    ]
+    assert not mismatched, f"crops differ for (frame, track) {mismatched}"
+
+
 def _fit_rigid(src, dst):
     """Fit `dst ~= src @ M.T + t` and return (rotation angle in degrees, flipped).
 
@@ -899,15 +1056,17 @@ def test_augmentations_cell_tracking(cell_tracking):
     assert all(25 <= abs(angle) <= 65 for angle, _ in transforms)
 
 
-def test_augment_clip_frame_randomness():
+def test_clip_augmentation_randomness():
     """Sampled params must be independent across transforms and follow np.random."""
-    augmentations = build_augmentations(
-        {"Rotate": {"limit": 45, "p": 1.0}, "HorizontalFlip": {"p": 0.5}}
+    clip_augmentations = ClipAugmentation(
+        build_augmentations(
+            {"Rotate": {"limit": 45, "p": 1.0}, "HorizontalFlip": {"p": 0.5}}
+        )
     )
     img = np.zeros((16, 16, 3), dtype=np.uint8)
 
     def sample():
-        _, replay = augment_clip_frame(augmentations, None, image=img, keypoints=[])
+        _, replay = clip_augmentations(image=img, keypoints=[])
         rotate, flip = replay["transforms"]
         matrix = np.array(rotate["params"]["matrix"])
         return np.degrees(np.arctan2(matrix[1, 0], matrix[0, 0])), flip["applied"]
