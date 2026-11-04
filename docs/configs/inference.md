@@ -75,6 +75,7 @@ The `tracker` section controls tracking behavior and post-processing.
 * `decay_time` (`float` | `None`): Weight for temporal decay in post-processing. Set to `null` to disable.
 * `aggregation` (`str`): How per-instance association scores are pooled into a per-track score. `"recency_mean"` (default) scores each query/reference instance pair one-to-one on the raw association and pools them with a recency-weighted mean. `"softmax_sum"` restores the original behavior (a per-reference-frame softmax followed by an unweighted sum over each track's instances), whose scores depend on how much of the lookback window each track occupies -- a track that was missing for part of the window is scored on a different scale than one present throughout.
 * `recency_tau` (`float` | `None`): Time constant, in frames, of the exponential recency weight `exp(-delta / recency_tau)` used by `aggregation: "recency_mean"`. `null` (default) weights every reference instance in the window equally.
+* `gap_penalty` (`float`): Subtracts `gap_penalty * log(gap)` from each track's pooled score, where `gap` is the number of frames since the track's newest instance in the window (tracks seen in the previous frame are unchanged). Use it when animals disappear for a while: it stops a track whose animal vanished a few frames ago from outscoring the animal's own, current track. `0` (default) disables it.
 
 ## Dataloader Configuration
 
@@ -173,6 +174,9 @@ tracker:
 
   # float | null: Recency weight time constant in frames for "recency_mean" (optional)
   recency_tau: <float | null>
+
+  # float: Penalty on log(frames since a track was last seen) (default: 0, off)
+  gap_penalty: <float>
 
 trainer:
   # str: Device to use: "gpu", "cuda", or "cpu"
