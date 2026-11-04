@@ -347,6 +347,42 @@ def test_apply_gap_penalty():
         Tracker(gap_penalty=-1)
 
 
+def test_tracker_gap_penalty_discounts_unseen_tracks():
+    """The tracker subtracts gap_penalty * log(frames since each track was last seen)."""
+    # the second instance is absent in frame 1
+    positions = [[10.0, 60.0], [10.0], [10.0, 60.0]]
+    frames = []
+    for t, ys in enumerate(positions):
+        instances = [
+            Instance(
+                gt_track_id=i,
+                pred_track_id=-1,
+                bbox=torch.tensor([[y, y, y + 5, y + 5]]),
+                crop=torch.rand(size=(1, 1, 64, 64)),
+            )
+            for i, y in enumerate(ys)
+        ]
+        frames.append(
+            Frame(video_id=0, frame_id=t, img_shape=(1, 128, 128), instances=instances)
+        )
+
+    tracker = Tracker(overlap_thresh=0.01, decay_time=None, iou=None, gap_penalty=0.5)
+    frames_pred = tracker(_small_tracking_transformer(), frames)
+
+    # gaps from the tracker's own assignments, since an untrained model picks them
+    last_seen = {}
+    for t in range(2):
+        for track_id in frames_pred[t].get_pred_track_ids().tolist():
+            last_seen[track_id] = t
+    traj_score = frames_pred[2].get_traj_score("traj_score")
+    penalized = frames_pred[2].get_traj_score("gap_penalty")
+    gaps = np.array([2 - last_seen[track_id] for track_id in traj_score.columns])
+    # a track not continued in frame 1 was last seen 2 frames ago
+    assert gaps.max() == 2
+    expected = traj_score.to_numpy() - 0.5 * np.log(gaps)[None, :]
+    assert np.allclose(penalized.to_numpy(), expected)
+
+
 # @pytest.mark.parametrize("set_default_device", ["cpu"], indirect=True)
 def test_weight_iou():  # set_default_device
     """Test postprocessing methods.
