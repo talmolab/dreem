@@ -131,6 +131,19 @@ tracker:
   recency_tau: 5              # frames; null (default) weights the whole window equally
 ```
 
+When animals leave view for a while, the track of an animal that vanished a few frames ago can
+outscore that animal's own current track, because nothing discounts a track for how long it has been
+unseen. `gap_penalty` subtracts `gap_penalty * log(frames since the track was last seen)` from each
+track's score (tracks seen in the previous frame are unchanged; `0`, the default, turns it off). Pair
+it with a small `recency_tau` so each track is scored on its newest instance. The best value depends
+on the data; tune it on held-out clips:
+
+```yaml
+tracker:
+  recency_tau: 0.1
+  gap_penalty: 0.5
+```
+
 See the [Inference Configuration Reference](https://dreem.sleap.ai/configs/inference/) for details.
 
 For detailed usage instructions, see the [Usage Guide](https://dreem.sleap.ai/usage/).

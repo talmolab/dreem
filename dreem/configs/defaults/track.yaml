@@ -7,6 +7,7 @@ tracker:
   max_center_dist: null
   aggregation: "recency_mean"  # or "softmax_sum" for the legacy pooling
   recency_tau: null  # frames; null = weight all reference instances equally
+  gap_penalty: 0.0  # subtract gap_penalty * log(frames since a track was seen); 0 = off
 
 dataset:
   test_dataset:

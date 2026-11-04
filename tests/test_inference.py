@@ -1,5 +1,6 @@
 """Test inference logic."""
 
+import math
 import os
 
 import numpy as np
@@ -19,7 +20,7 @@ from dreem.inference.post_processing import (
 )
 from dreem.inference.track import export_trajectories, run
 from dreem.inference.track_queue import TrackQueue
-from dreem.inference.tracker import aggregate_traj_score
+from dreem.inference.tracker import aggregate_traj_score, apply_gap_penalty
 from dreem.io import Config, Frame, FrameFlagCode, Instance
 from dreem.models import GlobalTrackingTransformer, GTRRunner
 
@@ -217,6 +218,13 @@ def test_aggregate_traj_score_recency_weighting():
     assert torch.allclose(decayed, expected.view(1, 1))
     assert decayed.item() > plain.item()  # the recent, matching instance dominates
 
+    # a track last seen long ago keeps its weighted mean instead of underflowing to 0
+    stale = aggregate_traj_score(
+        raw_asso, softmax_asso, id_inds, deltas + 300.0, tau=1.0
+    )
+    weights = torch.exp(-(deltas - deltas.min()) / 1.0)
+    assert torch.allclose(stale, (weights[0] / weights.sum()).view(1, 1))
+
 
 def test_aggregate_traj_score_softmax_sum_matches_legacy_matmul():
     """`softmax_sum` reproduces the original `asso_nonquery @ id_inds` pooling."""
@@ -311,6 +319,32 @@ def test_tracker_center_dist_on_non_square_frames():
     traj_score = frames_pred[1].get_traj_score("traj_score").to_numpy()
     center_dist_score = frames_pred[1].get_traj_score("max_center_dist").to_numpy()
     assert np.allclose(center_dist_score, traj_score)
+
+
+def test_apply_gap_penalty():
+    """Tracks are penalized by log(frames since their newest instance); gap 1 is free."""
+    traj_score = torch.tensor([[2.0, 2.0, 2.0]])
+    # track 0 seen 1 and 2 frames ago, track 1 only 4 frames ago, track 2 at 10 and 20
+    id_inds = torch.tensor(
+        [
+            [1.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+    deltas = torch.tensor([1.0, 2.0, 4.0, 10.0, 20.0])
+
+    out = apply_gap_penalty(traj_score, id_inds, deltas, penalty=0.5)
+    expected = torch.tensor([[2.0, 2.0 - 0.5 * math.log(4), 2.0 - 0.5 * math.log(10)]])
+    assert torch.allclose(out, expected)
+    assert apply_gap_penalty(traj_score, id_inds, deltas, penalty=0.0) is traj_score
+
+    assert Tracker().gap_penalty == 0.0
+    assert Tracker(gap_penalty=1.5).gap_penalty == 1.5
+    with pytest.raises(ValueError, match="gap_penalty"):
+        Tracker(gap_penalty=-1)
 
 
 # @pytest.mark.parametrize("set_default_device", ["cpu"], indirect=True)
