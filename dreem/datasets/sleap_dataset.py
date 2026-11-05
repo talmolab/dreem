@@ -6,7 +6,6 @@ from math import inf
 from pathlib import Path
 from typing import Optional, Union
 
-import imageio
 import numpy as np
 import sleap_io as sio
 import torch
@@ -17,6 +16,47 @@ from dreem.datasets.preprocessors import NonMaxSuppression, RemoveExcessDetectio
 from dreem.io import Frame, Instance
 
 logger = logging.getLogger("dreem.datasets")
+
+
+class FrameReader:
+    """Random-access video reader with exact seeks, behind imageio's reader interface.
+
+    imageio's ffmpeg reader restarts ffmpeg with a timestamp seek on a backward or long
+    forward jump and can land one frame late: with chunks read in shuffled order, 94% of
+    the frames of an H.264 gerbil clip came back as frame t + 1. sleap-io's OpenCV backend
+    seeks by frame index and returned frame t every time (checked against a sequential
+    decode). Frames are always RGB (H, W, 3), as imageio returns them.
+
+    The decoder runs on one thread unless `OPENCV_FFMPEG_CAPTURE_OPTIONS` says otherwise:
+    FFmpeg's default is a thread (and frame buffers) per core for every open reader, and
+    each DataLoader worker holds readers for many videos.
+    """
+
+    def __init__(self, path: str):
+        """Open the video.
+
+        Args:
+            path: video file.
+        """
+        os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "threads;1")
+        self._video = sio.Video.from_filename(str(path), grayscale=False)
+
+    def get_data(self, index: int) -> np.ndarray:
+        """Return frame `index` as an (H, W, 3) uint8 array."""
+        if not 0 <= index < len(self._video):
+            raise IndexError(
+                f"frame {index} out of range for {len(self._video)} frames"
+            )
+        return self._video[index]
+
+    @property
+    def closed(self) -> bool:
+        """Whether the reader has been released."""
+        return not self._video.is_open
+
+    def close(self) -> None:
+        """Release the underlying reader."""
+        self._video.close()
 
 
 class SleapDataset(BaseDataset):
@@ -182,12 +222,13 @@ class SleapDataset(BaseDataset):
             if not Path(vid_file).exists():
                 raise FileNotFoundError(f"Video file not found: {vid_file}")
         # Video readers are opened lazily, once per process (see
-        # `_get_video_reader`). An imageio reader wraps an ffmpeg subprocess, so a
-        # reader opened here and inherited by forked DataLoader workers would have
-        # every worker reading the same pipe, handing crops to the wrong frames.
+        # `_get_video_reader`). A reader opened here and inherited by forked
+        # DataLoader workers would have every worker sharing one decoder's state,
+        # handing crops to the wrong frames.
         self.videos = [None] * len(self.vid_files)
         self._videos_pid = os.getpid()
         self._inherited_videos = []
+        self._open_order = []  # label indices of open readers, least recent first
         # preprocessors
         self.remove_excess_detections = RemoveExcessDetections(max_tracks)
         self.non_max_suppression = NonMaxSuppression(max_detection_overlap)
@@ -535,28 +576,42 @@ class SleapDataset(BaseDataset):
 
         return frames
 
-    def _get_video_reader(self, label_idx: int) -> "imageio.core.Format.Reader":
+    def _get_video_reader(self, label_idx: int) -> FrameReader:
         """Get the video reader for a labels file, opened by this process.
 
         A forked DataLoader worker inherits the parent's readers, which share the
-        parent's ffmpeg subprocesses. On the first call in a new process those are
-        set aside, unused, and the worker opens its own. They are kept referenced
-        rather than closed: closing one would terminate the ffmpeg process the
-        parent is still reading from.
+        parent's decoder state. On the first call in a new process those are set
+        aside, unused, and the worker opens its own. They are kept referenced
+        rather than closed: closing one could release a reader the parent is still
+        reading from.
+
+        `DREEM_MAX_OPEN_READERS` (env, default 0 = no limit) caps the readers one
+        process keeps open; past it, the least recently used one is closed. Every
+        reader holds decoder buffers, and a worker otherwise keeps one per video.
 
         Args:
             label_idx: index of the labels file (and its video).
 
         Returns:
-            An imageio reader for the video, owned by the calling process.
+            A `FrameReader` for the video, owned by the calling process.
         """
         pid = os.getpid()
         if self._videos_pid != pid:
             self._inherited_videos.extend(r for r in self.videos if r is not None)
             self.videos = [None] * len(self.vid_files)
             self._videos_pid = pid
+            self._open_order = []
+        order = self._open_order
+        if label_idx in order:
+            order.remove(label_idx)
+        order.append(label_idx)
         if self.videos[label_idx] is None:
-            self.videos[label_idx] = imageio.get_reader(self.vid_files[label_idx])
+            self.videos[label_idx] = FrameReader(self.vid_files[label_idx])
+            cap = int(os.environ.get("DREEM_MAX_OPEN_READERS", "0"))
+            while cap > 0 and len(order) > cap:
+                old = order.pop(0)
+                self.videos[old].close()
+                self.videos[old] = None
         return self.videos[label_idx]
 
     def __getstate__(self) -> dict:
@@ -569,6 +624,7 @@ class SleapDataset(BaseDataset):
         state["videos"] = [None] * len(self.vid_files)
         state["_videos_pid"] = None
         state["_inherited_videos"] = []
+        state["_open_order"] = []
         return state
 
     def __del__(self):

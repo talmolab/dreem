@@ -827,6 +827,17 @@ def test_crop_near_edge_is_centered():
     assert (crop[0, :, :6] == 0).all()  # columns left of the frame are padding
 
 
+def test_crop_wholly_off_frame_is_padding():
+    """A box entirely above or left of the frame gives an all-padding crop of its size."""
+    img = torch.ones(1, 100, 100)
+
+    above = crop_bbox(img, get_bbox((50.0, -40.0), 32))
+    left = crop_bbox(img, get_bbox((-40.0, 50.0), 32))
+
+    assert above.shape == left.shape == (1, 32, 32)
+    assert (above == 0).all() and (left == 0).all()
+
+
 def test_spatial_augmentations_consistent_across_clip(two_flies):
     """Spatial augmentations must use one set of parameters for a whole clip.
 
@@ -906,7 +917,7 @@ def test_sleap_dataset_video_readers_are_per_process(two_flies):
     ds._videos_pid = -1  # as a forked DataLoader worker sees the parent's state
     ds[0]
     assert ds.videos[0] is not parent_reader
-    assert not parent_reader.closed  # closing it would kill the parent's ffmpeg
+    assert not parent_reader.closed  # closing it could release the parent's reader
     parent_reader.get_data(0)
 
 
@@ -1203,3 +1214,45 @@ def test_augmentations_differ_across_workers_and_epochs(cell_tracking):
 #     from tests.fixtures.datasets import cell_tracking
 #     cell_tracking_args = cell_tracking(("/root/vast/mustafa/dreem-experiments/src/dreem/tests/data/microscopy/cell_tracking"))
 #     test_cell_tracking_dataset(cell_tracking_args)
+
+
+def test_frame_reader_exact_in_shuffled_order(tmp_path):
+    """`FrameReader` returns frame t for any access order, as a sequential decode does."""
+    import imageio
+
+    from dreem.datasets.sleap_dataset import FrameReader
+
+    rng = np.random.default_rng(0)
+    path = tmp_path / "clip.mp4"
+    with imageio.get_writer(path, fps=30, codec="libx264", macro_block_size=1) as w:
+        for _ in range(300):
+            w.append_data(rng.integers(0, 255, size=(48, 64, 3), dtype=np.uint8))
+    sequential = [f.astype(np.int16) for f in imageio.get_reader(path).iter_data()]
+
+    reader = FrameReader(str(path))
+    for t in [250, 3, 299, 120, 0, 200, 199, 40]:
+        frame = reader.get_data(t)
+        assert frame.shape == (48, 64, 3)
+        assert np.abs(frame.astype(np.int16) - sequential[t]).mean() < 0.5
+    with pytest.raises(IndexError):
+        reader.get_data(300)
+    reader.close()
+
+
+def test_sleap_dataset_caps_open_readers(two_flies, monkeypatch):
+    """`DREEM_MAX_OPEN_READERS` closes the least recently used reader past the cap."""
+    monkeypatch.setenv("DREEM_MAX_OPEN_READERS", "1")
+    ds = SleapDataset(
+        slp_files=[two_flies[0], two_flies[0]],
+        video_files=[two_flies[1], two_flies[1]],
+        data_dirs=["./data/sleap"],
+        crop_size=128,
+        chunk=True,
+        clip_length=8,
+    )
+    first = ds._get_video_reader(0)
+    second = ds._get_video_reader(1)
+    assert ds.videos == [None, second] and first.closed and not second.closed
+    assert ds._get_video_reader(1) is second
+    ds._get_video_reader(0)
+    assert ds.videos[1] is None and second.closed
