@@ -12,6 +12,7 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 """
 
 import copy
+import os
 
 import torch
 import torch.nn.functional as F
@@ -20,6 +21,7 @@ from torch import nn
 from dreem.io import AssociationMatrix, Instance
 from dreem.models.attention_head import ATTWeightHead
 from dreem.models.embedding import Embedding, FourierPositionalEmbeddings
+from dreem.models.geometry import RotaryXYT, get_centroids
 from dreem.models.model_utils import get_boxes, get_times
 
 # todo: add named tensors
@@ -103,6 +105,10 @@ class Transformer(torch.nn.Module):
             self.d_pos = self.d_temp = self.d_visual = self.d_model
             self.visual_proj = None
 
+        # "rope": rotary embedding over (y, x, t) on the attention head's q and k
+        # (geometry.RotaryXYT kwargs: sigma_space, sigma_time, fraction). Off by default.
+        self.rope_cfg = em.get("rope")
+
         self.pos_emb = Embedding(emb_type="off", mode="off", features=self.d_pos)
         self.temp_emb = Embedding(emb_type="off", mode="off", features=self.d_temp)
 
@@ -170,6 +176,11 @@ class Transformer(torch.nn.Module):
         )
 
         self._reset_parameters()
+
+        # Built after _reset_parameters, whose xavier init would overwrite RoPE's
+        # 2-d frequency matrix.
+        if self.rope_cfg is not None:
+            self.attn_head.rope = RotaryXYT(feature_dim_attn_head, **self.rope_cfg)
 
     @property
     def legacy_embeddings(self) -> bool:
@@ -265,6 +276,39 @@ class Transformer(torch.nn.Module):
 
         ref_pos_emb = self.pos_emb(ref_boxes)
 
+        # Inference-time ablation: every instance gets the window's mean value of
+        # an ablated signal, removing what distinguishes instances while keeping
+        # the input near its trained range. Queries get the same mean.
+        ablate = ablated_signals()
+
+        # (y, x, t) of every instance for the rotary head
+        use_rope = self.attn_head.rope is not None
+        if use_rope:
+            ref_geo = torch.cat(
+                [
+                    get_centroids(ref_instances).to(ref_boxes.device),
+                    ref_times.float()[:, None],
+                ],
+                dim=-1,
+            )
+            if "pos" in ablate:
+                ref_geo[:, :2] = ref_geo[:, :2].mean(dim=0, keepdim=True)
+            if "temp" in ablate:
+                ref_geo[:, 2] = ref_geo[:, 2].mean()
+            query_geo = ref_geo
+
+        if "visual" in ablate:
+            ref_features = ref_features.mean(dim=1, keepdim=True).expand_as(
+                ref_features
+            )
+        if "pos" in ablate:
+            ref_pos_emb = ref_pos_emb.mean(dim=0, keepdim=True).expand_as(ref_pos_emb)
+        if "temp" in ablate:
+            # .float(): an "off" embedding returns zeros in the times' integer dtype
+            ref_temp_emb = (
+                ref_temp_emb.float().mean(dim=0, keepdim=True).expand_as(ref_temp_emb)
+            )
+
         if self.return_embedding:
             for i, instance in enumerate(ref_instances):
                 instance.add_embedding("pos", ref_pos_emb[i])
@@ -337,6 +381,26 @@ class Transformer(torch.nn.Module):
 
             query_pos_emb = self.pos_emb(query_boxes)
 
+            if use_rope:
+                query_geo = torch.cat(
+                    [
+                        get_centroids(query_instances).to(ref_boxes.device),
+                        query_times.float()[:, None],
+                    ],
+                    dim=-1,
+                )
+                if "pos" in ablate:
+                    query_geo[:, :2] = ref_geo[:1, :2]
+                if "temp" in ablate:
+                    query_geo[:, 2] = ref_geo[0, 2]
+
+            if "visual" in ablate:
+                query_features = ref_features[:1].expand_as(query_features)
+            if "pos" in ablate:
+                query_pos_emb = ref_pos_emb[:1].expand_as(query_pos_emb)
+            if "temp" in ablate:
+                query_temp_emb = ref_temp_emb[:1].expand_as(query_temp_emb)
+
             if self.embedding_agg_method == "concatenate":
                 query_emb = None
             else:
@@ -401,15 +465,36 @@ class Transformer(torch.nn.Module):
 
         asso_output = []
         for frame_features in decoder_features:
-            asso_matrix = self.attn_head(frame_features, encoder_features).view(
-                n_query, total_instances
-            )
+            asso_matrix = self.attn_head(
+                frame_features,
+                encoder_features,
+                query_pos=query_geo if use_rope else None,
+                key_pos=ref_geo if use_rope else None,
+            ).view(n_query, total_instances)
             asso_matrix = AssociationMatrix(asso_matrix, ref_instances, query_instances)
 
             asso_output.append(asso_matrix)
 
         # (L=1, n_query, total_instances)
         return asso_output
+
+
+def ablated_signals() -> set[str]:
+    """Signals named in the `DREEM_ABLATE` env var, e.g. `"visual,pos"`.
+
+    Diagnostic only: `Transformer.forward` replaces each named signal (`visual`,
+    `pos`, `temp`) with its mean over the window, to measure how much a trained
+    model relies on it. Unset in training and normal tracking.
+
+    Returns:
+        The set of signal names to ablate.
+    """
+    names = {s.strip() for s in os.environ.get("DREEM_ABLATE", "").split(",")}
+    names.discard("")
+    unknown = names - {"visual", "pos", "temp"}
+    if unknown:
+        raise ValueError(f"DREEM_ABLATE: unknown signal(s) {sorted(unknown)}")
+    return names
 
 
 def apply_fourier_embeddings(

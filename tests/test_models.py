@@ -11,11 +11,13 @@ from dreem.models import (
     VisualEncoder,
 )
 from dreem.models.attention_head import ATTWeightHead
+from dreem.models.geometry import RotaryXYT
 from dreem.models.mlp import MLP
 from dreem.models.model_utils import get_boxes, get_times
 from dreem.models.transformer import (
     TransformerDecoderLayer,
     TransformerEncoderLayer,
+    ablated_signals,
 )
 from dreem.models.visual_encoder import GeM
 
@@ -811,3 +813,87 @@ def test_tracking_transformer():
         len(instances),
         feats,
     ), temp_emb.shape
+
+
+def test_rotary_xyt_is_relative():
+    """RoPE scores depend on positions only through their differences."""
+    torch.manual_seed(0)
+    rope = RotaryXYT(16)
+    q, k = torch.randn(1, 3, 16), torch.randn(1, 4, 16)
+    pq, pk = torch.rand(3, 3), torch.rand(4, 3)
+    shift = torch.tensor([[0.2, -0.1, 7.0]])
+
+    def score(a, b):
+        return torch.bmm(rope(q, a), rope(k, b).transpose(1, 2))
+
+    assert torch.allclose(score(pq, pk), score(pq + shift, pk + shift), atol=1e-4)
+    assert not torch.allclose(score(pq, pk), score(pq + shift, pk), atol=1e-4)
+
+
+def test_rotary_xyt_fraction_leaves_other_pairs():
+    """With `fraction`, only the first pairs rotate; the rest pass through unchanged."""
+    rope = RotaryXYT(16, fraction=0.5)
+    x, pos = torch.randn(1, 5, 16), torch.rand(5, 3)
+    out = rope(x, pos)
+
+    assert rope.n_rot == 4 and rope.omega.shape == (4, 3)
+    assert torch.equal(out[..., 8:], x[..., 8:])
+    assert not torch.allclose(out[..., :8], x[..., :8])
+    assert torch.allclose(out[..., :8].norm(dim=-1), x[..., :8].norm(dim=-1), atol=1e-5)
+    with pytest.raises(ValueError, match="fraction"):
+        RotaryXYT(16, fraction=0.0)
+
+
+def test_transformer_rope_head():
+    """`embedding_meta["rope"]` puts a rotary embedding on the head, used in forward."""
+    feats, num_frames, num_detected = 64, 3, 4
+    transformer = Transformer(
+        d_model=feats,
+        num_encoder_layers=1,
+        num_decoder_layers=1,
+        embedding_meta={
+            "embedding_agg_method": "concatenate",
+            "temp": {"mode": "rff", "sigma": 20.0},
+            "rope": {"fraction": 0.5},
+        },
+    )
+    assert isinstance(transformer.attn_head.rope, RotaryXYT)
+    assert transformer.attn_head.rope.n_rot == feats // 4
+
+    frames = [
+        Frame(
+            video_id=0,
+            frame_id=i,
+            img_shape=(1, 100, 200),
+            instances=[
+                Instance(
+                    bbox=torch.tensor(
+                        [[10.0 * j, 20.0 * j, 10.0 * j + 8, 20.0 * j + 8]]
+                    ),
+                    features=torch.rand(size=(1, feats)),
+                )
+                for j in range(num_detected)
+            ],
+        )
+        for i in range(num_frames)
+    ]
+    ref = [inst for f in frames[:-1] for inst in f.instances]
+    asso = transformer(ref, frames[-1].instances)[0].matrix
+    assert asso.shape == (num_detected, num_detected * (num_frames - 1))
+
+    # moving every box changes the scores; without RoPE nothing here reads the boxes
+    for f in frames:
+        for inst in f.instances:
+            inst.bbox = inst.bbox + torch.tensor([[30.0, 0.0, 30.0, 0.0]]) * f.frame_id
+    assert not torch.allclose(transformer(ref, frames[-1].instances)[0].matrix, asso)
+
+
+def test_ablated_signals(monkeypatch):
+    """`DREEM_ABLATE` names the signals to replace by their window mean."""
+    monkeypatch.setenv("DREEM_ABLATE", "visual, pos")
+    assert ablated_signals() == {"visual", "pos"}
+    monkeypatch.setenv("DREEM_ABLATE", "")
+    assert ablated_signals() == set()
+    monkeypatch.setenv("DREEM_ABLATE", "colour")
+    with pytest.raises(ValueError, match="colour"):
+        ablated_signals()

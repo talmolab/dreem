@@ -265,7 +265,24 @@ class GTRRunner(LightningModule):
         if self.optimizer_cfg is None:
             optimizer = torch.optim.Adam(self.parameters(), lr=1e-4, betas=(0.9, 0.999))
         else:
-            optimizer = init_optimizer(self.parameters(), self.optimizer_cfg)
+            optimizer_cfg = dict(self.optimizer_cfg)
+            # `geom_lr`: learning rate of the parameters marked `_geom` (the rotary
+            # frequencies, models/geometry.py), which also get no weight decay.
+            # Defaults to `lr`. It is not an optimizer argument, so it is removed here.
+            geom_lr = optimizer_cfg.pop("geom_lr", None)
+            geom = [p for p in self.parameters() if getattr(p, "_geom", False)]
+            if geom:
+                geom_ids = {id(p) for p in geom}
+                geom_group = {"params": geom, "weight_decay": 0.0}
+                if geom_lr is not None:
+                    geom_group["lr"] = float(geom_lr)
+                params = [
+                    {"params": [p for p in self.parameters() if id(p) not in geom_ids]},
+                    geom_group,
+                ]
+            else:
+                params = self.parameters()
+            optimizer = init_optimizer(params, optimizer_cfg)
 
         if self.scheduler_cfg is None:
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(

@@ -305,3 +305,28 @@ def test_checkpoint_normalize_image():
     # checkpoints from before the scale was recorded leave it unknown
     model.on_load_checkpoint({})
     assert model.normalize_image is None
+
+
+def test_configure_optimizers_geom_group():
+    """RoPE frequencies get their own group: no weight decay and `geom_lr`."""
+    model_cfg = {
+        "encoder_cfg": {"model_name": "resnet18", "pretrained": False, "in_chans": 1},
+        "d_model": 64,
+        "nhead": 1,
+        "num_encoder_layers": 1,
+        "num_decoder_layers": 1,
+        "embedding_meta": {"embedding_agg_method": "concatenate", "rope": {}},
+    }
+    optim_cfg = {"name": "Adam", "lr": 1e-4, "weight_decay": 0.01, "geom_lr": 1e-3}
+    runner = GTRRunner(model_cfg=model_cfg, optimizer_cfg=optim_cfg)
+    optimizer = runner.configure_optimizers()["optimizer"]
+
+    rest, geom = optimizer.param_groups
+    omega = runner.model.transformer.attn_head.rope.omega
+    assert [id(p) for p in geom["params"]] == [id(omega)]
+    assert geom["weight_decay"] == 0.0 and geom["lr"] == 1e-3
+    assert rest["weight_decay"] == 0.01 and rest["lr"] == 1e-4
+    assert sum(p.numel() for g in optimizer.param_groups for p in g["params"]) == sum(
+        p.numel() for p in runner.parameters()
+    )
+    assert "geom_lr" in runner.optimizer_cfg  # the runner's own config is untouched
