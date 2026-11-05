@@ -18,7 +18,7 @@ from dreem.inference.post_processing import (
     IOUWeighting,
     OrientationWeighting,
 )
-from dreem.inference.track import export_trajectories, run
+from dreem.inference.track import export_trajectories, run, track_sleap
 from dreem.inference.track_queue import TrackQueue
 from dreem.inference.tracker import aggregate_traj_score, apply_gap_penalty
 from dreem.io import Config, Frame, FrameFlagCode, Instance
@@ -484,6 +484,40 @@ def test_track(tmp_path, inference_config):
         len(list(out_dir.iterdir()))
         == len(os.listdir(cfg.cfg.dataset.test_dataset.dir.path)) / 2
     )
+
+
+def test_track_sleap_clip_starting_after_frame_0(tmp_path):
+    """Saving predictions works when a clip's first tracked frame is not frame 0."""
+    import sleap_io as sio
+
+    class _Predicts:
+        def predict(self, model, dataloader):
+            return [frames]
+
+    skeleton = sio.Skeleton(["a"])
+    frames = [
+        Frame(
+            video_id=0,
+            frame_id=t,
+            vid_file=str(tmp_path / "clip.mp4"),
+            img_shape=(1, 128, 128),
+            instances=[
+                Instance(
+                    gt_track_id=0,
+                    pred_track_id=0,
+                    bbox=torch.tensor([[10.0, 10.0, 15.0, 15.0]]),
+                    pose={"a": np.array([12.0, 12.0])},
+                    skeleton=skeleton,
+                    point_scores=np.array([1.0]),
+                )
+            ],
+        )
+        for t in (1, 2)
+    ]
+    labels, all_frames = track_sleap(None, _Predicts(), None, str(tmp_path), {})
+
+    assert [lf.frame_idx for lf in labels] == [1, 2]
+    assert len(all_frames) == 2
 
 
 def test_confidence_thresholding():

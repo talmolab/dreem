@@ -186,10 +186,12 @@ def track_sleap(
     pred_slp = []
     tracks = {}
     all_frames: list[Frame] = []
+    video = None
     for batch in tqdm(preds, desc="Saving .slp and frame metadata"):
         for frame in batch:
             all_frames.append(frame)
-            if frame.frame_id.item() == 0:
+            # a clip's first tracked frame need not be frame 0 (labels can start later)
+            if video is None or frame.frame_id.item() == 0:
                 video = (
                     sio.Video(frame.video)
                     if isinstance(frame.video, str)
