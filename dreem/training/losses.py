@@ -131,48 +131,38 @@ class AssoLoss(nn.Module):
         ious[pred_time[:, None] != target_time[None, :]] = -1.0
 
         # get unique instance ids
+        target_inst_id = target_inst_id.to(pred_box.device)
         inst_ids = torch.unique(target_inst_id[target_inst_id > -1])
 
-        # initialize tensors
+        # initialize tensors: a (gt instance, frame) pair with no detection of positive
+        # IoU gets the frame's number of detections (the "no match" column)
         K, N = len(inst_ids), len(pred_box)
         match_cues = pred_box.new_full((N,), -1, dtype=torch.long)
-        T = len(n_t)
-        asso_gt = pred_box.new_zeros((K, T), dtype=torch.long)
+        n_t_ = torch.as_tensor(n_t, dtype=torch.long, device=pred_box.device)
+        T = len(n_t_)
+        asso_gt = n_t_.repeat(K, 1)
+        if K == 0 or N == 0:
+            return asso_gt, match_cues
 
-        # split ious by frames
-        ious_per_frame = ious.split(n_t, dim=0)
+        # Each gt box's best detection. Detections in other frames have IoU -1, so a
+        # positive best is in the box's own frame. All pairs at once: a loop over
+        # (instance, frame) pairs costs ~0.4 s for 30 animals x 32 frames.
+        val, best = ious.max(dim=0)
+        keep = (val > 0.0) & (target_inst_id > -1)
+        k_of = torch.searchsorted(inst_ids, target_inst_id[keep])
+        best = best[keep]
+        frame_of = torch.repeat_interleave(torch.arange(T, device=n_t_.device), n_t_)
+        t_of = frame_of[best]
 
-        for k, inst_id in enumerate(inst_ids):
-            # get ground truth indices, init index
-            target_inds = target_inst_id == inst_id
-            base_ind = 0
+        # make sure there is at most one detection per gt instance and frame
+        per_pair = torch.bincount(k_of * T + t_of, minlength=K * T)
+        assert per_pair.max() <= 1, f"{target_inst_id} {n_t}"
 
-            for t in range(T):
-                # get relevant ious
-                iou_t = ious_per_frame[t][:, target_inds]
-
-                # if there are no detections, asso_gt = # gt instances at time step
-                if iou_t.numel() == 0:
-                    asso_gt[k, t] = n_t[t]
-                else:
-                    # get max iou and index, select positive ious
-                    val, inds = iou_t.max(dim=0)
-                    ind = inds[val > 0.0]
-
-                    # make sure there is at most one detection
-                    assert len(ind) <= 1, f"{target_inst_id} {n_t}"
-
-                    # if there is one detection with pos IOU, select it
-                    if len(ind) == 1:
-                        obj_ind = ind[0].item()
-                        asso_gt[k, t] = obj_ind
-                        match_cues[base_ind + obj_ind] = k
-
-                    # otherwise asso_gt = # gt instances at time step
-                    else:
-                        asso_gt[k, t] = n_t[t]
-
-                base_ind += n_t[t]
+        base_ind = torch.cumsum(n_t_, dim=0) - n_t_
+        asso_gt[k_of, t_of] = best - base_ind[t_of]
+        # a detection matched by several gt instances keeps the last one, as in a loop
+        # over instances in order
+        match_cues.scatter_reduce_(0, best, k_of, reduce="amax")
 
         return asso_gt, match_cues
 

@@ -305,6 +305,29 @@ def test_get_boxes_normalizes_each_axis():
     assert torch.allclose(legacy_boxes, torch.tensor([[[0.05, 0.2, 0.15, 0.4]]]))
 
 
+def test_get_boxes_matches_per_instance_division():
+    """get_boxes divides each instance's boxes by its own frame's height and width."""
+    frames = [
+        Frame(video_id=0, frame_id=0, img_shape=(1, 100, 200)),
+        Frame(video_id=0, frame_id=1, img_shape=(3, 1536, 2048)),
+    ]
+    instances = []
+    for i in range(6):
+        inst = Instance(bbox=torch.rand(1, 2, 4) * 100)
+        inst.frame = frames[i % 2]
+        instances.append(inst)
+
+    for legacy in (False, True):
+        boxes = get_boxes(instances, legacy_axes=legacy)
+        for i, inst in enumerate(instances):
+            _, h, w = inst.frame.img_shape
+            y_scale, x_scale = (w, h) if legacy else (h, w)
+            ref = inst.bbox.clone()
+            ref[:, :, [0, 2]] /= y_scale
+            ref[:, :, [1, 3]] /= x_scale
+            assert torch.equal(boxes[i : i + 1], ref)
+
+
 def test_learned_temporal_embedding_rows():
     """Test that each frame offset gets its own row of the learned lookup table."""
     d_model = 32

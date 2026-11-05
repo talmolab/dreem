@@ -22,18 +22,21 @@ def get_boxes(instances: list["Instance"], legacy_axes: bool = False) -> torch.T
         An (n_instances, n_points, 4) float tensor containing the `[y1, x1, y2, x2]`
         bounding boxes with y normalized by the image height and x by the width.
     """
-    boxes = []
-    for i, instance in enumerate(instances):
-        _, h, w = instance.frame.img_shape
-        bbox = instance.bbox.clone()
-        y_scale, x_scale = (w, h) if legacy_axes else (h, w)
-        bbox[:, :, [0, 2]] /= y_scale
-        bbox[:, :, [1, 3]] /= x_scale
-        boxes.append(bbox)
+    # N, n_anchors, 4
+    boxes = torch.cat([instance.bbox for instance in instances], dim=0)
+    # one (h, w) row per bbox row, divided in one op: a per-instance indexed divide
+    # costs a host-to-device copy each, ~0.4 s for a frame of 30 animals x 32 frames
+    hw = torch.tensor(
+        [list(instance.frame.img_shape[-2:]) for instance in instances],
+        dtype=boxes.dtype,
+        device=boxes.device,
+    )
+    rows = torch.tensor([instance.bbox.shape[0] for instance in instances])
+    h, w = hw.repeat_interleave(rows.to(boxes.device), dim=0).unbind(-1)
+    y_scale, x_scale = (w, h) if legacy_axes else (h, w)
+    scale = torch.stack([y_scale, x_scale, y_scale, x_scale], dim=-1)[:, None, :]
 
-    boxes = torch.cat(boxes, dim=0)  # N, n_anchors, 4
-
-    return boxes
+    return boxes / scale
 
 
 def get_times(

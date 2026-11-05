@@ -42,6 +42,80 @@ def test_asso_loss():
     assert isinstance(loss.item(), float)
 
 
+def _asso_gt_loop(pred_box, pred_time, target_box, target_time, target_inst_id, n_t):
+    """The per-(instance, frame) loop AssoLoss._get_asso_gt replaced, for comparison."""
+    import torchvision
+
+    ious = torchvision.ops.box_iou(pred_box, target_box)
+    ious[pred_time[:, None] != target_time[None, :]] = -1.0
+    inst_ids = torch.unique(target_inst_id[target_inst_id > -1])
+    K, N, T = len(inst_ids), len(pred_box), len(n_t)
+    match_cues = pred_box.new_full((N,), -1, dtype=torch.long)
+    asso_gt = pred_box.new_zeros((K, T), dtype=torch.long)
+    ious_per_frame = ious.split(n_t, dim=0)
+    for k, inst_id in enumerate(inst_ids):
+        target_inds = target_inst_id == inst_id
+        base_ind = 0
+        for t in range(T):
+            iou_t = ious_per_frame[t][:, target_inds]
+            if iou_t.numel() == 0:
+                asso_gt[k, t] = n_t[t]
+            else:
+                val, inds = iou_t.max(dim=0)
+                ind = inds[val > 0.0]
+                assert len(ind) <= 1
+                if len(ind) == 1:
+                    asso_gt[k, t] = ind[0].item()
+                    match_cues[base_ind + ind[0].item()] = k
+                else:
+                    asso_gt[k, t] = n_t[t]
+            base_ind += n_t[t]
+    return asso_gt, match_cues
+
+
+@pytest.mark.parametrize("seed", range(5))
+def test_asso_gt_matches_loop(seed):
+    """The vectorized association ground truth equals the per-pair loop's."""
+    gen = torch.Generator().manual_seed(seed)
+    n_t = torch.randint(0, 6, (7,), generator=gen).tolist()
+    n_t[0] = max(n_t[0], 1)
+    ids, times, boxes = [], [], []
+    for t, n in enumerate(n_t):
+        # each track at most once per frame; some instances untracked (-1)
+        ids += torch.randperm(8, generator=gen)[:n].tolist()
+        times += [t] * n
+        xy = torch.rand(n, 2, generator=gen) * 60
+        boxes.append(
+            torch.cat([xy, xy + 10 + torch.rand(n, 2, generator=gen) * 20], dim=1)
+        )
+    ids = torch.tensor(ids)
+    ids[torch.rand(len(ids), generator=gen) < 0.2] = -1
+    box, time = torch.cat(boxes), torch.tensor(times)
+    # some boxes overlap a neighbour; one degenerate (zero-area) box
+    box[1] = box[0] + 2.0
+    box[-1, 2:] = box[-1, :2]
+
+    loss = AssoLoss(neg_unmatched=True, asso_weight=10.0)
+    asso_gt, match_cues = loss._get_asso_gt(box, time, box, time, ids, n_t)
+    ref_gt, ref_cues = _asso_gt_loop(box, time, box, time, ids, n_t)
+
+    assert torch.equal(asso_gt, ref_gt)
+    assert torch.equal(match_cues, ref_cues)
+
+
+def test_asso_gt_without_tracked_instances():
+    """No tracked gt instance gives an empty ground truth and no matches."""
+    box = torch.tensor([[0.0, 0.0, 10.0, 10.0], [20.0, 20.0, 30.0, 30.0]])
+    time = torch.tensor([0, 1])
+    loss = AssoLoss(neg_unmatched=True, asso_weight=10.0)
+    asso_gt, match_cues = loss._get_asso_gt(
+        box, time, box, time, torch.tensor([-1, -1]), [1, 1]
+    )
+
+    assert asso_gt.shape == (0, 2)
+    assert match_cues.tolist() == [-1, -1]
+
+
 def test_basic_gtr_runner():
     """Test basic GTR Runner."""
     num_frames = 2
