@@ -19,17 +19,13 @@ def get_boxes(instances: list["Instance"]) -> torch.Tensor:
         An (n_instances, n_points, 4) float tensor containing the bounding boxes
         normalized by the height and width of the image
     """
-    boxes = []
-    for i, instance in enumerate(instances):
-        _, h, w = instance.frame.img_shape
-        bbox = instance.bbox.clone()
-        bbox[:, :, [0, 2]] /= h
-        bbox[:, :, [1, 3]] /= w
-        boxes.append(bbox)
+    boxes = torch.cat([instance.bbox for instance in instances], dim=0)  # N, n_anchors, 4
+    # one division by a per-instance (h, w, h, w) row instead of per-instance
+    # fancy-indexed in-place divides, which dominated tracking time
+    hw = [(instance.frame.img_shape[1], instance.frame.img_shape[2]) for instance in instances]
+    scale = torch.tensor([[h, w, h, w] for h, w in hw], dtype=boxes.dtype, device=boxes.device)
 
-    boxes = torch.cat(boxes, dim=0)  # N, n_anchors, 4
-
-    return boxes
+    return boxes / scale[:, None, :]
 
 
 def denormalize_boxes(boxes: torch.Tensor, h: int, w: int) -> torch.Tensor:

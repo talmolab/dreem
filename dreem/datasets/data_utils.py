@@ -160,15 +160,14 @@ def crop_bbox(img: torch.Tensor, bbox: ArrayLike) -> torch.Tensor:
     """
     # Crop to the bounding box.
     y1, x1, y2, x2 = bbox
-    crop = tvf.crop(
-        img,
-        top=int(y1.round()),
-        left=int(x1.round()),
-        height=int((y2 - y1).round()),
-        width=int((x2 - x1).round()),
-    )
-
-    return crop
+    top, left = int(y1.round()), int(x1.round())
+    height, width = int((y2 - y1).round()), int((x2 - x1).round())
+    if top + height > 0 and left + width > 0:
+        return tvf.crop(img, top=top, left=left, height=height, width=width)
+    # A box wholly above or left of the frame (e.g. an animal rotated out of view
+    # with a centered box): tvf.crop slices img[..., :bottom] with a negative
+    # bottom and returns most of the frame, so build the all-padding crop here.
+    return img.new_zeros((*img.shape[:-2], height, width))
 
 
 def get_mask_from_keypoints(

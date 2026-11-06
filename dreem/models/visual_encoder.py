@@ -568,6 +568,35 @@ class SleapNNVisualEncoder(torch.nn.Module):
         return feats
 
 
+class NullVisualEncoder(torch.nn.Module):
+    """Visual encoder that returns zeros, so association sees only position and time.
+
+    Asks how much DREEM can do from its positional and temporal embeddings alone.
+    It has no parameters and never reads the crop, so a dataset can hand it a 1x1
+    placeholder instead of decoding frames (`SleapDataset(skip_image=True)`).
+    Under concatenate fusion the visual slice becomes `visual_proj.bias`, the same
+    constant for every instance; under average fusion the queries are the
+    embeddings alone.
+    """
+
+    def __init__(self, d_model: int, **kwargs):
+        """Initialize the null encoder.
+
+        Args:
+            d_model: Output feature dimension, matching the transformer.
+            **kwargs: Accepted and ignored, so any encoder config can be swapped in.
+        """
+        super().__init__()
+        self.d_model = d_model
+        # Tracks the module's device, so zeros land beside the transformer
+        # even if the placeholder crops were left on the CPU.
+        self.register_buffer("_anchor", torch.zeros(0), persistent=False)
+
+    def forward(self, img: torch.Tensor) -> torch.Tensor:
+        """Return a (B, d_model) block of zeros, one row per crop."""
+        return torch.zeros(img.shape[0], self.d_model, device=self._anchor.device)
+
+
 def register_encoder(encoder_type: str, encoder_class: Type[torch.nn.Module]):
     """Register a new encoder type."""
     if not issubclass(encoder_class, torch.nn.Module):
@@ -582,6 +611,7 @@ def create_visual_encoder(d_model: int, **encoder_cfg) -> torch.nn.Module:
     # register any custom encoders here
     register_encoder("dino", DINOVisualEncoder)
     register_encoder("sleapnn", SleapNNVisualEncoder)
+    register_encoder("none", NullVisualEncoder)
 
     # compatibility with configs that don't specify encoder_type; default to resnet
     if not encoder_cfg or "encoder_type" not in encoder_cfg:

@@ -141,8 +141,10 @@ class DistanceWeighting(ProcessingStep):
         # pairwise euclidean distance in units of pixels
         dist = ((k_ct[:, None, :, :] - nonk_ct[None, :, :, :]) ** 2).sum(dim=-1) ** (
             1 / 2
-        )  # n_k x n_nonk
-        dist = dist.squeeze(-1) / diag_length  # n_k x n_nonk
+        )  # n_k x n_nonk x n_anchors
+        # Mean over anchors, as `_pairwise_iou` does; with one anchor this is the
+        # old squeeze. Squeezing left multi-anchor boxes 3-D and crashed the gate.
+        dist = dist.nanmean(dim=-1) / diag_length  # n_k x n_nonk
         while dist.dim() < 2:
             dist = dist.unsqueeze(0)
 

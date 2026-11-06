@@ -12,6 +12,7 @@ Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 """
 
 import copy
+import os
 
 import torch
 import torch.nn.functional as F
@@ -242,6 +243,21 @@ class Transformer(torch.nn.Module):
 
         ref_pos_emb = self.pos_emb(ref_boxes)
 
+        # Inference-time ablation: every instance gets the window's mean value of
+        # an ablated signal, removing what distinguishes instances while keeping
+        # the input near its trained range. Queries get the same mean.
+        ablate = ablated_signals()
+        if "visual" in ablate:
+            ref_features = ref_features.mean(dim=1, keepdim=True).expand_as(
+                ref_features
+            )
+        if "pos" in ablate:
+            ref_pos_emb = ref_pos_emb.mean(dim=0, keepdim=True).expand_as(ref_pos_emb)
+        if "temp" in ablate:
+            ref_temp_emb = ref_temp_emb.mean(dim=0, keepdim=True).expand_as(
+                ref_temp_emb
+            )
+
         if self.return_embedding:
             for i, instance in enumerate(ref_instances):
                 instance.add_embedding("pos", ref_pos_emb[i])
@@ -313,6 +329,13 @@ class Transformer(torch.nn.Module):
             query_temp_emb = self.temp_emb(query_times)
 
             query_pos_emb = self.pos_emb(query_boxes)
+
+            if "visual" in ablate:
+                query_features = ref_features[:1].expand_as(query_features)
+            if "pos" in ablate:
+                query_pos_emb = ref_pos_emb[:1].expand_as(query_pos_emb)
+            if "temp" in ablate:
+                query_temp_emb = ref_temp_emb[:1].expand_as(query_temp_emb)
 
             if self.embedding_agg_method == "concatenate":
                 query_emb = None
@@ -387,6 +410,24 @@ class Transformer(torch.nn.Module):
 
         # (L=1, n_query, total_instances)
         return asso_output
+
+
+def ablated_signals() -> set[str]:
+    """Signals named in the `DREEM_ABLATE` env var, e.g. `"visual,pos"`.
+
+    Diagnostic only: `Transformer.forward` replaces each named signal (`visual`,
+    `pos`, `temp`) with its mean over the window, to measure how much a trained
+    model relies on it. Unset in training and normal tracking.
+
+    Returns:
+        The set of signal names to ablate.
+    """
+    names = {s.strip() for s in os.environ.get("DREEM_ABLATE", "").split(",")}
+    names.discard("")
+    unknown = names - {"visual", "pos", "temp"}
+    if unknown:
+        raise ValueError(f"DREEM_ABLATE: unknown signal(s) {sorted(unknown)}")
+    return names
 
 
 def apply_fourier_embeddings(

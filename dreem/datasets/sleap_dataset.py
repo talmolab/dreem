@@ -111,6 +111,8 @@ class SleapDataset(BaseDataset):
         n_bursts: int = 4,
         burst_max_span: int = 900,
         feature_cache: str | None = None,
+        skip_image: bool = False,
+        bbox_mode: str | None = None,
         **kwargs,
     ):
         """Initialize SleapDataset.
@@ -154,6 +156,7 @@ class SleapDataset(BaseDataset):
             normalize_image: whether to normalize the image to [0, 1]
             max_batching_gap: the max number of frames that can be unlabelled before starting a new batch
             use_tight_bbox: whether to use tight bounding box (around keypoints) instead of the default square bounding box
+                Equivalent to `bbox_mode="tight"` with no padding; `bbox_mode` wins if both are set.
             dilation_radius_px: radius of the keypoints dilation in pixels. 0 means no mask applied
             max_detection_overlap: the iom threshold for non-maximum suppression of detections
             max_tracks: the maximum number of tracks that can be created while tracking. Remove any detections that exceed this number.
@@ -173,6 +176,23 @@ class SleapDataset(BaseDataset):
                 vectors cannot follow a moving one -- and it disables crop
                 augmentation, since a cached feature cannot vary per epoch.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility)
+            skip_image: never decode frames. Each instance gets a 1x1 placeholder
+                crop and the frame size comes from the video metadata, for models
+                whose visual encoder ignores pixels (`encoder_type: none`).
+                Spatial augmentations still move the keypoints: they run on a
+                blank frame of the true size, so rotations turn about the same
+                center as with real images. Pixel-level ones have nothing to act on.
+            bbox_mode: how each anchor's box is fit to the pose. One of
+                * "square" (default): a `crop_size` square on the anchor, shifted
+                  (not clipped) to start at 0 when it crosses the top or left
+                  edge, so near those edges the box is no longer centered.
+                * "square_centered": a `crop_size` square always centered on
+                  the anchor, even past an edge.
+                * "tight": the keypoints' axis-aligned extent.
+                All three add `padding` on every side. A single-node pose falls
+                back to "square_centered" under "tight", which has no extent.
+                None keeps the legacy behavior: "tight" if `use_tight_bbox`, else
+                "square" (padding is not applied to legacy tight boxes).
         """
         # These must be set BEFORE super().__init__(): it calls create_chunks(),
         # which reads them through getattr on self.
@@ -242,6 +262,13 @@ class SleapDataset(BaseDataset):
         self.normalize_image = normalize_image
         self.max_batching_gap = max_batching_gap
         self.use_tight_bbox = use_tight_bbox
+        self.skip_image = skip_image
+        if bbox_mode not in (None, "square", "square_centered", "tight"):
+            raise ValueError(
+                "bbox_mode must be one of 'square', 'square_centered', 'tight' "
+                f"or None, got {bbox_mode!r}"
+            )
+        self.bbox_mode = bbox_mode
         self.dilation_radius_px = dilation_radius_px
         self.max_detection_overlap = (
             max_detection_overlap if max_detection_overlap is not None else 0
@@ -402,7 +429,7 @@ class SleapDataset(BaseDataset):
             if frame_ind != lf.frame_idx:
                 logger.warning(f"Frame index mismatch: {frame_ind} != {lf.frame_idx}")
 
-            if self._features is not None:
+            if self._features is not None or self.skip_image:
                 # Cached features mean no crop is ever needed, so skip the decode.
                 # This is the expensive half under burst sampling: the frames in a
                 # chunk are scattered, so every one is a random seek into the mp4.
@@ -528,11 +555,16 @@ class SleapDataset(BaseDataset):
                 else:
                     keypoints = []
 
+                # skip_image: spatial transforms need the frame's size to move
+                # keypoints, not its pixels, so hand them a blank frame.
+                aug_img = img if not self.skip_image else np.zeros((h, w, 1), np.uint8)
                 augmented, aug_replay = self.clip_augmentations(
-                    image=img, keypoints=keypoints, replay=aug_replay
+                    image=aug_img, keypoints=keypoints, replay=aug_replay
                 )
 
-                img, aug_poses = augmented["image"], augmented["keypoints"]
+                aug_poses = augmented["keypoints"]
+                if not self.skip_image:
+                    img = augmented["image"]
 
                 aug_poses = [
                     arr
@@ -599,6 +631,8 @@ class SleapDataset(BaseDataset):
 
                     if np.isnan(centroid).all():
                         bbox = torch.tensor([np.nan, np.nan, np.nan, np.nan])
+                    elif self.bbox_mode is not None:
+                        bbox = self._fit_bbox(centroid, arr_pose, crop_size)
                     else:
                         if self.use_tight_bbox and len(pose) > 1:
                             # tight bbox, dont allow this for centroid-only poses!
@@ -611,7 +645,10 @@ class SleapDataset(BaseDataset):
                                 padding=self.padding,
                             )
 
-                    if img is None:
+                    if self.skip_image:
+                        # 1x1 stand-in; the null encoder never reads it
+                        crop = torch.zeros(1, 1, 1)
+                    elif img is None:
                         # cached features: bbox/centroid are still needed by the
                         # positional embedding, the pixels are not
                         crop = torch.empty(0)
@@ -636,7 +673,9 @@ class SleapDataset(BaseDataset):
 
                     crops.append(crop)
                     # get max h,w for padding for tight bboxes
-                    if crop.ndim == 3:  # empty when features come from the cache
+                    # empty when features come from the cache; skip_image placeholders
+                    # must not overwrite the frame size h, w read from metadata
+                    if crop.ndim == 3 and not self.skip_image:
                         c, h, w = crop.shape
                         if h > max_crop_h:
                             max_crop_h = h
@@ -646,7 +685,9 @@ class SleapDataset(BaseDataset):
                     centroids[anchor] = centroid
                     boxes.append(bbox)
 
-                if len(crops) > 0 and img is not None:
+                if self.skip_image:
+                    crops = crops[0]  # one placeholder per instance, any anchor count
+                elif len(crops) > 0 and img is not None:
                     crops = torch.concat(crops, dim=0)
                 elif img is None:
                     crops = torch.empty(0)
@@ -715,6 +756,32 @@ class SleapDataset(BaseDataset):
             frames.append(frame)
 
         return frames
+
+    def _fit_bbox(
+        self, anchor_xy: np.ndarray, pose_xy: np.ndarray, crop_size: int
+    ) -> torch.Tensor:
+        """Fit one anchor's (y1, x1, y2, x2) box according to `self.bbox_mode`.
+
+        Args:
+            anchor_xy: (x, y) of the anchor.
+            pose_xy: (n_visible_nodes, 2) visible keypoints of the instance.
+            crop_size: side of the square boxes, in pixels.
+
+        Returns:
+            The padded box in pixels.
+        """
+        mode = self.bbox_mode
+        if mode == "tight" and len(pose_xy) < 2:
+            mode = "square_centered"
+        if mode == "square":
+            bbox = data_utils.get_bbox(anchor_xy, crop_size)
+        elif mode == "square_centered":
+            cx, cy = float(anchor_xy[0]), float(anchor_xy[1])
+            half = crop_size / 2
+            bbox = torch.Tensor([cy - half, cx - half, cy + half, cx + half])
+        else:
+            bbox = data_utils.get_tight_bbox(pose_xy)
+        return data_utils.pad_bbox(bbox, padding=self.padding)
 
     def _get_video_reader(self, label_idx: int) -> "imageio.core.Format.Reader":
         """Get the video reader for a labels file, opened by this process.
