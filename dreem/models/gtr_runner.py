@@ -232,6 +232,12 @@ class GTRRunner(LightningModule):
             # lower one when fine-tuning a pretrained encoder); everything else
             # keeps `lr`. It is not an optimizer argument, so it is removed here.
             encoder_lr = optimizer_cfg.pop("encoder_lr", None)
+            # `geom_lr`: learning rate of the parameters marked `_geom` (rotary
+            # frequencies and distance-kernel scales, models/geometry.py), which
+            # also get no weight decay. Defaults to `lr`; unused by other models.
+            geom_lr = optimizer_cfg.pop("geom_lr", None)
+            geom_params = [p for p in self.parameters() if getattr(p, "_geom", False)]
+            geom_ids = {id(p) for p in geom_params}
             if encoder_lr is None:
                 params = self.parameters()
             else:
@@ -245,6 +251,15 @@ class GTRRunner(LightningModule):
                     },
                     {"params": encoder_params, "lr": float(encoder_lr)},
                 ]
+            if geom_params:
+                if encoder_lr is None:
+                    params = [{"params": list(self.parameters())}]
+                for group in params:
+                    group["params"] = [p for p in group["params"] if id(p) not in geom_ids]
+                geom_group = {"params": geom_params, "weight_decay": 0.0}
+                if geom_lr is not None:
+                    geom_group["lr"] = float(geom_lr)
+                params.append(geom_group)
             optimizer = init_optimizer(params, optimizer_cfg)
 
         if self.scheduler_cfg is None:

@@ -77,10 +77,46 @@ def aggregate_traj_score(
     if mode != "recency_mean":
         raise ValueError(f"`mode` must be one of {AGGREGATION_MODES}, got {mode!r}")
     # Named `rec_w` rather than `w`: `w` is the image width in the caller.
-    rec_w = torch.ones_like(deltas) if tau == inf else torch.exp(-deltas / tau)
+    if tau == inf:
+        rec_w = torch.ones_like(deltas)
+    else:
+        # Measure each weight from its track's newest instance: the common factor
+        # cancels in the mean, and a track last seen long ago no longer has every
+        # weight underflow to 0 (float32 exp(-delta / tau) is 0 past ~100 tau).
+        track_newest = torch.where(
+            id_inds > 0, deltas[:, None], torch.full_like(id_inds, inf)
+        ).amin(dim=0)  # (n_traj,)
+        rec_w = torch.exp(-(deltas - track_newest[id_inds.argmax(dim=1)]) / tau)
     num = torch.mm(raw_asso * rec_w[None, :], id_inds)  # (n_query, n_traj)
     den = torch.mm(rec_w[None, :], id_inds).clamp_min(1e-8)  # (1, n_traj)
     return num / den
+
+
+def apply_gap_penalty(
+    traj_score: torch.Tensor,
+    id_inds: torch.Tensor,
+    deltas: torch.Tensor,
+    penalty: float,
+) -> torch.Tensor:
+    """Subtract `penalty * log(gap)` from each track's score.
+
+    Args:
+        traj_score: (n_query, n_traj) pooled trajectory scores.
+        id_inds: (n_nonquery, n_traj) one-hot mapping of reference instances to tracks.
+        deltas: (n_nonquery,) frames between the query frame and each reference instance.
+        penalty: weight of the log-gap term; `0` returns `traj_score` unchanged.
+
+    Returns:
+        The (n_query, n_traj) penalized scores. `gap` is the number of frames since the
+        track's newest instance in the window, so a track seen in the previous frame
+        (gap 1) is unchanged.
+    """
+    if penalty == 0 or id_inds.numel() == 0:
+        return traj_score
+    gap = torch.where(id_inds > 0, deltas[:, None], torch.full_like(id_inds, inf)).amin(
+        dim=0
+    )  # (n_traj,)
+    return traj_score - penalty * torch.log(gap.clamp_min(1.0))[None, :]
 
 
 class Tracker:
@@ -109,6 +145,7 @@ class Tracker:
         enable_crop_saving: bool = False,
         aggregation: str = "recency_mean",
         recency_tau: float | None = None,
+        gap_penalty: float = 0.0,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -148,6 +185,12 @@ class Tracker:
             recency_tau: time constant, in frames, of the exponential recency weight
                 `exp(-delta / recency_tau)` applied by `"recency_mean"`. `None`
                 (default) weights every reference instance in the window equally.
+            gap_penalty: subtract `gap_penalty * log(gap)` from each track's pooled
+                score, where `gap` is the number of frames since the track's newest
+                instance in the window (1 for a track seen in the previous frame, so
+                those are unchanged). Without it, a track whose animal vanished a few
+                frames ago competes with present tracks on a score whose distance
+                tolerance widens with the gap. `0` (default) disables it.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
@@ -174,6 +217,9 @@ class Tracker:
             raise ValueError(f"`recency_tau` must be > 0, got {recency_tau}")
         self.aggregation = aggregation
         self.recency_tau = inf if recency_tau is None else float(recency_tau)
+        if gap_penalty < 0:
+            raise ValueError(f"`gap_penalty` must be >= 0, got {gap_penalty}")
+        self.gap_penalty = float(gap_penalty)
         self.max_angle_diff = (
             deg2rad(max_angle_diff) if max_angle_diff is not None else inf
         )
@@ -219,7 +265,8 @@ class Tracker:
             f"queue={self.track_queue}, "
             f"temperature={self.temperature}, "
             f"aggregation={self.aggregation}, "
-            f"recency_tau={self.recency_tau}"
+            f"recency_tau={self.recency_tau}, "
+            f"gap_penalty={self.gap_penalty}"
         )
 
     def track(
@@ -508,6 +555,17 @@ class Tracker:
         traj_score_df.columns.name = "Unique IDs"
 
         query_frame.add_traj_score("traj_score", traj_score_df)
+
+        if self.gap_penalty > 0 and id_inds.numel() > 0:
+            traj_score = apply_gap_penalty(
+                traj_score, id_inds.cpu(), deltas, self.gap_penalty
+            )
+            gap_penalty_df = pd.DataFrame(
+                traj_score.clone().numpy(), columns=unique_ids.cpu().numpy()
+            )
+            gap_penalty_df.index.name = "Current Frame Instances"
+            gap_penalty_df.columns.name = "Unique IDs"
+            query_frame.add_traj_score("gap_penalty", gap_penalty_df)
         ################################################################################
 
         # with iou -> combining with location in tracker, they set to True

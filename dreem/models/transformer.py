@@ -21,6 +21,7 @@ from torch import nn
 from dreem.io import AssociationMatrix, Instance
 from dreem.models.attention_head import ATTWeightHead
 from dreem.models.embedding import Embedding, FourierPositionalEmbeddings
+from dreem.models.geometry import DistanceKernelBias, JointRFF, RotaryXYT, get_centroids
 from dreem.models.model_utils import get_boxes, get_times
 
 # todo: add named tensors
@@ -104,6 +105,23 @@ class Transformer(torch.nn.Module):
             self.d_pos = self.d_temp = self.d_visual = self.d_model
             self.visual_proj = None
 
+        # Position terms that reach the association score directly (geometry.py), all
+        # off by default:
+        #   "joint": one space-time RFF block of pos_dim + temp_dim dims replaces the
+        #       separate pos and temp blocks (concatenate only; set pos/temp to None).
+        #   "rope": rotary embedding over (y, x, t) on the attention head's q and k.
+        #   "dist_bias": a learned distance-kernel term added to every logit.
+        #   "reinject": the pos/temp block is also added to the encoder memory and to
+        #       both attention-head inputs, not only to the input tokens (concatenate only).
+        self.joint_cfg = em.get("joint")
+        self.rope_cfg = em.get("rope")
+        self.dist_bias_cfg = em.get("dist_bias")
+        self.reinject = bool(em.get("reinject", False))
+        if (self.joint_cfg or self.reinject) and self.embedding_agg_method != "concatenate":
+            raise ValueError("`joint` and `reinject` need embedding_agg_method 'concatenate'")
+        if self.joint_cfg:
+            self.d_pos, self.d_temp = self.d_pos + self.d_temp, 0
+
         self.pos_emb = Embedding(emb_type="off", mode="off", features=self.d_pos)
         self.temp_emb = Embedding(emb_type="off", mode="off", features=self.d_temp)
 
@@ -170,6 +188,15 @@ class Transformer(torch.nn.Module):
 
         self._reset_parameters()
 
+        # Built after _reset_parameters, whose xavier init would overwrite RoPE's
+        # 2-d frequency matrix.
+        self.joint_emb = JointRFF(self.d_pos, **self.joint_cfg) if self.joint_cfg else None
+        if self.rope_cfg:
+            self.attn_head.rope = RotaryXYT(feature_dim_attn_head, **self.rope_cfg)
+        self.dist_bias = (
+            DistanceKernelBias(**self.dist_bias_cfg) if self.dist_bias_cfg else None
+        )
+
     def _reset_parameters(self):
         """Initialize model weights from xavier distribution."""
         for p in self.parameters():
@@ -207,6 +234,19 @@ class Transformer(torch.nn.Module):
         temp = temp_emb.view(n, 1, self.d_temp)
         return torch.cat([visual, pos, temp], dim=-1)  # (n, 1, d_model)
 
+    def _pos_block(
+        self, pos_emb: torch.Tensor, temp_emb: torch.Tensor, n: int
+    ) -> torch.Tensor:
+        """The concatenated layout's position block 0 ⊕ pos ⊕ temp, shape (n, 1, d_model).
+
+        Used by `reinject`: added wherever the layers add a positional embedding, it
+        puts the pos/temp slice back at full strength without touching the visual slice.
+        """
+        zeros = pos_emb.new_zeros(n, 1, self.d_visual)
+        pos = pos_emb.view(n, 1, self.d_pos)
+        temp = temp_emb.view(n, 1, self.d_temp)
+        return torch.cat([zeros, pos, temp], dim=-1)
+
     def forward(
         self,
         ref_instances: list[Instance],
@@ -241,20 +281,44 @@ class Transformer(torch.nn.Module):
 
         ref_temp_emb = self.temp_emb(ref_times)
 
-        ref_pos_emb = self.pos_emb(ref_boxes)
-
         # Inference-time ablation: every instance gets the window's mean value of
         # an ablated signal, removing what distinguishes instances while keeping
         # the input near its trained range. Queries get the same mean.
         ablate = ablated_signals()
+
+        if self.joint_emb is not None:
+            # space and time share one embedding, so ablate its inputs, not its output
+            jb, jt = ref_boxes, ref_times.float()
+            if "pos" in ablate:
+                jb = jb.mean(dim=0, keepdim=True).expand_as(jb)
+            if "temp" in ablate:
+                jt = jt.mean().expand_as(jt)
+            ref_pos_emb = self.joint_emb(jb, jt)
+        else:
+            ref_pos_emb = self.pos_emb(ref_boxes)
+
+        # (y, x, t) of every instance for the rotary head and the distance bias
+        use_geo = self.attn_head.rope is not None or self.dist_bias is not None
+        if use_geo:
+            ref_geo = torch.cat(
+                [get_centroids(ref_instances).to(ref_boxes.device), ref_times.float()[:, None]],
+                dim=-1,
+            )
+            if "pos" in ablate:
+                ref_geo[:, :2] = ref_geo[:, :2].mean(dim=0, keepdim=True)
+            if "temp" in ablate:
+                ref_geo[:, 2] = ref_geo[:, 2].mean()
+            query_geo = ref_geo
+
         if "visual" in ablate:
             ref_features = ref_features.mean(dim=1, keepdim=True).expand_as(
                 ref_features
             )
-        if "pos" in ablate:
+        if "pos" in ablate and self.joint_emb is None:
             ref_pos_emb = ref_pos_emb.mean(dim=0, keepdim=True).expand_as(ref_pos_emb)
         if "temp" in ablate:
-            ref_temp_emb = ref_temp_emb.mean(dim=0, keepdim=True).expand_as(
+            # .float(): an "off" embedding returns zeros in the times' integer dtype
+            ref_temp_emb = ref_temp_emb.float().mean(dim=0, keepdim=True).expand_as(
                 ref_temp_emb
             )
 
@@ -269,7 +333,19 @@ class Transformer(torch.nn.Module):
             1, 0, 2
         )  # (total_instances, batch_size, embed_dim)
 
-        if self.embedding_agg_method == "concatenate":
+        if self.embedding_agg_method == "concatenate" and self.reinject:
+            # The tokens carry zeros in the pos/temp slice and the layers add the
+            # block (0 ⊕ pos ⊕ temp) back, so the encoder input equals the plain
+            # concatenation, and the block is re-added wherever the encoder/decoder
+            # add their positional embedding, and at the attention head.
+            ref_emb = self._pos_block(ref_pos_emb, ref_temp_emb, total_instances)
+            encoder_queries = self._concat_fuse(
+                ref_features,
+                torch.zeros_like(ref_pos_emb),
+                torch.zeros_like(ref_temp_emb),
+                total_instances,
+            )
+        elif self.embedding_agg_method == "concatenate":
             # visual ⊕ pos ⊕ temp baked into the feature vector; no additive path.
             encoder_queries = self._concat_fuse(
                 ref_features, ref_pos_emb, ref_temp_emb, total_instances
@@ -328,16 +404,39 @@ class Transformer(torch.nn.Module):
             query_boxes = torch.nan_to_num(query_boxes, -1.0)
             query_temp_emb = self.temp_emb(query_times)
 
-            query_pos_emb = self.pos_emb(query_boxes)
+            if self.joint_emb is not None:
+                jb, jt = query_boxes, query_times.float()
+                if "pos" in ablate:
+                    jb = ref_boxes.mean(dim=0, keepdim=True).expand_as(jb)
+                if "temp" in ablate:
+                    jt = ref_times.float().mean().expand_as(jt)
+                query_pos_emb = self.joint_emb(jb, jt)
+            else:
+                query_pos_emb = self.pos_emb(query_boxes)
+
+            if use_geo:
+                query_geo = torch.cat(
+                    [
+                        get_centroids(query_instances).to(ref_boxes.device),
+                        query_times.float()[:, None],
+                    ],
+                    dim=-1,
+                )
+                if "pos" in ablate:
+                    query_geo[:, :2] = ref_geo[:1, :2]
+                if "temp" in ablate:
+                    query_geo[:, 2] = ref_geo[0, 2]
 
             if "visual" in ablate:
                 query_features = ref_features[:1].expand_as(query_features)
-            if "pos" in ablate:
+            if "pos" in ablate and self.joint_emb is None:
                 query_pos_emb = ref_pos_emb[:1].expand_as(query_pos_emb)
             if "temp" in ablate:
                 query_temp_emb = ref_temp_emb[:1].expand_as(query_temp_emb)
 
-            if self.embedding_agg_method == "concatenate":
+            if self.embedding_agg_method == "concatenate" and self.reinject:
+                query_emb = self._pos_block(query_pos_emb, query_temp_emb, n_query)
+            elif self.embedding_agg_method == "concatenate":
                 query_emb = None
             else:
                 query_emb = (query_pos_emb + query_temp_emb) / 2.0
@@ -374,7 +473,16 @@ class Transformer(torch.nn.Module):
                 self.fourier_norm,
             )
 
-        if self.embedding_agg_method == "concatenate":
+        if self.embedding_agg_method == "concatenate" and self.reinject:
+            decoder_queries = self._concat_fuse(
+                query_features,
+                torch.zeros_like(query_pos_emb),
+                torch.zeros_like(query_temp_emb),
+                n_query,
+            )
+            decoder_ref_emb = ref_emb
+            decoder_query_emb = query_emb
+        elif self.embedding_agg_method == "concatenate":
             decoder_queries = self._concat_fuse(
                 query_features, query_pos_emb, query_temp_emb, n_query
             )
@@ -399,11 +507,27 @@ class Transformer(torch.nn.Module):
             batch_size, total_instances, embed_dim
         )  # (batch_size, total_instances, embed_dim)
 
+        head_keys = encoder_features
+        if self.reinject:
+            head_keys = encoder_features + ref_emb.permute(1, 0, 2)
+        geo_bias = None
+        if self.dist_bias is not None:
+            geo_bias = self.dist_bias(
+                query_geo[:, :2], ref_geo[:, :2], query_geo[:, 2], ref_geo[:, 2]
+            )
+
         asso_output = []
         for frame_features in decoder_features:
-            asso_matrix = self.attn_head(frame_features, encoder_features).view(
-                n_query, total_instances
-            )
+            if self.reinject:
+                frame_features = frame_features + query_emb.permute(1, 0, 2)
+            asso_matrix = self.attn_head(
+                frame_features,
+                head_keys,
+                query_pos=query_geo if use_geo else None,
+                key_pos=ref_geo if use_geo else None,
+            ).view(n_query, total_instances)
+            if geo_bias is not None:
+                asso_matrix = asso_matrix + geo_bias
             asso_matrix = AssociationMatrix(asso_matrix, ref_instances, query_instances)
 
             asso_output.append(asso_matrix)
