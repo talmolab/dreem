@@ -11,7 +11,9 @@ from omegaconf import OmegaConf
 from pytorch_lightning import Trainer
 
 from dreem.datasets import CellTrackingDataset
+from dreem.datasets.data_utils import _pairwise_iou
 from dreem.inference import Tracker, metrics
+from dreem.inference.boxes import Boxes
 from dreem.inference.post_processing import (
     ConfidenceFlagging,
     DistanceWeighting,
@@ -20,7 +22,11 @@ from dreem.inference.post_processing import (
 )
 from dreem.inference.track import export_trajectories, run
 from dreem.inference.track_queue import TrackQueue
-from dreem.inference.tracker import aggregate_traj_score, apply_gap_penalty
+from dreem.inference.tracker import (
+    aggregate_traj_score,
+    apply_gap_penalty,
+    cv_predict_boxes,
+)
 from dreem.io import Config, Frame, FrameFlagCode, Instance
 from dreem.models import GlobalTrackingTransformer, GTRRunner
 
@@ -381,6 +387,79 @@ def test_tracker_gap_penalty_discounts_unseen_tracks():
     assert gaps.max() == 2
     expected = traj_score.to_numpy() - 0.5 * np.log(gaps)[None, :]
     assert np.allclose(penalized.to_numpy(), expected)
+
+
+def test_cv_predict_boxes():
+    """Each track's newest box moves by its velocity between its two newest instances."""
+    # track 0: 3 and 1 frames before the query, moving +2 px per frame in x;
+    # track 1: one instance only
+    boxes = torch.tensor(
+        [
+            [[0.0, 0.0, 10.0, 10.0]],
+            [[5.0, 5.0, 15.0, 15.0]],
+            [[0.0, 4.0, 10.0, 14.0]],
+        ]
+    )
+    id_inds = torch.tensor([[1.0, 0.0], [0.0, 1.0], [1.0, 0.0]])
+    deltas = torch.tensor([3.0, 2.0, 1.0])
+    last_inds = (id_inds * torch.arange(3)[:, None]).max(dim=0)[1]
+    pred = cv_predict_boxes(boxes, id_inds, last_inds, deltas)
+    assert pred.shape == (2, 1, 4)
+    assert torch.allclose(pred[0, 0], torch.tensor([0.0, 6.0, 10.0, 16.0]))
+    assert torch.allclose(pred[1, 0], boxes[1, 0])
+
+
+def test_tracker_cv_reference_scores_iou_from_predicted_boxes():
+    """With cv_reference, the IoU step compares queries to each track's predicted box."""
+    # the first instance moves 6 px per frame in x, the second stays put
+    frames = []
+    for t in range(4):
+        boxes = [[10.0, 6.0 * t, 30.0, 6.0 * t + 20], [80.0, 80.0, 100.0, 100.0]]
+        instances = [
+            Instance(
+                gt_track_id=i,
+                pred_track_id=-1,
+                bbox=torch.tensor([box]),
+                crop=torch.rand(size=(1, 1, 64, 64)),
+            )
+            for i, box in enumerate(boxes)
+        ]
+        frames.append(
+            Frame(video_id=0, frame_id=t, img_shape=(1, 128, 128), instances=instances)
+        )
+
+    tracker = Tracker(
+        overlap_thresh=0.01, decay_time=None, iou="mult", cv_reference=True
+    )
+    frames_pred = tracker(_small_tracking_transformer(), frames)
+
+    # each track's boxes from the tracker's own assignments, since an untrained model picks them
+    history = {}
+    for t in range(3):
+        for instance in frames_pred[t].instances:
+            history.setdefault(int(instance.pred_track_id), []).append(
+                (t, instance.bbox[0, 0])
+            )
+    traj_score = frames_pred[3].get_traj_score("traj_score")
+    weighted = frames_pred[3].get_traj_score("weight_iou")
+    predicted = []
+    for track_id in traj_score.columns:
+        t_last, last = history[track_id][-1]
+        pred = last.clone()
+        if len(history[track_id]) > 1:
+            t_prev, prev = history[track_id][-2]
+            shift = ((last - prev) / (t_last - t_prev)).reshape(2, 2).mean(dim=0)
+            pred = last + shift.repeat(2) * (3 - t_last)
+        predicted.append(pred)
+    # the moving instance's track is extrapolated, not scored at its newest box
+    assert any(
+        not torch.allclose(pred, history[track_id][-1][1])
+        for pred, track_id in zip(predicted, traj_score.columns)
+    )
+    query = torch.stack([instance.bbox[0] for instance in frames_pred[3].instances])
+    ious = _pairwise_iou(Boxes(query), Boxes(torch.stack(predicted)[:, None])).numpy()
+    raw = traj_score.to_numpy()
+    assert np.allclose(weighted.to_numpy(), raw + np.abs(ious - raw) * ious)
 
 
 # @pytest.mark.parametrize("set_default_device", ["cpu"], indirect=True)

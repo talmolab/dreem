@@ -144,6 +144,21 @@ tracker:
   gap_penalty: 0.5
 ```
 
+The IoU and `max_center_dist` terms compare each detection with the newest box of each track. When
+animals move fast and steadily and pass close to each other (schooling fish, for example), the
+detection nearest a track's newest box is often the other animal. `cv_reference: true` measures both
+terms from where each track would be now at constant velocity: its newest box moved by the velocity
+between its two newest instances in the window. Tracks with a single instance keep their newest box.
+It helps when velocity predicts the next position better than the last position does. On animals that
+stop and turn often (gerbils, mice in a home cage) it made tracking worse, so check it on held-out
+clips:
+
+```yaml
+tracker:
+  iou: "mult"
+  cv_reference: true
+```
+
 See the [Inference Configuration Reference](https://dreem.sleap.ai/configs/inference/) for details.
 
 For detailed usage instructions, see the [Usage Guide](https://dreem.sleap.ai/usage/).
