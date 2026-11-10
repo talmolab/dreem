@@ -26,6 +26,43 @@ logger = logging.getLogger("dreem.inference")
 AGGREGATION_MODES = ("recency_mean", "softmax_sum")
 
 
+def cv_predict_boxes(
+    nonquery_boxes: torch.Tensor,
+    id_inds: torch.Tensor,
+    last_inds: torch.Tensor,
+    deltas: torch.Tensor,
+) -> torch.Tensor:
+    """Each track's newest box moved to its constant-velocity position at the query frame.
+
+    The velocity is the per-frame displacement of the box between the track's two newest
+    instances in the window; a track with a single instance keeps its newest box.
+
+    Args:
+        nonquery_boxes: (n_nonquery, n_anchors, 4) boxes as (y1, x1, y2, x2).
+        id_inds: (n_nonquery, n_traj) one-hot track membership of each reference instance.
+        last_inds: (n_traj,) index of each track's newest reference instance.
+        deltas: (n_nonquery,) frames between each reference instance and the query frame.
+
+    Returns:
+        (n_traj, n_anchors, 4) predicted boxes.
+    """
+    n_nonquery, n_traj = id_inds.shape
+    cols = torch.arange(n_traj)
+    rest = id_inds.clone()
+    rest[last_inds, cols] = 0
+    has_prev = rest.sum(dim=0) > 0
+    prev_inds = (rest * torch.arange(n_nonquery)[:, None]).max(dim=0)[1]
+    d_last = deltas[last_inds].float()
+    span = (deltas[prev_inds].float() - d_last).clamp(min=1.0)
+    boxes = nonquery_boxes.detach().cpu().float()
+    step = (boxes[last_inds] - boxes[prev_inds]) / span[:, None, None]
+    step[~has_prev] = 0
+    # move the box, keep its size: the shift of its corners' mean
+    shift = (step[..., :2] + step[..., 2:]) / 2
+    pred = boxes[last_inds] + torch.cat([shift, shift], dim=-1) * d_last[:, None, None]
+    return pred.to(device=nonquery_boxes.device, dtype=nonquery_boxes.dtype)
+
+
 def aggregate_traj_score(
     raw_asso: torch.Tensor,
     softmax_asso: torch.Tensor,
@@ -145,6 +182,7 @@ class Tracker:
         aggregation: str = "recency_mean",
         recency_tau: float | None = None,
         gap_penalty: float = 0.0,
+        cv_reference: bool = False,
         **kwargs,
     ):
         """Initialize a tracker to run inference.
@@ -186,6 +224,12 @@ class Tracker:
                 those are unchanged). Without it, a track whose animal vanished a few
                 frames ago competes with present tracks on a score whose distance
                 tolerance widens with the gap. `0` (default) disables it.
+            cv_reference: measure the IoU and center-distance terms from each track's
+                constant-velocity prediction at the query frame (its newest box moved by
+                the velocity between its two newest instances in the window, times the
+                frames since the newest) instead of from its newest box. Tracks with one
+                instance in the window keep their newest box. `False` (default) keeps
+                the newest box.
             **kwargs: Additional keyword arguments (unused but accepted for compatibility).
         """
         self.track_queue = TrackQueue(
@@ -215,6 +259,7 @@ class Tracker:
         if gap_penalty < 0:
             raise ValueError(f"`gap_penalty` must be >= 0, got {gap_penalty}")
         self.gap_penalty = float(gap_penalty)
+        self.cv_reference = bool(cv_reference)
         self.max_angle_diff = (
             deg2rad(max_angle_diff) if max_angle_diff is not None else inf
         )
@@ -259,7 +304,8 @@ class Tracker:
             f"temperature={self.temperature}, "
             f"aggregation={self.aggregation}, "
             f"recency_tau={self.recency_tau}, "
-            f"gap_penalty={self.gap_penalty}"
+            f"gap_penalty={self.gap_penalty}, "
+            f"cv_reference={self.cv_reference}"
         )
 
     def track(
@@ -564,6 +610,10 @@ class Tracker:
             last_inds = (id_inds * torch.arange(n_nonquery)[:, None]).max(dim=0)[1]  # M
 
             last_boxes = nonquery_boxes[last_inds]  # n_traj x 4
+            if self.cv_reference:
+                last_boxes = cv_predict_boxes(
+                    nonquery_boxes, id_inds.cpu(), last_inds, deltas
+                )
             last_ious = _pairwise_iou(Boxes(query_boxes), Boxes(last_boxes))  # n_k x M
         else:
             last_ious = traj_score.new_zeros(traj_score.shape)

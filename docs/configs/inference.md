@@ -76,6 +76,7 @@ The `tracker` section controls tracking behavior and post-processing.
 * `aggregation` (`str`): How per-instance association scores are pooled into a per-track score. `"recency_mean"` (default) scores each query/reference instance pair one-to-one on the raw association and pools them with a recency-weighted mean. `"softmax_sum"` restores the original behavior (a per-reference-frame softmax followed by an unweighted sum over each track's instances), whose scores depend on how much of the lookback window each track occupies -- a track that was missing for part of the window is scored on a different scale than one present throughout.
 * `recency_tau` (`float` | `None`): Time constant, in frames, of the exponential recency weight `exp(-delta / recency_tau)` used by `aggregation: "recency_mean"`. `null` (default) weights every reference instance in the window equally.
 * `gap_penalty` (`float`): Subtracts `gap_penalty * log(gap)` from each track's pooled score, where `gap` is the number of frames since the track's newest instance in the window (tracks seen in the previous frame are unchanged). Use it when animals disappear for a while: it stops a track whose animal vanished a few frames ago from outscoring the animal's own, current track. `0` (default) disables it.
+* `cv_reference` (`bool`): Measures the IOU and `max_center_dist` terms from each track's constant-velocity position at the current frame instead of from its newest box. That position is the newest box moved by the per-frame velocity between the track's two newest instances in the window, times the frames since the newest. A track with one instance in the window keeps its newest box. Use it for animals whose velocity predicts their next position better than their last position does (e.g. fish swimming past each other); it can hurt animals that stop and turn often. `false` (default) uses the newest box.
 
 ## Dataloader Configuration
 
@@ -177,6 +178,9 @@ tracker:
 
   # float: Penalty on log(frames since a track was last seen) (default: 0, off)
   gap_penalty: <float>
+
+  # bool: Measure IOU and center distance from each track's constant-velocity position (default: false)
+  cv_reference: <bool>
 
 trainer:
   # str: Device to use: "gpu", "cuda", or "cpu"
