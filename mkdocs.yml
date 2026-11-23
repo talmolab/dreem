@@ -140,8 +140,9 @@ copyright: Copyright &copy; 2024 - 2025 Talmo Lab
 nav:
   - Home: index.md
   - Get Started:
-    - Installation: installation.md
     - Quickstart: quickstart.md
+    - Installation: installation.md
+    - Choosing Parameters: parameters.md
   - Guides:
     - Usage Guide: usage.md
     - Choosing Parameters: parameters.md

@@ -33,6 +33,15 @@ main, and `mike deploy <tag> latest` when a release is published. Only a release
       `--max-detection-overlap`, `--dilation-radius`, `--mult-thresh` on track/eval (#149); the CSV
       `flagged` column and CTC `.flagged_frames.txt` (#178); the `output_format` config key
       (`docs/configs/inference.md`). Build warnings unchanged (386, as main)
+- [x] Get Started (2026-11-23, Elise: "more emphasis on what the user must do, and easier to
+      follow ui"): Quickstart rewritten as six guided steps (install, try the sample, prepare
+      your data, choose parameters, track, check results) with a step strip, "You should see"
+      and "If it fails" boxes, and a checklist of the files a user must bring; Installation
+      restyled with tabs (uv / uv tool / pip; NVIDIA / Apple / CPU). Quickstart first in the tab;
+      Choosing Parameters listed under both Get Started and Guides (the Guides tab is the one
+      highlighted on that page). The sample commands were run here on a CPU: download 6 s,
+      `dreem track` 14 min 20 s, 2 tracks over 2,560 frames; the crop stays 70 (Elise), with a
+      note that the helper suggests 104 for these 102 px flies
 - [ ] Look at the page in a browser (light/dark, narrow screen): not possible on this machine
       (no browser; installing one was blocked). Via the PR preview at dreem.sleap.ai/pr/<n>/,
       or `uv run mkdocs serve`
