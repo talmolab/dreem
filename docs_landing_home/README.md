@@ -42,6 +42,11 @@ main, and `mike deploy <tag> latest` when a release is published. Only a release
       highlighted on that page). The sample commands were run here on a CPU: download 6 s,
       `dreem track` 14 min 20 s, 2 tracks over 2,560 frames; the crop stays 70 (Elise), with a
       note that the helper suggests 104 for these 102 px flies
+- [x] Contact (2026-11-23, Elise: Salk email only, on the home page and in the footer, a little
+      more highlighted): the home page's Get Help section is a "Questions or feedback?" box with
+      an "Email edavis@salk.edu" button (primary) and an "Open an issue" button; an envelope icon
+      (mailto, title "Email edavis@salk.edu") follows the GitHub and X icons in every page's
+      footer. Build warnings unchanged (386)
 - [ ] Look at the page in a browser (light/dark, narrow screen): not possible on this machine
       (no browser; installing one was blocked). Via the PR preview at dreem.sleap.ai/pr/<n>/,
       or `uv run mkdocs serve`

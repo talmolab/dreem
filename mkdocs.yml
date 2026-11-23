@@ -127,6 +127,9 @@ extra:
       link: https://github.com/talmolab
     - icon: fontawesome/brands/x-twitter
       link: https://twitter.com/talmop
+    - icon: fontawesome/solid/envelope
+      link: mailto:edavis@salk.edu
+      name: Email edavis@salk.edu
 
 extra_css:
   - css/mkdocstrings.css

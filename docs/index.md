@@ -63,7 +63,11 @@ Explore the Examples section for notebooks that walk you through the DREEM pipel
 
 ## Get Help
 
-- **Questions?** Open an issue on [GitHub](https://github.com/talmolab/dreem/issues).
+!!! question "Questions or feedback?"
+    Email [edavis@salk.edu](mailto:edavis@salk.edu), or open an issue on [GitHub](https://github.com/talmolab/dreem/issues).
+
+    [:fontawesome-solid-envelope: Email edavis@salk.edu](mailto:edavis@salk.edu){ .md-button .md-button--primary }
+    [:fontawesome-brands-github: Open an issue](https://github.com/talmolab/dreem/issues){ .md-button }
 
 
 <!-- ## Citing DREEM
