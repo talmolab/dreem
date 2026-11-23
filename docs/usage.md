@@ -172,6 +172,9 @@ dreem track ./data/inference \
 | `--video-type` | Video file extension |
 | `--device cpu` | Run on CPU |
 
+!!! tip "Not sure what values to use?"
+    [Choosing Parameters](parameters.md) reads your detections (and video) in the browser and suggests `--crop-size`, `--max-tracks`, `--max-dist` and the rest, with the reason for each.
+
 !!! tip "Using `--max-dist` to enforce distance or motion based constraints"
     If you know the maximum distance the instances in your data can travel frame over frame, using `--max-dist` can help track them better. It penalizes matches that exceed the threshold you set. Using `--max-dist-multiplier` multiplies this distance penalty relative to the model's association scores, pushing tracking behavior closer to a pure distance-based tracker.
 

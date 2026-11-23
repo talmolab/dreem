@@ -144,6 +144,7 @@ nav:
     - Quickstart: quickstart.md
   - Guides:
     - Usage Guide: usage.md
+    - Choosing Parameters: parameters.md
     - Datasets: datasets.md
     - Models: models_pg.md
     - Live Visualizer: visualizer.md
