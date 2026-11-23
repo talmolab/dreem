@@ -1,0 +1,66 @@
+{#- Home page: a hero section above the page's Markdown (docs/index.md sets `template: home.html`). -#}
+{% extends "main.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ 'css/home.css' | url }}">
+{% endblock %}
+
+{#- Material's partials/content.html without its fallback <h1>: the hero holds the page's h1. -#}
+{% block content %}
+  {% include "partials/tags.html" %}
+  {% include "partials/actions.html" %}
+  {{ page.content }}
+  {% include "partials/source-file.html" %}
+  {% include "partials/feedback.html" %}
+  {% include "partials/comments.html" %}
+{% endblock %}
+
+{% block tabs %}
+  {{ super() }}
+  <section class="dreem-hero" data-md-color-scheme="slate">
+    <div class="md-grid md-typeset dreem-hero__inner">
+      <div class="dreem-hero__text">
+        <h1 class="dreem-hero__title">DREEM</h1>
+        <p class="dreem-hero__subtitle">Relates Every Entity's Motion</p>
+        <p class="dreem-hero__lead">
+          Multi-object tracking for animals and microscopy. Give DREEM your detections
+          (pose keypoints or segmentation masks) and it gives back the identity of every
+          object across the video, with pretrained models or one you train on your own data.
+        </p>
+        <div class="dreem-hero__buttons">
+          <a href="{{ 'quickstart/' | url }}" class="md-button md-button--primary">Get started</a>
+          <a href="{{ config.repo_url }}" class="md-button">GitHub</a>
+        </div>
+      </div>
+      <div class="dreem-hero__media">
+        <figure class="dreem-hero__clip">
+          <video autoplay muted loop playsinline preload="metadata"
+                 poster="{{ 'assets/hero/animals.jpg' | url }}"
+                 aria-label="Four flies walking, each fly's skeleton drawn in its own track color">
+            <source src="{{ 'assets/hero/animals.mp4' | url }}" type="video/mp4">
+          </video>
+          <figcaption>Animals: flies tracked from SLEAP pose keypoints</figcaption>
+        </figure>
+        <figure class="dreem-hero__clip">
+          <video autoplay muted loop playsinline preload="metadata"
+                 poster="{{ 'assets/hero/microscopy.jpg' | url }}"
+                 aria-label="Cells in a microscopy video, each cell marked by a dot in its own track color">
+            <source src="{{ 'assets/hero/microscopy.mp4' | url }}" type="video/mp4">
+          </video>
+          <figcaption>Microscopy: cells tracked from centroid detections (4&times; speed)</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+  <script>
+    // Readers who ask for less motion get paused clips with controls instead of autoplay.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.querySelectorAll(".dreem-hero video").forEach(function (v) {
+        v.removeAttribute("autoplay");
+        v.pause();
+        v.controls = true;
+      });
+    }
+  </script>
+{% endblock %}

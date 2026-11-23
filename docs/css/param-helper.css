@@ -1,0 +1,212 @@
+/* Choosing Parameters page (docs/parameters.md, docs/js/param-helper/). */
+
+#param-helper {
+  --ph-panel: rgba(127, 127, 127, 0.08);
+  --ph-line: var(--md-default-fg-color--lightest);
+  margin: 1.2rem 0;
+}
+
+#param-helper * {
+  box-sizing: border-box;
+}
+
+.ph-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.8rem;
+  padding: 0.9rem;
+  border: 1px solid var(--ph-line);
+  border-radius: 0.4rem;
+  background: var(--ph-panel);
+}
+
+.ph-inputs label,
+.ph-inputs fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.ph-inputs fieldset {
+  border: 0;
+  padding: 0;
+}
+
+.ph-inputs fieldset label {
+  flex-direction: row;
+  align-items: center;
+  font-weight: 400;
+}
+
+.ph-inputs input[type="file"],
+.ph-inputs select {
+  max-width: 100%;
+  font-size: 0.65rem;
+  font-weight: 400;
+}
+
+.ph-hint {
+  color: var(--md-default-fg-color--light);
+  font-size: 0.62rem;
+  font-weight: 400;
+}
+
+.ph-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  grid-column: 1 / -1;
+}
+
+.md-typeset .ph-actions .md-button {
+  margin: 0;
+  padding: 0.35em 1em;
+  font-size: 0.7rem;
+}
+
+#ph-status {
+  margin: 0.6rem 0;
+  color: var(--md-default-fg-color--light);
+  font-size: 0.7rem;
+}
+
+#ph-status.ph-error {
+  color: #d32f2f;
+}
+
+.md-typeset #param-helper table:not([class]) {
+  display: table;
+  width: 100%;
+  font-size: 0.68rem;
+}
+
+.md-typeset #param-helper table:not([class]) th[scope="row"] {
+  min-width: 9rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.md-typeset #param-helper th[scope="row"] code {
+  font-size: 0.6rem;
+  font-weight: 400;
+}
+
+.ph-value {
+  font-family: var(--md-code-font-family);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ph-unset {
+  color: var(--md-default-fg-color--light);
+  font-family: inherit;
+  font-weight: 400;
+}
+
+.ph-warn {
+  margin-top: 0.3rem;
+  padding-left: 0.5rem;
+  border-left: 3px solid #f57c00;
+}
+
+.ph-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+#ph-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.3rem;
+  background: #111;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.ph-frame-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin-top: 0.4rem;
+  font-size: 0.65rem;
+}
+
+.ph-frame-controls button,
+#ph-copy {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--ph-line);
+  border-radius: 0.2rem;
+  background: var(--ph-panel);
+  color: inherit;
+  font-size: 0.65rem;
+  cursor: pointer;
+}
+
+#ph-hist svg {
+  width: 100%;
+  height: auto;
+}
+
+.ph-hist-bar {
+  fill: var(--md-primary-fg-color);
+  opacity: 0.8;
+}
+
+.ph-hist-bar:hover {
+  opacity: 1;
+}
+
+.ph-hist-axis {
+  stroke: var(--md-default-fg-color--lighter);
+  stroke-width: 1;
+}
+
+.ph-hist-tick,
+.ph-hist-title,
+.ph-hist-label {
+  fill: var(--md-default-fg-color--light);
+  font-size: 11px;
+}
+
+.ph-hist-title {
+  fill: var(--md-default-fg-color);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ph-hist-label {
+  fill: var(--md-default-fg-color);
+}
+
+.ph-hist-mark {
+  stroke: var(--md-default-fg-color);
+  stroke-width: 2;
+}
+
+.ph-hist-mark--alt {
+  stroke-dasharray: 4 3;
+}
+
+#ph-output {
+  margin-top: 1rem;
+}
+
+#ph-output pre {
+  margin: 0.3rem 0 0;
+}
+
+/* Phones and narrow windows: frame above the chart. */
+@media screen and (max-width: 44.9375em) {
+  .ph-view {
+    grid-template-columns: 1fr;
+  }
+}

@@ -11,7 +11,9 @@
 }
 
 [data-termynal] {
-    width: 750px;
+    /* wide enough for the home page's `dreem track ... --crop-size 128` on one line
+       (74 characters at 9px + the prompt + 90px of padding = ~776px) */
+    width: 820px;
     max-width: 100%;
     background: var(--color-bg);
     color: var(--color-text);

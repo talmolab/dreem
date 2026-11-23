@@ -10,6 +10,7 @@ on:
       - "dreem/**"
       - "docs/**"
       - "mkdocs.yml"
+      - "overrides/**"
       - ".github/workflows/pr-preview.yml"
 
 # Per-PR concurrency: each PR gets its own group, allowing parallel PR previews

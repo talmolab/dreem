@@ -1,4 +1,10 @@
-# DREEM Relates Every Entity's Motion
+---
+title: DREEM
+template: home.html  # overrides/home.html: the hero (name, buttons, demo clips) above this page
+hide:
+  - navigation
+  - toc
+---
 
 [![CI](https://github.com/talmolab/dreem/actions/workflows/ci.yml/badge.svg)](https://github.com/talmolab/dreem/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/talmolab/dreem/branch/main/graph/badge.svg?token=Sj8kIFl3pi)](https://codecov.io/gh/talmolab/dreem)
@@ -6,7 +12,7 @@
 [![Release](https://img.shields.io/github/v/release/talmolab/dreem?label=Latest)](https://github.com/talmolab/dreem/releases/)
 [![PyPI](https://img.shields.io/pypi/v/dreem-track?label=PyPI)](https://pypi.org/project/dreem-track)
 
-Welcome to the documentation for **DREEM** – an open-source tool for multiple object tracking. It enables you to track identities of objects in video data. You can run tracking using our pretrained models for animals and microscopy, or train a new model on your own data. In either case, DREEM takes in detection outputs in the form of pose keypoints or segmentation masks, and outputs identities of objects in the video. For an interactive demo, visit our [Hugging Face demo page](https://huggingface.co/spaces/talmolab/dreem).
+Welcome to the documentation for **DREEM** – an open-source tool for multiple object tracking. It enables you to track identities of objects in video data. You can run tracking using our pretrained models for animals and microscopy, or train a new model on your own data. In either case, DREEM takes in detection outputs in the form of pose keypoints or segmentation masks, and outputs identities of objects in the video.
 
 <div class="termy">
 ```console
@@ -57,7 +63,11 @@ Explore the Examples section for notebooks that walk you through the DREEM pipel
 
 ## Get Help
 
-- **Questions?** Open an issue on [GitHub](https://github.com/talmolab/dreem/issues).
+!!! question "Questions or feedback?"
+    Email [edavis@salk.edu](mailto:edavis@salk.edu), or open an issue on [GitHub](https://github.com/talmolab/dreem/issues).
+
+    [:fontawesome-solid-envelope: Email edavis@salk.edu](mailto:edavis@salk.edu){ .md-button .md-button--primary }
+    [:fontawesome-brands-github: Open an issue](https://github.com/talmolab/dreem/issues){ .md-button }
 
 
 <!-- ## Citing DREEM

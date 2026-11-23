@@ -15,6 +15,7 @@ dreem --help
 | `dreem eval` | Evaluate tracking against ground truth |
 | `dreem convert` | Convert external tracking formats to `.slp` files |
 | `dreem render` | Render tracking results as video (CTC masks or SLEAP labels) |
+| `dreem system` | Show system information (Python, PyTorch, CUDA, GPUs, package versions) |
 
 ---
 
@@ -92,13 +93,16 @@ dreem track INPUT_DIR --checkpoint PATH --output DIR --crop-size SIZE [OPTIONS]
 | `--video-type`, `-vt` | `mp4` | Video file extension |
 | `--anchor`, `-a` | `centroid` | Anchor keypoint name |
 | `--clip-length`, `-cl` | `32` | Frames per batch |
+| `--max-detection-overlap`, `-di` | - | IOU threshold above which detections are considered duplicates |
+| `--dilation-radius`, `-dr` | - | Size of the mask around each keypoint (pixels); background outside it is masked out |
 | `--max-tracks`, `-mx` | - | Maximum number of tracks |
-| `--confidence-threshold`, `-conf` | `0` | Threshold for flagging low-confidence predictions. Results saved to the suggested frames section of the output .slp file. |
+| `--confidence-threshold`, `-conf` | `0` | Threshold for flagging low-confidence predictions. Results saved to the suggested frames section of the output .slp file; for CTC inputs, `dreem track` writes the flagged frame numbers to a `.flagged_frames.txt` file. |
 | `--max-dist`, `-md` | - | Maximum center distance between frames |
 | `--max-dist-multiplier`, `-mdm` | - | Penalty multiplier applied when center distance exceeds `--max-dist` (default: `1.0`) |
 | `--max-gap`, `-mg` | - | Maximum frame gap for track continuity |
 | `--iou-mode`, `-iou` | `mult` | IOU mode (`mult` or `add`) |
 | `--overlap-thresh`, `-ot` | - | Overlap threshold |
+| `--mult-thresh`, `-mt` | - | Use multiplicative threshold weighting |
 | `--max-angle`, `-ma` | - | Maximum angle difference |
 | `--front-node`, `-fn` | - | Front nodes for orientation (can repeat) |
 | `--back-node`, `-bn` | - | Back nodes for orientation (can repeat) |
@@ -164,7 +168,7 @@ dreem eval ./data/test \
 ### Output
 
 - `.slp` or `.tif` files with predicted tracks (native format)
-- `.csv` trajectory file (if `--output-format csv` or `both`; columns: `frame`, `detection_idx`, `track_id`, `confidence`, `centroid_x`, `centroid_y`)
+- `.csv` trajectory file (if `--output-format csv` or `both`; columns: `frame`, `detection_idx`, `track_id`, `confidence`, `centroid_x`, `centroid_y`, `flagged`; `flagged` is `True` on frames flagged by `--confidence-threshold`)
 - `motmetrics.csv` with evaluation metrics
 - `.h5` file with detailed results
 
@@ -301,6 +305,16 @@ dreem track ./data \
 ### Output
 
 - `.mp4` video file with colored overlays and annotations
+
+---
+
+## System
+
+Print system information for troubleshooting or bug reports: Python version, platform, PyTorch version, CUDA availability, driver version with a compatibility check, GPU details, and package versions.
+
+```bash
+dreem system
+```
 
 ---
 

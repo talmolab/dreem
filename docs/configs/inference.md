@@ -90,6 +90,7 @@ The `tracker` section controls tracking behavior and post-processing.
 ## Other Parameters
 
 * `save_frame_meta` (`bool`): Whether to save frame-level metadata (default: `false`).
+* `output_format` (`str`): Which result files to write: `"native"` (default; `.slp`, or `.tif` masks for CTC data), `"csv"` (a trajectory table with columns `frame`, `detection_idx`, `track_id`, `confidence`, `centroid_x`, `centroid_y`, `flagged`), or `"both"`. Same as the `--output-format` CLI flag.
 * `dataset.metrics.test` (`str` | `list[str]`): Metrics to compute during evaluation. Use `"all"` for all metrics.
 
 ## Example Configuration
@@ -135,6 +136,9 @@ dataset:
 
 # bool: Whether to save frame-level metadata (default: false)
 save_frame_meta: <bool>
+
+# str: Result files to write: "native" (.slp / .tif, default), "csv", or "both"
+output_format: <str>
 
 tracker:
   # float | null: Maximum angle difference (degrees) allowed for track assignment (optional)
