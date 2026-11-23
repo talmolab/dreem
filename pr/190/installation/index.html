@@ -11,10 +11,10 @@
         <link rel="canonical" href="https://dreem.sleap.ai/installation/">
       
       
-        <link rel="prev" href="..">
+        <link rel="prev" href="../quickstart/">
       
       
-        <link rel="next" href="../quickstart/">
+        <link rel="next" href="../parameters/">
       
       
         
@@ -255,7 +255,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+        <a href="../quickstart/" class="md-tabs__link">
           
   
   
@@ -488,6 +488,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -551,10 +579,32 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#gpu-support" class="md-nav__link">
+  <a href="#1-install-dreem" class="md-nav__link">
     <span class="md-ellipsis">
       
-        GPU Support
+        1. Install DREEM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-add-gpu-support-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Add GPU support (optional)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-check-that-it-worked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Check that it worked
       
     </span>
   </a>
@@ -565,18 +615,7 @@
   <a href="#development-installation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Development Installation
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#verify-installation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Verify Installation
+        Development installation
       
     </span>
   </a>
@@ -610,14 +649,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../quickstart/" class="md-nav__link">
+      <a href="../parameters/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Quickstart
+    Choosing Parameters
   
 
     
@@ -3367,10 +3406,32 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#gpu-support" class="md-nav__link">
+  <a href="#1-install-dreem" class="md-nav__link">
     <span class="md-ellipsis">
       
-        GPU Support
+        1. Install DREEM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-add-gpu-support-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Add GPU support (optional)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-check-that-it-worked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Check that it worked
       
     </span>
   </a>
@@ -3381,18 +3442,7 @@
   <a href="#development-installation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Development Installation
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#verify-installation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Verify Installation
+        Development installation
       
     </span>
   </a>
@@ -3439,41 +3489,80 @@
 
 
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
-<p>The easiest way to install DREEM is with <a href="https://docs.astral.sh/uv/">uv</a>. </p>
-<p>In a new directory:</p>
+<p>Install DREEM into a fresh environment, add GPU support if you have one, and check that the <code>dreem</code> command works. DREEM runs on Linux, Windows and macOS. A GPU is optional, and the <a href="../quickstart/">Quickstart</a> runs on a CPU.</p>
+<h2 id="1-install-dreem">1. Install DREEM<a class="headerlink" href="#1-install-dreem" title="Permanent link">&para;</a></h2>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">uv (recommended)</label><label for="__tabbed_1_2">uv tool</label><label for="__tabbed_1_3">pip</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>In a new folder:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>venv<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>dreem-track
 </code></pre></div>
-<p>Or install as a standalone tool without creating a virtual environment:</p>
+<p>On Windows (PowerShell), activate with <code>.venv\Scripts\activate</code> instead. No uv yet? See <a href="https://docs.astral.sh/uv/getting-started/installation/">uv's installation guide</a>.</p>
+</div>
+<div class="tabbed-block">
+<p>Installs the <code>dreem</code> command on its own, without a virtual environment:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>dreem-track
 </code></pre></div>
-<p>You can also use pip:</p>
+</div>
+<div class="tabbed-block">
+<p>In an environment of your choice:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip<span class="w"> </span>install<span class="w"> </span>dreem-track
 </code></pre></div>
-<h2 id="gpu-support">GPU Support<a class="headerlink" href="#gpu-support" title="Permanent link">&para;</a></h2>
-<p>DREEM automatically uses GPU acceleration when available:</p>
-<ul>
-<li><strong>Linux/Windows</strong>: CUDA-enabled GPUs are supported via the <code>gpu</code> extra</li>
-<li><strong>macOS (Apple Silicon)</strong>: MPS acceleration is used automatically</li>
-</ul>
-<p>To install with GPU (CUDA) support:</p>
+</div>
+</div>
+</div>
+<h2 id="2-add-gpu-support-optional">2. Add GPU support (optional)<a class="headerlink" href="#2-add-gpu-support-optional" title="Permanent link">&para;</a></h2>
+<p>DREEM uses a GPU automatically when it finds one; <code>--device</code> chooses one explicitly.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">NVIDIA GPU (Linux, Windows)</label><label for="__tabbed_2_2">Apple Silicon</label><label for="__tabbed_2_3">CPU only</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Install the CUDA build of PyTorch with the <code>gpu</code> extra:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;dreem-track[gpu]&quot;</span>
 </code></pre></div>
-<p>Or with <code>uv tool</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;dreem-track[gpu]&quot;</span>
+<p>With <code>uv tool</code>, use <code>uv tool install "dreem-track[gpu]"</code>. For a specific CUDA version, use the <code>torch-cuda118</code>, <code>torch-cuda128</code> or <code>torch-cuda130</code> extra instead of <code>gpu</code>.</p>
+</div>
+<div class="tabbed-block">
+<p>Nothing to add: DREEM uses Apple's MPS acceleration automatically.</p>
+</div>
+<div class="tabbed-block">
+<p>Nothing to add. Tracking runs on the CPU, more slowly than on a GPU.</p>
+</div>
+</div>
+</div>
+<h2 id="3-check-that-it-worked">3. Check that it worked<a class="headerlink" href="#3-check-that-it-worked" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dreem<span class="w"> </span>--help
 </code></pre></div>
-<p>For a specific CUDA version, you can use <code>torch-cuda118</code>, <code>torch-cuda128</code>, or <code>torch-cuda130</code> instead of <code>gpu</code>.</p>
-<h2 id="development-installation">Development Installation<a class="headerlink" href="#development-installation" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/talmolab/dreem<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>dreem
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>gpu
+<div class="admonition success">
+<p class="admonition-title">You should see</p>
+<p>The list of commands:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>╭─ Commands ───────────────────────────────────────────────────────────────────╮
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>│ track     Run tracking on a dataset.                                         │
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>│ eval      Evaluate a trained DREEM model against ground truth.               │
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>│ convert   Convert external tracking formats to .slp files.                   │
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>│ train     Train a DREEM model.                                               │
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>│ render    Render tracking results as a video with colored overlays.          │
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>│ system    Display system information and GPU status.                         │
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>╰──────────────────────────────────────────────────────────────────────────────╯
 </code></pre></div>
-<h2 id="verify-installation">Verify Installation<a class="headerlink" href="#verify-installation" title="Permanent link">&para;</a></h2>
-<p>Check that DREEM is installed correctly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>dreem<span class="w"> </span>--help
+</div>
+<p>To check whether DREEM sees your GPU, run <code>dreem system</code>.</p>
+<details class="failure">
+<summary>If it fails</summary>
+<ul>
+<li><strong><code>dreem: command not found</code></strong>: the environment is not active. Run <code>source .venv/bin/activate</code> (or <code>.venv\Scripts\activate</code> on Windows) in the folder where you created it, or use <code>uv tool install</code>.</li>
+<li><strong>No GPU in <code>dreem system</code></strong>: install the <code>gpu</code> extra (step 2), and check that <code>nvidia-smi</code> works on your machine.</li>
+</ul>
+</details>
+<p>Next: the <a href="../quickstart/">Quickstart</a> tracks a sample video in a few minutes.</p>
+<h2 id="development-installation">Development installation<a class="headerlink" href="#development-installation" title="Permanent link">&para;</a></h2>
+<p>To work on DREEM itself:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/talmolab/dreem<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>dreem
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>gpu
 </code></pre></div>
 <h2 id="uninstall">Uninstall<a class="headerlink" href="#uninstall" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>uv<span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>dreem-track
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># or</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># or, if installed with uv tool</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>uv<span class="w"> </span>tool<span class="w"> </span>uninstall<span class="w"> </span>dreem-track
 </code></pre></div>
 
