@@ -12,7 +12,7 @@ hide:
 [![Release](https://img.shields.io/github/v/release/talmolab/dreem?label=Latest)](https://github.com/talmolab/dreem/releases/)
 [![PyPI](https://img.shields.io/pypi/v/dreem-track?label=PyPI)](https://pypi.org/project/dreem-track)
 
-Welcome to the documentation for **DREEM** – an open-source tool for multiple object tracking. It enables you to track identities of objects in video data. You can run tracking using our pretrained models for animals and microscopy, or train a new model on your own data. In either case, DREEM takes in detection outputs in the form of pose keypoints or segmentation masks, and outputs identities of objects in the video. For an interactive demo, visit our [Hugging Face demo page](https://huggingface.co/spaces/talmolab/dreem).
+Welcome to the documentation for **DREEM** – an open-source tool for multiple object tracking. It enables you to track identities of objects in video data. You can run tracking using our pretrained models for animals and microscopy, or train a new model on your own data. In either case, DREEM takes in detection outputs in the form of pose keypoints or segmentation masks, and outputs identities of objects in the video.
 
 <div class="termy">
 ```console
