@@ -1,0 +1,109 @@
+/* Home page hero (overrides/home.html). Loaded on the home page only. */
+
+.dreem-hero {
+  background:
+    radial-gradient(ellipse at 85% 0%, rgba(255, 112, 67, 0.35), transparent 60%),
+    linear-gradient(160deg, #17181d 0%, #26201d 100%);
+  color: #fff;
+}
+
+.dreem-hero__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2rem 2.5rem;
+  padding: 2.4rem 0.8rem 2.8rem;
+}
+
+.dreem-hero__text {
+  flex: 1 1 20rem;
+}
+
+.md-typeset .dreem-hero__title {
+  margin: 0;
+  color: #fff;
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+.dreem-hero__subtitle {
+  margin: 0.3rem 0 1.1rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 1rem;
+}
+
+.md-typeset .dreem-hero__lead {
+  max-width: 32rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.dreem-hero__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.4rem;
+}
+
+.md-typeset .dreem-hero .md-button {
+  margin: 0;
+  border-color: rgba(255, 255, 255, 0.55);
+  color: #fff;
+}
+
+.md-typeset .dreem-hero .md-button--primary {
+  border-color: var(--md-primary-fg-color);
+  background-color: var(--md-primary-fg-color);
+}
+
+.md-typeset .dreem-hero .md-button:focus,
+.md-typeset .dreem-hero .md-button:hover {
+  border-color: var(--md-accent-fg-color);
+  background-color: var(--md-accent-fg-color);
+  color: var(--md-accent-bg-color);
+}
+
+.dreem-hero__media {
+  display: grid;
+  flex: 1 1 24rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.md-typeset .dreem-hero__clip {
+  margin: 0;
+}
+
+.dreem-hero__clip video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;  /* square tiles; a wider clip is letterboxed, not cropped */
+  border-radius: 0.4rem;
+  background: #000;
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.45);
+}
+
+.md-typeset .dreem-hero__clip figcaption {
+  max-width: none;
+  margin: 0.5rem 0 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.65rem;
+  font-style: normal;
+  text-align: left;
+}
+
+/* Phones: one clip per row. */
+@media screen and (max-width: 29.9375em) {
+  .dreem-hero__media {
+    grid-template-columns: 1fr;
+  }
+
+  .md-typeset .dreem-hero__title {
+    font-size: 2.1rem;
+  }
+}

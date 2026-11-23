@@ -1,4 +1,10 @@
-# DREEM Relates Every Entity's Motion
+---
+title: DREEM
+template: home.html  # overrides/home.html: the hero (name, buttons, demo clips) above this page
+hide:
+  - navigation
+  - toc
+---
 
 [![CI](https://github.com/talmolab/dreem/actions/workflows/ci.yml/badge.svg)](https://github.com/talmolab/dreem/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/talmolab/dreem/branch/main/graph/badge.svg?token=Sj8kIFl3pi)](https://codecov.io/gh/talmolab/dreem)

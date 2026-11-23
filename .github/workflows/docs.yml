@@ -12,6 +12,7 @@ on:
       - "dreem/**"
       - "docs/**"
       - "mkdocs.yml"
+      - "overrides/**"
       - ".github/workflows/docs.yml"
 
 # Prevent race conditions when PR is merged (last PR commit + push to main)

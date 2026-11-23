@@ -5,6 +5,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  custom_dir: overrides  # home.html: the home page's hero
   logo: assets/sleap-logo.png
   favicon: assets/favicon.ico
   icon:
@@ -30,8 +31,8 @@ theme:
     - navigation.tracking
     # - toc.integrate
     - toc.follow
-    # Tabs
-    # - navigation.tabs
+    # Tabs: the top-level nav sections below
+    - navigation.tabs
     # - navigation.tabs.sticky  # stays visible at the top
     - navigation.sections
     - navigation.top
@@ -137,21 +138,24 @@ extra_javascript:
 
 copyright: Copyright &copy; 2024 - 2025 Talmo Lab
 nav:
-  - Overview: index.md
-  - Installation: installation.md
-  - Quickstart: quickstart.md
-  - Datasets: datasets.md
-  - Models: models_pg.md
-  - Live Visualizer: visualizer.md
-  - Usage Guide: usage.md
+  - Home: index.md
+  - Get Started:
+    - Installation: installation.md
+    - Quickstart: quickstart.md
+  - Guides:
+    - Usage Guide: usage.md
+    - Datasets: datasets.md
+    - Models: models_pg.md
+    - Live Visualizer: visualizer.md
   - Examples:
     - Overview: Examples/index.md
     - Microscopy: Examples/microscopy-demo.md
     - End-to-end: Examples/dreem-demo.md
-  - Core API:
-    - i/o: io/
-    - models: models/
-    - configs: configs/
-    - cli: cli.md
-  - Full API: reference/
+  - API:
+    - Core API:
+      - i/o: io/
+      - models: models/
+      - configs: configs/
+      - cli: cli.md
+    - Full API: reference/
   - Changelog: https://github.com/talmolab/dreem/releases
